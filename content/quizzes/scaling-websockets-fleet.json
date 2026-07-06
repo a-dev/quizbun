@@ -186,9 +186,7 @@
       "type": "input",
       "validation": {
         "mode": "numeric",
-        "acceptedAnswers": [
-          500000
-        ]
+        "acceptedAnswers": [500000]
       },
       "explanation": "Fan-out amplifies: one logical message becomes N physical sends, one per subscriber. So 5 messages/sec × 100,000 clients = **500,000** sends/sec.\n\n```js\nconsole.log(100_000 * 5); // 500000\n```\n\nThe cost scales **linearly with connection count**, which is the hidden price of \"just broadcast it.\" It's why broadcast-heavy systems lean on an efficient backplane, edge fan-out, or — when traffic is one-way — a simpler push transport like SSE. Doubling your users doubles your send rate at the same message frequency.",
       "references": "[Socket.IO: Broadcasting events](https://socket.io/docs/v4/broadcasting-events/)"

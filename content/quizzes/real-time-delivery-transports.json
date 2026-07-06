@@ -65,10 +65,7 @@
       "type": "input",
       "validation": {
         "mode": "text",
-        "acceptedAnswers": [
-          "Last-Event-ID",
-          "Last Event ID"
-        ]
+        "acceptedAnswers": ["Last-Event-ID", "Last Event ID"]
       },
       "explanation": "SSE has reconnection built into the spec. The server can tag events with an `id:` line; the browser remembers the most recent id, and when the connection drops it reconnects on its own and replays that id in the `Last-Event-ID` request header. The server reads that header and resumes sending events *after* that id, so a brief network blip does not lose messages.\n\n```text\nevent: price\nid: 42\ndata: {\"price\":100}\n\n```\n\nAfter a drop, the browser reconnects with `Last-Event-ID: 42`, and the server streams everything after #42. This resume-by-default behavior is exactly what raw WebSockets make you build yourself.",
       "references": "[WHATWG HTML: Server-sent events](https://html.spec.whatwg.org/multipage/server-sent-events.html)"
@@ -132,9 +129,7 @@
       "type": "input",
       "validation": {
         "mode": "numeric",
-        "acceptedAnswers": [
-          101
-        ]
+        "acceptedAnswers": [101]
       },
       "explanation": "The server replies `101 Switching Protocols` — the \"I am changing this connection's protocol as you requested\" status. A complete acceptance looks like:\n\n```text\nHTTP/1.1 101 Switching Protocols\nUpgrade: websocket\nConnection: Upgrade\nSec-WebSocket-Accept: s3pPLMBiTxaQ9kYGzzhZRbK+xOo=\n```\n\nAnything else (for example `200`) means the upgrade did *not* happen and you are still speaking plain HTTP. `101` is the only success status for this handshake.",
       "references": "[MDN: 101 Switching Protocols](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/101)"
@@ -146,10 +141,7 @@
       "type": "input",
       "validation": {
         "mode": "text",
-        "acceptedAnswers": [
-          "wss",
-          "wss://"
-        ]
+        "acceptedAnswers": ["wss", "wss://"]
       },
       "explanation": "WebSockets use `ws://` for plaintext and `wss://` for TLS-encrypted connections — the exact parallel to `http://` versus `https://`. The default ports follow suit: 80 for `ws`, 443 for `wss`.\n\n```js\nconst socket = new WebSocket(\"wss://example.com/chat\");\n```\n\nAlways prefer `wss://` in production. Beyond encryption, it dramatically improves the odds of passing cleanly through corporate proxies and interception middleboxes that otherwise mangle plaintext `Upgrade` requests.",
       "references": "[MDN: The WebSocket() constructor](https://developer.mozilla.org/en-US/docs/Web/API/WebSocket/WebSocket)"

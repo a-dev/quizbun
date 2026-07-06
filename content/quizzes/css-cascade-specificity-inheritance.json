@@ -65,9 +65,7 @@
       "type": "input",
       "validation": {
         "mode": "numeric",
-        "acceptedAnswers": [
-          3
-        ]
+        "acceptedAnswers": [3]
       },
       "explanation": "The **B** column counts classes, attribute selectors, **and pseudo-classes** together. A pseudo-class such as `:hover` lives here — not in the type column.\n\nFor `nav.primary > ul li.active a:hover`:\n\n- A (IDs): none → 0\n- B (`.primary`, `.active`, `:hover`): **3**\n- C (`nav`, `ul`, `li`, `a`): 4\n\nThe child combinator `>` and the descendant spaces add nothing. The full triple is **(0, 3, 4)**, so **B = 3**. Forgetting that `:hover` counts in B (or miscounting it as a type) is a classic off-by-one.",
       "references": "[W3C Selectors Level 4: Calculating a selector's specificity](https://www.w3.org/TR/selectors-4/#specificity-rules)"
@@ -291,9 +289,7 @@
       "type": "input",
       "validation": {
         "mode": "text",
-        "acceptedAnswers": [
-          "unset"
-        ]
+        "acceptedAnswers": ["unset"]
       },
       "explanation": "`unset` is the chameleon keyword: it behaves as **`inherit` for properties that inherit by default**, and as **`initial` for properties that do not**.\n\n```css\n.card {\n  color: unset;  /* color inherits → behaves like inherit */\n  border: unset; /* border does not inherit → behaves like initial (no border) */\n}\n```\n\nThe four CSS-wide keywords compared:\n\n- `inherit` — always take the parent's computed value.\n- `initial` — always the property's spec initial value.\n- `unset` — inherit-or-initial, depending on whether the property inherits.\n- `revert` — roll back to the previous cascade origin (e.g. the UA stylesheet).\n\n`all: unset` applies this to *every* property at once — a quick way to neutralize both inherited and default styling on an element.",
       "references": "[MDN: unset](https://developer.mozilla.org/en-US/docs/Web/CSS/unset)"

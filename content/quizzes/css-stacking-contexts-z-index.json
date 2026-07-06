@@ -42,7 +42,10 @@
         { "text": "`position: relative` with no `z-index` set", "isCorrect": false },
         { "text": "`transform: scale(1)`", "isCorrect": true },
         { "text": "`isolation: isolate`", "isCorrect": true },
-        { "text": "`z-index: 0` on a `position: static` block (not a flex or grid item)", "isCorrect": false },
+        {
+          "text": "`z-index: 0` on a `position: static` block (not a flex or grid item)",
+          "isCorrect": false
+        },
         { "text": "`will-change: transform`", "isCorrect": true }
       ],
       "explanation": "A stacking context is created by far more than `z-index`. The confirmed creators here:\n\n- **`opacity` below `1`** — even `0.99`.\n- **Any `transform` other than the keyword `none`** — and `scale(1)` is a transform *function*, not `none`, so it counts even though it changes nothing visually.\n- **`isolation: isolate`** — its entire job is to make a stacking context.\n- **`will-change`** naming a property (like `transform`) that *would* create one — it forms the context preemptively.\n\nThe two non-creators:\n\n- **`position: relative` alone** does nothing for stacking until you add a `z-index` other than `auto`.\n- **`z-index` is ignored entirely** on a `position: static` element unless it is a flex or grid item.\n\nThis is why a performance tweak (`will-change`, `transform: translateZ(0)`) or a fade-in (`opacity`) can silently rearrange your layers.",

@@ -91,10 +91,7 @@
       "type": "input",
       "validation": {
         "mode": "text",
-        "acceptedAnswers": [
-          "UDP",
-          "User Datagram Protocol"
-        ]
+        "acceptedAnswers": ["UDP", "User Datagram Protocol"]
       },
       "explanation": "QUIC runs over **UDP**, then rebuilds reliability, in-order per-stream delivery, and congestion control in userspace — plus TLS 1.3 baked directly in. Choosing UDP let QUIC be deployed and iterated without kernel/OS changes and sidestep the middlebox ossification that makes changing TCP nearly impossible. HTTP/3's default is UDP port 443, usually advertised to clients via an `Alt-Svc` header on an existing HTTP/1.1 or HTTP/2 response.",
       "references": "[RFC 9000: QUIC: A UDP-Based Multiplexed and Secure Transport](https://datatracker.ietf.org/doc/html/rfc9000)"
@@ -132,11 +129,7 @@
       "type": "input",
       "validation": {
         "mode": "text",
-        "acceptedAnswers": [
-          "CONNECT",
-          "Extended CONNECT",
-          "the CONNECT method"
-        ]
+        "acceptedAnswers": ["CONNECT", "Extended CONNECT", "the CONNECT method"]
       },
       "explanation": "RFC 8441 (\"Bootstrapping WebSockets with HTTP/2\") defines **Extended CONNECT**: the client sends a request with `:method: CONNECT` plus a new `:protocol: websocket` pseudo-header. The server must first advertise it supports this via the `SETTINGS_ENABLE_CONNECT_PROTOCOL` setting.\n\n```text\n:method: CONNECT\n:protocol: websocket\n:scheme: https\n:path: /chat\n```\n\nThe payoff: the WebSocket becomes a single HTTP/2 **stream**, multiplexed alongside your other requests on one connection — instead of a dedicated TCP connection per socket.",
       "references": "[RFC 8441: Bootstrapping WebSockets with HTTP/2](https://datatracker.ietf.org/doc/html/rfc8441)"
@@ -252,9 +245,7 @@
       "type": "input",
       "validation": {
         "mode": "numeric",
-        "acceptedAnswers": [
-          103
-        ]
+        "acceptedAnswers": [103]
       },
       "explanation": "**103 Early Hints** is an informational (1xx) response the server can send *before* the final response, carrying `Link` headers that tell the browser to start preloading or preconnecting to critical resources. Unlike Server Push, it only *hints* — the client decides whether to fetch, so it can't waste bandwidth on already-cached assets. That's why it became the preferred answer to the problem Server Push tried (and failed) to solve.",
       "references": "[MDN: 103 Early Hints](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/103)"

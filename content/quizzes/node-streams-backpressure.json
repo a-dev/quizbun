@@ -13,10 +13,7 @@
       "type": "input",
       "validation": {
         "mode": "text",
-        "acceptedAnswers": [
-          "Duplex",
-          "Duplex stream"
-        ]
+        "acceptedAnswers": ["Duplex", "Duplex stream"]
       },
       "explanation": "A `Transform` extends `Duplex`. A `Duplex` has an *independent* readable side and writable side (think of a TCP socket: you read from it and write to it, and the two directions are unrelated). A `Transform` is the special case where the readable output is **computed from** the writable input — you write chunks in, a transformed version comes out.\n\nYou can confirm the hierarchy directly:\n\n```js\nconst { Transform, Duplex } = require(\"node:stream\");\nconsole.log(Object.getPrototypeOf(Transform.prototype) === Duplex.prototype); // true\n```\n\nSo the chain is `Transform → Duplex → (Readable + Writable)`. `zlib.createGzip()` and `crypto.createHash()` are everyday Transforms.",
       "references": "[Node.js: Class stream.Transform](https://nodejs.org/api/stream.html#class-streamtransform)"
@@ -132,9 +129,7 @@
       "type": "input",
       "validation": {
         "mode": "numeric",
-        "acceptedAnswers": [
-          16
-        ]
+        "acceptedAnswers": [16]
       },
       "explanation": "In object mode, `highWaterMark` is measured in **number of objects**, and the default is **16**. (In byte mode the default is a byte count — historically 16 KiB, raised to 64 KiB in Node 22+ — which is why memorizing the *byte* number is fragile, but the object-mode default of 16 has been stable.)\n\n```js\nconst { Writable } = require(\"node:stream\");\nconst w = new Writable({ objectMode: true, write(o, e, cb) { cb(); } });\nconsole.log(w.writableHighWaterMark); // 16\n```\n\nSo with the default, a producer can get ~16 objects ahead of a slow consumer before `write()` starts returning `false`.",
       "references": "[Node.js: Buffering and highWaterMark](https://nodejs.org/api/stream.html#buffering)"

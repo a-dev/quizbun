@@ -162,9 +162,7 @@
       "type": "input",
       "validation": {
         "mode": "numeric",
-        "acceptedAnswers": [
-          204
-        ]
+        "acceptedAnswers": [204]
       },
       "explanation": "EventSource only auto-reconnects after a *transient* failure (a dropped connection). When it (re)connects and the response isn't `200 OK` with `Content-Type: text/event-stream`, the client treats it as a **permanent failure**: it sets `readyState` to `CLOSED`, fires `error`, and does **not** try again. Returning **204 No Content** is the conventional, idiomatic 2xx way to tell a client \"stop reconnecting\" — the server cleanly signals there's nothing more to stream.\n\nSo the lifecycle is: network blip → auto-retry (with `Last-Event-ID`); deliberate `204` → permanent stop.",
       "references": "[WHATWG HTML: Server-sent events](https://html.spec.whatwg.org/multipage/server-sent-events.html)"

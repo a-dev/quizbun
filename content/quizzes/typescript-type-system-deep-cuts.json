@@ -247,9 +247,7 @@
       "type": "input",
       "validation": {
         "mode": "text",
-        "acceptedAnswers": [
-          "never"
-        ]
+        "acceptedAnswers": ["never"]
       },
       "explanation": "An intersection `A & B` is the set of values that are **both** an `A` and a `B`. No value is simultaneously a `string` and a `number`, so the set is empty — and the type of the empty set is `never`. This is one of the quiet places `never` appears without you writing it:\n\n```ts\ntype T = string & number;     // never\ntype U = \"a\" & \"b\";          // never\ntype V = { x: 1 } & { x: 2 };  // x: never\n```\n\nThe same logic powers exhaustiveness checks, where narrowing away every union member leaves `never`.",
       "references": "[TypeScript Handbook: Intersection types](https://www.typescriptlang.org/docs/handbook/2/objects.html#intersection-types)"
@@ -495,9 +493,7 @@
       "type": "input",
       "validation": {
         "mode": "text",
-        "acceptedAnswers": [
-          "as const"
-        ]
+        "acceptedAnswers": ["as const"]
       },
       "explanation": "Appending **`as const`** applies a *const assertion*: literals keep their narrowest types, arrays become `readonly` tuples, and object properties become `readonly`. So `[3, 4] as const` is typed `readonly [3, 4]` instead of the widened `number[]`.\n\nUnlike a normal `as T` cast (which changes the type to *exactly* `T`), `as const` doesn't name a target type — it just tells the compiler to infer the most specific, immutable type possible.",
       "references": "[TypeScript 3.4 release notes: `const` assertions](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-4.html#const-assertions)"

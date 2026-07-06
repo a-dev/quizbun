@@ -39,9 +39,7 @@
       "type": "input",
       "validation": {
         "mode": "text",
-        "acceptedAnswers": [
-          "text/event-stream"
-        ]
+        "acceptedAnswers": ["text/event-stream"]
       },
       "explanation": "SSE is not a separate protocol — it is an ordinary HTTP response whose body never ends, framed by the `text/event-stream` media type. The browser parses the body line-by-line into events:\n\n```http\nHTTP/1.1 200 OK\nContent-Type: text/event-stream\nCache-Control: no-cache\nConnection: keep-alive\n\ndata: hello\n\nid: 42\nevent: tick\ndata: world\n```\n\nEach event is separated by a blank line. `data:` is the payload, `id:` tags the event for resumption, `event:` names a custom event type, and a line starting with `:` is a comment (handy as a heartbeat). Because the stream is decoded as UTF-8 **text**, SSE cannot carry raw binary without base64-encoding it first.",
       "references": "[WHATWG HTML: Server-sent events](https://html.spec.whatwg.org/multipage/server-sent-events.html)"
@@ -161,9 +159,7 @@
       "type": "input",
       "validation": {
         "mode": "numeric",
-        "acceptedAnswers": [
-          101
-        ]
+        "acceptedAnswers": [101]
       },
       "explanation": "The handshake is HTTP that *graduates* into the WebSocket protocol, and the success signal is **101 Switching Protocols**:\n\n```http\nGET /chat HTTP/1.1\nHost: example.com\nUpgrade: websocket\nConnection: Upgrade\nSec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\nSec-WebSocket-Version: 13\n\nHTTP/1.1 101 Switching Protocols\nUpgrade: websocket\nConnection: Upgrade\nSec-WebSocket-Accept: s3pPLMBiTxaQ9kYGzzhZRbK+xOo=\n```\n\nThe server proves it understood the protocol by echoing `Sec-WebSocket-Accept` — the base64 SHA-1 of the client's `Sec-WebSocket-Key` concatenated with a fixed GUID (the values above are RFC 6455's worked example). A plain `200` would mean the server ignored the upgrade and answered as normal HTTP; `426 Upgrade Required` is a *refusal* that demands the client upgrade, not a success.",
       "references": "[RFC 6455 §1.3: Opening Handshake](https://datatracker.ietf.org/doc/html/rfc6455#section-1.3)"
@@ -175,10 +171,7 @@
       "type": "input",
       "validation": {
         "mode": "text",
-        "acceptedAnswers": [
-          "wss",
-          "wss://"
-        ]
+        "acceptedAnswers": ["wss", "wss://"]
       },
       "explanation": "`wss://` is to `ws://` what `https://` is to `http://`: the same protocol wrapped in TLS, defaulting to port 443. Beyond confidentiality, `wss://` is the *practical* choice because TLS makes the upgrade traffic opaque to meddling intermediaries — many corporate proxies and transparent caches mangle or strip the `Upgrade`/`Connection` headers on plaintext `ws://`, silently breaking the handshake. Encrypting the stream sidesteps that whole class of middlebox interference, so production WebSockets are almost always `wss://`.",
       "references": "[MDN: The WebSocket API](https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API)"

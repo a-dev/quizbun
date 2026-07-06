@@ -65,10 +65,7 @@
       "type": "input",
       "validation": {
         "mode": "text",
-        "acceptedAnswers": [
-          "SCTP",
-          "Stream Control Transmission Protocol"
-        ]
+        "acceptedAnswers": ["SCTP", "Stream Control Transmission Protocol"]
       },
       "explanation": "Data channels run over **SCTP** (Stream Control Transmission Protocol), tunneled inside DTLS over UDP. SCTP is what gives data channels their superpowers: it's message-oriented (preserves message boundaries), multiplexes many channels over one association, and exposes **configurable reliability and ordering** per channel. The full stack is: `RTCDataChannel → SCTP → DTLS → ICE/UDP`. (Media takes a different path — SRTP — but data uses SCTP.)",
       "references": "[RFC 8831: WebRTC Data Channels](https://datatracker.ietf.org/doc/html/rfc8831)"
@@ -158,11 +155,7 @@
       "type": "input",
       "validation": {
         "mode": "text",
-        "acceptedAnswers": [
-          "mandatory",
-          "required",
-          "compulsory"
-        ]
+        "acceptedAnswers": ["mandatory", "required", "compulsory"]
       },
       "explanation": "Encryption in WebRTC is **mandatory** — there is no unencrypted mode. Data channels are secured with **DTLS** (Datagram TLS), and media with SRTP keyed via that same DTLS handshake. This is a deliberate contrast with WebSocket, where `ws://` (plaintext) is permitted and you must opt into `wss://`. WebRTC removed the choice: every connection is encrypted by design.",
       "references": "[RFC 8827: WebRTC Security Architecture](https://datatracker.ietf.org/doc/html/rfc8827)"
@@ -278,9 +271,7 @@
       "type": "input",
       "validation": {
         "mode": "numeric",
-        "acceptedAnswers": [
-          0
-        ]
+        "acceptedAnswers": [0]
       },
       "explanation": "`maxRetransmits: 0` makes the channel **unreliable**: a lost message is never retransmitted, so delivery is fire-and-forget like raw UDP. Any positive integer N makes it **partially reliable** (retransmit up to N times before giving up), and omitting both `maxRetransmits` and `maxPacketLifeTime` leaves the channel **fully reliable** (TCP-like). Verified with a classifier:\n\n```js\nclassify({ maxRetransmits: 0 }); // \"unreliable (fire-and-forget)\"\nclassify({ maxRetransmits: 3 }); // \"partially reliable (<=3 retransmits)\"\nclassify({});                    // \"reliable (TCP-like)\"\n```",
       "references": "[MDN: RTCPeerConnection.createDataChannel()](https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection/createDataChannel)"

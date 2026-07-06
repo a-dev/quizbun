@@ -265,9 +265,7 @@
       "type": "input",
       "validation": {
         "mode": "numeric",
-        "acceptedAnswers": [
-          6
-        ]
+        "acceptedAnswers": [6]
       },
       "explanation": "RFC 9110 defines **6** idempotent methods: the four *safe* ones — `GET`, `HEAD`, `OPTIONS`, `TRACE` — plus `PUT` and `DELETE`. Repeating any of them has the same server-visible effect as a single call, so a client can safely retry them after a timeout.\n\n`POST` and `PATCH` are **not** idempotent — retrying a `POST` may create a second resource or double-charge a card. That's precisely why payment APIs require an `Idempotency-Key` header on `POST`: it manufactures idempotency for a method that lacks it.\n\n```js\nconst idempotent = [\"GET\", \"HEAD\", \"OPTIONS\", \"TRACE\", \"PUT\", \"DELETE\"];\nconsole.log(idempotent.length);           // 6\nconsole.log(idempotent.includes(\"POST\")); // false\n```",
       "references": "[RFC 9110 §9.2.2: Idempotent Methods](https://datatracker.ietf.org/doc/html/rfc9110#section-9.2.2)"

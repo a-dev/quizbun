@@ -247,11 +247,7 @@
       "type": "input",
       "validation": {
         "mode": "text",
-        "acceptedAnswers": [
-          "deque",
-          "double-ended queue",
-          "double ended queue"
-        ]
+        "acceptedAnswers": ["deque", "double-ended queue", "double ended queue"]
       },
       "explanation": "The structure is a **deque** (pronounced \"deck\"), short for *double-ended queue*. Unlike a stack (one open end) or a plain queue (add at one end, remove at the other), a deque lets you push and pop at *either* end, so it can act as a stack, a queue, or both at once. That flexibility is why it backs a bounded \"recent items\" list — add the newest to the front, evict the oldest from the back:\n\n```js\nconst MAX = 3, recent = [];\nconst visit = (item) => {\n  const dup = recent.indexOf(item);\n  if (dup !== -1) recent.splice(dup, 1); // de-dupe\n  recent.unshift(item);                  // newest to the front\n  if (recent.length > MAX) recent.pop(); // evict oldest from the back\n};\nvisit('a'); visit('b'); visit('c'); visit('d');\nconsole.log(recent); // [ 'd', 'c', 'b' ] — 'a' evicted\n```\n\nNote that *deque* (the structure) is different from *dequeue* (the queue operation that removes the front element) — they are spelled and pronounced differently.",
       "references": "[Wikipedia: Double-ended queue](https://en.wikipedia.org/wiki/Double-ended_queue)"

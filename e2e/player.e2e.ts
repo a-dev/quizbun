@@ -31,20 +31,23 @@ async function tabUntilFocused(page: Page, target: Locator, maxTabs = 12) {
 test("Catalog single-choice Run locks the Question, shows the Explanation, and can be retaken", async ({
   page,
 }) => {
-  await page.goto("/quizzes/css-box-model/");
+  await page.goto("/quizzes/undo-redo-back-stacks-queues/");
 
   await page.getByRole("button", { name: "Start" }).click();
 
-  await expect(page.getByRole("heading", { name: /CSS Box Model/ })).toBeVisible();
-  await expect(page.getByText(/padding inherits the element's background color/)).toBeHidden();
+  await expect(page.getByRole("heading", { name: /Undo, Redo, and Back/ })).toBeVisible();
+  await expect(page.getByText(/exactly what Undo needs/)).toBeHidden();
+
+  // Finish only appears once every Question is answered, so show all 10 on one page.
+  await selectPageSize(page, 10);
 
   const firstQuestion = questionGroup(page, 1);
 
-  await firstQuestion.getByRole("radio", { name: /padding → border → margin/ }).check();
+  await firstQuestion.getByRole("radio", { name: /most recently applied edit/ }).check();
   await firstQuestion.getByRole("button", { name: "Submit" }).click();
 
   await expect(firstQuestion.getByRole("status")).toContainText("Correct!");
-  await expect(page.getByText(/padding inherits the element's background color/)).toBeVisible();
+  await expect(page.getByText(/exactly what Undo needs/)).toBeVisible();
   // Locking now disables each answer control individually (the <fieldset> itself
   // stays enabled so the Explanation's read-aloud button keeps working) and
   // unmounts Submit, so assert both the control state and Submit's removal.
@@ -53,30 +56,55 @@ test("Catalog single-choice Run locks the Question, shows the Explanation, and c
 
   const secondQuestion = questionGroup(page, 2);
 
-  await secondQuestion.getByLabel("Your answer").fill("250");
+  await secondQuestion.getByRole("radio", { name: /enqueue at the back/ }).check();
   await secondQuestion.getByRole("button", { name: "Submit" }).click();
   await expect(secondQuestion.getByRole("status")).toContainText("Correct!");
 
-  const thirdQuestion = questionGroup(page, 3);
+  const remainingSingleChoiceAnswers: Array<[question: number, correctOption: RegExp]> = [
+    [3, /mirroring the undo stack/],
+    [4, /Clear it/],
+    [5, /C is discarded/],
+    [6, /position in the site/],
+  ];
 
-  await thirdQuestion.getByRole("radio", { name: /include padding and border/ }).check();
-  await thirdQuestion.getByRole("button", { name: "Submit" }).click();
+  for (const [questionNumber, correctOption] of remainingSingleChoiceAnswers) {
+    const question = questionGroup(page, questionNumber);
 
-  const fourthQuestion = questionGroup(page, 4);
+    await question.getByRole("radio", { name: correctOption }).check();
+    await question.getByRole("button", { name: "Submit" }).click();
+  }
 
-  await fourthQuestion.getByLabel("Your answer").fill("30");
-  await fourthQuestion.getByRole("button", { name: "Submit" }).click();
+  const multipleChoiceAnswers: Array<[question: number, correctOptions: RegExp[]]> = [
+    [7, [/both acting on the same end/, /core operations are enqueue/, /without removing it/]],
+    [8, [/first one reversed/, /walking back through visited pages/]],
+    [9, [/drop the oldest/, /naturally a deque/, /can no longer be undone/]],
+  ];
+
+  for (const [questionNumber, correctOptions] of multipleChoiceAnswers) {
+    const question = questionGroup(page, questionNumber);
+
+    for (const correctOption of correctOptions) {
+      await question.getByRole("checkbox", { name: correctOption }).check();
+    }
+
+    await question.getByRole("button", { name: "Submit" }).click();
+  }
+
+  const inputQuestion = questionGroup(page, 10);
+
+  await inputQuestion.getByLabel("Your answer").fill("deque");
+  await inputQuestion.getByRole("button", { name: "Submit" }).click();
 
   await page.getByRole("button", { name: "Finish" }).click();
 
   await expect(page.getByRole("heading", { name: "Summary" })).toBeVisible();
-  await expect(page.getByRole("status").filter({ hasText: "4 of 4 correct" })).toBeVisible();
+  await expect(page.getByRole("status").filter({ hasText: "10 of 10 correct" })).toBeVisible();
 
   await page.getByRole("button", { name: "Retake" }).click();
 
   // A fresh Run has nothing submitted yet, so the "answered" counter is hidden.
   await expect(page.getByText(/answered/)).toBeHidden();
-  await expect(page.getByText(/padding inherits the element's background color/)).toBeHidden();
+  await expect(page.getByText(/exactly what Undo needs/)).toBeHidden();
   await expect(firstQuestion.getByRole("radio").first()).toBeEnabled();
   await expectUnlocked(firstQuestion);
   await expect(firstQuestion.getByRole("button", { name: "Submit" })).toBeDisabled();

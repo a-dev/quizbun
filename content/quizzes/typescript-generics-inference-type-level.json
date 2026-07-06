@@ -247,9 +247,7 @@
       "type": "input",
       "validation": {
         "mode": "text",
-        "acceptedAnswers": [
-          "unknown"
-        ]
+        "acceptedAnswers": ["unknown"]
       },
       "explanation": "With no argument there is no inference site for `T`, and there is no declared default, so the compiler falls back to **`unknown`** — `r` has type `unknown`. This is the modern \"`<T>` leaks `unknown`\" behavior (very old TypeScript used the empty type `{}` instead).\n\nIt's a design smell: an unconstrained parameter that escapes into the return type usually means you should add a constraint (`<T extends …>`), supply a default (`<T = …>`), or annotate the call (`identity<number>()`). `unknown` is the safe top type — it can hold any value, but you must narrow it before you can use it.",
       "references": "[TypeScript Handbook: `unknown`](https://www.typescriptlang.org/docs/handbook/2/functions.html#unknown)"
@@ -261,11 +259,7 @@
       "type": "input",
       "validation": {
         "mode": "text",
-        "acceptedAnswers": [
-          "a",
-          "\"a\"",
-          "`a`"
-        ]
+        "acceptedAnswers": ["a", "\"a\"", "`a`"]
       },
       "explanation": "Template-literal inference splits at the **first** occurrence of the literal delimiter. The pattern `` `${infer H}.${infer _Rest}` `` matches the first `.` in `\"a.b.c\"`, so `H` captures `\"a\"` and `_Rest` captures `\"b.c\"`. Therefore `R` is the literal type `\"a\"`.\n\nRecurse on `_Rest` and you have a compile-time string splitter — the backbone of typed routers, i18n key checkers, and ORM path types. If the string contains no `.`, the conditional takes its false branch and returns `S` unchanged.",
       "references": "[TypeScript Handbook: Template Literal Types](https://www.typescriptlang.org/docs/handbook/2/template-literal-types.html)"
@@ -277,9 +271,7 @@
       "type": "input",
       "validation": {
         "mode": "text",
-        "acceptedAnswers": [
-          "number"
-        ]
+        "acceptedAnswers": ["number"]
       },
       "explanation": "`Flatten` peels exactly one array layer per recursion:\n\n```text\nnumber[][][]  is Array<number[][]>  -> Inner = number[][]  (recurse)\nnumber[][]    is Array<number[]>    -> Inner = number[]    (recurse)\nnumber[]      is Array<number>      -> Inner = number      (recurse)\nnumber        is NOT an array       -> false branch, return number\n```\n\nThe recursion stops when the element is no longer an array, yielding `number`. It's a *deep* version of the one-level `type ElementType<T> = T extends (infer U)[] ? U : T`. Recursive conditional types like this are how `Awaited`, deep `Readonly`, and JSON-path utilities are built.",
       "references": "[TypeScript Handbook: Conditional Types](https://www.typescriptlang.org/docs/handbook/2/conditional-types.html)"

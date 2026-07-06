@@ -35,14 +35,14 @@ The Public catalog profile is stricter than the Standard and is enforced only in
 
 Every Question has common fields plus a type-specific body.
 
-| Field         | Required | Semantics                                                                                                                    |
-| ------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| `id`          | yes      | Stable Question identifier, unique within the Quiz. Use the same kebab-case charset as Quiz `id`.                            |
-| `title`       | yes      | Short Markdown prompt carrying the question itself — the actual ask, usually ending in `?`. Must be a non-empty string after trimming. |
+| Field         | Required | Semantics                                                                                                                                              |
+| ------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `id`          | yes      | Stable Question identifier, unique within the Quiz. Use the same kebab-case charset as Quiz `id`.                                                      |
+| `title`       | yes      | Short Markdown prompt carrying the question itself — the actual ask, usually ending in `?`. Must be a non-empty string after trimming.                 |
 | `description` | no       | Long Markdown supporting context for the prompt: a scenario, code snippet, or constraints — never the question itself. Must be non-empty when present. |
-| `explanation` | yes      | Long Markdown teaching text shown after submission regardless of correctness. Must be non-empty.                             |
-| `references`  | no       | Long Markdown content for links, citations, or further reading, shown after the Explanation. Must be non-empty when present. |
-| `type`        | yes      | One of `single-choice`, `multiple-choice`, or `input`.                                                                       |
+| `explanation` | yes      | Long Markdown teaching text shown after submission regardless of correctness. Must be non-empty.                                                       |
+| `references`  | no       | Long Markdown content for links, citations, or further reading, shown after the Explanation. Must be non-empty when present.                           |
+| `type`        | yes      | One of `single-choice`, `multiple-choice`, or `input`.                                                                                                 |
 
 Question `id` is part of Progress identity. Changing it creates a new Question from the Renderer and storage perspective.
 

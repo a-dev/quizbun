@@ -39,9 +39,7 @@
       "type": "input",
       "validation": {
         "mode": "numeric",
-        "acceptedAnswers": [
-          2
-        ]
+        "acceptedAnswers": [2]
       },
       "explanation": "The opcode registry: `0x0` continuation, `0x1` text, `0x2` binary, `0x8` close, `0x9` ping, `0xA` pong. Binary is `0x2` — decimal **2**. Binary frames carry arbitrary bytes (images, Protobuf, audio), whereas text frames (`0x1`) are constrained to valid UTF-8. The remaining opcode values are reserved for future use.",
       "references": "[RFC 6455 §11.8: WebSocket Opcode Registry](https://datatracker.ietf.org/doc/html/rfc6455#section-11.8)"
@@ -131,11 +129,7 @@
       "type": "input",
       "validation": {
         "mode": "text",
-        "acceptedAnswers": [
-          "close",
-          "close frame",
-          "the close frame"
-        ]
+        "acceptedAnswers": ["close", "close frame", "the close frame"]
       },
       "explanation": "The **Close** frame (opcode `0x8`) starts the closing handshake. It may carry a 2-byte status code followed by an optional UTF-8 reason. The peer replies with its own Close frame (echoing or choosing a code), and only then is the TCP connection torn down. That two-way Close exchange is what makes a shutdown *clean*; if the socket simply drops without it, the API reports an *abnormal* closure instead.",
       "references": "[RFC 6455 §5.5.1: Close](https://datatracker.ietf.org/doc/html/rfc6455#section-5.5.1)"
@@ -173,9 +167,7 @@
       "type": "input",
       "validation": {
         "mode": "numeric",
-        "acceptedAnswers": [
-          1000
-        ]
+        "acceptedAnswers": [1000]
       },
       "explanation": "**1000** = Normal Closure: the connection fulfilled its purpose. Other common codes: `1001` going away (server shutting down or page navigating away), `1002` protocol error, `1003` unsupported data, `1009` message too big, `1011` server-side internal error. Application-defined codes live in the `4000–4999` range.\n\nWebSocket close codes start at 1000 (not in HTTP's 1xx/2xx ranges) precisely because they describe a *separate* protocol concern from the HTTP handshake that bootstrapped the connection.",
       "references": "[RFC 6455 §7.4.1: Defined Status Codes](https://datatracker.ietf.org/doc/html/rfc6455#section-7.4.1)"

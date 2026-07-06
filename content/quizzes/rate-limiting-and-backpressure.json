@@ -230,11 +230,7 @@
       "type": "input",
       "validation": {
         "mode": "text",
-        "acceptedAnswers": [
-          "thundering herd",
-          "thundering herd problem",
-          "the thundering herd"
-        ]
+        "acceptedAnswers": ["thundering herd", "thundering herd problem", "the thundering herd"]
       },
       "explanation": "This is the **thundering herd** problem: a large group of clients (or processes, or threads) all wake or retry at the same instant and stampede a shared resource together, so the recovering server is toppled again before it can stabilize. Fixed-delay retries cause it because everyone computes the identical next-attempt time.\n\nThe cure is to spread the herd out: add **jitter** (randomize each backoff within `[0, delay]`) on top of exponential backoff and a retry cap. The same term appears in OS scheduling (many threads woken by one event contend for a lock) and in caching, where a popular key expires and every request misses to the origin at once — a *cache stampede*, a sibling of the same idea."
     },

@@ -13,9 +13,7 @@
       "type": "input",
       "validation": {
         "mode": "text",
-        "acceptedAnswers": [
-          "Uint8Array"
-        ]
+        "acceptedAnswers": ["Uint8Array"]
       },
       "explanation": "Node's `Buffer` is not a separate language type bolted on — it is a **subclass of `Uint8Array`**, the standard array-of-bytes view. You can confirm it directly:\n\n```js\nBuffer.from([1, 2, 3]) instanceof Uint8Array;                      // true\nObject.getPrototypeOf(Buffer.prototype) === Uint8Array.prototype;  // true\n```\n\nThe relationship is **one-way**: every Buffer is a Uint8Array, but a plain Uint8Array is not a Buffer (`new Uint8Array(1) instanceof Buffer` is `false`). Because a Buffer *is* a Uint8Array, you can hand one to any standard API that expects a Uint8Array — `TextDecoder`, Web Crypto, `fetch` bodies. Buffer simply adds Node conveniences on top: string encodings, fixed-width integer reads like `readInt32BE`, `toString('hex')`, and an allocation pool.",
       "references": "[Node.js: Buffer and TypedArray](https://nodejs.org/api/buffer.html#buffers-and-typedarrays)"
@@ -53,9 +51,7 @@
       "type": "input",
       "validation": {
         "mode": "numeric",
-        "acceptedAnswers": [
-          16
-        ]
+        "acceptedAnswers": [16]
       },
       "explanation": "`length` counts *elements*; `byteLength` counts *bytes*. A `Uint32Array` stores 32-bit (4-byte) integers, so 4 elements occupy 4 × 4 = **16 bytes**.\n\n```js\nconst a = new Uint32Array(4);\na.length;                      // 4  (elements)\na.byteLength;                  // 16 (bytes)\nUint32Array.BYTES_PER_ELEMENT; // 4\n```\n\nThis is exactly why the view type matters: one 16-byte `ArrayBuffer` is 16 elements as a `Uint8Array`, 8 as a `Uint16Array`, 4 as a `Uint32Array`, or 2 as a `Float64Array`. For a Node `Buffer` (a `Uint8Array`), `length` and `byteLength` are always equal because every element is a single byte.",
       "references": "[MDN: TypedArray.prototype.byteLength](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/TypedArray/byteLength)"
@@ -93,9 +89,7 @@
       "type": "input",
       "validation": {
         "mode": "numeric",
-        "acceptedAnswers": [
-          5
-        ]
+        "acceptedAnswers": [5]
       },
       "explanation": "`c`, `a`, and `f` are one byte each in UTF-8, but `é` (U+00E9) needs **two** bytes (`0xC3 0xA9`), so the total is **5 bytes** — even though the string is only 4 characters long.\n\n```js\n'café'.length;                     // 4  (UTF-16 code units / characters)\nBuffer.byteLength('café', 'utf8'); // 5  (bytes on the wire)\nBuffer.from('café').toString('hex'); // '636166c3a9'\n```\n\nThis gap between *character count* and *byte count* is the root of countless bugs: a `Content-Length` header, a fixed-size buffer, or a substring offset computed from `.length` will all be wrong for non-ASCII text. When you need bytes, measure bytes with `Buffer.byteLength`, not `String.length`.",
       "references": "[Node.js: Buffer.byteLength()](https://nodejs.org/api/buffer.html#static-method-bufferbytelengthstring-encoding)"
@@ -107,9 +101,7 @@
       "type": "input",
       "validation": {
         "mode": "text",
-        "acceptedAnswers": [
-          "Hello"
-        ]
+        "acceptedAnswers": ["Hello"]
       },
       "explanation": "`Buffer` is Node's converter between encodings. The Base64 text `SGVsbG8=` decodes to the five bytes `48 65 6c 6c 6f`, which are the ASCII codes for `Hello`.\n\n```js\nBuffer.from('SGVsbG8=', 'base64').toString('utf8'); // 'Hello'\nBuffer.from('Hello').toString('base64');            // 'SGVsbG8=' (round-trip)\nBuffer.from('Hello').toString('hex');               // '48656c6c6f'\n```\n\nThe pattern is always *bytes in one encoding → Buffer → bytes out in another*: `Buffer.from(input, fromEncoding)` then `.toString(toEncoding)`. Supported encodings include `utf8`, `hex`, `base64`, `base64url`, `latin1`, and `ascii`. Note the Buffer is the real value here — the strings are just two different textual *representations* of the same underlying bytes.",
       "references": "[Node.js: Buffers and character encodings](https://nodejs.org/api/buffer.html#buffers-and-character-encodings)"

@@ -112,11 +112,7 @@
       "type": "input",
       "validation": {
         "mode": "text",
-        "acceptedAnswers": [
-          "check",
-          "check phase",
-          "the check phase"
-        ]
+        "acceptedAnswers": ["check", "check phase", "the check phase"]
       },
       "explanation": "The **check** phase exists for one reason: to run `setImmediate` callbacks, right after the poll phase finishes.\n\nMentally pin it next to poll. \"I just finished handling I/O (poll) — now run my `setImmediate` work (check).\" That poll → check adjacency is what makes `setImmediate` so predictable inside I/O callbacks, as later questions show.",
       "references": "[Node.js API — `setImmediate()`](https://nodejs.org/api/timers.html#setimmediatecallback-args)\n\n[Node.js — The event loop, timers, and `process.nextTick()`](https://nodejs.org/en/learn/asynchronous-work/event-loop-timers-and-nexttick)"
@@ -358,9 +354,7 @@
       "type": "input",
       "validation": {
         "mode": "numeric",
-        "acceptedAnswers": [
-          1
-        ]
+        "acceptedAnswers": [1]
       },
       "explanation": "Per the `setTimeout` docs, when `delay` is less than 1 (or larger than the 32-bit signed max, ~2.1 billion), Node sets it to **1 ms**. So `setTimeout(fn, 0)` and `setTimeout(fn, 1)` request the exact same minimum delay.\n\nIt is a tiny detail with real consequences: it is part of *why* a top-level `setTimeout(…, 0)` can lose the startup race to `setImmediate` — the timer is not actually due for ~1 ms, giving the **check** phase a chance to win first.",
       "references": "[Node.js API — `setTimeout()` delay clamping](https://nodejs.org/api/timers.html#settimeoutcallback-delay-args)"
