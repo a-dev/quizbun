@@ -1,0 +1,169 @@
+{
+  "schemaVersion": 1,
+  "id": "idempotency-retries-delivery-guarantees",
+  "title": "Idempotency, Retries & Delivery Guarantees",
+  "description": "Networks fail mid-request, so real systems retry — and retries are where correctness quietly breaks. Build intuition for at-least-once vs. at-most-once vs. 'exactly-once' (and why the last is a myth), idempotency keys and server-side dedup, exponential backoff with jitter, safe vs. unsafe retries, the Two Generals' Problem, and poison messages — including how to make a payment survive a duplicate without double-charging.",
+  "language": "en",
+  "tags": ["system-design", "http"],
+  "questions": [
+    {
+      "id": "at-least-once-duplicates",
+      "title": "Which delivery guarantee does this broker behavior describe?",
+      "description": "A message broker keeps redelivering a message until the consumer acknowledges it. If an acknowledgment is lost in transit, the broker sends the same message again.",
+      "type": "single-choice",
+      "options": [
+        { "text": "At-least-once", "isCorrect": true },
+        { "text": "At-most-once", "isCorrect": false },
+        { "text": "Exactly-once", "isCorrect": false },
+        { "text": "Best-effort (fire-and-forget)", "isCorrect": false }
+      ],
+      "explanation": "Delivery guarantees trade off two failure modes: **message loss** and **duplication**.\n\n- **At-most-once** — send and never retry (fire-and-forget). A lost message is gone for good, but you never see a duplicate. Delivery count: 0 or 1.\n- **At-least-once** — retry until the consumer acknowledges. Nothing is ever lost, but a *lost acknowledgment* makes the broker resend a message the consumer already handled. Delivery count: 1 or more.\n- **Exactly-once** — the 'delivered once and only once' ideal. As a pure *delivery* guarantee over an unreliable network it is unattainable (see the Two Generals' Problem).\n\nThe scenario — keep redelivering until acked, resend on a lost ack — is the textbook definition of **at-least-once**. That is precisely why at-least-once systems must pair with idempotent consumers: duplicates aren't a bug, they're guaranteed.",
+      "references": "[Apache Kafka Docs: Message Delivery Semantics](https://kafka.apache.org/documentation/#semantics)"
+    },
+    {
+      "id": "exactly-once-in-practice",
+      "title": "Which design delivers the achievable version of 'exactly-once'?",
+      "description": "A senior engineer says: 'Exactly-once *delivery* is impossible, but exactly-once *processing* is achievable.'",
+      "type": "single-choice",
+      "options": [
+        { "text": "At-least-once delivery combined with idempotent processing (dedup) on the consumer", "isCorrect": true },
+        { "text": "At-most-once delivery plus a faster, more reliable network so nothing is lost", "isCorrect": false },
+        { "text": "A two-phase commit that makes the network channel itself perfectly reliable", "isCorrect": false },
+        { "text": "Disabling retries so every message is transmitted exactly one time", "isCorrect": false }
+      ],
+      "explanation": "You cannot guarantee a message crosses an unreliable network *exactly once* — the sender can never be certain the message (or its ack) arrived. So real systems choose **at-least-once delivery** (retry, accept duplicates) and then make duplicates harmless on the receiving side with **idempotent processing or deduplication**. The observable result — each effect happens once — is usually called **effectively-once** or **exactly-once processing**.\n\nWhy the distractors miss the point:\n- A faster network lowers the probability of loss but never reaches zero; at-most-once still drops messages.\n- Two-phase commit coordinates a transaction across participants; it does **not** turn a lossy channel into a reliable one.\n- Disabling retries gives you *at-most-once*, which loses the message on the first failure.\n\nEven Kafka's 'exactly-once semantics' only holds *inside* its transactional log (idempotent producer + transactions); it cannot make an arbitrary external side effect — like a third-party card charge — fire exactly once.",
+      "references": "[Confluent: Exactly-Once Semantics Are Possible in Apache Kafka](https://www.confluent.io/blog/exactly-once-semantics-are-possible-heres-how-apache-kafka-does-it/)"
+    },
+    {
+      "id": "two-generals-proves",
+      "title": "What does the Two Generals' Problem establish?",
+      "description": "Two allied generals must attack at the same time to win, but can only coordinate via messengers who might be captured crossing enemy territory.",
+      "type": "single-choice",
+      "options": [
+        { "text": "Two parties communicating over an unreliable channel can never *guarantee* agreement using a finite number of messages", "isCorrect": true },
+        { "text": "Agreement is guaranteed as long as at least three acknowledgments are exchanged", "isCorrect": false },
+        { "text": "TCP fully solves the problem by retransmitting any lost segment", "isCorrect": false },
+        { "text": "The problem disappears once both parties share a synchronized clock", "isCorrect": false }
+      ],
+      "explanation": "The **Two Generals' Problem** is the classic proof that *guaranteed* agreement over a lossy channel is impossible with finitely many messages. General A sends 'attack at dawn'; to be sure it arrived, A needs an acknowledgment. But the ack can be lost, so B needs an acknowledgment *of the acknowledgment*, and so on forever. No finite exchange ever makes both sides **certain** the other will act.\n\nThis is exactly why 'exactly-once delivery' is a myth, and why systems must choose:\n- **stop retrying** → risk loss (at-most-once), or\n- **keep retrying** → risk duplication (at-least-once).\n\nWhy the distractors are wrong: no fixed number of acks closes the infinite regress (three is no safer than two). **TCP does not solve it** — TCP retransmits and uses timeouts, but a connection can still die *after* data is delivered yet *before* its ack returns, leaving the sender unsure. A shared clock tells the generals *when* to act, not *whether the message arrived*.",
+      "references": "[Wikipedia: Two Generals' Problem](https://en.wikipedia.org/wiki/Two_Generals%27_Problem)"
+    },
+    {
+      "id": "idempotent-http-methods",
+      "title": "Which HTTP methods are idempotent?",
+      "description": "Per RFC 9110, an *idempotent* method is one where making the identical request many times has the same effect on server state as making it once. Select **all** that apply.",
+      "type": "multiple-choice",
+      "options": [
+        { "text": "`GET`", "isCorrect": true },
+        { "text": "`PUT`", "isCorrect": true },
+        { "text": "`DELETE`", "isCorrect": true },
+        { "text": "`POST`", "isCorrect": false },
+        { "text": "`PATCH`", "isCorrect": false }
+      ],
+      "explanation": "RFC 9110 defines the **idempotent** methods as `PUT`, `DELETE`, and all **safe** methods (`GET`, `HEAD`, `OPTIONS`, `TRACE`). So among the choices, `GET`, `PUT`, and `DELETE` qualify; `POST` and `PATCH` do **not**.\n\nKey nuances:\n- **Idempotent is not the same as safe.** `GET` is *safe* (read-only). `PUT` and `DELETE` change state but are still *idempotent*: writing the same full representation, or deleting the same resource, twice leaves the server in the same final state as doing it once.\n- **`DELETE` is idempotent even though the second call may return `404`.** Idempotency is about the *effect on server state* (the resource is gone), not about getting identical response codes.\n- **`POST` is neither** — two `POST /charges` calls create two charges. **`PATCH` is not guaranteed idempotent** either: a relative patch like 'add 100 to balance' applied twice adds 200.\n\nThis is why a bare `POST` retry is dangerous and needs an idempotency key, while a `GET` retry is always free.",
+      "references": "[RFC 9110 §9.2.2: Idempotent Methods](https://www.rfc-editor.org/rfc/rfc9110.html#name-idempotent-methods)"
+    },
+    {
+      "id": "idempotency-key-retry-flow",
+      "title": "What should the server do when the same idempotency key arrives again?",
+      "description": "A mobile app sends `POST /charges` with header `Idempotency-Key: abc-123`. The charge succeeds, but the response is lost to a dropped connection, so the app retries with the **same** key. The server has already processed `abc-123`.",
+      "type": "single-choice",
+      "options": [
+        { "text": "Return the stored response from the first request, without charging again", "isCorrect": true },
+        { "text": "Process a fresh charge, since the retry arrives on a new TCP connection", "isCorrect": false },
+        { "text": "Reject the retry with a 4xx error and discard the original charge data", "isCorrect": false },
+        { "text": "Charge the customer again, then immediately issue an automatic refund", "isCorrect": false }
+      ],
+      "explanation": "The whole point of an **idempotency key** is to make an unsafe `POST` safe to retry. On the first request the server executes the charge and **persists the key together with the resulting status code and body**. When a retry arrives with the same key, the server **replays the stored result** instead of re-executing the side effect — so the customer is charged once, and the client finally receives its response.\n\n```ts\nconst cached = await store.get(idempotencyKey);\nif (cached) return cached.response;            // retry → replay stored result\n\nconst response = await charge(req);            // first time → do the work\nawait store.set(idempotencyKey, { response }); // persist key → result\nreturn response;\n```\n\nThe distractors are real anti-patterns: a new TCP connection says nothing about whether the work already happened; rejecting with an error *and* dropping the charge data leaves the client unable to ever learn the outcome; and charge-then-refund is a visible double transaction. (If the *original* request is still in flight when the retry lands, the correct response is `409 Conflict`, not a second charge.)",
+      "references": "[Stripe API: Idempotent Requests](https://docs.stripe.com/api/idempotent_requests)"
+    },
+    {
+      "id": "idempotency-key-requirements",
+      "title": "Which statements about a correct idempotency-key design are true?",
+      "description": "A team is adding idempotency keys to a payments API. Select **all** that apply.",
+      "type": "multiple-choice",
+      "options": [
+        { "text": "The client must reuse the same key when **retrying** a payment, but generate a new key for each **distinct** payment", "isCorrect": true },
+        { "text": "The server should persist a key→result mapping so a retried request returns the original result without re-charging", "isCorrect": true },
+        { "text": "Using one constant key for every request is fine, because the server deduplicates anyway", "isCorrect": false },
+        { "text": "Adding an idempotency key reclassifies `POST` as a *safe* method under the HTTP spec", "isCorrect": false }
+      ],
+      "explanation": "An idempotency key identifies **one logical operation**, and the contract has two sides:\n- **Client:** generate a fresh key (e.g. a UUID) per *distinct* payment, and reuse that *exact* key on every retry of that same payment. This is what lets the server tell 'a retry of payment X' apart from 'a brand-new payment.'\n- **Server:** durably store `key → {status, body}` and replay it on repeats, so the side effect runs at most once.\n\nWhy the false options fail:\n- **A constant key for everything** would make the server treat *every* payment as a duplicate of the first, collapsing distinct, legitimate charges into one. Keys must be unique per operation, not per client.\n- **Safe is not the same as idempotent.** 'Safe' methods are read-only (`GET`, `HEAD`, `OPTIONS`, `TRACE`); an idempotency key makes a `POST` *retry-safe* but never makes it *safe* in the spec's sense — it still changes state.",
+      "references": "[Stripe Docs: Idempotent requests](https://docs.stripe.com/api/idempotent_requests)"
+    },
+    {
+      "id": "exponential-backoff-sum",
+      "title": "How many seconds does the client spend waiting in total?",
+      "description": "A client retries with exponential backoff: it waits **1 second** before the first retry and **doubles** the wait each time (1, 2, 4, 8, 16, …). It makes **5 retries** before giving up.",
+      "type": "input",
+      "validation": { "mode": "numeric", "acceptedAnswers": [31] },
+      "explanation": "The waits form a geometric series: `1 + 2 + 4 + 8 + 16 = 31` seconds. In general the sum of the first *n* doublings starting at 1 is `2^n − 1`, so five retries give `2^5 − 1 = 31`.\n\nThis is the core appeal of exponential backoff: the gap between attempts grows fast, so a struggling server gets exponentially more breathing room instead of being hammered at a fixed interval. The trade-off is latency — by the fifth retry the client has already waited half a minute — which is why production clients also set a **maximum delay (a cap)** and a **retry limit or overall deadline** so backoff can't grow without bound.",
+      "references": "[AWS Builders' Library: Timeouts, retries, and backoff with jitter](https://aws.amazon.com/builders-library/timeouts-retries-and-backoff-with-jitter/)"
+    },
+    {
+      "id": "why-jitter",
+      "title": "Why add jitter to backoff?",
+      "description": "A thousand clients all fail against an overloaded service at the same instant. Each uses identical exponential backoff.",
+      "type": "single-choice",
+      "options": [
+        { "text": "Their retries stay synchronized and arrive together as a 'thundering herd' that re-overloads the service; jitter randomizes the delays so retries spread out", "isCorrect": true },
+        { "text": "Backoff delays grow without bound; jitter imposes the maximum-delay cap", "isCorrect": false },
+        { "text": "The clients give up too early; jitter increases the total number of retries", "isCorrect": false },
+        { "text": "The server cannot tell retries apart from new requests; jitter tags each retry with a unique id", "isCorrect": false }
+      ],
+      "explanation": "Pure exponential backoff controls the *rate* of one client's retries but not the *correlation* between clients. If everyone failed at the same moment and waits the same `1s, 2s, 4s…`, they all retry **at the same instants**, producing synchronized spikes — a **thundering herd** — that knocks the recovering service straight back down. **Jitter** adds randomness to each delay so the retries scatter across time, smoothing the load into something the server can absorb.\n\nThe distractors confuse jitter with other knobs: the **cap** bounds the maximum delay; the **retry limit / deadline** bounds how many attempts happen; and telling retries apart is the job of **idempotency keys**, not jitter. AWS's experiments showed that adding jitter dramatically cut both server contention and total time-to-completion.",
+      "references": "[AWS Architecture Blog: Exponential Backoff And Jitter](https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/)"
+    },
+    {
+      "id": "full-jitter-formula",
+      "title": "What sleep time does **full jitter** use instead of the baseline?",
+      "description": "In AWS's well-known backoff study, the baseline delay for attempt *n* is `min(cap, base * 2^n)`.",
+      "type": "single-choice",
+      "options": [
+        { "text": "`random_between(0, min(cap, base * 2^n))`", "isCorrect": true },
+        { "text": "`min(cap, base * 2^n) + random_between(0, base)`", "isCorrect": false },
+        { "text": "`2 * min(cap, base * 2^n)`", "isCorrect": false },
+        { "text": "`random_between(min(cap, base * 2^n), 2 * min(cap, base * 2^n))`", "isCorrect": false }
+      ],
+      "explanation": "**Full jitter** discards the fixed delay entirely and sleeps a uniformly random amount between zero and the capped exponential bound:\n\n```py\nsleep = random.uniform(0, min(cap, base * 2 ** n))\n```\n\nThis maximally de-correlates clients: two clients on the same attempt number can wait wildly different amounts, so they rarely retry together. Contrast the other named strategies from the same study:\n- **Equal jitter:** `temp = min(cap, base * 2^n); sleep = temp/2 + random(0, temp/2)` — keeps half the delay fixed.\n- **Decorrelated jitter:** `sleep = min(cap, random(base, prev_sleep * 3))` — grows from the previous sleep.\n\nAWS found **full jitter** and **decorrelated jitter** performed best (fewest client calls and lowest completion time). The distractors only *add* a bit of randomness on top of a fixed delay, so clients stay largely synchronized.",
+      "references": "[AWS Architecture Blog: Exponential Backoff And Jitter](https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/)"
+    },
+    {
+      "id": "safe-to-retry-blindly",
+      "title": "Which request is safe to retry blindly?",
+      "description": "Your HTTP client auto-retries on a network timeout, with **no** idempotency key. \"Inherently safe\" means repeating the request cannot change server state more than the first call did.",
+      "type": "single-choice",
+      "options": [
+        { "text": "`GET /orders/42` — fetch an order's current status", "isCorrect": true },
+        { "text": "`POST /transfers` — create a new money transfer", "isCorrect": false },
+        { "text": "`POST /charges` — charge the customer's card", "isCorrect": false },
+        { "text": "`PATCH /accounts/7` with body `{ \"balance\": \"+100\" }` — add 100 to the balance", "isCorrect": false }
+      ],
+      "explanation": "A **`GET`** is both *safe* (read-only) and *idempotent*, so retrying it any number of times can't change server state — it's always free to retry. The other three each mutate state in a way that **repeats** on retry:\n- `POST /transfers` and `POST /charges` create a brand-new transfer/charge per call → a retry double-acts.\n- The **relative** `PATCH` ('add 100') is the classic non-idempotent write: applied twice it adds **200**. (A *full-replacement* `PUT` that sets `balance = 500` *would* be idempotent — it's the relative delta that breaks it.)\n\nLesson: only retry *unsafe* operations once you've made them idempotent — typically with an **idempotency key** and server-side dedup. Reads you can always retry; blind writes you cannot.",
+      "references": "[RFC 9110 §9.2.1: Safe Methods](https://www.rfc-editor.org/rfc/rfc9110.html#name-safe-methods)"
+    },
+    {
+      "id": "dedup-window-expiry",
+      "title": "What's the most likely outcome of retrying 30 hours later?",
+      "description": "An API stores idempotency keys for **24 hours** to deduplicate retries. A client's request fails, its phone stays offline, and it finally retries the *same* charge **30 hours** later with the same key.",
+      "type": "single-choice",
+      "options": [
+        { "text": "The key has already expired, so the server treats the retry as a new request and may charge the customer a second time", "isCorrect": true },
+        { "text": "The server recognizes the key forever and returns the original charge", "isCorrect": false },
+        { "text": "The retry is rejected with an error because the key is older than the window", "isCorrect": false },
+        { "text": "The API automatically detects and refunds the resulting duplicate charge", "isCorrect": false }
+      ],
+      "explanation": "Server-side dedup state is not kept forever — it lives in a **dedup window** with a TTL (Stripe, for example, prunes idempotency keys after about 24 hours). A retry that arrives *after* the key has been evicted looks brand-new, so the side effect can run **again**: a second charge.\n\nThe practical rules this implies:\n- Retries must complete **within** the dedup window; size your backoff and deadlines accordingly.\n- For retries that might be delayed for days (offline mobile, long-queued jobs), a short server window isn't enough — you need **durable client-side keys** plus reconciliation, or a longer-lived dedup store.\n\nThe distractors assume the window is infinite, that expiry produces a clean error (it usually just looks like a fresh request), or that the system magically self-heals — none of which a finite TTL guarantees.",
+      "references": "[Stripe API: Idempotent Requests](https://docs.stripe.com/api/idempotent_requests)"
+    },
+    {
+      "id": "poison-message-queue",
+      "title": "What is the queue for repeatedly-failing messages called?",
+      "description": "A consumer keeps failing to process one malformed message. Because the broker uses at-least-once delivery, that **poison message** is redelivered over and over, blocking healthy messages behind it. After a max-retries threshold, the standard fix is to move it off the main queue into a special holding queue. Answer with three words, or the acronym.",
+      "type": "input",
+      "validation": { "mode": "text", "acceptedAnswers": ["dead letter queue", "dead-letter queue", "dlq"] },
+      "explanation": "A **poison message** (or 'poison pill') is one that fails every processing attempt — bad data, a schema mismatch, a consumer bug — so under at-least-once redelivery it loops endlessly and can cause **head-of-line blocking**. The standard remedy is a **dead-letter queue (DLQ)**: after a configured number of failed attempts, the broker moves the message to the DLQ so the main queue keeps flowing, and engineers can inspect, fix, or replay the message offline.\n\nThis is also why retries need a **bound**: 'retry forever' turns one bad message into a permanently stuck pipeline. A DLQ — plus alerting on its depth — converts an infinite redelivery loop into a finite, observable backlog.",
+      "references": "[AWS SQS Developer Guide: Dead-letter queues](https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-dead-letter-queues.html)"
+    }
+  ]
+}

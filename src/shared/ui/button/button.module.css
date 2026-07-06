@@ -1,0 +1,206 @@
+@layer ui {
+  .button {
+    cursor: pointer;
+    user-select: none;
+
+    display: inline-flex;
+    flex-shrink: 0;
+    gap: 0.25rem;
+    align-items: center;
+    justify-content: center;
+
+    border: 1px solid var(--_button-border-color, transparent);
+
+    line-height: 1;
+    text-decoration: none;
+    white-space: nowrap;
+
+    background-color: transparent;
+
+    transition:
+      background-color 0.2s,
+      border-color 0.2s,
+      box-shadow 0.2s;
+
+    &:focus-visible {
+      outline: 2px solid var(--color-focus-ring);
+      outline-offset: 2px;
+    }
+
+    &[data-disabled],
+    &[disabled] {
+      pointer-events: none;
+      cursor: not-allowed;
+      opacity: 0.7;
+    }
+
+    &[data-loading] {
+      cursor: progress;
+      opacity: 0.7;
+    }
+  }
+
+  /** Size */
+
+  .size-s {
+    composes: rounded-s from "#styles/utils.module.css";
+    padding-block: 0.2rem;
+    padding-inline: 0.4rem;
+    font-size: var(--fs-s);
+  }
+
+  .size-m {
+    composes: rounded-m from "#styles/utils.module.css";
+    padding-block: 0.4rem;
+    padding-inline: 0.7rem;
+    font-size: var(--fs-m);
+  }
+
+  .size-l {
+    composes: rounded-m from "#styles/utils.module.css";
+    padding-block: 0.6rem;
+    padding-inline: 0.9rem;
+    font-size: var(--fs-l);
+  }
+
+  .size-icon-xs,
+  .size-icon-s,
+  .size-icon-m {
+    aspect-ratio: 1;
+    padding: 0;
+  }
+
+  .size-icon-xs {
+    composes: rounded-s from "#styles/utils.module.css";
+    inline-size: 1.5rem;
+    font-size: var(--fs-xs);
+  }
+
+  .size-icon-s {
+    composes: rounded-s from "#styles/utils.module.css";
+    inline-size: 2rem;
+    font-size: var(--fs-s);
+  }
+
+  .size-icon-m {
+    composes: rounded-m from "#styles/utils.module.css";
+    inline-size: 2.5rem;
+    font-size: var(--fs-m);
+  }
+
+  /** Variant  */
+
+  .variant-primary {
+    color: var(--color-text-on-primary-blue);
+    background-color: var(--color-primary-blue);
+
+    &[data-disabled],
+    &[disabled] {
+      border-color: var(--color-primary-blue-accent);
+      opacity: 0.3;
+      background-color: color-mix(var(--color-primary-blue) 80%, var(--color-text-tertiary));
+    }
+  }
+
+  .variant-secondary {
+    color: var(--color-text-on-secondary-gray);
+    background-color: var(--color-secondary-gray);
+
+    &[data-disabled],
+    &[disabled] {
+      border-color: var(--color-secondary-gray-accent);
+      opacity: 0.3;
+    }
+  }
+
+  .variant-outline {
+    border-color: var(--color-primary-blue);
+    color: var(--color-text-primary);
+    background-color: transparent;
+
+    &[data-disabled],
+    &[disabled] {
+      border-color: var(--color-primary-blue-accent);
+      opacity: 0.3;
+    }
+  }
+
+  .variant-destructive {
+    color: var(--color-text-on-primary-orange);
+    background-color: var(--color-primary-orange);
+
+    &[data-disabled],
+    &[disabled] {
+      border-color: var(--color-primary-orange-accent);
+      opacity: 0.3;
+    }
+  }
+
+  .variant-ghost,
+  .variant-link,
+  .variant-icon {
+    color: var(--color-text-primary);
+
+    &[data-disabled],
+    &[disabled] {
+      opacity: 0.3;
+      background-color: var(--color-state-muted-bg);
+    }
+  }
+
+  .variant-icon {
+    color: var(--color-state-muted-text);
+
+    &[data-disabled],
+    &[disabled] {
+      opacity: 0.3;
+      background-color: transparent;
+    }
+  }
+
+  .variant-link {
+    color: var(--color-primary-blue);
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+
+    &[data-disabled],
+    &[disabled] {
+      color: var(--color-text-tertiary);
+      opacity: 0.9;
+      background-color: transparent;
+    }
+  }
+
+  /** Hover  */
+
+  @media (hover: hover) {
+    .variant-primary:hover {
+      background-color: var(--color-primary-blue-accent);
+    }
+
+    .variant-secondary:hover {
+      background-color: var(--color-secondary-gray-accent);
+    }
+
+    .variant-outline:hover {
+      border-color: var(--color-primary-blue-accent);
+      box-shadow: inset 0 0 0 1px var(--color-primary-blue-accent);
+    }
+
+    .variant-ghost:hover {
+      background-color: var(--color-state-muted-bg);
+    }
+
+    .variant-link:hover {
+      color: var(--color-primary-blue-accent);
+    }
+
+    .variant-destructive:hover {
+      background-color: var(--color-primary-orange-accent);
+    }
+
+    .variant-icon:hover {
+      color: var(--color-text-primary);
+    }
+  }
+}

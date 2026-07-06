@@ -1,0 +1,317 @@
+---
+
+import { withBase } from "@/shared/lib/routing";
+import ThemeSwitcher from "./theme-switcher.astro";
+
+import { FileText, LibraryBig, ListTodo } from "@lucide/astro";
+
+import BunThinkHard from "./assets/bun-think-hard.svg";
+
+interface Props {
+  currentPath?: string;
+}
+
+const { currentPath = "/" } = Astro.props;
+const base = import.meta.env.BASE_URL;
+const normalizedBase = base.endsWith("/") ? base : `${base}/`;
+const pathWithoutBase =
+  normalizedBase === "/" || !currentPath.startsWith(normalizedBase)
+    ? currentPath
+    : `/${currentPath.slice(normalizedBase.length)}`;
+const isMainPage = pathWithoutBase === "/";
+
+const isCurrentPath = (href: string) =>
+  href === "/"
+    ? pathWithoutBase === "/"
+    : pathWithoutBase === href || pathWithoutBase.startsWith(`${href}/`);
+
+const navItems = [
+  {
+    label: "Quizzes",
+    href: "/quizzes/",
+    description:
+      "A public collection of quizzes for learning, with new quizzes added regularly.",
+    icon: ListTodo,
+  },
+  {
+    label: "My library",
+    href: "/library/",
+    description: "Quizzes saved only in the current browser.",
+    icon: LibraryBig,
+  },
+  {
+    label: "Docs",
+    href: "/docs/",
+    description: "Learn about Quizbun, how to use it, and how to contribute.",
+    icon: FileText,
+  },
+] as const;
+---
+
+<div class="wrapper">
+  <header class="root">
+    {isMainPage && <div class="quizbun">Quizbun</div>}
+    <a class="home-link" href={withBase("/")}>
+      <BunThinkHard class="logo" data-current={isMainPage} />
+    </a>
+
+    <nav aria-label="Primary navigation" class="nav">
+      {
+        navItems.map((item) => {
+          const Icon = item.icon;
+
+          return (
+            <a
+              class="link"
+              href={withBase(item.href)}
+              data-current={isCurrentPath(item.href)}
+              aria-current={isCurrentPath(item.href) ? "page" : undefined}
+              aria-label={item.label}
+              title={item.description}
+            >
+              <span class="icon" aria-hidden="true"><Icon size="18" /></span>
+              <span class="label">{item.label}</span>
+            </a>
+          );
+        })
+      }
+      <ThemeSwitcher />
+    </nav>
+  </header>
+</div>
+
+<style>
+  .wrapper {
+    --_text-color: var(--color-text-on-main-bg-dark);
+    --_hover-color: var(--color-focus-ring-on-main-bg-dark);
+  }
+
+  .root {
+    isolation: isolate;
+    position: relative;
+
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1rem;
+    align-items: center;
+    justify-content: space-between;
+
+    max-width: var(--max-content-width);
+    height: var(--header-height);
+    margin: 0 auto;
+    padding-inline: 1rem;
+  }
+
+  .quizbun {
+    position: absolute;
+    z-index: 1;
+    bottom: -0.716em;
+
+    margin-left: 1rem;
+
+    font-size: clamp(4rem, 14vw, 10rem);
+    font-weight: 900;
+    line-height: 1.1;
+    color: transparent;
+    letter-spacing: -0.07em;
+
+    opacity: 0.99;
+    background: linear-gradient(
+      100deg,
+      var(--color-blue-500),
+      var(--color-seagrass-500),
+      var(--color-orange-500)
+    );
+    background-clip: text;
+
+    -webkit-text-fill-color: transparent;
+  }
+
+  @media(width < 40rem) {
+    .quizbun {
+      filter: drop-shadow(0 -2px 0 color-mix(in oklch, var(--color-blue-100) 80%, transparent));
+    }
+  }
+
+
+  .home-link {
+    --logo-size: 4rem;
+    --logo-stroke-width: 11px;
+    --logo-stroke-width-thin: 8px;
+
+    position: relative;
+    z-index: 1;
+
+    display: flex;
+    flex-shrink: 0;
+
+    margin-bottom: -0.25rem;
+    margin-left: -0.5rem;
+    padding-inline: 0.5rem;
+    border-radius: var(--rounded-l);
+
+    color: var(--color-logo);
+
+    transition: color 0.2s;
+
+    .logo {
+      width: var(--logo-size);
+      height: var(--logo-size);
+      image-rendering: -webkit-optimize-contrast;
+      shape-rendering: geometricprecision;
+    }
+
+    &:focus-visible {
+      outline: 2px solid currentcolor;
+      outline-offset: 2px;
+    }
+
+    :global(.thought-1) {
+      animation: thoughts 1s ease infinite;
+      animation-play-state: paused;
+    }
+
+    :global(.thought-2) {
+      animation: thoughts 2s ease-out infinite alternate;
+      animation-play-state: paused;
+    }
+
+    :global(.eye) {
+      transform-origin: center;
+      transform-box: fill-box;
+      animation: eye-contract 0.9s ease-in-out infinite;
+      animation-play-state: paused;
+    }
+
+    :global(.mouth) {
+      animation: mouth-wave 1.2s ease-in-out infinite;
+      animation-play-state: paused;
+    }
+  }
+
+  @media (hover: hover) {
+    .home-link:hover :global(.thought-1) {
+      animation-play-state: running;
+    }
+
+    .home-link:hover :global(.thought-2) {
+      animation-play-state: running;
+    }
+
+    .home-link:hover :global(.eye),
+    .home-link:hover :global(.mouth) {
+      animation-play-state: running;
+    }
+  }
+
+  @keyframes thoughts {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+
+    50% {
+      transform: translateY(-12%);
+    }
+  }
+
+  @keyframes eye-contract {
+    0%,
+    100% {
+      transform: scaleX(1);
+    }
+
+    50% {
+      transform: scaleX(1.2);
+    }
+  }
+
+  @keyframes mouth-wave {
+    0%,
+    100% {
+      d: path("M87.7 149.985 Q93.6 145.554 99.5 149.985 Q105.4 154.415 111.3 149.985");
+    }
+
+    50% {
+      d: path("M87.7 149.985 Q93.6 154.416 99.5 149.985 Q105.4 145.555 111.3 149.985");
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .home-link :global(.thought-1),
+    .home-link :global(.thought-2),
+    .home-link :global(.eye),
+    .home-link :global(.mouth) {
+      animation: none;
+    }
+  }
+
+  .nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: center;
+    justify-content: flex-end;
+
+    min-width: 0;
+    margin-inline-start: auto;
+
+    list-style: none;
+  }
+
+  .link {
+    display: inline-flex;
+    gap: 0.25rem;
+    align-items: center;
+
+    min-block-size: 2.75rem;
+    padding-block: 0.5rem;
+    padding-inline: 0.5rem;
+    border-radius: var(--rounded-l);
+
+    font-size: var(--fs-s);
+    font-weight: var(--fw-semibold);
+    line-height: 1;
+    color: var(--_text-color);
+    text-decoration: none;
+
+    transition: color 0.2s;
+  }
+
+  .icon {
+    display: inline-flex;
+    padding: 0.125rem;
+  }
+
+  @media (hover: hover) {
+    .link:hover {
+      color: var(--_hover-color);
+    }
+  }
+
+  .link:focus-visible {
+    outline: 2px solid currentcolor;
+    outline-offset: 2px;
+  }
+
+  .link[data-current="true"] .icon {
+    color: var(--_hover-color);
+    filter: drop-shadow(0 0 .25rem color-mix(in oklch, var(--_hover-color) 50%, transparent));
+  }
+
+  @media (width < 40rem) {
+    .nav {
+      gap: 0.25rem;
+    }
+
+    .link {
+      justify-content: center;
+      inline-size: 2.75rem;
+      padding-inline: 0;
+    }
+
+    .label {
+      display: none;
+    }
+  }
+</style>

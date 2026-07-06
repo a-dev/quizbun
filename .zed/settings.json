@@ -1,0 +1,66 @@
+// Folder-specific settings
+//
+// For a full list of overridable settings, and general information on folder-specific settings,
+// see the documentation: https://zed.dev/docs/configuring-zed#settings-files
+{
+  "languages": {
+    "CSS": {
+      "formatter": {
+        "external": {
+          "command": "bun",
+          "arguments": ["x", "stylelint", "--stdin", "--stdin-filename", "{buffer_path}", "--fix"]
+        }
+      },
+      "format_on_save": "on"
+    },
+    "Astro": {
+      "formatter": {
+        "external": {
+          "command": "bun",
+          "arguments": ["x", "stylelint", "--stdin", "--stdin-filename", "{buffer_path}", "--fix"]
+        }
+      },
+      "format_on_save": "on"
+    },
+    "TypeScript": {
+      "language_servers": ["tsgo", "!vtsls", "!typescript-language-server"],
+      "formatter": {
+        "external": {
+          "command": "bun",
+          "arguments": ["x", "oxfmt", "--stdin-filepath", "{buffer_path}"]
+        }
+      },
+      "format_on_save": "on"
+    },
+    "TSX": {
+      "language_servers": ["tsgo", "!vtsls", "!typescript-language-server"],
+      "formatter": {
+        "external": {
+          "command": "bun",
+          "arguments": ["x", "oxfmt", "--stdin-filepath", "{buffer_path}"]
+        }
+      },
+      "format_on_save": "on"
+    }
+  },
+  "code_actions_on_format": {
+    "source.fixAll.stylelint": true
+  },
+  "lsp": {
+    "css-variables": {
+      "settings": {
+        "cssVariables": {
+          "lookupFiles": ["src/shared/styles/vars/**/*.css"],
+          "undefinedVarFallback": "info"
+        }
+      }
+    },
+    "vscode-css-language-server": {
+      "settings": {
+        "css": {
+          "customData": ["./.vscode/css-custom-data.json"]
+        }
+      }
+    }
+  }
+}

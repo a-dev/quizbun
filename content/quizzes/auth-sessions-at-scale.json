@@ -1,0 +1,294 @@
+{
+  "schemaVersion": 1,
+  "id": "auth-sessions-at-scale",
+  "title": "Auth & Sessions at Scale",
+  "description": "Authentication is where security and system design collide. This quiz contrasts stateful sessions with stateless JWTs, then digs into the consequences: where to store tokens (`httpOnly` cookie vs. `localStorage` and the XSS/CSRF tradeoff), refresh-token rotation, revocation and logout-everywhere (the hard part of stateless auth), short-lived access tokens, and multi-device/multi-tab coordination. Grounded in the specs: RFC 7519 (JWT), RFC 6749 (OAuth 2.0), RFC 7636 (PKCE), RFC 9700 (OAuth Security BCP), and OpenID Connect Core.",
+  "language": "en",
+  "tags": ["system-design", "security", "http"],
+  "questions": [
+    {
+      "id": "session-vs-jwt-tradeoff",
+      "title": "What is the defining tradeoff of a stateless JWT versus a server-side session?",
+      "description": "A server-side session stores state on the server and hands the client an opaque session id; a JWT is self-contained and signed.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The server validates a JWT from its signature alone — no per-request datastore lookup — but loses the ability to instantly invalidate a token before it expires.",
+          "isCorrect": true
+        },
+        {
+          "text": "A JWT is encrypted by default, so its payload is hidden from the client; a session id is sent in plaintext.",
+          "isCorrect": false
+        },
+        {
+          "text": "Server-side sessions cannot scale horizontally because the session can only live on the single server that created it.",
+          "isCorrect": false
+        },
+        {
+          "text": "JWTs remove the need for HTTPS, since the signature already prevents an attacker from reading or tampering with the token.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The core JWT bargain is **statelessness for revocability**. A standard JWT (a JWS) is *signed*, so any server holding the verification key can trust the claims without a shared session store — great for horizontal scale. The price: there is no central record to delete, so you can't instantly kill a valid token; it stays usable until `exp`.\n\nThe distractors are classic misconceptions:\n\n- A plain JWT is **base64url-encoded, not encrypted**. Anyone can decode the payload — never put secrets in it (use JWE if you truly need encryption).\n- Sessions **do** scale horizontally via a shared store (Redis, a database) or sticky sessions.\n- The signature provides *integrity*, not *confidentiality*. Without HTTPS the token can be read in transit and replayed, so TLS is still mandatory.",
+      "references": "[RFC 7519: JSON Web Token](https://datatracker.ietf.org/doc/html/rfc7519) · [OWASP: JWT for Java Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/JSON_Web_Token_for_Java_Cheat_Sheet.html)"
+    },
+    {
+      "id": "jwt-third-part",
+      "title": "A JWT is three base64url segments joined by dots: `header.payload.____`. Name the third segment.",
+      "description": "Type the name of the final part of a compact-serialized JWT (a JWS).",
+      "type": "input",
+      "validation": {
+        "mode": "text",
+        "acceptedAnswers": ["signature"]
+      },
+      "explanation": "A compact JWT is `base64url(header) . base64url(payload) . signature`. The signature is computed over the encoded header and payload (e.g. `HMAC-SHA256(base64url(header) + \".\" + base64url(payload), secret)` for `HS256`), which is exactly why tampering is detectable: change a single byte of header or payload and the signature no longer verifies.\n\nNote what this does **not** give you: the header and payload are merely encoded, so they are fully readable by anyone who holds the token. The signature protects *integrity and authenticity*, not *confidentiality*.",
+      "references": "[RFC 7519 §3: JWT Serialization](https://datatracker.ietf.org/doc/html/rfc7519#section-3)"
+    },
+    {
+      "id": "token-storage-tradeoffs",
+      "title": "Which statements about where you store an auth token in the browser are correct?",
+      "description": "Pick every statement that is true. Think about what JavaScript can reach and what the browser sends automatically.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "A token in `localStorage` is readable by any JavaScript running on the page, so a single XSS bug can exfiltrate it.",
+          "isCorrect": true
+        },
+        {
+          "text": "An `httpOnly` cookie is not exposed to JavaScript, which blunts token theft through XSS.",
+          "isCorrect": true
+        },
+        {
+          "text": "The browser attaches cookies to matching requests automatically, and that automatic sending is exactly what opens cookie-based auth to CSRF.",
+          "isCorrect": true
+        },
+        {
+          "text": "Putting the token in `localStorage` instead of a cookie makes the app immune to both CSRF and XSS.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "There is no storage location that is safe against everything — you choose *which* attack class to fight.\n\n- **`localStorage`**: reachable by any script on the origin, so it is squarely in the XSS blast radius. It is *not* auto-attached to requests, so it sidesteps CSRF (you send it explicitly, e.g. in an `Authorization: Bearer` header).\n- **`httpOnly` cookie**: invisible to JavaScript, so an XSS payload can't simply read it out. But cookies ride along automatically on cross-site requests, which is the very mechanism CSRF abuses.\n\nThe false option is the trap: moving to `localStorage` trades CSRF exposure for *worse* XSS exposure — it is not immune to both. The honest summary is \"cookie ⇒ defend CSRF; `localStorage` ⇒ defend XSS,\" and you must still defend XSS regardless, because XSS can ride a cookie-authenticated session even when it can't read the cookie.",
+      "references": "[MDN: Using HTTP cookies — Security](https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Cookies#security) · [OWASP: Cross-Site Request Forgery (CSRF)](https://owasp.org/www-community/attacks/csrf)"
+    },
+    {
+      "id": "csrf-cookie-mitigation",
+      "title": "You authenticate with a session cookie. Which measure most directly mitigates CSRF?",
+      "description": "CSRF tricks the victim's browser into sending an authenticated request the user didn't intend. What stops the cross-site request from carrying valid credentials — or from being honored?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Set `SameSite=Lax` (or `Strict`) on the cookie and/or require an anti-CSRF token the attacker's page cannot read.",
+          "isCorrect": true
+        },
+        {
+          "text": "Add the `httpOnly` flag to the cookie.",
+          "isCorrect": false
+        },
+        {
+          "text": "Respond with `Access-Control-Allow-Origin: *` so CORS governs every request.",
+          "isCorrect": false
+        },
+        {
+          "text": "Serve the site over HTTPS and enable HSTS.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "CSRF works because the browser *automatically* attaches the session cookie to a cross-site request. The two standard defenses attack that directly:\n\n- **`SameSite=Lax`/`Strict`** tells the browser not to send the cookie on cross-site requests (Lax still allows top-level GET navigations), so the forged request arrives *without* credentials.\n- **Anti-CSRF tokens** (synchronizer token / double-submit) require a secret value the attacker's origin cannot read, so it can't forge a valid request.\n\nWhy the others fail:\n\n- **`httpOnly`** hides the cookie from JavaScript (an XSS defense). It does nothing about CSRF, where no one needs to *read* the cookie — the browser just sends it.\n- **CORS** governs whether script may *read a cross-origin response*. It does not block the request from being *sent and processed*; HTML forms and simple requests fly regardless, and `*` actually loosens things (and can't be combined with credentials).\n- **HTTPS/HSTS** protect against eavesdropping and downgrade (MITM), an orthogonal threat.",
+      "references": "[MDN: Set-Cookie (SameSite directive)](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Set-Cookie) · [OWASP: CSRF Prevention Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html)"
+    },
+    {
+      "id": "refresh-token-rotation-reuse",
+      "title": "With refresh-token rotation, a client presents a refresh token that was already used (and rotated away). What should the server do?",
+      "description": "Rotation means each refresh token is single-use: spending it returns a new access token **and** a new refresh token, retiring the old one.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Treat it as suspected theft: a retired refresh token reappearing implies a leaked copy, so revoke the entire token family / session.",
+          "isCorrect": true
+        },
+        {
+          "text": "Silently issue a fresh access token — refresh tokens are meant to be reused as many times as needed.",
+          "isCorrect": false
+        },
+        {
+          "text": "Honor the request but emit a log warning; nothing should be revoked on a mere replay.",
+          "isCorrect": false
+        },
+        {
+          "text": "Extend the current access token in place without issuing a new refresh token.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "This is **automatic reuse detection**, the security payoff of rotation. Each refresh token is single-use, so legitimately there should only ever be *one* live refresh token in a family. If a previously-rotated token is presented again, two parties hold copies — almost certainly because one was stolen — and the server can't tell the thief from the victim. The safe response is to **invalidate the whole family**, forcing a fresh login and cutting off the attacker (the victim's next refresh fails too, which is the intended, fail-closed behavior).\n\nThe distractors describe non-rotating refresh tokens (reusable) or a passive log-and-allow stance — both forfeit the reason rotation exists. RFC 9700 explicitly recommends rotation with reuse detection for public clients that can't keep a client secret.",
+      "references": "[RFC 9700 §4.14: Refresh Token Protection](https://datatracker.ietf.org/doc/html/rfc9700#section-4.14) · [Auth0: Refresh Token Rotation](https://auth0.com/docs/secure/tokens/refresh-tokens/refresh-token-rotation)"
+    },
+    {
+      "id": "why-short-lived-access-tokens",
+      "title": "Why keep access tokens short-lived (minutes) while refresh tokens live for days?",
+      "description": "Access tokens are the credentials sent on every API call; refresh tokens are exchanged occasionally to mint new access tokens.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "A stateless access token can't be revoked instantly, so a short TTL bounds the damage window of a leaked one; the refresh exchange is where revocation checks actually bite.",
+          "isCorrect": true
+        },
+        {
+          "text": "A shorter expiry makes the signature cryptographically stronger and harder to forge.",
+          "isCorrect": false
+        },
+        {
+          "text": "Short-lived tokens are physically smaller, which meaningfully reduces request bandwidth.",
+          "isCorrect": false
+        },
+        {
+          "text": "A short lifetime prevents CSRF because the token expires before an attacker can act.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Short-lived access tokens are a **blast-radius control**. Because a stateless JWT is honored on signature alone, you can't reliably yank it mid-flight; a 5-15 minute TTL means a stolen access token is useless soon after capture. Meanwhile the long-lived refresh token does the heavy lifting *through a checkpoint you control*: every refresh is a chance to consult server state — is this user disabled? did they log out? was the family revoked? — so revocation propagates at roughly the access-token TTL.\n\nThe distractors are unrelated mechanisms: expiry has nothing to do with signature strength (that's the algorithm and key) or token size (the `exp` claim is a few bytes either way), and CSRF is about automatic credential sending, not token lifetime.",
+      "references": "[RFC 9700 §2.1: Access Token Privilege & Lifetime](https://datatracker.ietf.org/doc/html/rfc9700#section-2.1) · [RFC 7519 §4.1.4: exp Claim](https://datatracker.ietf.org/doc/html/rfc7519#section-4.1.4)"
+    },
+    {
+      "id": "logout-everywhere-stateless",
+      "title": "You use stateless JWT access tokens and need \"log out everywhere\" to take effect quickly. Which approaches actually accomplish that?",
+      "description": "Select every approach that genuinely forces existing access tokens to stop working promptly. Notice the common thread among the ones that work.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "Keep access tokens short-lived and revoke the refresh tokens; live access dies within one short TTL.",
+          "isCorrect": true
+        },
+        {
+          "text": "Maintain a server-side denylist of revoked token ids (`jti`) and check it on every request.",
+          "isCorrect": true
+        },
+        {
+          "text": "Store a per-user token version and reject any token whose embedded version is stale after you bump it.",
+          "isCorrect": true
+        },
+        {
+          "text": "Have the server delete the JWT from the user's browser `localStorage`.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The lesson hiding in the three correct answers: **to revoke a stateless token, you must reintroduce some state.** A pure signature check can't know a token is unwanted, so every workable approach adds a lookup —\n\n- **short TTL + revoke refresh**: the cheapest; you accept a small window equal to the access-token lifetime and never check a denylist per request.\n- **`jti` denylist**: precise and immediate, but every request now does a (typically cached) revocation lookup — you've partly rebuilt sessions.\n- **token version / `tokenVersion` claim**: bumping the user's version invalidates all their outstanding tokens at once (\"log out everywhere\"), at the cost of reading the current version on each request.\n\nThe false option is wishful: a server has **no way to reach into a browser's `localStorage`**, and even if it could, the attacker may have copied the token elsewhere. Revocation must be enforced where the token is *checked* (the server), not where it happens to be stored (the client).",
+      "references": "[OWASP: JSON Web Token Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/JSON_Web_Token_for_Java_Cheat_Sheet.html) · [RFC 7519 §4.1.7: jti Claim](https://datatracker.ietf.org/doc/html/rfc7519#section-4.1.7)"
+    },
+    {
+      "id": "oidc-adds-to-oauth",
+      "title": "What does OpenID Connect (OIDC) add on top of OAuth 2.0?",
+      "description": "A common interview trap: OAuth 2.0 and OIDC are related but solve different problems.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "An identity layer: a signed **ID Token** (a JWT) describing the authenticated user, plus a standardized `/userinfo` endpoint — OAuth 2.0 by itself is about authorization, not authentication.",
+          "isCorrect": true
+        },
+        {
+          "text": "Mandatory encryption of all access tokens issued by the authorization server.",
+          "isCorrect": false
+        },
+        {
+          "text": "A replacement for OAuth's access tokens with long-lived API keys.",
+          "isCorrect": false
+        },
+        {
+          "text": "Removal of the redirect-based authorization step, so no browser round-trip is needed.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "OAuth 2.0 answers *\"is this client allowed to access this resource?\"* — **authorization**. It deliberately says nothing standard about *who the user is*; an access token is opaque to the client and meant for the resource server. People bolted identity onto OAuth in incompatible ways until **OIDC** standardized it.\n\nOIDC adds:\n\n- the **ID Token**, a JWT with claims like `sub` (the user's stable id), `iss`, `aud`, `iat`, `exp`, and `nonce`, *intended for the client* to establish *who logged in*;\n- the **`/userinfo`** endpoint for additional profile claims;\n- discovery and standard scopes (`openid`, `profile`, `email`).\n\nThe distractors invert reality: OIDC doesn't mandate token encryption, doesn't swap tokens for API keys, and is built *on* the redirect-based Authorization Code flow rather than removing it. Mnemonic: **OAuth = access, OIDC = identity.**",
+      "references": "[OpenID Connect Core 1.0 §2: ID Token](https://openid.net/specs/openid-connect-core-1_0.html#IDToken) · [OAuth 2.0 (RFC 6749)](https://datatracker.ietf.org/doc/html/rfc6749)"
+    },
+    {
+      "id": "pkce-vs-implicit",
+      "title": "Why do public clients (SPAs, mobile apps) use the Authorization Code flow with PKCE instead of the old Implicit flow?",
+      "description": "PKCE = Proof Key for Code Exchange. The client generates a random `code_verifier`, sends its hash as `code_challenge` up front, then reveals the verifier when redeeming the code.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "PKCE binds the authorization code to a secret only the original client knows (`code_verifier`), so a stolen code can't be exchanged; the Implicit flow instead returned tokens directly in the redirect URL, where they leak.",
+          "isCorrect": true
+        },
+        {
+          "text": "PKCE lets a public client safely embed a long-lived client secret in shipped source code.",
+          "isCorrect": false
+        },
+        {
+          "text": "Implicit flow is actually more secure, and PKCE only trades that security away for faster logins.",
+          "isCorrect": false
+        },
+        {
+          "text": "PKCE end-to-end encrypts the access token so the browser never sees it in cleartext.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Public clients can't keep a client secret (anyone can read an SPA's JS or decompile an app), so the classic confidential-client protection is unavailable. PKCE replaces it with a **per-request dynamic secret**:\n\n```text\ncode_verifier  = random high-entropy string (kept in the client)\ncode_challenge = base64url(SHA-256(code_verifier))   // sent on the authorize request\n```\n\nThe authorization server records the `code_challenge`, returns a code via redirect, and at the token endpoint requires the matching `code_verifier`. An attacker who intercepts the *code* (e.g. via a malicious app registered on a custom URI scheme, or browser history) still can't redeem it — they don't have the verifier.\n\nThe **Implicit flow** is the foil: it returned the access token straight in the URL fragment (`#access_token=...`), exposing it to browser history, logs, and referrer leakage, with no exchange step to protect. That's why current guidance (RFC 9700) is: Authorization Code + PKCE for everyone, and don't use Implicit. The distractors misstate PKCE — it doesn't enable storing a secret, isn't a security downgrade, and provides no token encryption.",
+      "references": "[RFC 7636: Proof Key for Code Exchange](https://datatracker.ietf.org/doc/html/rfc7636) · [RFC 9700 §2.1: Protecting Redirect-Based Flows](https://datatracker.ietf.org/doc/html/rfc9700#section-2.1)"
+    },
+    {
+      "id": "clock-skew-exp-nbf",
+      "title": "Your fleet validates JWTs and intermittently rejects *freshly issued* tokens as \"not yet valid\" or \"expired,\" depending on which server handles the request. Most likely cause and fix?",
+      "description": "The errors point at the `nbf` (not-before) and `exp` (expiration) claims, and they correlate with *which* instance validates the token, not with the token's age.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Clock skew between the issuer and the validating servers; allow a small leeway when checking `exp`/`nbf` and keep all clocks synced via NTP.",
+          "isCorrect": true
+        },
+        {
+          "text": "The signing key was rotated; re-sign every outstanding token to fix it.",
+          "isCorrect": false
+        },
+        {
+          "text": "The tokens exceed the maximum allowed JWT size; shrink the payload.",
+          "isCorrect": false
+        },
+        {
+          "text": "CORS preflight requests are delaying calls past expiry; disable CORS.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`exp` and `nbf` are **absolute timestamps** (NumericDate — seconds since the Unix epoch) compared against each validator's *own* clock. If the issuer's clock is even a few seconds ahead, a token it just minted can look like it's `nbf`-in-the-future to a validator whose clock lags — \"not yet valid.\" The mirror case makes a near-expiry token look already `exp`-ired on a fast-running instance. The tell in this scenario is that the outcome depends on *which server* validates, not on elapsed time.\n\nStandard remedy, two parts:\n\n1. **Sync clocks** with NTP so drift stays tiny.\n2. **Allow a small leeway** (a few seconds to a couple of minutes) when comparing `exp`/`nbf`; most JWT libraries expose a `clockTolerance`/`leeway` option for exactly this. RFC 7519 explicitly permits \"some small leeway, usually no more than a few minutes, to account for clock skew.\"\n\nThe distractors don't fit the symptom: a rotated key yields *signature* failures, not time-validity errors; JWT size limits surface as transport/header errors; and CORS is unrelated to `exp`/`nbf` evaluation.",
+      "references": "[RFC 7519 §4.1.4: exp & clock skew leeway](https://datatracker.ietf.org/doc/html/rfc7519#section-4.1.4) · [RFC 7519 §4.1.5: nbf Claim](https://datatracker.ietf.org/doc/html/rfc7519#section-4.1.5)"
+    },
+    {
+      "id": "multi-tab-refresh-coordination",
+      "title": "Your SPA is open in three tabs. One tab refreshes the access token, rotating the refresh token. How should the other tabs avoid a stale token *and* a refresh stampede?",
+      "description": "All tabs share the same origin and the same stored tokens. Rotation makes the old refresh token single-use.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Coordinate across tabs — e.g. a `BroadcastChannel`/`storage` event or a Web Lock — so exactly one tab performs the refresh and the others pick up the new token.",
+          "isCorrect": true
+        },
+        {
+          "text": "Let every tab refresh independently at the same time; rotation will sort out the duplicates.",
+          "isCorrect": false
+        },
+        {
+          "text": "Switch token storage to `sessionStorage` so each tab keeps its own isolated token.",
+          "isCorrect": false
+        },
+        {
+          "text": "Turn off refresh-token rotation so simultaneous refreshes are harmless.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "With rotation, **concurrent refreshes are dangerous**, and this is where it bites in practice. If two tabs spend the *same* refresh token at once, the second one is presenting an already-rotated token — which the server's reuse detection reads as theft and responds to by **revoking the whole family**, logging the user out of every tab. So the fix is cross-tab coordination:\n\n- a **Web Lock** (`navigator.locks.request`) so only one tab holds the \"refresh\" lock at a time, or\n- a **`BroadcastChannel`** / the `storage` event to elect one refresher and fan the new token out to the others (often with a single-flight in-memory promise so overlapping calls await one network request).\n\nThe distractors each backfire: independent simultaneous refreshes are exactly what triggers reuse-detection revocation (option 2); `sessionStorage` is per-tab, so tabs wouldn't share the session at all, breaking single sign-on across tabs (option 3); and disabling rotation \"solves\" the race only by discarding the security benefit you adopted rotation for (option 4).",
+      "references": "[MDN: Web Locks API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Locks_API) · [MDN: BroadcastChannel](https://developer.mozilla.org/en-US/docs/Web/API/BroadcastChannel)"
+    },
+    {
+      "id": "jti-claim-denylist",
+      "title": "Which registered JWT claim is a unique identifier for an individual token — the natural key for building a revocation denylist?",
+      "description": "Type the three-letter claim name from RFC 7519's registered claims.",
+      "type": "input",
+      "validation": {
+        "mode": "text",
+        "acceptedAnswers": ["jti", "jti claim"]
+      },
+      "explanation": "`jti` is the **JWT ID**: a value that uniquely identifies the token and \"can be used to prevent the JWT from being replayed\" (RFC 7519 §4.1.7). Because it's unique per token, it's the natural key for a revocation **denylist** — store the `jti` of any token you want to kill (until its `exp`, after which it dies on its own), and reject matches on each request.\n\nMind the tradeoff it implies: consulting a `jti` denylist on every request reintroduces server state and a per-request lookup — you've partially rebuilt the stateful session you tried to avoid, which is the recurring tension of stateless auth (see the logout-everywhere question). It's a deliberate, often-worthwhile exchange for precise, immediate revocation.",
+      "references": "[RFC 7519 §4.1.7: jti (JWT ID) Claim](https://datatracker.ietf.org/doc/html/rfc7519#section-4.1.7)"
+    }
+  ]
+}

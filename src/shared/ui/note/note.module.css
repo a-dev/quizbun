@@ -1,0 +1,65 @@
+@layer ui {
+  .root {
+    composes: rounded-s from "#styles/utils.module.css";
+
+    display: flex;
+    gap: 0.5rem;
+    align-items: flex-start;
+
+    padding-block: 0.4rem;
+    padding-inline: 0.6rem;
+    border: 1px solid;
+
+    font-size: var(--fs-s);
+    line-height: var(--lh-m);
+  }
+
+  .icon {
+    flex-shrink: 0;
+
+    inline-size: 1.25rem;
+    block-size: 1.25rem;
+
+    /* Nudge the icon down to sit on the first line of text. */
+    margin-block-start: 0.125rem;
+
+    color: var(--_note-icon);
+  }
+
+  .content {
+    /* Let long words and inline code wrap instead of overflowing the flex row. */
+    min-inline-size: 0;
+  }
+
+  .type-info {
+    --_note-icon: var(--color-state-info-icon);
+
+    border-color: var(--color-state-info-border);
+    color: var(--color-state-info-text);
+    background-color: var(--color-state-info-bg);
+  }
+
+  .type-warning {
+    --_note-icon: var(--color-state-warning-icon);
+
+    border-color: var(--color-state-warning-border);
+    color: var(--color-state-warning-text);
+    background-color: var(--color-state-warning-bg);
+  }
+
+  .type-error {
+    --_note-icon: var(--color-state-error-icon);
+
+    border-color: var(--color-state-error-border);
+    color: var(--color-state-error-text);
+    background-color: var(--color-state-error-bg);
+  }
+
+  .type-success {
+    --_note-icon: var(--color-state-success-icon);
+
+    border-color: var(--color-state-success-border);
+    color: var(--color-state-success-text);
+    background-color: var(--color-state-success-bg);
+  }
+}

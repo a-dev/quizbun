@@ -1,0 +1,48 @@
+---
+import { withBase } from "@/shared/lib/routing";
+import DocsLayout from "@/app/docs-layout.astro";
+---
+
+<DocsLayout
+  title="Docs"
+  description="Quizbun documentation: the Quiz Object Standard, the AI generation prompt, canonical examples, and the contributor guide."
+>
+  <h1>Quizbun docs</h1>
+
+  <p>
+    Everything you need to create a quiz and, if you want, publish it in the
+    public Catalog. Start with the prompt if you are generating with an AI tool,
+    or with the examples if you are writing JSON by hand.
+  </p>
+
+  <h2><a href={withBase("docs/standard/")}>The Quiz Object Standard</a></h2>
+  <p>
+    The normative reference for the versioned JSON quiz format: every field,
+    every rule, and the strictness guarantees that make validation errors
+    precise. Tooling can also consume the published
+    <a href={withBase("schema/quiz.v1.json")}>JSON Schema</a>.
+  </p>
+
+  <h2><a href={withBase("docs/prompt/")}>Generate a quiz with AI</a></h2>
+  <p>
+    A self-contained prompt you copy into any AI chat to generate one valid
+    quiz. It embeds the JSON Schema and a canonical example, so the AI has
+    everything it needs in a single paste.
+  </p>
+
+  <h2><a href={withBase("docs/examples/")}>Example quizzes</a></h2>
+  <p>
+    Four canonical quizzes — one per question shape. Copy one as a starting
+    point instead of reverse-engineering the format, and import it on the
+    <a href={withBase("import/")}>import page</a> to try it immediately.
+  </p>
+
+  <h2>
+    <a href={withBase("docs/contributing/")}>Contribute to the Catalog</a>
+  </h2>
+  <p>
+    How a quiz goes from your AI chat to a merged pull request: validate on the
+    import page, meet the Public catalog profile, open a PR, and use the CI
+    feedback to fix anything it rejects.
+  </p>
+</DocsLayout>

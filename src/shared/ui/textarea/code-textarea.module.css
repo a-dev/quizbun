@@ -1,0 +1,98 @@
+@layer ui {
+  .root {
+    position: relative;
+    display: grid;
+    inline-size: 100%;
+  }
+
+  .code {
+    pointer-events: none;
+
+    position: absolute;
+    z-index: 0;
+    inset: 1px;
+
+    overflow: hidden;
+
+    box-sizing: border-box;
+    margin: 0;
+    padding-block: 0.5rem;
+    padding-inline: 0.625rem;
+
+    font-family: var(--font-mono);
+    font-size: var(--fs-s);
+    line-height: var(--lh-m);
+    color: var(--color-text-primary);
+    overflow-wrap: anywhere;
+    white-space: pre-wrap;
+  }
+
+  .content {
+    transform: translate(var(--_scroll-inline, 0), var(--_scroll-block, 0));
+    display: block;
+    font: inherit;
+  }
+
+  .textarea {
+    --_font-family: var(--font-mono);
+    --_line-height: var(--lh-m);
+
+    position: relative;
+    z-index: 1;
+
+    overflow: auto;
+
+    color: transparent;
+    overflow-wrap: anywhere;
+    white-space: pre-wrap;
+
+    background-color: transparent;
+    caret-color: var(--color-text-primary);
+
+    -webkit-text-fill-color: transparent;
+
+    &::selection {
+      /*
+       * The highlighted <pre> is the only visible glyph layer. Painting selected
+       * textarea glyphs here would duplicate and misalign the text beneath it.
+       */
+      color: transparent;
+      background-color: color-mix(in oklch, var(--color-focus-ring) 22%, transparent);
+
+      -webkit-text-fill-color: transparent;
+    }
+  }
+
+  .code :global(.token.comment),
+  .code :global(.token.prolog),
+  .code :global(.token.doctype),
+  .code :global(.token.cdata) {
+    font-style: italic;
+    color: var(--color-syntax-comment);
+  }
+
+  .code :global(.token.punctuation) {
+    color: var(--color-syntax-punctuation);
+  }
+
+  .code :global(.token.property),
+  .code :global(.token.boolean),
+  .code :global(.token.number),
+  .code :global(.token.constant),
+  .code :global(.token.symbol) {
+    color: var(--color-syntax-literal);
+  }
+
+  .code :global(.token.string) {
+    color: var(--color-syntax-string);
+  }
+
+  .code :global(.token.operator) {
+    color: var(--color-syntax-operator);
+  }
+
+  .code :global(.token.keyword) {
+    font-weight: var(--fw-semibold);
+    color: var(--color-syntax-keyword);
+  }
+}

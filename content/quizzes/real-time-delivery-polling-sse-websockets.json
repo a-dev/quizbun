@@ -1,0 +1,373 @@
+{
+  "schemaVersion": 1,
+  "id": "real-time-delivery-polling-sse-websockets",
+  "title": "Real-Time Delivery: Polling → SSE → WebSockets",
+  "description": "\"Make it real-time\" hides a ladder of escalating tradeoffs. Climb it: short polling, long polling, Server-Sent Events, and WebSockets — when each is the right tool, what they cost to scale, and the operational details that bite (reconnection with backoff, message ordering, missed-message recovery, presence, fan-out to thousands of clients, and proxy/load-balancer behavior). Grounded in the real browser APIs (`EventSource`, `WebSocket`) and Node server patterns.",
+  "language": "en",
+  "tags": ["real-time", "websockets", "networking", "system-design"],
+  "questions": [
+    {
+      "id": "short-vs-long-polling-latency",
+      "title": "Short polling vs. long polling: where does the latency go?",
+      "description": "A client must learn about server-side events. It **short-polls** a `/events` endpoint on a fixed 10-second timer. An event is produced 100 ms after a poll returns empty.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Worst case ~10 s with short polling; long polling delivers almost immediately because the server holds the request open until an event is ready (or a timeout fires)",
+          "isCorrect": true
+        },
+        {
+          "text": "~10 s for both; long polling only cuts the number of requests, not the latency",
+          "isCorrect": false
+        },
+        {
+          "text": "Near-zero for both; the polling interval affects only bandwidth, never latency",
+          "isCorrect": false
+        },
+        {
+          "text": "~10 s for short polling, but long polling is worse because each held request blocks the next one",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Short polling decouples the client's request rhythm from the server's events, so an event that lands just after an empty poll waits out the rest of the interval — up to ~10 s here, ~5 s on average. **Long polling** closes that gap: the server *parks* the request and responds the instant an event is available (or after a safety timeout of ~25–30 s, after which the client immediately re-polls). Latency drops to roughly one network round-trip. The cost is one in-flight request per client at all times, plus a subtle hazard: in the window between a long-poll response and the next request, new events must be buffered server-side (typically behind a cursor / `since` token) or they are missed.",
+      "references": "[MDN: Using server-sent events (vs. polling)](https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events)"
+    },
+    {
+      "id": "sse-content-type",
+      "title": "What exact `Content-Type` makes a response an SSE stream?",
+      "description": "You want the browser's `EventSource` to treat a long-lived HTTP response as a Server-Sent Events stream.",
+      "type": "input",
+      "validation": {
+        "mode": "text",
+        "acceptedAnswers": [
+          "text/event-stream"
+        ]
+      },
+      "explanation": "SSE is not a separate protocol — it is an ordinary HTTP response whose body never ends, framed by the `text/event-stream` media type. The browser parses the body line-by-line into events:\n\n```http\nHTTP/1.1 200 OK\nContent-Type: text/event-stream\nCache-Control: no-cache\nConnection: keep-alive\n\ndata: hello\n\nid: 42\nevent: tick\ndata: world\n```\n\nEach event is separated by a blank line. `data:` is the payload, `id:` tags the event for resumption, `event:` names a custom event type, and a line starting with `:` is a comment (handy as a heartbeat). Because the stream is decoded as UTF-8 **text**, SSE cannot carry raw binary without base64-encoding it first.",
+      "references": "[WHATWG HTML: Server-sent events](https://html.spec.whatwg.org/multipage/server-sent-events.html)"
+    },
+    {
+      "id": "eventsource-auto-reconnect",
+      "title": "Who reconnects for you: EventSource or WebSocket?",
+      "description": "A flaky network drops an open connection mid-stream. Assume the default behavior — no extra code.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`EventSource` automatically reconnects after a short delay; a `WebSocket` stays closed and you must construct a brand-new one yourself",
+          "isCorrect": true
+        },
+        {
+          "text": "Both auto-reconnect with exponential backoff that the browser implements for you",
+          "isCorrect": false
+        },
+        {
+          "text": "Neither reconnects automatically; both require you to re-create the object on `error`",
+          "isCorrect": false
+        },
+        {
+          "text": "`EventSource` fires `error` and stays permanently `CLOSED` until the page reloads",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Automatic reconnection is a headline feature of SSE. On a transport drop, `EventSource` fires an `error` event, moves `readyState` back to `CONNECTING` (0), waits the reconnection interval (which the server can tune by sending a `retry: <ms>` line), and reconnects — it only reaches `CLOSED` (2) if you call `.close()` or the server replies with the wrong content-type or a fatal status. `WebSocket` has **no** built-in reconnection: after `onclose` you must `new WebSocket(url)` again, and any backoff/jitter is your responsibility. This single difference is often the deciding factor for one-way feeds where you'd rather not hand-roll reconnection logic.",
+      "references": "[MDN: EventSource](https://developer.mozilla.org/en-US/docs/Web/API/EventSource)"
+    },
+    {
+      "id": "last-event-id-recovery",
+      "title": "How can `EventSource` recover events missed during a disconnect?",
+      "description": "While a client is briefly disconnected, the server emits events tagged `id: 42`, `id: 43`, `id: 44`. Then the browser's `EventSource` reconnects.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "On reconnect the browser sends a `Last-Event-ID` request header carrying the last id it saw; the server uses it to resend everything after that id",
+          "isCorrect": true
+        },
+        {
+          "text": "SSE buffers missed events inside the browser and replays them locally once the stream resumes",
+          "isCorrect": false
+        },
+        {
+          "text": "SSE guarantees zero message loss at the protocol level, so no recovery step is needed",
+          "isCorrect": false
+        },
+        {
+          "text": "TCP's retransmission buffer holds the events and redelivers them after the new connection opens",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "SSE's resumption mechanism is a contract between the browser and *your* server. When events carry `id:` lines, the browser remembers the last one and, on reconnect, replays it as a header:\n\n```http\nGET /stream HTTP/1.1\nLast-Event-ID: 44\n```\n\nThe server must read that header and resend events `45+` from a log/buffer — the browser cannot recover anything on its own, and there is no protocol-level delivery guarantee. The TCP option is a trap: once the old connection closes, its kernel buffers are gone. This server-cooperative replay is exactly what raw `WebSocket` lacks, which is why WebSocket apps build their own `since`-cursor resumption.",
+      "references": "[WHATWG HTML: The Last-Event-ID header](https://html.spec.whatwg.org/multipage/server-sent-events.html#the-last-event-id-header)"
+    },
+    {
+      "id": "sse-http1-connection-limit",
+      "title": "Why does the 7th SSE tab hang the whole app, and what removes the limit?",
+      "description": "A user opens your app in several tabs, each holding an open `EventSource`. Over HTTP/1.1, the app mysteriously stops issuing *any* new requests once enough streams are open.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Browsers cap concurrent HTTP/1.1 connections at ~6 per host and each SSE stream permanently occupies one; serving over HTTP/2 multiplexes many streams on a single connection and removes the bottleneck",
+          "isCorrect": true
+        },
+        {
+          "text": "`EventSource` has a hard spec limit of 6 instances per page; there is no workaround",
+          "isCorrect": false
+        },
+        {
+          "text": "The server exhausted its file descriptors, and HTTP/2 cannot help with that",
+          "isCorrect": false
+        },
+        {
+          "text": "A cookie grew past 6 KB and is blocking further requests; shrink the cookie",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Chrome and Firefox both cap simultaneous HTTP/1.1 connections to the *same host* at **6**. Each SSE stream is a connection that, by design, never closes — so a handful of tabs (or even one tab opening several streams) can swallow the entire pool, and now images, XHRs, and fonts to that host all stall behind them. The fix is the transport, not the code: over **HTTP/2** a single TCP connection multiplexes ~100 concurrent streams (`SETTINGS_MAX_CONCURRENT_STREAMS`), so many open `EventSource`s coexist comfortably. This is a classic reason production SSE is deployed behind HTTP/2.",
+      "references": "[MDN: Using server-sent events — caveats with HTTP/1](https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events#browser_compatibility)"
+    },
+    {
+      "id": "choose-sse-over-websockets",
+      "title": "Which of these are genuine reasons to choose SSE over WebSockets?",
+      "description": "You are picking a transport for a server-driven feature. Select **every** one that applies.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "You only need a one-way stream of updates from server to client",
+          "isCorrect": true
+        },
+        {
+          "text": "You want automatic reconnection and event-id resumption without writing it yourself",
+          "isCorrect": true
+        },
+        {
+          "text": "It rides on ordinary HTTP, so existing auth, gzip, and HTTP/2 infrastructure just work",
+          "isCorrect": true
+        },
+        {
+          "text": "You need to push high volumes of binary data with minimal overhead",
+          "isCorrect": false
+        },
+        {
+          "text": "You need low-latency two-way messaging, like chat with live typing indicators",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "SSE shines exactly where its constraints don't hurt: **one-way** server→client streams (live scores, notifications, progress, log tailing), with **built-in reconnection + `Last-Event-ID` resumption** and the operational comfort of being *plain HTTP* (cookies, bearer-in-cookie auth, gzip, proxies, and HTTP/2 multiplexing all apply unchanged). The two false options are precisely the WebSocket territory: SSE is UTF-8 **text-only**, so binary must be base64-encoded (~33% bloat), and SSE is unidirectional, so true low-latency bidirectional interaction (typing indicators, collaborative editing, gaming) wants a full-duplex `WebSocket`.",
+      "references": "[MDN: Server-sent events](https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events)"
+    },
+    {
+      "id": "websocket-handshake-status-code",
+      "title": "What numeric HTTP status code confirms the protocol switch succeeded?",
+      "description": "A `WebSocket` connection opens as an ordinary HTTP/1.1 request carrying `Upgrade: websocket`.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [
+          101
+        ]
+      },
+      "explanation": "The handshake is HTTP that *graduates* into the WebSocket protocol, and the success signal is **101 Switching Protocols**:\n\n```http\nGET /chat HTTP/1.1\nHost: example.com\nUpgrade: websocket\nConnection: Upgrade\nSec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\nSec-WebSocket-Version: 13\n\nHTTP/1.1 101 Switching Protocols\nUpgrade: websocket\nConnection: Upgrade\nSec-WebSocket-Accept: s3pPLMBiTxaQ9kYGzzhZRbK+xOo=\n```\n\nThe server proves it understood the protocol by echoing `Sec-WebSocket-Accept` — the base64 SHA-1 of the client's `Sec-WebSocket-Key` concatenated with a fixed GUID (the values above are RFC 6455's worked example). A plain `200` would mean the server ignored the upgrade and answered as normal HTTP; `426 Upgrade Required` is a *refusal* that demands the client upgrade, not a success.",
+      "references": "[RFC 6455 §1.3: Opening Handshake](https://datatracker.ietf.org/doc/html/rfc6455#section-1.3)"
+    },
+    {
+      "id": "websocket-secure-scheme",
+      "title": "What scheme does a WebSocket use when it runs over TLS?",
+      "description": "Plaintext WebSockets use the `ws://` scheme; TLS is the encrypted, secure form.",
+      "type": "input",
+      "validation": {
+        "mode": "text",
+        "acceptedAnswers": [
+          "wss",
+          "wss://"
+        ]
+      },
+      "explanation": "`wss://` is to `ws://` what `https://` is to `http://`: the same protocol wrapped in TLS, defaulting to port 443. Beyond confidentiality, `wss://` is the *practical* choice because TLS makes the upgrade traffic opaque to meddling intermediaries — many corporate proxies and transparent caches mangle or strip the `Upgrade`/`Connection` headers on plaintext `ws://`, silently breaking the handshake. Encrypting the stream sidesteps that whole class of middlebox interference, so production WebSockets are almost always `wss://`.",
+      "references": "[MDN: The WebSocket API](https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API)"
+    },
+    {
+      "id": "browser-realtime-auth-header",
+      "title": "Why are bearer tokens awkward with native `EventSource` and `WebSocket`, and what do teams do instead?",
+      "description": "Your API authenticates with an `Authorization: Bearer <token>` header.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Neither constructor accepts custom request headers, so teams pass the token via cookie, a query-string parameter, or (for WebSocket) a subprotocol value / first message",
+          "isCorrect": true
+        },
+        {
+          "text": "Both forbid authentication entirely; the endpoint must be made public",
+          "isCorrect": false
+        },
+        {
+          "text": "They require the header but only in lowercase; renaming it to `authorization` fixes it",
+          "isCorrect": false
+        },
+        {
+          "text": "Custom headers work fine — the real issue is CORS, solved by `Access-Control-Allow-Origin: *`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The browser constructors are deliberately minimal: `new EventSource(url, { withCredentials })` exposes only a credentials flag, and `new WebSocket(url, protocols)` takes only an optional subprotocol list — **neither lets you set arbitrary headers**, so you cannot attach `Authorization` the usual way. Common workarounds, roughly best-to-worst: rely on a same-origin **cookie** (sent automatically; pair SSE with `withCredentials`); smuggle the token through the **`Sec-WebSocket-Protocol`** subprotocol header for WebSockets; or put it in a **query-string** (simplest, but tokens then leak into access logs and browser history). The same limitation, incidentally, is why authenticating a raw EventSource often pushes teams toward cookie-based sessions.",
+      "references": "[MDN: WebSocket() constructor](https://developer.mozilla.org/en-US/docs/Web/API/WebSocket/WebSocket)"
+    },
+    {
+      "id": "single-websocket-ordering",
+      "title": "Do you need sequence numbers to guarantee in-order delivery on one WebSocket?",
+      "description": "Over a single, uninterrupted `WebSocket` connection, the server sends messages A, B, C in that order.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "No — a WebSocket rides on one TCP connection, which already delivers bytes (and therefore whole messages) in order; sequence numbers matter across reconnects or multiple connections",
+          "isCorrect": true
+        },
+        {
+          "text": "Yes — WebSocket frames can be reordered by the network, so sequence numbers are always required",
+          "isCorrect": false
+        },
+        {
+          "text": "No — WebSocket has its own UDP-based ordering layer that is independent of TCP",
+          "isCorrect": false
+        },
+        {
+          "text": "Yes — TCP orders raw bytes but randomizes WebSocket message boundaries",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "WebSocket is framed on top of a **single TCP connection**, and TCP guarantees in-order, gap-free byte delivery; the WebSocket framing layer reassembles those bytes into complete messages in send order. So *within one live connection* ordering is free — no sequence numbers needed. The catch is everything that breaks the single-connection assumption: after a **reconnect** the new TCP connection has no memory of the old one, messages may have been buffered or dropped during the gap, and if a client opens **multiple** connections (or you fan out through a backplane), cross-stream ordering is no longer guaranteed. That is where application-level sequence numbers — and dedup of duplicates from at-least-once redelivery — earn their keep.",
+      "references": "[RFC 6455 §1.5: Design Philosophy](https://datatracker.ietf.org/doc/html/rfc6455#section-1.5)"
+    },
+    {
+      "id": "reconnect-backoff-jitter",
+      "title": "Why does plain exponential backoff still stampede, and what fixes it?",
+      "description": "A server restart drops thousands of clients at once. Each reconnects with pure exponential backoff — 1 s, 2 s, 4 s, 8 s — but no randomization. The reconnection load still arrives in sharp, synchronized spikes.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "All clients started their backoff at the same instant, so they stay in lockstep and retry in waves; adding random jitter spreads the attempts across the interval",
+          "isCorrect": true
+        },
+        {
+          "text": "Exponential backoff alone already prevents synchronized spikes; jitter only saves a bit of bandwidth",
+          "isCorrect": false
+        },
+        {
+          "text": "The delay grows unbounded so clients never reconnect; the fix is to remove the backoff entirely",
+          "isCorrect": false
+        },
+        {
+          "text": "Jitter would make it worse by randomly delaying clients that could have reconnected instantly",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Exponential backoff controls *how fast an individual client retries*, but it does nothing about **correlation**: clients knocked offline by the same event share a clock, so 1 s / 2 s / 4 s windows line up and the herd thunders in unison. The cure is **jitter** — randomize each delay so retries smear across the window instead of stacking on its edge. AWS's canonical \"full jitter\":\n\n```js\nconst cap = 30_000;                       // 30 s ceiling\nconst base = 1_000;                       // 1 s\nconst exp = Math.min(cap, base * 2 ** attempt);\nconst delay = Math.random() * exp;        // pick anywhere in [0, exp)\n```\n\nCounter-intuitively, this both flattens the server's load curve and *lowers* average time-to-recovery, because the server stops drowning in synchronized bursts.",
+      "references": "[AWS Architecture Blog: Exponential Backoff And Jitter](https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/)"
+    },
+    {
+      "id": "sticky-sessions-realtime",
+      "title": "Why does long-polling need sticky sessions when a live WebSocket doesn't?",
+      "description": "Behind a load balancer, HTTP long-polling and Socket.IO's polling fallback usually require **sticky sessions** (session affinity), yet a fully-established raw WebSocket does not.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Long-polling is a sequence of separate HTTP requests that must each return to the server holding the client's session/cursor; an established WebSocket is one persistent TCP connection that already stays pinned to a single server",
+          "isCorrect": true
+        },
+        {
+          "text": "WebSockets encode the server's identity inside each frame, so the load balancer can always route them without affinity",
+          "isCorrect": false
+        },
+        {
+          "text": "Long-polling runs over UDP, which load balancers cannot correlate across requests",
+          "isCorrect": false
+        },
+        {
+          "text": "Sticky sessions are required for WebSockets too — affinity is never optional for any real-time transport",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The distinction is **one logical session, how many connections?** Long-polling is a *series* of independent HTTP requests; if request N+1 lands on a different instance than the one buffering this client's events (or holding its handshake state, as in Socket.IO), continuity breaks — hence affinity, unless that state lives in a shared store. A raw WebSocket is the opposite: after the `101` upgrade it is a **single long-lived TCP connection** that, by nature of TCP, stays on whichever backend the LB first chose, for the life of the socket. Affinity for WebSockets matters mainly for the *handshake* and for fallback transports — not for the established stream. (Note UDP is irrelevant here: every one of these transports is TCP.)",
+      "references": "[Socket.IO docs: Using multiple nodes — sticky sessions](https://socket.io/docs/v4/using-multiple-nodes/)"
+    },
+    {
+      "id": "proxy-idle-timeout-heartbeats",
+      "title": "What's the most likely culprit killing idle connections at ~60 seconds, and the standard fix?",
+      "description": "Your SSE and WebSocket connections silently drop after about 60 seconds of inactivity, even though both client and server are perfectly healthy and the network is up.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "An intermediary — load balancer or proxy — is closing idle connections at its idle-timeout; send periodic heartbeats so traffic keeps flowing and the timer never expires",
+          "isCorrect": true
+        },
+        {
+          "text": "TCP's built-in keepalive fires every 60 s and kills idle sockets; disabling TCP keepalive fixes it",
+          "isCorrect": false
+        },
+        {
+          "text": "Browsers force-close any connection open longer than 60 s, and nothing can prevent it",
+          "isCorrect": false
+        },
+        {
+          "text": "The OS ephemeral-port lease expires after 60 s and must be renewed",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A suspiciously round timeout almost always points at a **middlebox**. Reverse proxies and load balancers reclaim connections that have sent no bytes for a while — AWS's Application Load Balancer, for instance, defaults its **connection idle timeout to 60 seconds**. A long-lived but quiet SSE/WebSocket looks idle, so the proxy cuts it. The fix is to never look idle: emit periodic **heartbeats** — an SSE comment line (`: ping\\n\\n`) or a WebSocket ping/application keepalive every 15–30 s. The TCP-keepalive option is a double error: its default interval is ~2 *hours*, not 60 s, and it *maintains* connections rather than killing healthy idle ones.",
+      "references": "[AWS: Application Load Balancer connection idle timeout](https://docs.aws.amazon.com/elasticloadbalancing/latest/application/application-load-balancers.html#connection-idle-timeout)"
+    },
+    {
+      "id": "half-open-connection-heartbeats",
+      "title": "What state is the server-side connection left in, and how do heartbeats help?",
+      "description": "A client's laptop loses power instantly — no graceful shutdown — while its WebSocket is open.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The connection goes half-open: with no FIN/RST ever arriving, the server still sees it as OPEN; periodic ping/pong heartbeats let the server notice the silent peer and reclaim the socket",
+          "isCorrect": true
+        },
+        {
+          "text": "The server immediately receives a `close` event with code 1000, so no heartbeat is needed",
+          "isCorrect": false
+        },
+        {
+          "text": "The OS notifies the server within milliseconds via an RST packet, making heartbeats redundant",
+          "isCorrect": false
+        },
+        {
+          "text": "The browser sent a close frame just before shutting down, so the server already knows",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A graceful close sends a TCP FIN (or a WebSocket close frame, code `1000`); a *power loss sends nothing*. TCP has no out-of-band 'are you still there?' signal, so the server's side stays in `ESTABLISHED` — a **half-open** connection — and may sit there for a very long time (kernel TCP keepalive defaults to ~2 hours before probing). That phantom connection still consumes a file descriptor and memory, and any presence system will keep showing the user as 'online'. **Heartbeats** are the application-level liveness check: if a ping goes unanswered within a few intervals, the server declares the peer dead, closes the socket, and updates presence — usually a Redis key with a short TTL that the heartbeat refreshes.",
+      "references": "[RFC 6455 §5.5.2: Ping and Pong frames](https://datatracker.ietf.org/doc/html/rfc6455#section-5.5.2)"
+    },
+    {
+      "id": "fanout-backplane-scaling",
+      "title": "Which statements about cross-instance WebSocket fan-out are true?",
+      "description": "You scale your WebSocket server to three instances behind a load balancer. A single published message must reach **all** subscribed clients, regardless of which instance each one is connected to. Select every true statement.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "Clients are partitioned across instances, so any one instance can directly push only to the clients it personally holds",
+          "isCorrect": true
+        },
+        {
+          "text": "You need a pub/sub backplane (Redis, NATS, Kafka, …) so a publish on one instance fans out to clients held by the others",
+          "isCorrect": true
+        },
+        {
+          "text": "A shared pub/sub channel decouples the publisher from whichever instance happens to hold each subscriber",
+          "isCorrect": true
+        },
+        {
+          "text": "The load balancer transparently duplicates every message to all instances, so no backplane is needed",
+          "isCorrect": false
+        },
+        {
+          "text": "Per-instance in-memory subscriber maps are sufficient for cross-instance delivery on their own",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A WebSocket is a stateful, pinned connection, so each instance only knows about *its own* connected clients — its in-memory subscriber map is blind to the other instances. A load balancer routes *incoming* connections; it does not replicate your *outgoing* application messages. To fan a publish out to everyone, instances must share a **backplane**: a pub/sub system (Redis Pub/Sub, NATS, Kafka, or a managed service) that every instance subscribes to, so a message published anywhere is delivered to all instances, which then push to their local clients. This is exactly what adapters like Socket.IO's Redis adapter provide. Beware the backplane's own delivery semantics — plain Redis Pub/Sub is fire-and-forget, so a momentarily disconnected instance simply misses messages unless you add a durable log or replay.",
+      "references": "[Socket.IO docs: Adapters and the Redis backplane](https://socket.io/docs/v4/redis-adapter/)"
+    }
+  ]
+}

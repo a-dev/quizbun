@@ -1,0 +1,346 @@
+{
+  "schemaVersion": 1,
+  "id": "rate-limiting-and-backpressure",
+  "title": "Rate Limiting & Backpressure",
+  "description": "When demand outruns capacity, a system either sheds load gracefully or collapses. This quiz walks the full path: the algorithms (token vs. leaky bucket, fixed vs. sliding window), where to enforce a limit (per-IP vs. per-user, client-side debounce/throttle), how to communicate it (`429`, `Retry-After`, backoff with jitter), and how backpressure propagates through Node.js streams so a slow consumer doesn't exhaust memory. Every answer is computed, executed, or cited against the relevant spec.",
+  "language": "en",
+  "tags": ["system-design", "nodejs", "networking"],
+  "questions": [
+    {
+      "id": "token-bucket-vs-leaky-bucket",
+      "title": "Token bucket vs. leaky bucket: which one lets traffic burst?",
+      "description": "Both algorithms cap the long-run average rate, but they shape short-term traffic differently.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "**Token bucket** lets traffic burst up to the bucket's capacity, then settles to the refill rate; **leaky bucket** drains at a fixed rate, smoothing bursts away",
+          "isCorrect": true
+        },
+        {
+          "text": "**Leaky bucket** lets traffic burst up to its capacity; **token bucket** forces a perfectly constant output rate",
+          "isCorrect": false
+        },
+        {
+          "text": "Both shape output into a perfectly constant rate and forbid any burst",
+          "isCorrect": false
+        },
+        {
+          "text": "Both allow unlimited bursts as long as the long-run average stays under the limit",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A **token bucket** accumulates tokens at a fixed refill rate up to a maximum (its *capacity*). A request spends one token and passes immediately if a token is available. After an idle stretch the bucket is full, so a client can fire a burst as large as the capacity all at once — and only *then* is it throttled down to the refill rate. Mnemonic: *save up, spend in a burst.*\n\nA **leaky bucket** models a bucket with a hole: requests pour in (overflowing if it's full) but *leave* at a constant rate, so the output is smooth no matter how bursty the input. Mnemonic: *constant trickle.*\n\nSo token bucket tolerates bursts; leaky bucket erases them. The reversed and \"both identical\" options are the classic confusions. (Note: some texts describe a *leaky-bucket-as-a-meter* variant that behaves like a token bucket; the burst-vs-smooth contrast here uses the well-known *leaky-bucket-as-a-queue* model.)",
+      "references": "[Stripe: Scaling your API with rate limiters](https://stripe.com/blog/rate-limiters) · [Wikipedia: Token bucket](https://en.wikipedia.org/wiki/Token_bucket)"
+    },
+    {
+      "id": "token-bucket-max-burst",
+      "title": "How many requests succeed in that first instantaneous burst?",
+      "description": "A token bucket holds at most **20** tokens and refills at **5** tokens per second; each request costs 1 token. After the bucket has sat idle long enough to fill completely, a client suddenly fires many requests at once.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [20]
+      },
+      "explanation": "The bucket's **capacity is the burst ceiling**. While idle, tokens accrue at 5/s but are capped at 20, so a full bucket holds exactly 20 tokens. An *instantaneous* burst means no time passes, so the refill adds nothing — the client can spend all 20 tokens at once, and **20** requests pass immediately.\n\nThe 21st request must wait for a refill. From there the client is throttled to the sustained rate: 5 tokens/sec = one request every 200 ms. This is the entire design intent — *capacity* sets how big a burst you tolerate, *refill rate* sets the sustained throughput. (A leaky-bucket limiter with the same 5/s average would not allow this burst; it would release requests at a steady 5 per second.)"
+    },
+    {
+      "id": "fixed-window-boundary-burst",
+      "title": "What does the fixed-window limiter do with these 200 requests?",
+      "description": "A fixed-window limiter allows **100 requests per minute**, counted against wall-clock minutes (the counter resets at `:00`). A client sends 100 requests at `12:00:59.9` and another 100 at `12:01:00.1`.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "About 200 requests are admitted within roughly one second — the limiter is briefly fooled into allowing ~2× the intended rate near the window edge",
+          "isCorrect": true
+        },
+        {
+          "text": "All 200 are rejected, because the limiter sums them to 200 over the minute",
+          "isCorrect": false
+        },
+        {
+          "text": "The second batch is automatically deferred to the `12:02` window",
+          "isCorrect": false
+        },
+        {
+          "text": "Only 100 total are admitted; fixed windows track a rolling 60-second total",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The fixed window counts against the *clock*, not against each request. At `12:00:59.9` the `12:00` window still has room, so 100 requests pass. Just 0.2 s later the clock ticks to `12:01`, the counter **resets to 0**, and 100 more pass. Net result: ~200 requests in ~1 second — double the intended ceiling — even though each one-minute window individually counted only 100.\n\nThis \"boundary burst\" is the headline weakness of fixed windows, and it's exactly what sliding-window algorithms fix by measuring a window that moves *with the current request* instead of snapping to the clock. The distractors describe sliding-window or queueing behavior, not fixed windows.",
+      "references": "[Cloudflare: How we built rate limiting capable of scaling to millions of domains](https://blog.cloudflare.com/counting-things-a-lot-of-different-things/)"
+    },
+    {
+      "id": "sliding-window-counter-estimate",
+      "title": "What is the estimated request count for the trailing 60 seconds?",
+      "description": "A sliding-window-*counter* limiter uses 60-second windows. Right now you are **15 seconds** into the current window. The **previous** window saw **80** requests; the **current** window has logged **20** so far.\n\nUse the standard weighted estimate `estimate = current + previous × (window − elapsed) / window`; round to the nearest whole request.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [80]
+      },
+      "explanation": "Plug in the numbers. The weight on the previous window is `(60 − 15) / 60 = 45 / 60 = 0.75`, so:\n\n`estimate = 20 + 80 × 0.75 = 20 + 60 = `**`80`**`.\n\nThe intuition: a *true* sliding window would count every request in the trailing 60 s, which needs a timestamp per request. The counter approximates by assuming the previous window's requests were spread evenly, so it keeps only the fraction still inside the trailing 60 s — here 45 of its 60 seconds, i.e. 75% — and adds everything in the current window. Against a limit of 100, this request is admitted (80 < 100). Had the previous window held 110, the estimate would be `20 + 110 × 0.75 = 102.5` → blocked, even though the current window alone is far under 100. The payoff is **O(1) memory per key** (two integers) instead of the exact log's O(n).",
+      "references": "[Cloudflare: How we built rate limiting capable of scaling to millions of domains](https://blog.cloudflare.com/counting-things-a-lot-of-different-things/)"
+    },
+    {
+      "id": "sliding-window-log-vs-counter",
+      "title": "What's the difference between a sliding-window log and counter?",
+      "description": "You must hold per-key limiter state for tens of millions of API keys in Redis, and you're choosing between two sliding-window implementations.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The **log** stores a timestamp per request (exact, but O(n) memory per key); the **counter** keeps two integers per key (O(1) memory, but an approximation)",
+          "isCorrect": true
+        },
+        {
+          "text": "The **counter** is exact; the **log** is only an approximation that drifts over time",
+          "isCorrect": false
+        },
+        {
+          "text": "Both store one timestamp per request and differ only in their eviction policy",
+          "isCorrect": false
+        },
+        {
+          "text": "The **log** uses constant memory; the **counter** grows with the request rate",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A sliding-window **log** keeps the timestamp of every request (e.g. a Redis sorted set), counts the entries newer than `now − window`, and trims the rest. It is perfectly accurate — but its memory and trim cost grow with the number of requests in the window, **O(n) per key**, which is punishing across tens of millions of keys.\n\nA sliding-window **counter** keeps only the current and previous fixed-window totals — two integers — and blends them with the weighted estimate from the previous question. That's **O(1) memory** and one arithmetic step, at the cost of being an approximation (it assumes the previous window's load was uniform). At scale the counter's memory win dominates; reserve the log for cases that truly need exactness. The distractors simply invert which structure is exact and which is constant-memory.",
+      "references": "[Cloudflare: How we built rate limiting capable of scaling to millions of domains](https://blog.cloudflare.com/counting-things-a-lot-of-different-things/)"
+    },
+    {
+      "id": "per-ip-vs-per-user-limiting",
+      "title": "What's the real trade-off between per-IP and per-user rate limiting?",
+      "description": "You're deciding what to key a limiter on: the source IP, or the authenticated user / API key.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Per-IP can collectively throttle many distinct users sharing one address (corporate NAT, carrier-grade NAT, a VPN exit); per-user keying is fairer but needs to identify the caller, so it can't gate fully anonymous traffic",
+          "isCorrect": true
+        },
+        {
+          "text": "Per-IP is strictly fairer, because every user is guaranteed a unique IP address",
+          "isCorrect": false
+        },
+        {
+          "text": "Per-user limiting needs no authentication and behaves identically for anonymous and signed-in callers",
+          "isCorrect": false
+        },
+        {
+          "text": "Per-IP fully stops abuse, because an attacker cannot change their source IP",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The key decides *who shares a bucket*. Per-IP is cheap and works for anonymous traffic, but many unrelated users routinely share one public IP — office and campus NATs, carrier-grade NAT on mobile networks, shared VPN/proxy exits — so one heavy user (or one abuser) can drain the limit for everyone behind that address.\n\nPer-user / per-API-key keying gives each account its own budget regardless of network: fairer and more precise, but it presupposes you can *identify* the caller, so it doesn't help before login. And neither is a silver bullet against abuse — attackers rotate through botnets and proxy pools, so per-IP limits alone don't \"stop\" them. Production systems usually **layer both**: a coarse per-IP limit for anonymous/edge protection plus a per-key limit for authenticated quotas.",
+      "references": "[Cloudflare: What is rate limiting?](https://www.cloudflare.com/learning/bots/what-is-rate-limiting/)"
+    },
+    {
+      "id": "429-vs-503-overload",
+      "title": "429 vs. 503: which says \"it's you,\" which says \"it's me\"?",
+      "description": "A gateway must reject traffic in two different situations: (a) one client blew past its own per-key quota, and (b) the whole upstream is overloaded and shedding load for everyone.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "(a) → `429 Too Many Requests` (this client is over its limit); (b) → `503 Service Unavailable` (the server can't cope right now). Both may carry `Retry-After`",
+          "isCorrect": true
+        },
+        {
+          "text": "(a) → `503 Service Unavailable`; (b) → `429 Too Many Requests` — the codes map to server vs. client load in that order",
+          "isCorrect": false
+        },
+        {
+          "text": "Both situations should return `403 Forbidden`, since the request is being refused",
+          "isCorrect": false
+        },
+        {
+          "text": "Both should return `200 OK` with an error body, so clients don't treat it as a failure",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`429 Too Many Requests` (RFC 6585 §4) means *this client* sent too many requests in a given time — the fault is attributable to the caller's rate. `503 Service Unavailable` (RFC 9110 §15.6.4) means *the server* is temporarily unable to handle the request — overloaded, deploying, or shedding load for everyone. Both are designed to carry **`Retry-After`** to tell the client when to come back.\n\nWhy the distractors fail: `403 Forbidden` is an authorization verdict (\"you may never do this\"), not \"slow down\" — retrying a 403 unchanged is pointless. And tunneling failures through `200 OK` is the anti-pattern that blinds every proxy, cache, retry library, and dashboard that branches on the status code. Use the status line to say *what kind* of failure this is; use `Retry-After` to say *when* to retry.",
+      "references": "[RFC 6585 §4: 429 Too Many Requests](https://www.rfc-editor.org/rfc/rfc6585#section-4) · [RFC 9110 §15.6.4: 503 Service Unavailable](https://www.rfc-editor.org/rfc/rfc9110.html#section-15.6.4)"
+    },
+    {
+      "id": "retry-after-valid-values",
+      "title": "Which are valid `Retry-After` values?",
+      "description": "Per RFC 9110 §10.2.3, `Retry-After`'s value is **either** an HTTP-date **or** a non-negative number of seconds. Select **all** that a spec-compliant server may send.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "`Retry-After: 120` — wait 120 seconds (delay-seconds)",
+          "isCorrect": true
+        },
+        {
+          "text": "`Retry-After: Wed, 21 Oct 2015 07:28:00 GMT` — an absolute HTTP-date",
+          "isCorrect": true
+        },
+        {
+          "text": "`Retry-After: 2m0s` — a Go-style duration string",
+          "isCorrect": false
+        },
+        {
+          "text": "`Retry-After: now+30` — a relative expression",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "RFC 9110 defines `Retry-After = HTTP-date / delay-seconds`. So a bare non-negative integer (`120`, meaning \"wait 120 seconds\") is valid, and an absolute IMF-fixdate such as `Wed, 21 Oct 2015 07:28:00 GMT` is valid.\n\nWhat's **not** valid: programming-language or ad-hoc duration syntaxes. `2m0s` is Go's `time.Duration` format and `now+30` is invented — HTTP defines neither, so a conforming client isn't required to parse them and will typically ignore the header, falling back to its own backoff. When you emit `Retry-After`, send integer seconds *or* a correctly formatted HTTP-date — nothing else.",
+      "references": "[RFC 9110 §10.2.3: Retry-After](https://www.rfc-editor.org/rfc/rfc9110.html#section-10.2.3) · [MDN: Retry-After](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Retry-After)"
+    },
+    {
+      "id": "exponential-backoff-delay",
+      "title": "What is the delay, in milliseconds, before the retry at `attempt = 4`?",
+      "description": "A client retries on `429` with exponential backoff and **no** jitter: `delay = base × 2^attempt`, where `base = 100` ms and `attempt` starts at `0` for the first retry. The server keeps returning `429`.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [1600]
+      },
+      "explanation": "Substitute: `delay = 100 × 2^4 = 100 × 16 = `**`1600`**` ms`.\n\nThe per-attempt sequence is `100, 200, 400, 800, 1600` ms for attempts 0–4 — each retry waits twice as long as the last, so the client backs off quickly while failures persist. Two refinements you'd add in production:\n\n- a **cap**, `min(cap, base × 2^attempt)`, so the delay can't grow without bound, and\n- **jitter**, randomizing within `[0, delay]`, so many clients don't retry in lockstep.\n\nAWS's \"full jitter\" recipe folds both together: `sleep = random(0, min(cap, base × 2^attempt))`.",
+      "references": "[AWS Architecture Blog: Exponential Backoff And Jitter](https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/)"
+    },
+    {
+      "id": "why-jitter-in-backoff",
+      "title": "Which statements about adding jitter to backoff are correct?",
+      "description": "After a spike of `429`/`503` responses, thousands of clients all retry with exponential backoff. Adding *jitter* randomizes each client's delay. Select **all** that apply.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "It de-synchronizes retries so clients don't all fire at the same instant, avoiding a self-inflicted \"thundering herd\" that re-overloads the recovering server",
+          "isCorrect": true
+        },
+        {
+          "text": "It spreads the retry load across an interval, smoothing the spike the server has to absorb",
+          "isCorrect": true
+        },
+        {
+          "text": "It guarantees every individual client a shorter wait than plain exponential backoff",
+          "isCorrect": false
+        },
+        {
+          "text": "It makes each client's retry schedule deterministic and identical, which is easier to reason about",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Without jitter, clients that failed at the same moment compute the *same* backoff (2 s, then 4 s, then 8 s…) and retry in synchronized waves, each wave hammering the server just as it tries to recover. Jitter breaks the synchronization by randomizing each delay (e.g. AWS \"full jitter\": `sleep = random(0, min(cap, base × 2^attempt))`), so retries arrive spread across the interval instead of all at once — fewer collisions, lower peak load.\n\nThe two false options invert what jitter does: it does **not** shorten any individual client's wait (on a given roll a client may wait *longer*), and it deliberately *introduces* randomness, so schedules become non-deterministic — that's the mechanism, not a drawback. The goal is lower contention and peak load, not lower per-client latency.",
+      "references": "[AWS Architecture Blog: Exponential Backoff And Jitter](https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/)"
+    },
+    {
+      "id": "thundering-herd-term",
+      "title": "What is the common two-word name for this synchronized-retry problem?",
+      "description": "Many clients fail at the same moment, all wait the *same* fixed backoff, then retry in a single synchronized wave that knocks the server over again just as it recovers — repeating the cycle. Adding jitter is the standard cure.",
+      "type": "input",
+      "validation": {
+        "mode": "text",
+        "acceptedAnswers": [
+          "thundering herd",
+          "thundering herd problem",
+          "the thundering herd"
+        ]
+      },
+      "explanation": "This is the **thundering herd** problem: a large group of clients (or processes, or threads) all wake or retry at the same instant and stampede a shared resource together, so the recovering server is toppled again before it can stabilize. Fixed-delay retries cause it because everyone computes the identical next-attempt time.\n\nThe cure is to spread the herd out: add **jitter** (randomize each backoff within `[0, delay]`) on top of exponential backoff and a retry cap. The same term appears in OS scheduling (many threads woken by one event contend for a lock) and in caching, where a popular key expires and every request misses to the origin at once — a *cache stampede*, a sibling of the same idea."
+    },
+    {
+      "id": "writable-write-returns-false",
+      "title": "What does a `false` return from `writable.write()` mean?",
+      "description": "You're piping a fast source into a slower Node.js writable by hand:\n\n```js\nfor (const chunk of source) {\n  const ok = writable.write(chunk);\n  if (!ok) {\n    // ...?\n  }\n}\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The internal buffer has reached `highWaterMark`. The chunk was still accepted and queued, but you should pause and wait for the `'drain'` event before writing more",
+          "isCorrect": true
+        },
+        {
+          "text": "The write failed; the chunk was dropped and you must send it again",
+          "isCorrect": false
+        },
+        {
+          "text": "The chunk exceeded `highWaterMark` and was rejected; split it into smaller pieces",
+          "isCorrect": false
+        },
+        {
+          "text": "The stream has already ended, so no further writes are possible",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`writable.write()` returns a boolean **flow-control signal**, not a success flag. It returns `false` once the buffered data reaches the stream's `highWaterMark` — Node's way of saying \"I accepted this, but I'm falling behind; please stop.\" The chunk is **not** lost or rejected: it's queued and will be written.\n\nThe correct response is to stop calling `write()` and wait for the `'drain'` event, which fires once the buffer has emptied enough to resume:\n\n```js\nimport { once } from 'node:events';\n\nif (!writable.write(chunk)) {\n  await once(writable, 'drain');\n}\n```\n\n`highWaterMark` is a *threshold* that flips this signal, not a hard cap — which is why \"rejected\" / \"split it\" is wrong. Ignoring the return value and writing anyway is the classic backpressure bug. The idiomatic fix is to let `stream.pipeline()` or `readable.pipe()` manage this handshake for you.",
+      "references": "[Node.js docs: writable.write()](https://nodejs.org/api/stream.html#writablewritechunk-encoding-callback) · [Node.js: Backpressuring in Streams](https://nodejs.org/en/learn/modules/backpressuring-in-streams)"
+    },
+    {
+      "id": "ignoring-backpressure-oom",
+      "title": "What happens when the source far outpaces the slow socket?",
+      "description": "A service reads a huge file (or a fast upstream) and writes every chunk to a slow destination — a throttled socket — never checking the return value:\n\n```js\nfor await (const chunk of fastSource) {\n  slowSocket.write(chunk); // return value ignored\n}\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Node keeps accepting and buffering the unflushed chunks in memory; the writable's buffer grows without bound until memory is exhausted and the process crashes",
+          "isCorrect": true
+        },
+        {
+          "text": "`write()` blocks the event loop until each chunk is flushed, so memory stays flat but throughput collapses",
+          "isCorrect": false
+        },
+        {
+          "text": "Node detects the imbalance and automatically pauses the source for you",
+          "isCorrect": false
+        },
+        {
+          "text": "The excess chunks are silently discarded once the buffer passes `highWaterMark`, so memory is safe",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`highWaterMark` is advisory, not a hard limit. When you ignore the `false` return from `write()` and keep pushing, Node neither blocks nor drops data — it queues every chunk in the writable's internal buffer, which grows unbounded because the producer outpaces the consumer. Memory climbs until the process is OOM-killed — the exact failure backpressure exists to prevent.\n\nThe distractors are three tempting myths: `write()` is **non-blocking** (it returns immediately, so it can't throttle by stalling the loop); Node does **not** auto-pause a *manually* driven source — only `pipe()` / `pipeline()` wire up that handshake; and chunks past the watermark are **buffered, never silently dropped**. The fix is to honor the `'drain'` signal yourself or, better, hand the whole transfer to `stream.pipeline(fastSource, slowSocket, cb)`, which propagates backpressure, errors, and cleanup end to end.",
+      "references": "[Node.js: Backpressuring in Streams](https://nodejs.org/en/learn/modules/backpressuring-in-streams) · [Node.js docs: stream.pipeline()](https://nodejs.org/api/stream.html#streampipelinesource-transforms-destination-callback)"
+    },
+    {
+      "id": "load-shedding-bounded-queue",
+      "title": "Why does a bounded queue beat an unbounded one under overload?",
+      "description": "A service receives work faster than it can process it for a sustained period. One design buffers everything in an **unbounded** in-memory queue; another keeps a **bounded** queue and rejects (sheds) work once it's full.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The unbounded queue turns sustained overload into ever-growing latency and memory until the process OOMs — and by the time old items run, callers have often timed out. A bounded queue + load shedding fails fast (e.g. `429`/`503`), keeping the system responsive",
+          "isCorrect": true
+        },
+        {
+          "text": "The unbounded queue is safe because, by Little's Law, a longer queue raises throughput above the service rate",
+          "isCorrect": false
+        },
+        {
+          "text": "The bounded queue is worse: rejecting requests always lowers total goodput compared with eventually serving them all",
+          "isCorrect": false
+        },
+        {
+          "text": "Queue length has no effect on latency as long as the average arrival rate equals the average service rate",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Throughput is capped by the **service rate** μ, not by how big the queue is — a bigger buffer adds no processing power. If arrivals λ exceed μ for any sustained period, the backlog grows at roughly `(λ − μ)` per second without bound. **Little's Law** (`L = λ × W`) captures the consequence: the more items are in the system (L), the longer each one waits (W). So an unbounded queue converts overload into *unbounded latency* — requests sit so long that clients time out, and you burn capacity computing responses nobody is waiting for (negative goodput) — and *unbounded memory*, until the process is OOM-killed.\n\n**Load shedding** is the deliberate fix: cap the queue and reject the overflow immediately with a fast `429`/`503` + `Retry-After`, so accepted work stays fresh and the server protects its own stability — *fail fast* beats *queue forever*. The final distractor hides a subtlety: even when λ ≈ μ on average, bursts make the queue and latency fluctuate, and as utilization approaches 100% the queueing delay grows sharply.",
+      "references": "[Google SRE Book: Handling Overload](https://sre.google/sre-book/handling-overload/)"
+    },
+    {
+      "id": "debounce-vs-throttle",
+      "title": "Which of these two behaviors is debounce, and which is throttle?",
+      "description": "Two client-side rate-control techniques for noisy event streams (keystrokes, scroll, resize): one fires a single time *after* activity settles; the other fires at most once per fixed interval *during* activity.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "**Debounce** waits for a quiet gap and then fires once (ideal for search-as-you-type, where you only query after the user pauses); **throttle** fires at most once per interval during continuous events (ideal for scroll/resize handlers)",
+          "isCorrect": true
+        },
+        {
+          "text": "**Throttle** fires once after activity stops; **debounce** fires at a steady cadence during activity",
+          "isCorrect": false
+        },
+        {
+          "text": "Both fire on every event but delay each callback by a fixed amount",
+          "isCorrect": false
+        },
+        {
+          "text": "They are interchangeable names for the same timer-based technique",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Both collapse a flood of events into fewer calls, but with different timing. **Debounce** resets a timer on every event and only fires when events *stop* for the chosen interval — so a burst of 50 keystrokes triggers exactly one call, after the user pauses. Perfect for search-as-you-type or \"resize finished\" work.\n\n**Throttle** instead enforces a steady ceiling: at most one call per interval *while events keep coming* — so a scroll firing hundreds of events per second is reduced to, say, one handler call every 100 ms. Rule of thumb: *debounce* when you only care about the final state after activity ends; *throttle* when you want regular updates during activity but capped in frequency. They're the client-side cousins of server rate limiting — same goal (protect a resource from too-frequent calls), applied in the browser before a request is even sent.",
+      "references": "[CSS-Tricks: Debouncing and Throttling Explained Through Examples](https://css-tricks.com/debouncing-throttling-explained-examples/)"
+    }
+  ]
+}

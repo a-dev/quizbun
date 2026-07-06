@@ -1,0 +1,299 @@
+{
+  "schemaVersion": 1,
+  "id": "project-management-failure-modes",
+  "title": "Project Management Failure Modes",
+  "description": "A scenario-based Quiz about why projects slip, grow, stall, or become confusing. Each Question names a recognizable project smell and uses the Explanation to teach the underlying failure mode.",
+  "language": "en",
+  "tags": ["work", "psychology"],
+  "questions": [
+    {
+      "id": "small-requirements-keep-appearing",
+      "title": "A feature keeps gaining small requirements after work starts. What failure mode is this?",
+      "description": "A checkout redesign was estimated as a two-week change. After implementation starts, stakeholders add coupon stacking, a gift-card edge case, a new tracking event, and a second confirmation state. Each request sounds small on its own.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Scope creep",
+          "isCorrect": true
+        },
+        {
+          "text": "A WIP limit",
+          "isCorrect": false
+        },
+        {
+          "text": "A handoff",
+          "isCorrect": false
+        },
+        {
+          "text": "Reference-class forecasting",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "This is scope creep: the project scope grows after work has begun, often through many additions that look harmless in isolation. The key smell is not that requirements changed; learning can be normal. The failure mode is that the change path is uncontrolled, so cost, schedule, risk, and shared expectations move while the original plan still pretends nothing changed.",
+      "references": "[Wikipedia: Scope creep](https://en.wikipedia.org/wiki/Scope_creep)"
+    },
+    {
+      "id": "dependency-risk-signs",
+      "title": "Which signs suggest a dependency risk?",
+      "description": "A team says a milestone is on track, but several pieces depend on people, systems, or decisions outside the team's direct control.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "A task cannot start until another team exposes an API.",
+          "isCorrect": true
+        },
+        {
+          "text": "A release date assumes a legal review slot that is not booked.",
+          "isCorrect": true
+        },
+        {
+          "text": "The team has a small, finished vertical slice in production.",
+          "isCorrect": false
+        },
+        {
+          "text": "A critical data migration owner has not been named.",
+          "isCorrect": true
+        }
+      ],
+      "explanation": "A project dependency is a relationship where one activity, milestone, resource, or decision constrains another. API availability, legal-review capacity, and an unnamed migration owner can all block the plan. A finished vertical slice usually lowers dependency risk because it proves that at least one end-to-end path has already crossed the important boundaries.",
+      "references": "[Wikipedia: Dependency (project management)](https://en.wikipedia.org/wiki/Dependency_%28project_management%29)"
+    },
+    {
+      "id": "name-hidden-dependency",
+      "title": "What project-management term fits a blocker that was not visible in the plan?",
+      "description": "The team planned frontend, backend, and QA work, but nobody noticed that the analytics team must create a new event contract before QA can verify the release.",
+      "type": "input",
+      "validation": {
+        "mode": "text",
+        "acceptedAnswers": [
+          "hidden dependency",
+          "hidden dependencies",
+          "dependency",
+          "untracked dependency"
+        ]
+      },
+      "explanation": "The useful term is **hidden dependency**: a dependency that exists in reality but was not made visible in planning. The general project-management idea is a dependency; the failure mode is that the dependency was not surfaced early enough to sequence work, assign an owner, or reserve capacity.",
+      "references": "[Wikipedia: Dependency (project management)](https://en.wikipedia.org/wiki/Dependency_%28project_management%29)"
+    },
+    {
+      "id": "starting-more-tasks",
+      "title": "Why can starting more tasks make a project finish later?",
+      "description": "A manager sees that the delivery date is at risk, so the team opens five more workstreams at once. A week later, more work is technically in progress, but fewer things are actually finishing.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "More parallel work can raise work in progress, context switching, and waiting time without increasing throughput.",
+          "isCorrect": true
+        },
+        {
+          "text": "Parallel work is always faster because every task receives attention sooner.",
+          "isCorrect": false
+        },
+        {
+          "text": "A project can only slip when the original estimate was mathematically wrong.",
+          "isCorrect": false
+        },
+        {
+          "text": "Starting work earlier removes dependencies between tasks.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The smell is excess work in progress. Kanban explicitly treats WIP control as part of managing flow. Little's law gives the systems intuition: for a stable system, average flow time is tied to the amount of work in the system and throughput. If throughput does not rise, adding more simultaneous work mostly creates queues, switching cost, and stale partially finished work.",
+      "references": "[Wikipedia: Kanban (development)](https://en.wikipedia.org/wiki/Kanban_%28development%29) · [Wikipedia: Little's law](https://en.wikipedia.org/wiki/Little%27s_law)"
+    },
+    {
+      "id": "planning-fallacy-scenario",
+      "title": "A team ignores past overruns and predicts the next similar project will be quick. What bias is showing?",
+      "description": "Three previous integrations of this kind took six to eight weeks. The team still estimates the next one at three weeks because this time the design feels clearer.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Planning fallacy",
+          "isCorrect": true
+        },
+        {
+          "text": "Definition of Done",
+          "isCorrect": false
+        },
+        {
+          "text": "Resource leveling",
+          "isCorrect": false
+        },
+        {
+          "text": "A responsibility assignment matrix",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "This is the planning fallacy: people make optimistic predictions about future work even when similar past work took longer. The practical fix is to pull in outside-view evidence, such as historical cycle times, comparable projects, and the boring failure cases the current plan is tempted to treat as exceptions.",
+      "references": "[Wikipedia: Planning fallacy](https://en.wikipedia.org/wiki/Planning_fallacy)"
+    },
+    {
+      "id": "estimation-error-causes",
+      "title": "Which causes commonly make an estimate too optimistic?",
+      "description": "A project estimate covers the happy path implementation, but the project later spends time on data cleanup, release coordination, test-environment instability, and design revisions.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "The estimate excluded coordination, review, and integration work.",
+          "isCorrect": true
+        },
+        {
+          "text": "The estimate used only the best-case path.",
+          "isCorrect": true
+        },
+        {
+          "text": "The team compared against similar past projects before committing.",
+          "isCorrect": false
+        },
+        {
+          "text": "The team treated unknowns as zero-cost until they became visible.",
+          "isCorrect": true
+        }
+      ],
+      "explanation": "Optimistic estimates often come from omitted work, best-case assumptions, and invisible unknowns. That overlaps with the planning fallacy, especially when the team discounts historical evidence. Comparing against similar past projects usually improves the estimate because it forces the plan to include the kinds of coordination, integration, and risk work that real projects repeatedly pay for.",
+      "references": "[Wikipedia: Planning fallacy](https://en.wikipedia.org/wiki/Planning_fallacy)"
+    },
+    {
+      "id": "poor-handoff",
+      "title": "A design is handed to engineering without states, constraints, or acceptance criteria. What is the main failure mode?",
+      "description": "The implementation team receives a polished mockup, but no empty state, error state, loading state, copy rules, accessibility expectations, or decision-maker for trade-offs. Work starts, then loops through repeated clarification meetings.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Poor handoff",
+          "isCorrect": true
+        },
+        {
+          "text": "Brooks's law",
+          "isCorrect": false
+        },
+        {
+          "text": "A finished Increment",
+          "isCorrect": false
+        },
+        {
+          "text": "A WIP limit",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "This is a poor handoff because the next group receives an artifact without enough context to make correct decisions independently. The issue is not just missing documentation; it is missing shared understanding of states, constraints, quality bar, and ownership. The Scrum Guide frames Done work as meeting explicit quality measures, which is the opposite of throwing ambiguous work over a wall.",
+      "references": "[Scrum Guides: The Increment](https://scrumguides.org/scrum-guide.html#increment)"
+    },
+    {
+      "id": "definition-of-done-purpose",
+      "title": "What problem does a shared Definition of Done mainly prevent?",
+      "description": "A team says a story is done when code is merged. QA says done means tested in staging. Support says done means help text and migration notes exist. The release meeting becomes an argument about whether the work is actually complete.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Misaligned definitions of complete work",
+          "isCorrect": true
+        },
+        {
+          "text": "Too few people assigned to each task",
+          "isCorrect": false
+        },
+        {
+          "text": "A lack of scope growth",
+          "isCorrect": false
+        },
+        {
+          "text": "An accurate dependency map",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A shared Definition of Done creates transparency about the quality measures required before work counts as complete. Without it, each role can honestly say \"done\" while meaning something different. The result is late rework, surprise release gates, and arguments that should have been settled before the work entered delivery.",
+      "references": "[Scrum Guides: The Increment](https://scrumguides.org/scrum-guide.html#increment)"
+    },
+    {
+      "id": "ownership-smell",
+      "title": "Which signals point to unclear ownership?",
+      "description": "Several teams are involved in a launch. People attend status meetings, but decisions drift and nobody can say who is accountable for the final release readiness call.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "Two teams assume the other team will update the migration checklist.",
+          "isCorrect": true
+        },
+        {
+          "text": "One named person is accountable for the launch decision.",
+          "isCorrect": false
+        },
+        {
+          "text": "Review comments ask \"who signs off on this?\" after implementation starts.",
+          "isCorrect": true
+        },
+        {
+          "text": "A task is marked important, but no owner is attached to it.",
+          "isCorrect": true
+        }
+      ],
+      "explanation": "Unclear ownership appears when responsibility, decision rights, or accountability are assumed rather than named. A responsibility assignment matrix such as RACI exists to make those roles explicit. A single accountable owner for a decision reduces drift; missing owners and late sign-off questions increase it.",
+      "references": "[Wikipedia: Responsibility assignment matrix](https://en.wikipedia.org/wiki/Responsibility_assignment_matrix)"
+    },
+    {
+      "id": "raci-accountable-letter",
+      "title": "In RACI, which letter names the role ultimately answerable for a deliverable?",
+      "description": "Type the single letter used in the common responsibility assignment matrix.",
+      "type": "input",
+      "validation": {
+        "mode": "text",
+        "acceptedAnswers": ["A", "a"]
+      },
+      "explanation": "The answer is **A**, for **Accountable**. In a RACI matrix, Responsible roles do the work, while the Accountable role is ultimately answerable for the deliverable or decision. This distinction matters because \"many people helped\" is not the same as \"someone owns the outcome.\"",
+      "references": "[Wikipedia: Responsibility assignment matrix](https://en.wikipedia.org/wiki/Responsibility_assignment_matrix)"
+    },
+    {
+      "id": "late-risk-discovery",
+      "title": "Which project smell points most directly to late risk discovery?",
+      "description": "The team learns during release week that production data has a shape the test fixtures never covered. The migration script passes in staging, but fails on old records created by a retired workflow.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The riskiest assumption was not tested until the end.",
+          "isCorrect": true
+        },
+        {
+          "text": "The team limited work in progress too aggressively.",
+          "isCorrect": false
+        },
+        {
+          "text": "The project had no dependency between tasks.",
+          "isCorrect": false
+        },
+        {
+          "text": "The Definition of Done was shared too early.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Late risk discovery means the plan deferred learning about the assumptions most likely to break the project. Short feedback loops, prototypes, spikes, production-like data checks, and early integration are risk controls. The Scrum Guide ties iterative work to inspection, adaptation, predictability, and risk control for exactly this reason.",
+      "references": "[Scrum Guides: Scrum Theory](https://scrumguides.org/scrum-guide.html#scrum-theory)"
+    },
+    {
+      "id": "adding-people-late",
+      "title": "A late software project adds more engineers and becomes slower. Which idea explains why?",
+      "description": "New engineers join during the final month. Existing engineers now spend time onboarding them, explaining architecture, splitting work, reviewing more changes, and resolving coordination gaps.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Brooks's law",
+          "isCorrect": true
+        },
+        {
+          "text": "Little's law",
+          "isCorrect": false
+        },
+        {
+          "text": "Scope freeze",
+          "isCorrect": false
+        },
+        {
+          "text": "A finish-to-start dependency",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Brooks's law is the software-project warning that adding people to a late project can make it later. It is not magic and it is not always a reason to refuse help. The mechanism is practical: onboarding, communication overhead, limited task divisibility, and integration costs can consume the extra capacity before the new people become net contributors.",
+      "references": "[Wikipedia: Brooks's law](https://en.wikipedia.org/wiki/Brooks%27s_law)"
+    }
+  ]
+}

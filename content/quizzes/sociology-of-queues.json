@@ -1,0 +1,645 @@
+{
+  "schemaVersion": 1,
+  "id": "sociology-of-queues",
+  "title": "Sociology of Queues: Waiting Lines as Social Systems",
+  "description": "Thirty-eight questions about waiting lines as social systems: first-come-first-served as a social contract, single serpentine queues, perceived waiting time, priority queues, queue jumping, bottlenecks, Little's Law, Kendall notation, Erlang models, Kingman's VUT formula, and everyday design choices that make lines feel fair or chaotic. Every explanation links to Wikipedia or another source so learners can verify the answer and read further.",
+  "language": "en",
+  "tags": ["psychology", "everyday-life"],
+  "author": "Quizbun",
+  "questions": [
+    {
+      "id": "queue-as-system-components",
+      "title": "Which parts belong to a queue as a system?",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "An arrival process: people, calls, tasks, or vehicles entering the system",
+          "isCorrect": true
+        },
+        { "text": "A waiting area or buffer where arrivals can wait", "isCorrect": true },
+        { "text": "One or more servers that perform the service", "isCorrect": true },
+        { "text": "A service discipline that decides who goes next", "isCorrect": true },
+        {
+          "text": "A guarantee that everyone feels equally happy about the wait",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Queueing theory models arrivals, waiting space, service channels, and the service discipline that orders work. The feeling of fairness is socially important, but it is not guaranteed by the mathematical model itself.",
+      "references": "[Wikipedia: Queueing theory](https://en.wikipedia.org/wiki/Queueing_theory)"
+    },
+    {
+      "id": "fcfs-social-contract",
+      "title": "In everyday queues, what is the core rule behind first-come-first-served?",
+      "type": "single-choice",
+      "options": [
+        { "text": "The person who has waited longest should be served next", "isCorrect": true },
+        { "text": "The person who complains loudest should be served next", "isCorrect": false },
+        {
+          "text": "The person closest to the counter should always be served next",
+          "isCorrect": false
+        },
+        { "text": "The shortest transaction should always jump ahead", "isCorrect": false }
+      ],
+      "explanation": "First-come-first-served, also called first-in-first-out in queueing theory, serves the customer who has been waiting the longest. As a social contract, it turns arrival order into a visible claim to fairness.",
+      "references": "[Wikipedia: Queueing theory#Service disciplines](https://en.wikipedia.org/wiki/Queueing_theory#Service_disciplines)"
+    },
+    {
+      "id": "fifo-acronym",
+      "title": "What does FIFO stand for?",
+      "description": "Enter the phrase, not just the letters.",
+      "type": "input",
+      "validation": {
+        "mode": "text",
+        "acceptedAnswers": [
+          "first in first out",
+          "first-in first-out",
+          "first in, first out",
+          "first-in, first-out"
+        ]
+      },
+      "explanation": "FIFO means **first in, first out**: the oldest entry leaves first. In human lines, that maps to first-come-first-served.",
+      "references": "[Wikipedia: FIFO](https://en.wikipedia.org/wiki/FIFO) · [Wikipedia: FIFO (computing and electronics)](https://en.wikipedia.org/wiki/FIFO_%28computing_and_electronics%29)"
+    },
+    {
+      "id": "queue-jumping-definition",
+      "title": "What is queue jumping, or cutting in line?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Entering a queue somewhere other than the end without a justified rule",
+          "isCorrect": true
+        },
+        { "text": "Leaving a queue because the wait is too long", "isCorrect": false },
+        { "text": "Switching from one checkout line to another", "isCorrect": false },
+        {
+          "text": "Serving urgent cases before routine cases under a posted triage rule",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Cutting in line is entering at a position other than the back, which directly conflicts with first-come-first-served. Leaving is reneging; switching lines is jockeying; formal urgency rules are priority disciplines.",
+      "references": "[Wikipedia: Cutting in line](https://en.wikipedia.org/wiki/Cutting_in_line)"
+    },
+    {
+      "id": "one-cutter-objection-rate",
+      "title": "In a cited line-cutting study, about what percent chance did one person cutting in line have of drawing an objection?",
+      "description": "Answer with the percentage number.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [54],
+        "tolerance": 1
+      },
+      "explanation": "One cited study reported about a **54%** chance that others would object when one person cut in line. The exact number is less important than the lesson: line order is often actively policed by the people waiting.",
+      "references": "[Wikipedia: Cutting in line#Reaction](https://en.wikipedia.org/wiki/Cutting_in_line#Reaction)"
+    },
+    {
+      "id": "two-cutters-objection-rate",
+      "title": "In the same cited line-cutting study, about what percent chance did two people cutting in line have of drawing an objection?",
+      "description": "Answer with the percentage number.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [91.3],
+        "tolerance": 0.5
+      },
+      "explanation": "The cited reaction rate rose to about **91.3%** when two people cut in line. Larger violations make the breach of the queue's social order harder to ignore.",
+      "references": "[Wikipedia: Cutting in line#Reaction](https://en.wikipedia.org/wiki/Cutting_in_line#Reaction)"
+    },
+    {
+      "id": "single-line-fairness",
+      "title": "Why can one long line feeding several service points feel fairer than several short parallel lines?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "It pools everyone into one arrival order and sends the front person to the next open server",
+          "isCorrect": true
+        },
+        {
+          "text": "It guarantees every transaction takes exactly the same time",
+          "isCorrect": false
+        },
+        { "text": "It hides all waiting, so people forget they are in a line", "isCorrect": false },
+        { "text": "It lets confident people choose the fastest server", "isCorrect": false }
+      ],
+      "explanation": "A single pooled line makes the rule easier to see: one order, next open server. Parallel lines create anxiety and resentment because another line can move faster through random delays. Queue-area references describe single-line bank and post-office setups as producing less line-choice anxiety and a stronger sense of fairness.",
+      "references": "[Wikipedia: Queue area#Psychology](https://en.wikipedia.org/wiki/Queue_area#Psychology)"
+    },
+    {
+      "id": "serpentine-line-term",
+      "title": "What is a common name for a single snaking line that folds back and forth before feeding service points?",
+      "description": "Enter a short phrase.",
+      "type": "input",
+      "validation": {
+        "mode": "text",
+        "acceptedAnswers": [
+          "serpentine queue",
+          "serpentine line",
+          "snaking line",
+          "single serpentine queue",
+          "single serpentine line"
+        ]
+      },
+      "explanation": "A **serpentine** or snaking line folds back and forth, often with barriers, so a single queue can fit many people in a smaller area and feed multiple servers.",
+      "references": "[Wikipedia: Queue area#Design](https://en.wikipedia.org/wiki/Queue_area#Design) · [WIRED: What’s Up With the Other Line? It’s Always Faster](https://www.wired.com/2014/07/whats-up-with-the-other-line-is-always-faster)"
+    },
+    {
+      "id": "perceived-wait-design-choices",
+      "title": "Which design choices can reduce perceived waiting time or frustration?",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "Give people something relevant to look at or do while they wait",
+          "isCorrect": true
+        },
+        { "text": "Show visible progress or queue status when possible", "isCorrect": true },
+        { "text": "Use a single line when line-choice anxiety would be high", "isCorrect": true },
+        {
+          "text": "Provide a virtual queue or callback so people can wait elsewhere",
+          "isCorrect": true
+        },
+        {
+          "text": "Understate the wait time so the delay feels like a surprise",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Waiting-line design often works by changing the experience of waiting: occupied waits feel shorter, visible progress lowers uncertainty, single lines reduce comparison anxiety, and virtual queues let people use the time elsewhere. Understating the wait can backfire because surprise delays feel worse.",
+      "references": "[Wikipedia: Queue area#Psychology](https://en.wikipedia.org/wiki/Queue_area#Psychology) · [Wikipedia: Progress bar#Perception](https://en.wikipedia.org/wiki/Progress_bar#Perception) · [Wikipedia: Virtual queue](https://en.wikipedia.org/wiki/Virtual_queue)"
+    },
+    {
+      "id": "actual-vs-perceived-wait",
+      "title": "What is the difference between actual wait time and perceived wait time?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Actual wait time is clock time; perceived wait time is the wait as subjectively experienced",
+          "isCorrect": true
+        },
+        {
+          "text": "Actual wait time is always longer than perceived wait time",
+          "isCorrect": false
+        },
+        {
+          "text": "Perceived wait time is only the number of people in front of you",
+          "isCorrect": false
+        },
+        {
+          "text": "There is no difference; people estimate time perfectly in queues",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A five-minute wait can feel short if you are occupied and informed, or long if you are uncertain and idle. Psychology treats time perception as subjective duration, not a perfect copy of clock time.",
+      "references": "[Wikipedia: Time perception](https://en.wikipedia.org/wiki/Time_perception) · [Wikipedia: Queue area#Psychology](https://en.wikipedia.org/wiki/Queue_area#Psychology)"
+    },
+    {
+      "id": "wait-overestimate-number",
+      "title": "Queue-area references commonly say people overestimate waited time by about what percent?",
+      "description": "Answer with the percentage number.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [36],
+        "tolerance": 1
+      },
+      "explanation": "A commonly cited waiting-line psychology figure is that people overestimate how long they waited by about **36%**. Treat this as a rule-of-thumb teaching number, not a universal constant.",
+      "references": "[Wikipedia: Queue area#Psychology](https://en.wikipedia.org/wiki/Queue_area#Psychology)"
+    },
+    {
+      "id": "occupied-time",
+      "title": "Why do mirrors near elevators, displays in amusement-park lines, or impulse items near checkout often help?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "They occupy attention, making the same clock wait feel shorter",
+          "isCorrect": true
+        },
+        {
+          "text": "They physically increase the service rate of the elevator or cashier",
+          "isCorrect": false
+        },
+        { "text": "They make queue jumping impossible", "isCorrect": false },
+        { "text": "They remove the need for a service discipline", "isCorrect": false }
+      ],
+      "explanation": "A classic waiting-line principle is that occupied time feels shorter than unoccupied time. Mirrors, displays, and small shopping opportunities do not necessarily reduce actual wait, but they change how the waiting interval is experienced.",
+      "references": "[Wikipedia: Queue area#Psychology](https://en.wikipedia.org/wiki/Queue_area#Psychology)"
+    },
+    {
+      "id": "progress-bars",
+      "title": "What is the main reason progress bars can improve a waiting experience?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "They make progress visible and reduce uncertainty about whether anything is happening",
+          "isCorrect": true
+        },
+        { "text": "They always make the task complete faster", "isCorrect": false },
+        { "text": "They remove the need for truthful wait estimates", "isCorrect": false },
+        { "text": "They work only when progress is impossible to measure", "isCorrect": false }
+      ],
+      "explanation": "Progress bars are visual feedback: they show that an extended operation is moving forward. Research summarized in the progress-bar literature found that percent-done indicators can reduce anxiety and improve the experience of waiting, even when the underlying operation still takes time.",
+      "references": "[Wikipedia: Progress bar#Perception](https://en.wikipedia.org/wiki/Progress_bar#Perception)"
+    },
+    {
+      "id": "progress-bar-design",
+      "title": "Which progress-display choices are usually better than a blank, unexplained wait?",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "A determinate progress bar when the amount of work is knowable",
+          "isCorrect": true
+        },
+        {
+          "text": "An indeterminate indicator when the system can show activity but not percent complete",
+          "isCorrect": true
+        },
+        { "text": "A queue-status display showing the currently served number", "isCorrect": true },
+        {
+          "text": "A promise of an exact completion time when the system cannot estimate one",
+          "isCorrect": false
+        },
+        {
+          "text": "No feedback at all, so users cannot tell whether the system is stuck",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Visible feedback reduces the gulf between what users expect and what the system is doing. Progress bars can be determinate or indeterminate; queue-number displays similarly make movement visible. Fake exactness creates a new fairness and trust problem.",
+      "references": "[Wikipedia: Progress bar](https://en.wikipedia.org/wiki/Progress_bar) · [Wikipedia: Queue area#Virtual](https://en.wikipedia.org/wiki/Queue_area#Virtual)"
+    },
+    {
+      "id": "priority-queue-meaning",
+      "title": "What makes a priority queue different from a simple first-come-first-served queue?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Items have priorities, and higher-priority items can be served before earlier lower-priority items",
+          "isCorrect": true
+        },
+        { "text": "No one waits in a priority queue", "isCorrect": false },
+        { "text": "Priority queues always serve the newest arrival first", "isCorrect": false },
+        { "text": "Priority queues are the same as random service order", "isCorrect": false }
+      ],
+      "explanation": "A priority queue attaches a priority to each item and serves by priority rather than pure arrival order. That is efficient or morally necessary in some contexts, but socially sensitive because it overrides the FCFS contract.",
+      "references": "[Wikipedia: Priority queue](https://en.wikipedia.org/wiki/Priority_queue) · [Wikipedia: Queueing theory#Service disciplines](https://en.wikipedia.org/wiki/Queueing_theory#Service_disciplines)"
+    },
+    {
+      "id": "legitimate-priority",
+      "title": "Which priority rules are most likely to feel legitimate rather than like unfair line cutting?",
+      "type": "multiple-choice",
+      "options": [
+        { "text": "Emergency triage based on clinical urgency", "isCorrect": true },
+        {
+          "text": "A clearly posted special-ticket or appointment rule known before people join",
+          "isCorrect": true
+        },
+        { "text": "A hidden favor for a friend of the staff", "isCorrect": false },
+        {
+          "text": "A secret rule that changes after people have already waited",
+          "isCorrect": false
+        },
+        {
+          "text": "A priority system with visible limits so regular service is not completely starved",
+          "isCorrect": true
+        }
+      ],
+      "explanation": "Priority tends to feel more legitimate when it is explicit, need-based, or purchased under known rules before joining. Emergency triage is the clearest need-based case; amusement-park special-ticket queues are a visible rule-based case. Hidden favoritism looks like queue jumping because it lacks public justification.",
+      "references": "[Wikipedia: Triage](https://en.wikipedia.org/wiki/Triage) · [Wikipedia: Queue area#Design](https://en.wikipedia.org/wiki/Queue_area#Design) · [Wikipedia: Priority queue](https://en.wikipedia.org/wiki/Priority_queue)"
+    },
+    {
+      "id": "triage-term",
+      "title": "What is the medical term for sorting patients by treatment priority when resources are limited?",
+      "type": "input",
+      "validation": {
+        "mode": "text",
+        "acceptedAnswers": ["triage"]
+      },
+      "explanation": "**Triage** is the process of determining priority for care, especially when there are more patients than immediately available resources. It is a socially accepted exception to FCFS because urgency, not arrival order, defines the moral rule.",
+      "references": "[Wikipedia: Triage](https://en.wikipedia.org/wiki/Triage)"
+    },
+    {
+      "id": "bottleneck-term",
+      "title": "What is the slowest or limiting step in a process usually called?",
+      "type": "input",
+      "validation": {
+        "mode": "text",
+        "acceptedAnswers": ["bottleneck", "constraint", "system constraint", "limiting constraint"]
+      },
+      "explanation": "The usual term is **bottleneck**; in the theory of constraints, the limiting step is the **constraint**. A queue often forms before this step because arrivals or upstream work reach it faster than it can process them.",
+      "references": "[Wikipedia: Bottleneck (production)](https://en.wikipedia.org/wiki/Bottleneck_%28production%29) · [Wikipedia: Theory of constraints](https://en.wikipedia.org/wiki/Theory_of_constraints)"
+    },
+    {
+      "id": "bottleneck-vs-staff-count",
+      "title": "Why can the bottleneck matter more than the total number of staff?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "System throughput is limited by the constrained step, even if other steps have spare capacity",
+          "isCorrect": true
+        },
+        { "text": "The step with the most staff is always the bottleneck", "isCorrect": false },
+        { "text": "Adding staff anywhere always reduces the queue equally", "isCorrect": false },
+        {
+          "text": "Bottlenecks matter only in factories, never in service lines",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "If one ID-check desk is slow, adding more cashiers after it may not reduce the line before ID check. The theory of constraints says overall flow is limited by the constraint, so improvement work should focus there first.",
+      "references": "[Wikipedia: Theory of constraints#The five focusing steps](https://en.wikipedia.org/wiki/Theory_of_constraints#The_five_focusing_steps)"
+    },
+    {
+      "id": "littles-law-formula",
+      "title": "Which formula is Little's Law?",
+      "type": "single-choice",
+      "options": [
+        { "text": "L = lambda * W", "isCorrect": true },
+        { "text": "W = lambda + L", "isCorrect": false },
+        { "text": "rho = mu / lambda", "isCorrect": false },
+        { "text": "c = A / S", "isCorrect": false }
+      ],
+      "explanation": "Little's Law states that the long-run average number in a stable system, `L`, equals the effective arrival rate, `lambda`, times the average time in the system, `W`: `L = lambda * W`.",
+      "references": "[Wikipedia: Little's law](https://en.wikipedia.org/wiki/Little%27s_law)"
+    },
+    {
+      "id": "littles-law-example",
+      "title": "A cafe receives 12 customers per hour, and each customer spends 0.5 hour in the system on average. By Little's Law, how many customers are in the system on average?",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [6]
+      },
+      "explanation": "Use `L = lambda * W`: `12 customers/hour * 0.5 hour = 6 customers`. Little's Law is useful because it links visible crowding, arrival rate, and time in system without requiring every detail of the service process.",
+      "references": "[Wikipedia: Little's law](https://en.wikipedia.org/wiki/Little%27s_law)"
+    },
+    {
+      "id": "stable-mm1-condition",
+      "title": "In an M/M/1 queue, what condition is required for the queue to be stable?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The arrival rate must be less than the service rate: lambda < mu",
+          "isCorrect": true
+        },
+        {
+          "text": "The arrival rate must be greater than the service rate: lambda > mu",
+          "isCorrect": false
+        },
+        { "text": "The service rate must be exactly zero", "isCorrect": false },
+        { "text": "The queue must use LIFO order", "isCorrect": false }
+      ],
+      "explanation": "For a basic M/M/1 queue, arrivals must occur more slowly than service completions on average. If `lambda >= mu`, the system cannot catch up in the long run and the line grows without bound.",
+      "references": "[Wikipedia: M/M/1 queue#Stationary analysis](https://en.wikipedia.org/wiki/M/M/1_queue#Stationary_analysis)"
+    },
+    {
+      "id": "utilization-formula",
+      "title": "In a single-server M/M/1 queue, what is server utilization usually written as?",
+      "type": "single-choice",
+      "options": [
+        { "text": "rho = lambda / mu", "isCorrect": true },
+        { "text": "rho = mu / lambda", "isCorrect": false },
+        { "text": "rho = L + W", "isCorrect": false },
+        { "text": "rho = c / lambda", "isCorrect": false }
+      ],
+      "explanation": "Utilization `rho` is the fraction of time the server is busy, and for M/M/1 it is `lambda / mu`. As `rho` approaches 1, waits rise sharply.",
+      "references": "[Wikipedia: M/M/1 queue#Stationary analysis](https://en.wikipedia.org/wiki/M/M/1_queue#Stationary_analysis)"
+    },
+    {
+      "id": "kingman-utilization-factor",
+      "title": "In Kingman's VUT approximation, the utilization term is rho / (1 - rho). If rho rises from 0.8 to 0.9, that term rises from 4 to what?",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [9]
+      },
+      "explanation": "At `rho = 0.9`, `rho / (1 - rho) = 0.9 / 0.1 = 9`. This is why a system that looks only 10 percentage points busier can feel much more than 10 percentage points worse. Kingman's formula separates utilization, variability, and service-time effects.",
+      "references": "[Wikipedia: Kingman's formula](https://en.wikipedia.org/wiki/Kingman%27s_formula)"
+    },
+    {
+      "id": "variability-and-waiting",
+      "title": "According to queueing approximations like Kingman's formula, which factors tend to increase average waiting time?",
+      "type": "multiple-choice",
+      "options": [
+        { "text": "Higher utilization", "isCorrect": true },
+        { "text": "More variability in arrivals", "isCorrect": true },
+        { "text": "More variability in service times", "isCorrect": true },
+        { "text": "Longer mean service time", "isCorrect": true },
+        { "text": "The alphabetic order of customers' names", "isCorrect": false }
+      ],
+      "explanation": "Kingman's VUT approximation says waiting time is driven by **V**ariability, **U**tilization, and service **T**ime. This is the operations version of a familiar everyday pattern: unpredictable arrivals and unpredictable transaction lengths make lines feel chaotic.",
+      "references": "[Wikipedia: Kingman's formula](https://en.wikipedia.org/wiki/Kingman%27s_formula)"
+    },
+    {
+      "id": "kendall-notation-components",
+      "title": "What do the first three fields A/S/c in Kendall's notation describe?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Arrival process, service-time distribution, and number of servers",
+          "isCorrect": true
+        },
+        { "text": "Age, salary, and customer count", "isCorrect": false },
+        { "text": "Aisle width, signage, and counter color", "isCorrect": false },
+        { "text": "Anxiety, satisfaction, and complaints", "isCorrect": false }
+      ],
+      "explanation": "Kendall's notation summarizes a queueing model as `A/S/c`: arrivals, service process, and number of servers. It can be extended with capacity, population size, and queue discipline.",
+      "references": "[Wikipedia: Kendall's notation](https://en.wikipedia.org/wiki/Kendall%27s_notation)"
+    },
+    {
+      "id": "kendall-notation-year",
+      "title": "In what year did D. G. Kendall propose the A/S/c notation for queueing models?",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [1953]
+      },
+      "explanation": "Kendall proposed the notation in **1953**. It became a compact way to name queue models such as M/M/1 or M/M/c.",
+      "references": "[Wikipedia: Kendall's notation](https://en.wikipedia.org/wiki/Kendall%27s_notation)"
+    },
+    {
+      "id": "mm1-meaning",
+      "title": "What does M/M/1 mean in Kendall's notation?",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "Markovian or memoryless arrivals, often modeled as a Poisson process",
+          "isCorrect": true
+        },
+        {
+          "text": "Markovian or memoryless service times, often modeled as exponential",
+          "isCorrect": true
+        },
+        { "text": "One server", "isCorrect": true },
+        { "text": "A mandatory one-minute maximum wait", "isCorrect": false },
+        { "text": "One queue jumper is allowed", "isCorrect": false }
+      ],
+      "explanation": "`M/M/1` means memoryless arrivals, memoryless service times, and one server. It is a simple model, not a promise about the social experience of the line.",
+      "references": "[Wikipedia: M/M/1 queue](https://en.wikipedia.org/wiki/M/M/1_queue) · [Wikipedia: Kendall's notation](https://en.wikipedia.org/wiki/Kendall%27s_notation)"
+    },
+    {
+      "id": "erlang-origin",
+      "title": "Queueing theory began with Agner Krarup Erlang's work on what practical system?",
+      "type": "single-choice",
+      "options": [
+        { "text": "Telephone calls at the Copenhagen Telephone Exchange", "isCorrect": true },
+        { "text": "Airport baggage carousels", "isCorrect": false },
+        { "text": "Supermarket checkout coupons", "isCorrect": false },
+        { "text": "Amusement-park FastPass systems", "isCorrect": false }
+      ],
+      "explanation": "Erlang worked for the Copenhagen Telephone Exchange and modeled incoming telephone calls. Queueing theory grew from this practical problem of limited service capacity and uncertain demand.",
+      "references": "[Wikipedia: Queueing theory#History](https://en.wikipedia.org/wiki/Queueing_theory#History)"
+    },
+    {
+      "id": "erlang-first-paper-year",
+      "title": "In what year did Erlang publish the first paper in what became queueing theory?",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [1909]
+      },
+      "explanation": "Erlang's first queueing-theory paper was published in **1909**. It analyzed telephone conversations and helped launch mathematical queueing theory.",
+      "references": "[Wikipedia: M/D/1 queue](https://en.wikipedia.org/wiki/M/D/1_queue) · [Wikipedia: Queueing theory#History](https://en.wikipedia.org/wiki/Queueing_theory#History)"
+    },
+    {
+      "id": "erlang-c-model",
+      "title": "What does an M/M/c, or Erlang-C, model represent?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "A multi-server queue with Poisson arrivals, exponential service times, and c servers",
+          "isCorrect": true
+        },
+        {
+          "text": "A line where exactly c people are allowed to wait and everyone else disappears",
+          "isCorrect": false
+        },
+        { "text": "A queue where the newest arrival is always served first", "isCorrect": false },
+        { "text": "A model of social media likes, not service lines", "isCorrect": false }
+      ],
+      "explanation": "The M/M/c model generalizes M/M/1 from one server to `c` servers. It is also called the Erlang-C model and is used to reason about the probability that an arrival has to wait when all servers are busy.",
+      "references": "[Wikipedia: M/M/c queue](https://en.wikipedia.org/wiki/M/M/c_queue)"
+    },
+    {
+      "id": "impatient-queue-behaviors",
+      "title": "Which queueing terms are matched correctly?",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "Balking: deciding not to join because the queue looks too long",
+          "isCorrect": true
+        },
+        { "text": "Reneging: joining, waiting, then leaving before service", "isCorrect": true },
+        {
+          "text": "Jockeying: switching between queues to try to be served faster",
+          "isCorrect": true
+        },
+        { "text": "Balking: cutting to the front of the line", "isCorrect": false },
+        { "text": "Reneging: being served immediately", "isCorrect": false }
+      ],
+      "explanation": "Queueing theory names several impatient behaviors: **balking** before joining, **reneging** after joining, and **jockeying** between lines. These terms help separate individual decisions from the social offense of cutting in line.",
+      "references": "[Wikipedia: Queueing theory#Service disciplines](https://en.wikipedia.org/wiki/Queueing_theory#Service_disciplines)"
+    },
+    {
+      "id": "lifo-discipline",
+      "title": "Which service discipline serves the most recent arrival first?",
+      "type": "single-choice",
+      "options": [
+        { "text": "LIFO or LCFS", "isCorrect": true },
+        { "text": "FIFO or FCFS", "isCorrect": false },
+        { "text": "Erlang C", "isCorrect": false },
+        { "text": "Little's Law", "isCorrect": false }
+      ],
+      "explanation": "LIFO means last-in-first-out, also called last-come-first-served. It is the opposite of the everyday FCFS queue norm, and it is analogous to a stack.",
+      "references": "[Wikipedia: Queueing theory#Service disciplines](https://en.wikipedia.org/wiki/Queueing_theory#Service_disciplines) · [Wikipedia: Kendall's notation#Description of the parameters](https://en.wikipedia.org/wiki/Kendall%27s_notation#Description_of_the_parameters)"
+    },
+    {
+      "id": "shortest-job-first-tradeoff",
+      "title": "What are true trade-offs of shortest-job-first scheduling?",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "It can minimize average waiting time when job lengths are known or estimated well",
+          "isCorrect": true
+        },
+        {
+          "text": "It can be socially less fair than FCFS because long jobs may keep getting pushed back",
+          "isCorrect": true
+        },
+        {
+          "text": "It can cause starvation for long jobs if short jobs keep arriving",
+          "isCorrect": true
+        },
+        { "text": "It preserves exact arrival order in every case", "isCorrect": false },
+        { "text": "It requires no knowledge or estimate of job length", "isCorrect": false }
+      ],
+      "explanation": "Shortest-job-first is efficient for average waiting time, but it changes the moral rule from 'who waited longest' to 'who is quickest to serve.' That can reduce system delay while creating fairness and starvation concerns.",
+      "references": "[Wikipedia: Shortest job next](https://en.wikipedia.org/wiki/Shortest_job_next)"
+    },
+    {
+      "id": "convoy-effect",
+      "title": "In FCFS scheduling, what is the convoy effect?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "A long job at the front holds the server, making many shorter jobs wait behind it",
+          "isCorrect": true
+        },
+        { "text": "A priority rule for emergency patients", "isCorrect": false },
+        { "text": "A progress bar that moves faster near the end", "isCorrect": false },
+        { "text": "The act of switching from one line to another", "isCorrect": false }
+      ],
+      "explanation": "FCFS has low scheduling overhead and no ordinary starvation, but a long process can hold the resource and make many short processes wait. Operating-systems texts call this the **convoy effect**.",
+      "references": "[Wikipedia: Scheduling (computing)#First come, first served](https://en.wikipedia.org/wiki/Scheduling_%28computing%29#First_come,_first_served)"
+    },
+    {
+      "id": "waiting-time-paradox",
+      "title": "Why can a randomly arriving bus passenger wait longer than the timetable's average gap suggests?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Random arrivals are more likely to land inside longer gaps than shorter gaps",
+          "isCorrect": true
+        },
+        {
+          "text": "The passenger always arrives exactly when the previous bus leaves",
+          "isCorrect": false
+        },
+        { "text": "Averages are illegal in queueing theory", "isCorrect": false },
+        { "text": "The next bus always skips the stop", "isCorrect": false }
+      ],
+      "explanation": "The waiting-time paradox is a sampling effect: if gaps between buses vary, a random passenger is disproportionately likely to arrive during a long gap. This separates the published average interval from the wait a person tends to experience.",
+      "references": "[arXiv: Queueing Theory and the Psychology of Waiting](https://arxiv.org/abs/2007.05883)"
+    },
+    {
+      "id": "social-proof-long-line",
+      "title": "Why can a long line sometimes attract more people instead of scaring everyone away?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "It can act as social proof that the scarce item or service is worth waiting for",
+          "isCorrect": true
+        },
+        {
+          "text": "Long lines always mean the service is mathematically faster",
+          "isCorrect": false
+        },
+        { "text": "People never dislike waiting for popular things", "isCorrect": false },
+        { "text": "A long line removes all uncertainty from the choice", "isCorrect": false }
+      ],
+      "explanation": "A long line can signal popularity or quality when people are uncertain, which is a form of social proof: people use others' behavior as evidence about what is worth doing. It can still deter people when the wait cost is too high.",
+      "references": "[Wikipedia: Social proof](https://en.wikipedia.org/wiki/Social_proof)"
+    },
+    {
+      "id": "virtual-queue-purpose",
+      "title": "What is the main purpose of a virtual queue or callback queue?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Preserve a person's place while letting them wait away from the physical line or phone hold",
+          "isCorrect": true
+        },
+        { "text": "Erase arrival order so staff can choose anyone", "isCorrect": false },
+        { "text": "Make the service time of every job zero", "isCorrect": false },
+        { "text": "Prevent all priority rules from existing", "isCorrect": false }
+      ],
+      "explanation": "A virtual queue keeps order while changing the waiting experience: people can roam, receive updates, or get a callback instead of standing in a crowd or staying on hold. It solves some perception and space problems without changing the underlying need to allocate scarce service capacity.",
+      "references": "[Wikipedia: Virtual queue](https://en.wikipedia.org/wiki/Virtual_queue) · [Wikipedia: Queue area#Virtual](https://en.wikipedia.org/wiki/Queue_area#Virtual)"
+    }
+  ]
+}

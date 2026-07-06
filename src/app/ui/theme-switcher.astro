@@ -1,0 +1,159 @@
+---
+import { THEME_PREFERENCES } from "../lib/theme-preference";
+
+import { Laptop, Moon, Sun } from "@lucide/astro";
+import { Button } from "@/shared/ui/button";
+
+const options = [
+  {
+    label: "Light",
+    value: THEME_PREFERENCES[0],
+    icon: Sun,
+  },
+  {
+    label: "Dark",
+    value: THEME_PREFERENCES[1],
+    icon: Moon,
+  },
+  {
+    label: "System",
+    value: THEME_PREFERENCES[2],
+    icon: Laptop,
+  },
+];
+---
+
+<Button
+  data-theme-switcher
+  aria-label="Switch theme. Current preference: System"
+  title="Switch theme. Current preference: System"
+  variant="ghost"
+  size="icon-s"
+  className="button"
+>
+  <span class="icons" aria-hidden="true">
+    {
+      options.map((option) => {
+        const Icon = option.icon;
+
+        return (
+          <span class="icon" data-theme-icon={option.value}>
+            <Icon size={20} title={option.label} />
+          </span>
+        );
+      })
+    }
+  </span>
+</Button>
+
+<script>
+  import {
+    applyThemePreference,
+    getNextThemePreference,
+    normalizeThemePreference,
+    readStoredThemePreference,
+    THEME_MEDIA_QUERY,
+    THEME_PREFERENCE_ATTRIBUTE,
+    writeStoredThemePreference,
+    type ThemePreference,
+  } from "../lib/theme-preference";
+
+  const labels = {
+    light: "Light",
+    dark: "Dark",
+    system: "System",
+  } satisfies Record<ThemePreference, string>;
+
+  const switchers = Array.from(
+    document.querySelectorAll<HTMLButtonElement>("[data-theme-switcher]"),
+  );
+  const mediaQuery = window.matchMedia(THEME_MEDIA_QUERY);
+
+  function syncSwitcher(
+    button: HTMLButtonElement,
+    preference: ThemePreference,
+  ) {
+    const readablePreference = labels[preference];
+
+    button.dataset.themeCurrent = preference;
+    button.ariaLabel = `Switch theme. Current preference: ${readablePreference}`;
+    button.title = `Switch theme. Current preference: ${readablePreference}`;
+  }
+
+  function syncAll(
+    preference = normalizeThemePreference(
+      document.documentElement.getAttribute(THEME_PREFERENCE_ATTRIBUTE) ??
+        readStoredThemePreference(),
+    ),
+  ) {
+    applyThemePreference(preference);
+
+    switchers.forEach((switcher) => {
+      syncSwitcher(switcher, preference);
+    });
+  }
+
+  switchers.forEach((button) => {
+    button.addEventListener("click", () => {
+      const currentPreference = normalizeThemePreference(
+        document.documentElement.getAttribute(THEME_PREFERENCE_ATTRIBUTE),
+      );
+      const nextPreference = getNextThemePreference(currentPreference);
+
+      writeStoredThemePreference(nextPreference);
+      syncAll(nextPreference);
+    });
+  });
+
+  syncAll();
+
+  mediaQuery.addEventListener("change", () => {
+    const preference = normalizeThemePreference(
+      document.documentElement.getAttribute(THEME_PREFERENCE_ATTRIBUTE),
+    );
+
+    if (preference === "system") {
+      syncAll(preference);
+    }
+  });
+</script>
+
+<style>
+  .button{
+    margin-inline-start: 1rem;
+    color: var(--color-text-on-main-bg-dark);
+    background: transparent;
+  }
+
+  @media(hover: hover) {
+    .button:hover {
+      background: color-mix(in oklch, var(--color-main-bg-dark) 80%, var(--color-main-bg));
+    }
+  }
+
+  .icons {
+    display: inline-grid;
+    place-items: center;
+  }
+
+  .icon {
+    display: inline-flex;
+    grid-area: 1 / 1;
+    opacity: 0;
+    transition:
+      opacity 140ms ease,
+      transform 140ms ease;
+  }
+
+  :global(html[data-theme-preference="light"])
+    .button
+    .icon[data-theme-icon="light"],
+  :global(html[data-theme-preference="dark"])
+    .button
+    .icon[data-theme-icon="dark"],
+  :global(html[data-theme-preference="system"])
+    .button
+    .icon[data-theme-icon="system"] {
+    opacity: 1;
+  }
+</style>

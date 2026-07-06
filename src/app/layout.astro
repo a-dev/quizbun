@@ -1,0 +1,117 @@
+---
+import { Font } from "astro:assets";
+
+import "#styles/index.css";
+
+import { withBase } from "@/shared/lib/routing";
+
+import Header from "./ui/header.astro";
+import Footer from "./ui/footer.astro";
+import { createThemeBootstrapScript } from "./lib/theme-preference";
+
+import { utils } from "#styles";
+
+const themeBootstrapScript = createThemeBootstrapScript();
+
+const {
+  title = "Quizbun: quizzes for learning",
+  description = "Quizbun: explanation-first quizzes, bundled public catalog, and a library for your own quiz collection. All static, all open source, and all for learning.",
+} = Astro.props;
+---
+
+<!doctype html>
+<html lang="en" data-theme="light" data-theme-preference="system">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/svg+xml" href={withBase("favicon.svg")} />
+    <link rel="icon" href={withBase("favicon.ico")} />
+    <meta name="generator" content={Astro.generator} />
+    <meta name="theme-color" content="#4d84a7" />
+    <Font cssVariable="--font-noto-sans" preload />
+    <Font cssVariable="--font-noto-mono" preload />
+    <meta name="description" content={description} />
+    <script is:inline set:html={themeBootstrapScript} />
+    <title>{title}</title>
+  </head>
+  <body class={utils.cellBackground}>
+    <a class="skip-link" href="#content">Skip to content</a>
+    <Header currentPath={Astro.url.pathname} />
+    <div class="root">
+      <main id="content" class="main" tabindex="-1">
+        <slot />
+      </main>
+    </div>
+    <Footer />
+  </body>
+</html>
+<style>
+  html {
+    background-color: var(--color-cell-bg);
+  }
+
+  body {
+    isolation: isolate;
+
+    overflow-x: clip;
+    overscroll-behavior-x: none;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+
+    min-height: 100dvh;
+  }
+
+  body::before {
+    position: fixed;
+    z-index: -1;
+    inset: -100%;
+    transform: rotate(-2.9deg);
+  }
+
+  .root {
+    background-color: var(--color-main-bg);
+  }
+
+  .main {
+    width: 100%;
+    max-width: var(--max-content-width);
+    min-height: 100%;
+    margin: 0 auto;
+  }
+
+  /* Keyboard skip link: visually hidden until focused (T7 keyboard pass). */
+  .skip-link {
+    position: absolute;
+    z-index: 1;
+    left: 50%;
+    transform: translateX(-50%);
+
+    margin-block-start: -.2rem;
+    padding-block: .2rem;
+    padding-inline: .5rem;
+    border-block-end: 2px solid transparent;
+
+    font-size: var(--fs-s);
+    color: var(--color-text-on-panel);
+    text-decoration: none;
+
+    background-color: var(--color-panel-bg);
+    outline: none;
+  }
+
+  .skip-link:focus,
+  .skip-link:focus-visible {
+    border-color: var(--color-panel-focus-ring);
+  }
+
+  .skip-link:not(:focus-visible) {
+    overflow: hidden;
+
+    width: 1px;
+    height: 1px;
+
+    white-space: nowrap;
+
+    clip-path: inset(50%);
+  }
+</style>

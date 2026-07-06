@@ -1,0 +1,17 @@
+---
+import { extractPromptText, loadDoc } from "@/shared/lib/docs";
+import DocsLayout from "@/app/docs-layout.astro";
+import { CopyPromptButton } from "@/features/copy-prompt";
+
+const doc = loadDoc("docs/quiz-generation-prompt.md");
+const promptText = extractPromptText(doc.source);
+---
+
+<DocsLayout
+  title="AI quiz generation prompt"
+  description="A self-contained prompt for generating one valid Quizbun quiz with any AI chat: authoring rules, the JSON Schema, and a canonical example."
+>
+  <CopyPromptButton client:idle promptText={promptText} />
+  <Fragment set:html={doc.html} />
+  <CopyPromptButton client:idle promptText={promptText} />
+</DocsLayout>

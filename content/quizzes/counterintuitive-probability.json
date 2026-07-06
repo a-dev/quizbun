@@ -1,0 +1,733 @@
+{
+  "schemaVersion": 1,
+  "id": "counterintuitive-probability",
+  "title": "Counterintuitive Probability",
+  "description": "Monty Hall, the birthday paradox, the gambler's fallacy, and other places where careful probability overturns gut instinct. Each question pairs a tempting wrong answer with an explanation that teaches the underlying rule — independence, conditional probability, expected value, and the complement trick — with links to proofs and primary sources.",
+  "language": "en",
+  "tags": ["mathematics", "everyday-life"],
+  "author": "Quizbun",
+  "questions": [
+    {
+      "id": "probability-scale",
+      "title": "On what numeric scale is a probability always measured?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "From `0` to `1`, where `0` means impossible and `1` means certain",
+          "isCorrect": true
+        },
+        {
+          "text": "From `-1` to `1`, where `-1` means impossible",
+          "isCorrect": false
+        },
+        {
+          "text": "From `0` to `100` only, never a fraction",
+          "isCorrect": false
+        },
+        {
+          "text": "Any real number, where a larger value just means more likely",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A probability is a number between `0` and `1` inclusive. `0` marks an impossible event and `1` a certain one; everything in between is a degree of belief, and the probabilities of all distinct possible outcomes must sum to `1`. Percentages such as 25% are just these same numbers scaled by 100 — they never drop below 0% or exceed 100%. Holding this scale firmly in mind is what lets you immediately reject any 'answer' that comes out negative or above 1.",
+      "references": "[Probability](https://en.wikipedia.org/wiki/Probability)"
+    },
+    {
+      "id": "complement-rule",
+      "title": "A weather model says there is a 30% chance of rain tomorrow. What is the chance of no rain?",
+      "type": "single-choice",
+      "options": [
+        { "text": "70%", "isCorrect": true },
+        { "text": "30%", "isCorrect": false },
+        { "text": "50%", "isCorrect": false },
+        { "text": "It cannot be determined from this", "isCorrect": false }
+      ],
+      "explanation": "Rain and no-rain are complementary events: exactly one of them happens, so their probabilities sum to `1`. The complement rule gives `P(no rain) = 1 - P(rain) = 1 - 0.30 = 0.70`. This 'compute the easy opposite and subtract' move is one of the most powerful tricks in probability — it is exactly how the birthday paradox later in this quiz is solved.",
+      "references": "[Complementary event](https://en.wikipedia.org/wiki/Complementary_event)"
+    },
+    {
+      "id": "equally-likely-outcomes",
+      "title": "When every outcome in the sample space is equally likely, how do you find the probability of an event?",
+      "description": "The *sample space* is the set of all possible outcomes of the experiment.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Favourable outcomes divided by the total number of possible outcomes",
+          "isCorrect": true
+        },
+        {
+          "text": "Favourable outcomes multiplied by the total number of outcomes",
+          "isCorrect": false
+        },
+        {
+          "text": "Total outcomes divided by favourable outcomes",
+          "isCorrect": false
+        },
+        { "text": "Always one half, by symmetry", "isCorrect": false }
+      ],
+      "explanation": "This is the classical definition of probability: `P(event) = (number of favourable outcomes) / (total number of equally likely outcomes)`. Rolling a fair die, `P(even) = 3/6 = 1/2`. The crucial fine print is the phrase *equally likely* — the formula only works when the outcomes really are symmetric, and several paradoxes in this quiz get their bite by quietly breaking that assumption.",
+      "references": "[Sample space](https://en.wikipedia.org/wiki/Sample_space)"
+    },
+    {
+      "id": "two-dice-most-likely-sum",
+      "title": "You roll two fair six-sided dice and add them. Which total is the most likely?",
+      "type": "single-choice",
+      "options": [
+        { "text": "7", "isCorrect": true },
+        { "text": "2", "isCorrect": false },
+        { "text": "12", "isCorrect": false },
+        {
+          "text": "Every total from 2 to 12 is equally likely",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "There are 36 equally likely ordered pairs. A total of 7 occurs in 6 of them — (1,6), (2,5), (3,4), (4,3), (5,2), (6,1) — giving `6/36 = 1/6`, more than any other total. Totals of 2 and 12 each occur just one way, `1/36`. The common mistake is to count the 11 possible *totals* as if they were equally likely; what actually matters is the number of *combinations* that produce each total.",
+      "references": "[Dice](https://en.wikipedia.org/wiki/Dice#Probability)"
+    },
+    {
+      "id": "independent-events-multiply",
+      "title": "Two events are independent. How do you find the probability that BOTH occur?",
+      "description": "*Independent* means the outcome of one event tells you nothing about the other.",
+      "type": "single-choice",
+      "options": [
+        { "text": "Multiply their probabilities", "isCorrect": true },
+        { "text": "Add their probabilities", "isCorrect": false },
+        { "text": "Subtract the smaller from the larger", "isCorrect": false },
+        { "text": "Take the average of the two", "isCorrect": false }
+      ],
+      "explanation": "For independent events, `P(A and B) = P(A) × P(B)`. Two fair coins both landing heads: `1/2 × 1/2 = 1/4`. Adding would be wrong (and could even exceed 1, which is impossible). This multiplication rule is the quiet engine behind two later surprises: it makes a shared birthday likely among just 23 people, and it is exactly what the gambler's fallacy forgets.",
+      "references": "[Independence](https://en.wikipedia.org/wiki/Independence_%28probability_theory%29)"
+    },
+    {
+      "id": "mutually-exclusive-add",
+      "title": "For a single roll of a fair die, what is the probability of rolling a 1 or a 2?",
+      "type": "single-choice",
+      "options": [
+        { "text": "1/3", "isCorrect": true },
+        { "text": "1/6", "isCorrect": false },
+        { "text": "1/36", "isCorrect": false },
+        { "text": "5/6", "isCorrect": false }
+      ],
+      "explanation": "Rolling a 1 and rolling a 2 are *mutually exclusive* on one roll — they cannot both happen — so the addition rule applies cleanly: `P(1 or 2) = P(1) + P(2) = 1/6 + 1/6 = 1/3`. Beware: addition only works directly for events that cannot overlap. For events that can co-occur you must subtract the double-counted overlap: `P(A or B) = P(A) + P(B) - P(A and B)`.",
+      "references": "[Mutual exclusivity](https://en.wikipedia.org/wiki/Mutual_exclusivity)"
+    },
+    {
+      "id": "conditional-probability",
+      "title": "What does the conditional probability P(A | B) measure?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The probability of A, given that B has already occurred",
+          "isCorrect": true
+        },
+        { "text": "The probability that A causes B", "isCorrect": false },
+        {
+          "text": "The probability of A and B happening in either order",
+          "isCorrect": false
+        },
+        {
+          "text": "The probability of A plus the probability of B",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Conditional probability updates your odds once you learn that B happened: `P(A | B) = P(A and B) / P(B)`. New information can move a probability dramatically — learning that the host opened a goat door (Monty Hall), or that a medical test came back positive (the base-rate paradox), reshapes everything. Independence is precisely the special case where conditioning changes nothing: `P(A | B) = P(A)`.",
+      "references": "[Conditional probability](https://en.wikipedia.org/wiki/Conditional_probability)"
+    },
+    {
+      "id": "expected-value-of-a-die",
+      "title": "What is the expected (average) value of a single roll of a fair six-sided die?",
+      "type": "single-choice",
+      "options": [
+        { "text": "3.5", "isCorrect": true },
+        { "text": "3", "isCorrect": false },
+        { "text": "6", "isCorrect": false },
+        { "text": "1/6", "isCorrect": false }
+      ],
+      "explanation": "Expected value weights each outcome by its probability and sums them: `(1 + 2 + 3 + 4 + 5 + 6) / 6 = 21/6 = 3.5`. Notice that 3.5 is not even a face the die can show — expected value is a long-run average, not a prediction of any single roll. This same tool is what later exposes why every casino bet loses money over time.",
+      "references": "[Expected value](https://en.wikipedia.org/wiki/Expected_value)"
+    },
+    {
+      "id": "at-least-one-complement",
+      "title": "Rolling one die four times, is getting at least one six more likely than not?",
+      "description": "This is the 17th-century gambling puzzle that helped launch probability theory.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Yes — about 51.8%, slightly in the bettor's favour",
+          "isCorrect": true
+        },
+        { "text": "No — it is exactly 4/6, so 66.7%", "isCorrect": false },
+        {
+          "text": "No — it is exactly 50%, a perfectly fair bet",
+          "isCorrect": false
+        },
+        { "text": "Yes — about 90%, almost guaranteed", "isCorrect": false }
+      ],
+      "explanation": "Do not add four `1/6` chances — that double-counts overlaps. Use the complement: `P(no six in 4 rolls) = (5/6)^4 ≈ 0.482`, so `P(at least one six) = 1 - 0.482 ≈ 0.518`. The gambler Chevalier de Méré also bet on at least one double-six in 24 throws of two dice and kept losing money: there `P = 1 - (35/36)^24 ≈ 0.491`, just under half. His confusion over why these near-identical bets land on opposite sides of 50% prompted the 1654 Pascal–Fermat correspondence that founded probability theory.",
+      "references": "[Antoine Gombaud (Chevalier de Méré)](https://en.wikipedia.org/wiki/Antoine_Gombaud)"
+    },
+    {
+      "id": "gamblers-fallacy-next-flip",
+      "title": "A fair coin has landed heads five times in a row. What is the probability the next flip is heads?",
+      "type": "single-choice",
+      "options": [
+        { "text": "1/2", "isCorrect": true },
+        {
+          "text": "Much less than 1/2 — tails is now overdue",
+          "isCorrect": false
+        },
+        { "text": "1/64", "isCorrect": false },
+        {
+          "text": "Much more than 1/2 — heads is clearly hot",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Each flip of a fair coin is independent, so the next flip is `1/2` no matter what came before — the coin keeps no record. It is true that six heads in a row *from the start* has probability `(1/2)^6 = 1/64`, but five of those heads have already happened; only the sixth flip is still uncertain, and it remains 50/50. Believing tails is 'due' is the gambler's fallacy.",
+      "references": "[Gambler's fallacy](https://en.wikipedia.org/wiki/Gambler%27s_fallacy)"
+    },
+    {
+      "id": "what-is-gamblers-fallacy",
+      "title": "Which belief is the gambler's fallacy?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "That past independent outcomes change the odds of future ones, so a result becomes 'due'",
+          "isCorrect": true
+        },
+        {
+          "text": "That the house always has a mathematical edge",
+          "isCorrect": false
+        },
+        {
+          "text": "That genuinely rare events can never happen",
+          "isCorrect": false
+        },
+        {
+          "text": "That every outcome in a game is equally likely",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The gambler's fallacy — also called the Monte Carlo fallacy — is the belief that in a sequence of *independent* events, a streak of one outcome makes the opposite outcome more likely next time. The wheel and the coin do not 'remember' or 'balance' anything. Note that the house edge, one of the distractors, is a genuine long-run disadvantage, not a fallacy at all — distinguishing real edges from imaginary corrections is the whole point.",
+      "references": "[Gambler's fallacy](https://en.wikipedia.org/wiki/Gambler%27s_fallacy)"
+    },
+    {
+      "id": "coins-have-no-memory",
+      "title": "Why does a streak of heads NOT make tails more likely on the very next flip?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Because successive flips are independent — the coin keeps no record of past results",
+          "isCorrect": true
+        },
+        {
+          "text": "Because the coin is secretly biased toward heads",
+          "isCorrect": false
+        },
+        {
+          "text": "Because the law of large numbers forces an immediate correction",
+          "isCorrect": false
+        },
+        {
+          "text": "Because five heads in a row is impossible, so the data must be wrong",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The reason is independence: the physical coin carries no state from one toss to the next, so each flip has the identical distribution, unaffected by its neighbours. The law of large numbers *does* eventually pull the proportion of heads toward `1/2`, but it works gradually over many future flips by dilution — it never reaches back to make one specific upcoming flip favour tails.",
+      "references": "[Independence](https://en.wikipedia.org/wiki/Independence_%28probability_theory%29)"
+    },
+    {
+      "id": "monte-carlo-1913",
+      "title": "At the Monte Carlo Casino in 1913, the roulette ball reportedly landed on black 26 times in a row. What did this famously trigger?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Huge losses, as gamblers kept piling onto red, certain it was 'due'",
+          "isCorrect": true
+        },
+        {
+          "text": "A payout bug that bankrupted the casino",
+          "isCorrect": false
+        },
+        {
+          "text": "A proof that the wheel had been rigged",
+          "isCorrect": false
+        },
+        {
+          "text": "A revision to the mathematical laws of probability",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The 1913 Monte Carlo run is the textbook episode that gave the gambler's fallacy its alternate name, the Monte Carlo fallacy. As black kept repeating, players bet ever-larger sums on red, convinced the streak had to break — and lost fortunes, because every spin stayed independent. For an idealised 50/50 process, one specific run of 26 has probability `(1/2)^26 ≈ 1 in 67 million` — vanishingly unlikely beforehand, yet that is never the same as 'due' once it is already underway.",
+      "references": "[Gambler's fallacy](https://en.wikipedia.org/wiki/Gambler%27s_fallacy#Monte_Carlo_Casino)"
+    },
+    {
+      "id": "law-of-large-numbers-meaning",
+      "title": "What does the law of large numbers actually promise about flipping a fair coin?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The proportion of heads gets ever closer to 1/2 as the number of flips grows",
+          "isCorrect": true
+        },
+        {
+          "text": "The number of heads and tails becomes exactly equal",
+          "isCorrect": false
+        },
+        {
+          "text": "Any long streak will soon be cancelled by an opposite streak",
+          "isCorrect": false
+        },
+        {
+          "text": "After enough flips, heads and tails start to alternate",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The law of large numbers says the sample *proportion* converges to the true probability `1/2` as the number of trials grows. It is a statement about long-run ratios — not a promise of equal counts, and certainly not of streak-cancelling corrections. It is constantly misread as a justification for the gambler's fallacy, but convergence happens because later flips overwhelm early imbalance, never because nature settles a debt.",
+      "references": "[Law of large numbers](https://en.wikipedia.org/wiki/Law_of_large_numbers)"
+    },
+    {
+      "id": "how-the-average-converges",
+      "title": "As you keep flipping a fair coin, what happens to the raw gap between the number of heads and the number of tails?",
+      "description": "The *proportion* of heads heads toward 1/2 — but what about the absolute difference in the counts?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "It tends to grow (on the order of the square root of n), even as the proportion evens out",
+          "isCorrect": true
+        },
+        { "text": "It steadily shrinks to zero", "isCorrect": false },
+        { "text": "It stays fixed once a streak ends", "isCorrect": false },
+        { "text": "It oscillates neatly between +1 and -1", "isCorrect": false }
+      ],
+      "explanation": "This is the subtle heart of why the gambler's fallacy fails. The *proportion* of heads converges to `1/2`, yet the absolute gap `|heads - tails|` typically *grows*, on the order of `sqrt(n)` — a classic random-walk result. So the ledger is never squared by a corrective streak; instead, a fixed early surplus simply becomes a shrinking *fraction* of an ever-larger total. Convergence by dilution, not by repayment.",
+      "references": "[Random walk](https://en.wikipedia.org/wiki/Random_walk)"
+    },
+    {
+      "id": "inverse-gamblers-fallacy",
+      "title": "Someone walks in, sees you roll a double-six, and concludes 'you must have been rolling for a long time to finally get that.' What error is this?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The inverse gambler's fallacy — a single independent roll says nothing about how many came before",
+          "isCorrect": true
+        },
+        { "text": "The base-rate fallacy", "isCorrect": false },
+        { "text": "Simpson's paradox", "isCorrect": false },
+        { "text": "A perfectly correct Bayesian inference", "isCorrect": false }
+      ],
+      "explanation": "Named by the philosopher Ian Hacking, the inverse gambler's fallacy reasons backwards: it treats a rare outcome as evidence that many attempts must have preceded it. But each roll is independent, so observing a double-six tells you nothing about the number of prior rolls — a double-six is exactly as likely on the very first roll as on the thousandth.",
+      "references": "[Inverse gambler's fallacy](https://en.wikipedia.org/wiki/Inverse_gambler%27s_fallacy)"
+    },
+    {
+      "id": "hot-hand-vs-gamblers-fallacy",
+      "title": "The gambler's fallacy expects a streak to reverse. Which belief expects a streak to continue?",
+      "type": "single-choice",
+      "options": [
+        { "text": "The 'hot-hand' belief", "isCorrect": true },
+        { "text": "The Monte Carlo fallacy", "isCorrect": false },
+        { "text": "The law of averages", "isCorrect": false },
+        { "text": "The maturity of chances", "isCorrect": false }
+      ],
+      "explanation": "The hot-hand belief is the mirror image of the gambler's fallacy: after a run of successes it predicts *more* of the same ('she is on fire'), whereas the gambler's fallacy predicts a reversal ('a miss is due'). For truly independent events, both are mistaken. (Note that 'Monte Carlo fallacy', 'law of averages', and 'maturity of chances' are all folk names for the gambler's fallacy itself.) Whether a real hot hand exists in sports is still debated — a famous 1985 study found none, but a 2018 reanalysis uncovered a subtle statistical bias that reopened the question.",
+      "references": "[Hot hand](https://en.wikipedia.org/wiki/Hot_hand)"
+    },
+    {
+      "id": "monty-hall-switch-or-stay",
+      "title": "Monty Hall: behind three doors are a car and two goats. You pick a door; the host, who knows the layout, opens a different door revealing a goat, then offers you the switch. Should you switch?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Yes — switching wins about 2/3 of the time",
+          "isCorrect": true
+        },
+        {
+          "text": "It makes no difference — it is now a 50/50 choice",
+          "isCorrect": false
+        },
+        {
+          "text": "No — staying wins about 2/3 of the time",
+          "isCorrect": false
+        },
+        {
+          "text": "Switch only if you originally guessed wrong",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Switching wins with probability `2/3`; staying wins only `1/3`. Your first pick is correct `1/3` of the time, which means `2/3` of the time the car sits behind one of the two doors you did not choose. The host — forced to reveal a goat from those two — effectively sweeps that entire `2/3` onto the single door he leaves closed. The seductive 50/50 intuition ignores that the host's move is not random.",
+      "references": "[Monty Hall problem](https://en.wikipedia.org/wiki/Monty_Hall_problem)"
+    },
+    {
+      "id": "monty-hall-why-switching-wins",
+      "title": "In the standard Monty Hall game, what crucial fact makes switching better than staying?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The host knows where the car is and always opens a goat door on purpose",
+          "isCorrect": true
+        },
+        {
+          "text": "The car is secretly more likely to be behind a higher-numbered door",
+          "isCorrect": false
+        },
+        {
+          "text": "The contestant's first pick is psychologically biased",
+          "isCorrect": false
+        },
+        {
+          "text": "There is no real reason — it is purely a trick of the mind",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The host's *knowledge* is everything. Because he never opens the car door and never opens your door, the door he leaves shut is special: it inherits the combined `2/3` probability of the two doors you passed over. This is a textbook Bayesian update — the host's deliberate action carries information. Replace him with a random reveal and the advantage vanishes entirely, as the next question shows.",
+      "references": "[Monty Hall problem](https://en.wikipedia.org/wiki/Monty_Hall_problem)"
+    },
+    {
+      "id": "monty-hall-host-assumptions",
+      "title": "The 2/3 switching advantage relies on specific rules. Which set of assumptions is required?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The host always opens a goat door, never your door, and always offers the switch",
+          "isCorrect": true
+        },
+        {
+          "text": "The host opens a door at random, sometimes revealing the car",
+          "isCorrect": false
+        },
+        {
+          "text": "The host offers a switch only when you have already picked the car",
+          "isCorrect": false
+        },
+        {
+          "text": "No assumptions are needed; 2/3 holds however the host behaves",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The clean `2/3` answer depends on a fully specified host: he must always reveal a goat, never open the contestant's own door, and always offer the swap. Change the rules and the answer changes — an adversarial 'Monty from Hell' who offers a switch only when you have already chosen the car would make switching *always* lose. Pinning down these assumptions is exactly what turned a notorious 'paradox' into a solved problem.",
+      "references": "[Monty Hall problem](https://en.wikipedia.org/wiki/Monty_Hall_problem#Other_host_behaviors)"
+    },
+    {
+      "id": "monty-hall-hundred-doors",
+      "title": "Now imagine 100 doors. You pick one; the host opens 98 other doors, all goats, leaving a single door closed. Should you switch?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Yes — the remaining door wins about 99% of the time",
+          "isCorrect": true
+        },
+        {
+          "text": "No difference — it is now a 50/50 choice",
+          "isCorrect": false
+        },
+        {
+          "text": "No — your original door is now 99% likely",
+          "isCorrect": false
+        },
+        { "text": "Switching wins exactly half the time", "isCorrect": false }
+      ],
+      "explanation": "Scaling the problem up makes the logic almost visible. Your first pick had a `1/100` chance of being right. The host then knowingly clears away 98 goats from the other 99 doors, funnelling their combined `99/100` probability onto the one door he refuses to open. Switching wins 99 times out of 100. Blowing the puzzle up from 3 doors to 100 is the fastest cure for the stubborn 50/50 intuition.",
+      "references": "[Monty Hall problem](https://en.wikipedia.org/wiki/Monty_Hall_problem#Increasing_the_number_of_doors)"
+    },
+    {
+      "id": "monty-fall-random-reveal",
+      "title": "Variant: the host forgets where the car is and opens one of the other two doors at random — and it happens to reveal a goat. Now should you switch?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "It no longer matters — switching and staying are both 1/2",
+          "isCorrect": true
+        },
+        { "text": "Switching still wins 2/3", "isCorrect": false },
+        { "text": "Staying now wins 2/3", "isCorrect": false },
+        { "text": "Switching wins 99/100", "isCorrect": false }
+      ],
+      "explanation": "This is the 'Monty Fall' variant, analysed by Jeffrey Rosenthal. When the reveal is accidental rather than deliberate, the fact that it *happened* to show a goat is itself informative and updates both remaining doors equally — leaving each at `1/2`. The lesson is sharp: the original `2/3` edge came from the host's *knowledge*, not from the mere sight of a door swinging open. Identical picture, different mechanism, different answer.",
+      "references": "[Monty Hall problem](https://en.wikipedia.org/wiki/Monty_Hall_problem#Other_host_behaviors)"
+    },
+    {
+      "id": "monty-hall-vos-savant",
+      "title": "When Marilyn vos Savant published the switching answer in Parade magazine in 1990, how was it received?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Thousands wrote in to insist she was wrong, many of them holding advanced degrees",
+          "isCorrect": true
+        },
+        {
+          "text": "It was accepted immediately and without objection",
+          "isCorrect": false
+        },
+        {
+          "text": "It was ignored entirely until the 2000s",
+          "isCorrect": false
+        },
+        {
+          "text": "Casinos sued her for revealing a betting secret",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "vos Savant's correct answer — switch, for a `2/3` win rate — drew roughly 10,000 letters, many from mathematicians and PhD holders, flatly insisting she had blundered. She was right. Even the legendary mathematician Paul Erdős reportedly remained unconvinced until he was shown a computer simulation. It endures as one of the most striking cases of a simple, correct answer that nearly everyone's intuition rejects.",
+      "references": "[Monty Hall problem](https://en.wikipedia.org/wiki/Monty_Hall_problem#vos_Savant_and_the_media_furor)"
+    },
+    {
+      "id": "monty-hall-origin-selvin",
+      "title": "Where did the 'Monty Hall problem' first appear in print under that framing?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "A 1975 letter by Steve Selvin in the journal The American Statistician",
+          "isCorrect": true
+        },
+        {
+          "text": "Marilyn vos Savant invented it from scratch in 1990",
+          "isCorrect": false
+        },
+        {
+          "text": "A 1950s textbook written by the host Monty Hall himself",
+          "isCorrect": false
+        },
+        {
+          "text": "It was first posed by Blaise Pascal in the 1650s",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The statistician Steve Selvin posed and solved the puzzle in a 1975 letter to *The American Statistician*, naming it after the *Let's Make a Deal* host Monty Hall. Mathematically it is a close cousin of the older Bertrand's box paradox (1889). vos Savant later made it world-famous, but she did not originate it — a useful reminder that popularity and authorship are different things.",
+      "references": "[Monty Hall problem](https://en.wikipedia.org/wiki/Monty_Hall_problem#History)"
+    },
+    {
+      "id": "birthday-paradox-23-people",
+      "title": "How many people must be in a room before it is more likely than not that at least two share a birthday?",
+      "description": "Ignore leap years, and assume birthdays are spread evenly across 365 days.",
+      "type": "single-choice",
+      "options": [
+        { "text": "Just 23", "isCorrect": true },
+        { "text": "183, about half of 365", "isCorrect": false },
+        { "text": "365", "isCorrect": false },
+        { "text": "100", "isCorrect": false }
+      ],
+      "explanation": "With only 23 people, the probability of at least one shared birthday is about `50.7%` — already past even. The popular guess of ~183 (half of 365) confuses two different questions: 'does someone share *my* birthday?' versus 'does *some pair* share a birthday?' The next few questions unpack why 23 is plenty.",
+      "references": "[Birthday problem](https://en.wikipedia.org/wiki/Birthday_problem)"
+    },
+    {
+      "id": "birthday-why-so-few",
+      "title": "Why does it take so few people (just 23) to make a shared birthday likely?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Because what matters is the number of pairs of people, and 23 people form 253 pairs",
+          "isCorrect": true
+        },
+        {
+          "text": "Because most people happen to be born in the same few months",
+          "isCorrect": false
+        },
+        {
+          "text": "Because 23 is more than half of the 52 weeks in a year",
+          "isCorrect": false
+        },
+        {
+          "text": "Because human birthdays are not actually random",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A shared birthday needs a matching *pair*, and the number of pairs grows quadratically, not linearly. Twenty-three people form `C(23,2) = (23 × 22) / 2 = 253` distinct pairs — vastly more than 23. With 253 separate chances, each around `1/365`, a match becomes more likely than not. Counting pairs instead of people is the single insight that dissolves the paradox.",
+      "references": "[Birthday problem](https://en.wikipedia.org/wiki/Birthday_problem)"
+    },
+    {
+      "id": "birthday-complement-method",
+      "title": "What is the cleanest way to calculate the probability of at least one shared birthday?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Compute the probability that ALL birthdays are different, then subtract it from 1",
+          "isCorrect": true
+        },
+        {
+          "text": "Add 1/365 once for every person in the room",
+          "isCorrect": false
+        },
+        {
+          "text": "Multiply 1/365 by the number of people",
+          "isCorrect": false
+        },
+        { "text": "Divide the number of people by 365", "isCorrect": false }
+      ],
+      "explanation": "Counting all the ways a match can occur is a tangle of overlaps. The complement is far easier: `P(all different) = (365/365) × (364/365) × (363/365) × ...`, each new person needing to dodge the birthdays already claimed. Then `P(at least one match) = 1 - P(all different)`, which for 23 people works out to about `0.507`. Adding `1/365` per person is the naive trap that ignores overlaps and would absurdly exceed 1 for a large room.",
+      "references": "[Birthday problem](https://en.wikipedia.org/wiki/Birthday_problem#Calculating_the_probability)"
+    },
+    {
+      "id": "birthday-seventy-people",
+      "title": "In a room of 70 people, roughly how likely is it that at least two share a birthday?",
+      "type": "single-choice",
+      "options": [
+        { "text": "About 99.9% — practically certain", "isCorrect": true },
+        { "text": "About 70%", "isCorrect": false },
+        { "text": "About 50%", "isCorrect": false },
+        { "text": "About 19%, roughly 70 out of 365", "isCorrect": false }
+      ],
+      "explanation": "The probability climbs astonishingly fast: about `50.7%` at 23 people, roughly `97%` at 50, and about `99.9%` at 70. It reaches near-certainty long before the 366 people a 'one each' intuition would demand. The curve is so steep because the pairs — and therefore the chances of a collision — accumulate quadratically.",
+      "references": "[Birthday problem](https://en.wikipedia.org/wiki/Birthday_problem#Probability_table)"
+    },
+    {
+      "id": "birthday-pigeonhole-certainty",
+      "title": "Ignoring leap years (so 365 possible birthdays), how many people guarantee — with 100% certainty — that two of them share a birthday?",
+      "type": "single-choice",
+      "options": [
+        { "text": "366", "isCorrect": true },
+        { "text": "365", "isCorrect": false },
+        { "text": "730", "isCorrect": false },
+        { "text": "It can never be made 100% certain", "isCorrect": false }
+      ],
+      "explanation": "This is the pigeonhole principle: with only 365 possible birthdays, 366 people simply cannot all be different, so a shared birthday is unavoidable. (Counting February 29 as a 366th possible day pushes the guaranteed point to 367.) The eye-opening part is the gulf between *certainty* at 366 people and mere *likelihood* at just 23 — that gap is the entire surprise of the paradox.",
+      "references": "[Pigeonhole principle](https://en.wikipedia.org/wiki/Pigeonhole_principle)"
+    },
+    {
+      "id": "birthday-your-own",
+      "title": "How many OTHER people must be in a room before there is a better-than-even chance that someone shares YOUR specific birthday?",
+      "type": "single-choice",
+      "options": [
+        { "text": "About 253", "isCorrect": true },
+        { "text": "About 23", "isCorrect": false },
+        { "text": "About 183", "isCorrect": false },
+        { "text": "About 365", "isCorrect": false }
+      ],
+      "explanation": "This is the question people *think* the birthday paradox asks — and its answer is wildly different. Matching one fixed date is much harder than finding any match at all: you need `(364/365)^n` to drop below `0.5`, which first happens at `n = 253`. Hold the two numbers side by side — 253 people for someone to share *your exact day*, versus just 23 for *any two* people to match. That gap is the paradox in one line.",
+      "references": "[Birthday problem](https://en.wikipedia.org/wiki/Birthday_problem#Same_birthday_as_you)"
+    },
+    {
+      "id": "birthday-attack-hashing",
+      "title": "Cryptography's 'birthday attack' uses this same paradox. Roughly how many random items must you generate to likely find a collision among N equally likely hash values?",
+      "type": "single-choice",
+      "options": [
+        { "text": "About the square root of N", "isCorrect": true },
+        { "text": "About N", "isCorrect": false },
+        { "text": "About N divided by 2", "isCorrect": false },
+        { "text": "About N squared", "isCorrect": false }
+      ],
+      "explanation": "The birthday math says collisions appear after about `sqrt(N)` tries, not `N`. So a hash with `2^n` possible outputs is exposed to a collision after roughly `2^(n/2)` attempts — which is exactly why a 128-bit hash provides only about 64 bits of *collision* resistance. The same quadratic-pairs effect that makes 23 people enough in a room makes hash collisions far cheaper to find than newcomers expect.",
+      "references": "[Birthday attack](https://en.wikipedia.org/wiki/Birthday_attack)"
+    },
+    {
+      "id": "base-rate-false-positive",
+      "title": "A disease affects 1% of people. A test is 99% accurate for both the sick and the healthy. You test positive. What is the chance you actually have the disease?",
+      "description": "A famous result that even many physicians get wrong.",
+      "type": "single-choice",
+      "options": [
+        { "text": "About 50%", "isCorrect": true },
+        { "text": "About 99%", "isCorrect": false },
+        { "text": "About 1%", "isCorrect": false },
+        { "text": "About 98%", "isCorrect": false }
+      ],
+      "explanation": "Picture 10,000 people. About 100 are sick, and 99 of them test positive. But about 9,900 are healthy, and 1% of *those* — about 99 people — also test positive. That is roughly 198 positives, only half of whom are truly sick: `99 / 198 = 50%`. Because the disease is rare, false positives drawn from the enormous healthy group rival the true positives. Forgetting that small base rate is the base-rate fallacy, and it is really just Bayes' theorem in disguise.",
+      "references": "[Base rate fallacy](https://en.wikipedia.org/wiki/Base_rate_fallacy)"
+    },
+    {
+      "id": "conjunction-fallacy-linda",
+      "title": "Linda is 31, single, outspoken, and a former philosophy student deeply concerned with social justice. Which is more probable?",
+      "type": "single-choice",
+      "options": [
+        { "text": "Linda is a bank teller", "isCorrect": true },
+        {
+          "text": "Linda is a bank teller who is also active in the feminist movement",
+          "isCorrect": false
+        },
+        {
+          "text": "The two statements are exactly equally probable",
+          "isCorrect": false
+        },
+        {
+          "text": "There is not enough information to compare them",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "This is Tversky and Kahneman's famous Linda problem. A conjunction can never be more probable than one of its parts: every feminist bank teller *is* a bank teller, so `P(bank teller) ≥ P(bank teller AND feminist)`. Yet the vivid, 'representative' description tempts most people to rank the more specific option higher — the conjunction fallacy. The story makes the impossible answer feel right.",
+      "references": "[Conjunction fallacy](https://en.wikipedia.org/wiki/Conjunction_fallacy)"
+    },
+    {
+      "id": "simpsons-paradox",
+      "title": "What is Simpson's paradox?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "A trend that appears within several groups can reverse when the groups are combined",
+          "isCorrect": true
+        },
+        {
+          "text": "A rare event becomes certain if you simply wait long enough",
+          "isCorrect": false
+        },
+        {
+          "text": "Two independent events that only seem to be dependent",
+          "isCorrect": false
+        },
+        {
+          "text": "The average of the averages always equals the overall average",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "In Simpson's paradox, pooling data can flip the apparent direction of an effect. The classic case is the 1973 UC Berkeley graduate admissions data: in aggregate it looked biased against women, yet within most individual departments women were admitted at equal or higher rates — the reversal arose because women applied more often to the most competitive departments. Whether you split or combine the data can literally invert the conclusion, so the grouping must be chosen with care.",
+      "references": "[Simpson's paradox](https://en.wikipedia.org/wiki/Simpson%27s_paradox)"
+    },
+    {
+      "id": "boy-or-girl-paradox",
+      "title": "A family has two children. You learn that at least one is a boy (and nothing about birth order). Assuming boys and girls are equally likely and independent, what is the probability that both are boys?",
+      "type": "single-choice",
+      "options": [
+        { "text": "1/3", "isCorrect": true },
+        { "text": "1/2", "isCorrect": false },
+        { "text": "1/4", "isCorrect": false },
+        { "text": "2/3", "isCorrect": false }
+      ],
+      "explanation": "List the equally likely birth-order combinations: BB, BG, GB, GG. 'At least one boy' rules out only GG, leaving BB, BG, GB — and just one of those three is two boys, so the answer is `1/3`. The twist: had you instead been told 'the *elder* child is a boy', the answer would jump to `1/2`. The seemingly identical wording hides *which* information you actually received — that ambiguity is the source of the paradox's notoriety.",
+      "references": "[Boy or Girl paradox](https://en.wikipedia.org/wiki/Boy_or_Girl_paradox)"
+    },
+    {
+      "id": "benfords-law",
+      "title": "In many real-world datasets (populations, street addresses, financial figures), how often does the leading digit turn out to be 1?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "About 30% — far more often than the 11% you might expect",
+          "isCorrect": true
+        },
+        {
+          "text": "About 11.1% — every digit 1 through 9 is equally likely",
+          "isCorrect": false
+        },
+        { "text": "Exactly 10%", "isCorrect": false },
+        { "text": "About 50%", "isCorrect": false }
+      ],
+      "explanation": "Benford's law says the leading digit `d` appears with probability `log10(1 + 1/d)`, so 1 leads about `30.1%` of the time while 9 leads only about `4.6%` — nothing like the uniform `11.1%` intuition suggests. It tends to hold for data spanning many orders of magnitude, and auditors exploit deviations from it to flag fabricated figures in accounting and suspected election fraud.",
+      "references": "[Benford's law](https://en.wikipedia.org/wiki/Benford%27s_law)"
+    },
+    {
+      "id": "st-petersburg-paradox",
+      "title": "A game: flip a fair coin until it lands heads. If the first head appears on flip k, you win 2^k dollars. What is the expected payout?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Infinite — and yet almost no one would pay much to play",
+          "isCorrect": true
+        },
+        { "text": "Exactly $2", "isCorrect": false },
+        { "text": "Exactly $4", "isCorrect": false },
+        { "text": "Zero", "isCorrect": false }
+      ],
+      "explanation": "Each term contributes `(1/2^k) × 2^k = 1` dollar to the expectation, and there are infinitely many terms, so the expected payout is `1 + 1 + 1 + ... = infinity`. Yet almost everyone would stake only a few dollars — the St. Petersburg paradox. Daniel Bernoulli resolved it in 1738 with expected *utility*: money has diminishing marginal value, so a finite, sensible price emerges. The puzzle is a foundation stone of modern decision theory.",
+      "references": "[St. Petersburg paradox](https://en.wikipedia.org/wiki/St._Petersburg_paradox)"
+    },
+    {
+      "id": "roulette-house-edge",
+      "title": "On an American roulette wheel (38 pockets), you bet $1 straight-up on a single number that pays 35 to 1. What is your long-run expected result per $1 bet?",
+      "type": "single-choice",
+      "options": [
+        { "text": "Lose about 5.3 cents — the house edge", "isCorrect": true },
+        { "text": "Break even on average", "isCorrect": false },
+        { "text": "Win about 5.3 cents", "isCorrect": false },
+        { "text": "Lose exactly 50 cents", "isCorrect": false }
+      ],
+      "explanation": "Expected value is `(1/38)(+$35) + (37/38)(-$1) = -$2/38 ≈ -$0.053`, a `5.26%` house edge — because a truly fair payout would be 37 to 1, not 35 to 1, and the casino quietly keeps the difference. No betting pattern, and certainly no 'due' number (that is the gambler's fallacy), changes this average; the edge is baked into the payout itself. A European wheel (37 pockets, a single zero) halves it to about `2.7%`.",
+      "references": "[Roulette](https://en.wikipedia.org/wiki/Roulette#Mathematical_model)"
+    }
+  ]
+}

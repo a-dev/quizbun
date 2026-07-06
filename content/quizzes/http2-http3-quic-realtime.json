@@ -1,0 +1,289 @@
+{
+  "schemaVersion": 1,
+  "id": "http2-http3-quic-realtime",
+  "title": "Real-Time over HTTP/2 & HTTP/3: Multiplexing, QUIC & WebSocket Bootstrapping",
+  "description": "How HTTP/2 multiplexing, HTTP/3 over QUIC, and Extended CONNECT (RFC 8441/9220) reshape real-time delivery: application- vs transport-level head-of-line blocking, QUIC's independent streams and connection migration, and running a WebSocket as a multiplexed stream. The HOL-blocking contrast is verified with a Node simulation.",
+  "language": "en",
+  "tags": ["http", "networking", "real-time"],
+  "questions": [
+    {
+      "id": "h2-multiplexing-benefit",
+      "title": "What does HTTP/2 multiplexing improve over HTTP/1.1?",
+      "description": "Recall how HTTP/1.1 forced browsers to open several connections per origin.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Many requests/streams share one TCP connection concurrently, eliminating HTTP/1.1's application-level head-of-line blocking and the ~6-connections-per-origin workaround.",
+          "isCorrect": true
+        },
+        {
+          "text": "It adds TLS support, which HTTP/1.1 could never use.",
+          "isCorrect": false
+        },
+        {
+          "text": "It drops TCP entirely and runs directly on UDP.",
+          "isCorrect": false
+        },
+        {
+          "text": "It gives every request its own dedicated TCP connection for isolation.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "On HTTP/1.1 a connection handles one request at a time — the response must finish before the next request on that connection starts — so browsers opened roughly 6 parallel connections per origin to get concurrency. HTTP/2's binary framing lets many **streams** interleave over a *single* TCP connection, removing that application-level head-of-line blocking and the 6-connection hack. (TLS works on both versions; HTTP/2 just isn't the first to use it. And HTTP/2 keeps TCP — it doesn't switch to UDP.)",
+      "references": "[MDN: Evolution of HTTP](https://developer.mozilla.org/en-US/docs/Web/HTTP/Evolution_of_HTTP)"
+    },
+    {
+      "id": "h2-tcp-hol-blocking",
+      "title": "HTTP/2 multiplexes streams over one TCP connection. Why can a single lost packet still stall every stream?",
+      "description": "Think about the guarantee TCP makes about byte order.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "TCP delivers bytes strictly in order, so one missing segment blocks delivery of everything after it — including other streams' data — causing transport-level head-of-line blocking.",
+          "isCorrect": true
+        },
+        {
+          "text": "HTTP/2 actually processes streams strictly one at a time.",
+          "isCorrect": false
+        },
+        {
+          "text": "The server must retransmit the entire connection whenever any packet is lost.",
+          "isCorrect": false
+        },
+        {
+          "text": "Browsers cap HTTP/2 to a single stream, so loss blocks that one stream.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "HTTP/2 removed *application*-level HOL blocking, but all its streams ride one ordered TCP byte stream. TCP won't hand the application any byte until all earlier bytes have arrived, so a single dropped segment forces it to withhold everything queued behind it — even bytes belonging to other, loss-free streams. Verified with a simulation of two streams interleaved on the wire with one lost segment:\n\n```text\nHTTP/2 (TCP, in-order): A0, B0   ← B1 is blocked even though stream B lost nothing\n```\n\nThis residual *transport*-level HOL blocking is precisely the problem QUIC/HTTP/3 was designed to solve.",
+      "references": "[Wikipedia: Head-of-line blocking](https://en.wikipedia.org/wiki/Head-of-line_blocking)"
+    },
+    {
+      "id": "h3-quic-solves-hol",
+      "title": "How does HTTP/3 (over QUIC) eliminate the transport-level head-of-line blocking that HTTP/2 still has?",
+      "description": "What changes about how streams are tracked when you move off TCP?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "QUIC runs over UDP and gives each stream independent ordering and loss recovery, so a packet lost in one stream doesn't stall the others.",
+          "isCorrect": true
+        },
+        {
+          "text": "QUIC turns off retransmission and simply accepts all packet loss.",
+          "isCorrect": false
+        },
+        {
+          "text": "QUIC opens a separate UDP socket for every stream.",
+          "isCorrect": false
+        },
+        {
+          "text": "QUIC funnels all data into one stream so there's nothing to block.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "QUIC implements streams in userspace over a single UDP socket, and each stream has its **own** ordering and loss recovery. A lost packet only blocks the stream it belonged to; every other stream keeps flowing. Same simulation, QUIC model:\n\n```text\nHTTP/3 (QUIC, per-stream): {\"A\":[\"A0\"],\"B\":[\"B0\",\"B1\"]}   ← B fully delivered; only A2 waits behind lost A1\n```\n\nSo B completes despite A's loss — the opposite of the TCP result. (QUIC still retransmits; it just scopes the blocking to one stream, using one UDP socket, not one per stream.)",
+      "references": "[RFC 9000: QUIC: A UDP-Based Multiplexed and Secure Transport](https://datatracker.ietf.org/doc/html/rfc9000)"
+    },
+    {
+      "id": "quic-over-udp",
+      "title": "HTTP/3 is built on QUIC. Which lower-layer transport protocol does QUIC itself run over?",
+      "description": "Three letters. It's deliberately *not* the one HTTP/1.1 and HTTP/2 use.",
+      "type": "input",
+      "validation": {
+        "mode": "text",
+        "acceptedAnswers": [
+          "UDP",
+          "User Datagram Protocol"
+        ]
+      },
+      "explanation": "QUIC runs over **UDP**, then rebuilds reliability, in-order per-stream delivery, and congestion control in userspace — plus TLS 1.3 baked directly in. Choosing UDP let QUIC be deployed and iterated without kernel/OS changes and sidestep the middlebox ossification that makes changing TCP nearly impossible. HTTP/3's default is UDP port 443, usually advertised to clients via an `Alt-Svc` header on an existing HTTP/1.1 or HTTP/2 response.",
+      "references": "[RFC 9000: QUIC: A UDP-Based Multiplexed and Secure Transport](https://datatracker.ietf.org/doc/html/rfc9000)"
+    },
+    {
+      "id": "quic-realtime-features",
+      "title": "Which are genuine advantages QUIC brings to real-time connections?",
+      "description": "Select every true statement.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "Connection migration: a connection survives the client changing IP/port (e.g. Wi-Fi → cellular) via connection IDs, with no new handshake.",
+          "isCorrect": true
+        },
+        {
+          "text": "Independent streams, so loss in one stream doesn't head-of-line-block the others.",
+          "isCorrect": true
+        },
+        {
+          "text": "A faster combined transport+TLS handshake — often 1-RTT, or 0-RTT on resumption.",
+          "isCorrect": true
+        },
+        {
+          "text": "Optional plaintext mode, since QUIC makes encryption optional to cut overhead.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "QUIC's real-time wins: **connection migration** (a connection is keyed by a connection ID, not the IP/port 4-tuple, so it rides through a network switch — huge for mobile), **independent streams** (no cross-stream HOL blocking), and a **fast handshake** that folds the transport and TLS 1.3 handshakes together (1-RTT, or 0-RTT when resuming). The false option inverts a core design rule: QUIC is **always encrypted** — TLS 1.3 is mandatory (RFC 9001), there is no plaintext mode.",
+      "references": "[RFC 9000 §9: Connection Migration](https://datatracker.ietf.org/doc/html/rfc9000#section-9)"
+    },
+    {
+      "id": "ws-h2-extended-connect-method",
+      "title": "RFC 8441 bootstraps WebSockets over HTTP/2 by reusing which HTTP method (carrying a `:protocol` pseudo-header set to `websocket`)?",
+      "description": "Give the method name. It's the same one used for HTTP tunneling/proxying, here in \"extended\" form.",
+      "type": "input",
+      "validation": {
+        "mode": "text",
+        "acceptedAnswers": [
+          "CONNECT",
+          "Extended CONNECT",
+          "the CONNECT method"
+        ]
+      },
+      "explanation": "RFC 8441 (\"Bootstrapping WebSockets with HTTP/2\") defines **Extended CONNECT**: the client sends a request with `:method: CONNECT` plus a new `:protocol: websocket` pseudo-header. The server must first advertise it supports this via the `SETTINGS_ENABLE_CONNECT_PROTOCOL` setting.\n\n```text\n:method: CONNECT\n:protocol: websocket\n:scheme: https\n:path: /chat\n```\n\nThe payoff: the WebSocket becomes a single HTTP/2 **stream**, multiplexed alongside your other requests on one connection — instead of a dedicated TCP connection per socket.",
+      "references": "[RFC 8441: Bootstrapping WebSockets with HTTP/2](https://datatracker.ietf.org/doc/html/rfc8441)"
+    },
+    {
+      "id": "ws-over-http2-benefit",
+      "title": "What's the practical benefit of running WebSockets over HTTP/2 (RFC 8441) instead of HTTP/1.1?",
+      "description": "Compare how many connections each approach consumes.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The WebSocket becomes one multiplexed stream sharing a single connection with other HTTP/2 traffic, instead of consuming a dedicated TCP connection (and one of the ~6 per-origin slots).",
+          "isCorrect": true
+        },
+        {
+          "text": "It makes the WebSocket one-way (server→client only) to save bandwidth.",
+          "isCorrect": false
+        },
+        {
+          "text": "It removes the requirement to mask client-to-server frames.",
+          "isCorrect": false
+        },
+        {
+          "text": "It automatically converts WebSocket frames into SSE events.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "On HTTP/1.1, each WebSocket is its own TCP connection and counts against the browser's ~6-per-origin limit, so several sockets plus normal requests can crowd each other out. Over HTTP/2, the WebSocket is a single stream multiplexed with everything else on one connection — fewer connections and better resource use. It stays full-duplex, client frames are still masked, and there's no conversion to SSE; only the *bootstrapping* and connection-sharing change.",
+      "references": "[RFC 8441: Bootstrapping WebSockets with HTTP/2](https://datatracker.ietf.org/doc/html/rfc8441)"
+    },
+    {
+      "id": "ws-over-http3-rfc9220",
+      "title": "WebSocket over HTTP/3 is standardized by RFC 9220. What does it actually do?",
+      "description": "Consider how it relates to the HTTP/2 mechanism.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "It extends RFC 8441's Extended CONNECT mechanism to HTTP/3, so a WebSocket can run as a stream over QUIC.",
+          "isCorrect": true
+        },
+        {
+          "text": "It replaces WebSockets with a new, incompatible real-time protocol.",
+          "isCorrect": false
+        },
+        {
+          "text": "It runs WebSockets directly over raw UDP, bypassing QUIC.",
+          "isCorrect": false
+        },
+        {
+          "text": "It removes the WebSocket opening handshake altogether.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "RFC 9220 (\"Bootstrapping WebSockets with HTTP/3\") carries the same Extended CONNECT approach from RFC 8441 into HTTP/3, letting a WebSocket ride a **QUIC stream**. The WebSocket API and semantics on top are unchanged, but the connection inherits QUIC's benefits — independent streams (no transport HOL blocking) and connection migration. It is not a new protocol, doesn't bypass QUIC, and still performs the handshake (as Extended CONNECT).",
+      "references": "[RFC 9220: Bootstrapping WebSockets with HTTP/3](https://datatracker.ietf.org/doc/html/rfc9220)"
+    },
+    {
+      "id": "hol-across-http-versions",
+      "title": "Which statements about head-of-line (HOL) blocking across HTTP versions are correct?",
+      "description": "Select every true statement.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "HTTP/1.1 suffers application-level HOL blocking: a slow response blocks later requests on the same connection.",
+          "isCorrect": true
+        },
+        {
+          "text": "HTTP/2 removes application-level HOL blocking but still has transport-level HOL blocking from its single ordered TCP connection.",
+          "isCorrect": true
+        },
+        {
+          "text": "HTTP/3 over QUIC removes transport-level HOL blocking via independent streams.",
+          "isCorrect": true
+        },
+        {
+          "text": "HTTP/3 reintroduces HTTP/1.1's ~6-connections-per-origin limit.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The arc of the three versions is exactly this progression: HTTP/1.1 blocks at the application layer (mitigated only by opening ~6 connections); HTTP/2 multiplexes to fix that but inherits TCP's transport-level HOL blocking; HTTP/3 over QUIC gives each stream independent ordering, removing transport HOL too. HTTP/3 does **not** bring back a per-origin connection cap — it uses one QUIC connection carrying many independent streams.",
+      "references": "[Wikipedia: Head-of-line blocking](https://en.wikipedia.org/wiki/Head-of-line_blocking)"
+    },
+    {
+      "id": "http2-server-push-deprecation",
+      "title": "What became of HTTP/2 Server Push as a delivery mechanism?",
+      "description": "It let servers send resources the client hadn't requested yet.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "It was largely abandoned — Chrome removed support in 2022 — because it was hard to use well and often pushed resources the client already had; lightweight hinting is preferred instead.",
+          "isCorrect": true
+        },
+        {
+          "text": "It became the standard way to implement Server-Sent Events.",
+          "isCorrect": false
+        },
+        {
+          "text": "It was promoted to a mandatory feature of HTTP/3.",
+          "isCorrect": false
+        },
+        {
+          "text": "It replaced WebSockets for bidirectional real-time traffic.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Server Push let a server proactively send resources alongside a response, but in practice servers couldn't tell what the client had cached, so it frequently wasted bandwidth pushing already-cached assets and was awkward to tune. Chrome removed it in version 106 (2022), and the ecosystem shifted to a simpler \"hint, don't push\" model. Note it was never a *bidirectional* or real-time-messaging mechanism — it pushed cacheable resources, not application events, so it never competed with WebSockets or SSE.",
+      "references": "[Chrome for Developers: Removing HTTP/2 Server Push](https://developer.chrome.com/blog/removing-push/)"
+    },
+    {
+      "id": "early-hints-status-code",
+      "title": "Which informational HTTP status code is the modern, lightweight replacement for HTTP/2 Server Push (letting the server hint at resources to preload before the final response)?",
+      "description": "An informational 1xx status code. Give the number.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [
+          103
+        ]
+      },
+      "explanation": "**103 Early Hints** is an informational (1xx) response the server can send *before* the final response, carrying `Link` headers that tell the browser to start preloading or preconnecting to critical resources. Unlike Server Push, it only *hints* — the client decides whether to fetch, so it can't waste bandwidth on already-cached assets. That's why it became the preferred answer to the problem Server Push tried (and failed) to solve.",
+      "references": "[MDN: 103 Early Hints](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/103)"
+    },
+    {
+      "id": "quic-connection-migration-mobile",
+      "title": "A mobile app needs a real-time connection that survives switching from Wi-Fi to cellular without a reconnect/handshake stall. Which characteristic delivers that?",
+      "description": "Switching networks changes the device's IP address. What keeps the connection alive across that?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "QUIC's connection migration (HTTP/3): the connection is keyed by a connection ID, not the IP/port 4-tuple, so it survives the client's address change.",
+          "isCorrect": true
+        },
+        {
+          "text": "TCP keepalive, which automatically re-routes the socket to the new network.",
+          "isCorrect": false
+        },
+        {
+          "text": "WebSocket Ping/Pong, which re-establishes the TCP connection on the new IP.",
+          "isCorrect": false
+        },
+        {
+          "text": "HTTP/2 multiplexing, which moves streams between TCP connections on the fly.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A TCP connection is identified by its 4-tuple — source IP/port and destination IP/port — so when the device's IP changes (Wi-Fi → cellular), the TCP connection breaks and everything on top (WebSocket, SSE, HTTP/2 streams) must reconnect and re-handshake. QUIC instead identifies a connection by a **connection ID**, independent of the IP/port, so it can migrate seamlessly to the new path without a new handshake. Keepalive and Ping/Pong only keep an existing connection from idling out — they cannot survive an address change; and HTTP/2 can't move streams between connections.",
+      "references": "[RFC 9000 §9: Connection Migration](https://datatracker.ietf.org/doc/html/rfc9000#section-9)"
+    }
+  ]
+}

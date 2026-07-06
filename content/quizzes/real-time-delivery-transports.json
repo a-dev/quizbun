@@ -1,0 +1,314 @@
+{
+  "schemaVersion": 1,
+  "id": "real-time-delivery-transports",
+  "title": "Real-Time Delivery: Polling, Long Polling, SSE & WebSockets",
+  "description": "When to reach for short polling, long polling, Server-Sent Events, or WebSockets — and how each handles reconnection and message ordering. Handshakes, headers, and trade-offs are checked against the specs (RFC 6455, WHATWG HTML) and verified in Node.",
+  "language": "en",
+  "tags": ["real-time", "websockets", "networking", "http"],
+  "questions": [
+    {
+      "id": "short-vs-long-polling",
+      "title": "What distinguishes *long* polling from *short* polling?",
+      "description": "Both are built on ordinary HTTP request/response. What is the defining difference?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The server holds each request open until data is ready (or a timeout fires), then responds — and the client immediately issues the next request.",
+          "isCorrect": true
+        },
+        {
+          "text": "The client keeps one TCP connection open permanently and the server pushes frames over it whenever it likes.",
+          "isCorrect": false
+        },
+        {
+          "text": "The server pushes responses to a client that never sent a request.",
+          "isCorrect": false
+        },
+        {
+          "text": "Several requests are fired in parallel on a fixed timer to cut latency.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Short polling means the client re-requests on a fixed timer; the server answers immediately, often with \"nothing new,\" so you pay for many empty round-trips and your worst-case latency is the whole polling interval.\n\nLong polling moves the waiting to the server: the request is *parked* until data exists (or a timeout fires), then it returns and the client immediately re-requests. That removes most empty responses and cuts latency to roughly \"as soon as data is available,\" while still costing one HTTP request per message.\n\nIt is **not** a persistent push channel — every message rides its own ordinary HTTP response. The distractors describe WebSockets (a permanent duplex connection) and an impossible \"push with no request,\" which plain HTTP cannot do on its own.",
+      "references": "[javascript.info: Long polling](https://javascript.info/long-polling)"
+    },
+    {
+      "id": "sse-api-content-type",
+      "title": "Which browser API and response `Content-Type` define Server-Sent Events?",
+      "description": "You want the server to stream events to the page over a single long-lived HTTP response.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`EventSource`, with the server sending `Content-Type: text/event-stream`.",
+          "isCorrect": true
+        },
+        {
+          "text": "`WebSocket`, with `Content-Type: application/websocket`.",
+          "isCorrect": false
+        },
+        {
+          "text": "`fetch()` streaming, with `Content-Type: application/x-ndjson`.",
+          "isCorrect": false
+        },
+        {
+          "text": "`XMLHttpRequest`, with `Content-Type: text/plain`.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "SSE is the `EventSource` interface on the client plus an HTTP response whose `Content-Type` is `text/event-stream` that the server keeps open. The wire format is line-oriented UTF-8 text: an event is one or more `field: value` lines terminated by a blank line.\n\n```js\nconst es = new EventSource(\"/stream\");\nes.addEventListener(\"price\", (e) => console.log(JSON.parse(e.data)));\n```\n\nA matching server event on the wire looks like:\n\n```text\nevent: price\nid: 7\ndata: {\"symbol\":\"ACME\",\"price\":42}\n\n```\n\n(The trailing blank line is what dispatches the event.) Streaming newline-delimited JSON over `fetch()` is a real alternative pattern — and is how `fetch`-based SSE polyfills work — but it is not SSE per the spec. The WebSocket and XHR options pair the wrong API with a made-up or wrong content type.",
+      "references": "[MDN: Using server-sent events](https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events)"
+    },
+    {
+      "id": "sse-last-event-id",
+      "title": "When `EventSource` auto-reconnects, which request header does it send so the server can resume the stream?",
+      "description": "Give the exact HTTP header name. It pairs with the `id:` field the server emits on each event.",
+      "type": "input",
+      "validation": {
+        "mode": "text",
+        "acceptedAnswers": [
+          "Last-Event-ID",
+          "Last Event ID"
+        ]
+      },
+      "explanation": "SSE has reconnection built into the spec. The server can tag events with an `id:` line; the browser remembers the most recent id, and when the connection drops it reconnects on its own and replays that id in the `Last-Event-ID` request header. The server reads that header and resumes sending events *after* that id, so a brief network blip does not lose messages.\n\n```text\nevent: price\nid: 42\ndata: {\"price\":100}\n\n```\n\nAfter a drop, the browser reconnects with `Last-Event-ID: 42`, and the server streams everything after #42. This resume-by-default behavior is exactly what raw WebSockets make you build yourself.",
+      "references": "[WHATWG HTML: Server-sent events](https://html.spec.whatwg.org/multipage/server-sent-events.html)"
+    },
+    {
+      "id": "choose-sse-one-way-dashboard",
+      "title": "A trading dashboard streams live price ticks to thousands of browser tabs; clients never send data back on this channel. Simplest robust fit?",
+      "description": "Optimize for simplicity and built-in resilience, not for bidirectional traffic you do not have.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Server-Sent Events — one-way server→client, plain HTTP, automatic reconnection with resume.",
+          "isCorrect": true
+        },
+        {
+          "text": "WebSockets — open a full-duplex socket per tab even though the client never sends.",
+          "isCorrect": false
+        },
+        {
+          "text": "Short polling every second — re-request the latest prices on a timer.",
+          "isCorrect": false
+        },
+        {
+          "text": "A WebRTC data channel between each browser and the server.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "When traffic is purely server→client, SSE is the smallest tool that does the job well: it rides ordinary HTTP(S) — friendly to proxies, load balancers, and existing infra — reconnects on its own, and resumes via `Last-Event-ID`.\n\nWebSockets would work, but you would pay for a bidirectional protocol, hand-write reconnection/backoff, and gain nothing for a read-only feed. Short polling adds up-to-one-second latency and a flood of mostly redundant requests. WebRTC is built for peer-to-peer and low-latency media and is wildly over-engineered here.\n\nThe guiding principle: *use the least powerful transport that satisfies the requirement.* It keeps the system simple to operate and reason about.",
+      "references": "[MDN: Server-sent events](https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events)"
+    },
+    {
+      "id": "websocket-handshake-facts",
+      "title": "Which statements about the WebSocket opening handshake are correct?",
+      "description": "Select every true statement about how a WebSocket connection is established.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "It starts as an HTTP/1.1 `GET` carrying `Upgrade: websocket` and `Connection: Upgrade` headers.",
+          "isCorrect": true
+        },
+        {
+          "text": "The server computes `Sec-WebSocket-Accept` by SHA-1 hashing the client's `Sec-WebSocket-Key` concatenated with a fixed GUID, then base64-encoding it.",
+          "isCorrect": true
+        },
+        {
+          "text": "Once established, data travels in *frames* tagged as either text or binary.",
+          "isCorrect": true
+        },
+        {
+          "text": "The browser must complete a CORS preflight `OPTIONS` request before it may upgrade.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The handshake is an HTTP Upgrade. The client sends a `GET` with `Upgrade: websocket`, `Connection: Upgrade`, and a random `Sec-WebSocket-Key`. The server proves it understood the protocol by concatenating that key with the magic GUID `258EAFA5-E914-47DA-95CA-C5AB0DC85B11`, SHA-1 hashing, and base64-encoding the result into `Sec-WebSocket-Accept`. Verified in Node against the RFC 6455 example:\n\n```js\nimport crypto from \"node:crypto\";\nconst key = \"dGhlIHNhbXBsZSBub25jZQ==\"; // sent by the client\nconst GUID = \"258EAFA5-E914-47DA-95CA-C5AB0DC85B11\";\nconst accept = crypto.createHash(\"sha1\").update(key + GUID).digest(\"base64\");\nconsole.log(accept); // s3pPLMBiTxaQ9kYGzzhZRbK+xOo=\n```\n\nAfter the upgrade, communication is framed (text opcode `0x1`, binary `0x2`), not raw HTTP. WebSockets are deliberately *not* governed by the CORS preflight model — there is no `OPTIONS` preflight; instead the server is expected to inspect the `Origin` header itself and reject unwanted origins.",
+      "references": "[RFC 6455: The WebSocket Protocol — Opening Handshake](https://datatracker.ietf.org/doc/html/rfc6455#section-1.3)"
+    },
+    {
+      "id": "websocket-upgrade-status-code",
+      "title": "What HTTP status code does a server send to accept a WebSocket upgrade?",
+      "description": "The one-line response that flips an HTTP connection into a WebSocket.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [
+          101
+        ]
+      },
+      "explanation": "The server replies `101 Switching Protocols` — the \"I am changing this connection's protocol as you requested\" status. A complete acceptance looks like:\n\n```text\nHTTP/1.1 101 Switching Protocols\nUpgrade: websocket\nConnection: Upgrade\nSec-WebSocket-Accept: s3pPLMBiTxaQ9kYGzzhZRbK+xOo=\n```\n\nAnything else (for example `200`) means the upgrade did *not* happen and you are still speaking plain HTTP. `101` is the only success status for this handshake.",
+      "references": "[MDN: 101 Switching Protocols](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/101)"
+    },
+    {
+      "id": "websocket-tls-scheme",
+      "title": "Which URI scheme does a WebSocket use when the connection is encrypted with TLS?",
+      "description": "Give the scheme — the part before `://`.",
+      "type": "input",
+      "validation": {
+        "mode": "text",
+        "acceptedAnswers": [
+          "wss",
+          "wss://"
+        ]
+      },
+      "explanation": "WebSockets use `ws://` for plaintext and `wss://` for TLS-encrypted connections — the exact parallel to `http://` versus `https://`. The default ports follow suit: 80 for `ws`, 443 for `wss`.\n\n```js\nconst socket = new WebSocket(\"wss://example.com/chat\");\n```\n\nAlways prefer `wss://` in production. Beyond encryption, it dramatically improves the odds of passing cleanly through corporate proxies and interception middleboxes that otherwise mangle plaintext `Upgrade` requests.",
+      "references": "[MDN: The WebSocket() constructor](https://developer.mozilla.org/en-US/docs/Web/API/WebSocket/WebSocket)"
+    },
+    {
+      "id": "long-polling-ordering-gap",
+      "title": "Why can naive long polling miss or reorder messages, and what is the standard fix?",
+      "description": "Think about the instant between one response returning and the next request being sent.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Events produced in the gap between a response returning and the client re-requesting can be lost; giving each event a sequence id and letting the client resume from its last id closes the gap.",
+          "isCorrect": true
+        },
+        {
+          "text": "TCP can deliver bytes out of order, so every message needs its own sequence number to be reassembled.",
+          "isCorrect": false
+        },
+        {
+          "text": "It cannot miss messages — HTTP guarantees exactly-once delivery per request.",
+          "isCorrect": false
+        },
+        {
+          "text": "Browsers cache `GET` responses, so messages vanish unless you add a random query parameter.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Long polling delivers one message (or batch) per HTTP response, after which the client must open a *new* request. If the server produces an event during the brief window when no request is parked, a naive server has nowhere to send it and the event is dropped. Racing reconnects can also deliver things out of order.\n\nThe fix is the same idea SSE bakes in: give every event a monotonically increasing id/cursor, have the client send its last-seen id when it reconnects (`?since=42`), and have the server replay everything after it from a short buffer. That turns \"fire and pray\" into resumable, ordered delivery.\n\nWatch the distractor traps: TCP already guarantees in-order, reliable bytes *within a connection*, so per-byte resequencing is not the problem; HTTP has no exactly-once guarantee (a response can be lost after the server already acted, so clients must tolerate duplicates and stay idempotent); and cache-busting is a real but separate concern from the delivery gap.",
+      "references": "[javascript.info: Long polling](https://javascript.info/long-polling)"
+    },
+    {
+      "id": "sse-limitations",
+      "title": "Which of these are genuine limitations of Server-Sent Events?",
+      "description": "Select every statement that is actually true about SSE.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "Over HTTP/1.1, browsers cap concurrent connections per origin (commonly 6), and each open `EventSource` consumes one of them.",
+          "isCorrect": true
+        },
+        {
+          "text": "The payload is UTF-8 text only — there are no binary event frames.",
+          "isCorrect": true
+        },
+        {
+          "text": "The native `EventSource` can only make `GET` requests and cannot set custom headers such as `Authorization`.",
+          "isCorrect": true
+        },
+        {
+          "text": "Events from a single `EventSource` can arrive out of order unless you number them.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "SSE's constraints are real and worth knowing.\n\n1. Under HTTP/1.1 the classic ~6-connections-per-origin limit bites: six SSE tabs to the same origin can starve other requests. Running SSE over HTTP/2 fixes this by multiplexing many streams over one connection.\n2. The format is text, so to ship bytes you must encode them — for example base64: `Buffer.from([0xDE,0xAD,0xBE,0xEF]).toString(\"base64\")` produces `3q2+7w==` (about 33% overhead).\n3. The native `EventSource` is `GET`-only with no custom headers, so auth usually rides on cookies or a query-string token — or you switch to a `fetch`-based SSE polyfill.\n\nThe false statement inverts a *strength*: a single SSE stream rides one TCP connection, so its events are delivered strictly in order by TCP. You do not need sequence numbers for ordering — only for *resume*, via `id:` / `Last-Event-ID`.",
+      "references": "[MDN: Using server-sent events](https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events)"
+    },
+    {
+      "id": "choose-websocket-collab-editor",
+      "title": "You are building a collaborative document editor: many users send edits and receive others' edits with sub-second latency. Best transport?",
+      "description": "Both directions are hot, and latency matters in each.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "WebSockets — one persistent, full-duplex connection carries edits in both directions over a single ordered channel.",
+          "isCorrect": true
+        },
+        {
+          "text": "Server-Sent Events alone — it streams others' edits to each client efficiently.",
+          "isCorrect": false
+        },
+        {
+          "text": "Long polling — park a request and respond when any edit arrives.",
+          "isCorrect": false
+        },
+        {
+          "text": "Short polling every 500 ms — fetch the latest document state on a timer.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Collaborative editing is bidirectional and latency-sensitive in *both* directions — exactly WebSockets' sweet spot: a single persistent connection where either side can send a frame the instant it has one, all in TCP order.\n\nSSE alone cannot do it; it is server→client only, so you would bolt a separate `POST`/`fetch` channel on for upstream edits, splitting the conversation across two channels and losing a single ordered stream. Polling adds latency and overhead that is painful when every keystroke may matter.\n\nThe transport is only the pipe. You still layer a concurrency model — Operational Transformation (OT) or CRDTs — on top to merge concurrent edits, but that model wants precisely the low-latency duplex pipe WebSockets provide.",
+      "references": "[MDN: The WebSocket API](https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API)"
+    },
+    {
+      "id": "websocket-ping-pong-keepalive",
+      "title": "At the protocol level, how does WebSocket keep an idle connection alive and detect a dead peer?",
+      "description": "Not an application-level heartbeat you invent — the mechanism built into the protocol itself.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Built-in Ping and Pong control frames: one side sends a Ping, the peer must reply with a Pong echoing the payload.",
+          "isCorrect": true
+        },
+        {
+          "text": "It re-sends the HTTP `Upgrade` request every 30 seconds to refresh the connection.",
+          "isCorrect": false
+        },
+        {
+          "text": "The WebSocket protocol has no keepalive; only OS-level TCP keepalive exists.",
+          "isCorrect": false
+        },
+        {
+          "text": "The client must POST a heartbeat to a separate `/ping` endpoint on a timer.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "RFC 6455 defines Ping (opcode `0x9`) and Pong (`0xA`) control frames. A peer sends a Ping; the other side must answer with a Pong carrying the same payload. This keeps intermediaries from idling the connection out, and it detects a *half-open* connection (TCP that looks alive but is not): if no Pong arrives within your timeout, tear it down and reconnect.\n\nA practical nuance worth remembering: the **browser** `WebSocket` API does not expose ping/pong to JavaScript. The browser auto-replies to server Pings for you, but you cannot *send* a Ping from page JS — so client-driven heartbeats are usually an app-level message like `{\"type\":\"ping\"}`. Server libraries (such as `ws` in Node) do expose real protocol-level pings.",
+      "references": "[RFC 6455: Ping and Pong frames](https://datatracker.ietf.org/doc/html/rfc6455#section-5.5.2)"
+    },
+    {
+      "id": "reconnect-sse-vs-websocket",
+      "title": "Out of the box, which protocol re-establishes a dropped connection on its own — no reconnection code from you?",
+      "description": "Assume the native browser APIs with no libraries.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Server-Sent Events — `EventSource` reconnects automatically and resumes via `Last-Event-ID`.",
+          "isCorrect": true
+        },
+        {
+          "text": "WebSockets — the browser silently reopens the socket after a drop.",
+          "isCorrect": false
+        },
+        {
+          "text": "Both reconnect automatically by default.",
+          "isCorrect": false
+        },
+        {
+          "text": "Neither — reconnection always requires application code.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "This is one of the most practical differences between the two. `EventSource` has reconnection in the spec: when the connection drops it waits a short, implementation-defined delay (a few seconds; the server can tune it with a `retry:` field) and reconnects, sending `Last-Event-ID` so the server can resume.\n\nThe native `WebSocket` does none of this — a drop fires `onclose` and the socket stays closed. You implement reconnection yourself, ideally with **exponential backoff plus jitter** so a server restart does not trigger a synchronized stampede from every client at once:\n\n```js\nlet delay = 1000;\nfunction connect() {\n  const ws = new WebSocket(\"wss://example.com/chat\");\n  ws.onopen = () => { delay = 1000; };          // reset after a success\n  ws.onclose = () => {\n    const wait = delay + Math.random() * 1000;  // jitter avoids a thundering herd\n    setTimeout(connect, wait);\n    delay = Math.min(delay * 2, 30000);         // capped exponential backoff\n  };\n}\nconnect();\n```",
+      "references": "[WHATWG HTML: Server-sent events](https://html.spec.whatwg.org/multipage/server-sent-events.html)"
+    },
+    {
+      "id": "sse-over-http2-multiplexing",
+      "title": "How does serving Server-Sent Events over HTTP/2 (instead of HTTP/1.1) help?",
+      "description": "Recall the per-origin connection cap that bites SSE on HTTP/1.1.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "HTTP/2 multiplexes many streams over one TCP connection, so multiple SSE streams no longer each consume one of the ~6 per-origin HTTP/1.1 connections.",
+          "isCorrect": true
+        },
+        {
+          "text": "HTTP/2 makes SSE bidirectional, removing the need for a separate upstream channel.",
+          "isCorrect": false
+        },
+        {
+          "text": "HTTP/2 lets SSE carry binary event frames in addition to text.",
+          "isCorrect": false
+        },
+        {
+          "text": "HTTP/2 is incompatible with SSE, so the browser silently downgrades to polling.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "On HTTP/1.1 every `EventSource` consumes one of the browser's ~6 connections per origin, so a few SSE tabs (plus your normal API calls) can starve each other. HTTP/2 multiplexes many independent streams over a single TCP connection (servers commonly allow ~100 concurrent streams), so each SSE stream is just another cheap stream and the connection cap effectively disappears.\n\nWhat HTTP/2 does *not* change: SSE is still one-way server→client, and still UTF-8 text only. (HTTP/2 frames are binary on the wire, but the SSE payload handed to `EventSource` is still decoded as text.)\n\nOne caveat to keep in mind: HTTP/2 still rides a single TCP connection, so a lost packet causes TCP head-of-line blocking across all those streams. Removing *that* is what HTTP/3 (QUIC over UDP) is for.",
+      "references": "[MDN: Evolution of HTTP](https://developer.mozilla.org/en-US/docs/Web/HTTP/Evolution_of_HTTP)"
+    }
+  ]
+}

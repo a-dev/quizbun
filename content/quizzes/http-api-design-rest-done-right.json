@@ -1,0 +1,342 @@
+{
+  "schemaVersion": 1,
+  "id": "http-api-design-rest-done-right",
+  "title": "Designing an HTTP API (REST, Done Right)",
+  "description": "Most \"REST\" APIs are RPC in disguise. This quiz sharpens the decisions that matter when other people build against your endpoints: method safety and idempotency, `PUT`/`PATCH`/`POST`, idempotency keys, cursor vs. offset pagination, the real meaning of 409/412/422/429, versioning, and error envelopes a client can program against. Every answer is grounded in the HTTP specs (RFC 9110, RFC 5789, RFC 9457).",
+  "language": "en",
+  "tags": ["http", "system-design"],
+  "questions": [
+    {
+      "id": "which-methods-are-idempotent",
+      "title": "Which of these HTTP methods are idempotent?",
+      "description": "Idempotent means applying the request once or many times leaves the server in the **same resulting state**.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "`GET`",
+          "isCorrect": true
+        },
+        {
+          "text": "`POST`",
+          "isCorrect": false
+        },
+        {
+          "text": "`PUT`",
+          "isCorrect": true
+        },
+        {
+          "text": "`PATCH`",
+          "isCorrect": false
+        },
+        {
+          "text": "`DELETE`",
+          "isCorrect": true
+        }
+      ],
+      "explanation": "RFC 9110 §9.2.2 defines `PUT`, `DELETE`, and all *safe* methods (`GET`, `HEAD`, `OPTIONS`, `TRACE`) as idempotent. `POST` is **not** idempotent — two identical `POST`s typically create two resources. `PATCH` is **not guaranteed** idempotent (RFC 5789 says so explicitly): a patch can describe a relative change.\n\nThe classic gotcha is `DELETE`: a second `DELETE` may return `404` instead of `204`, but idempotency is about the *resulting state* (the resource is gone), not about returning an identical status code.",
+      "references": "[RFC 9110 §9.2.2: Idempotent Methods](https://www.rfc-editor.org/rfc/rfc9110.html#section-9.2.2)"
+    },
+    {
+      "id": "what-does-safe-mean",
+      "title": "What does it mean for an HTTP method to be \"safe\"?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The client is not requesting any state change — the method is essentially read-only (`GET`, `HEAD`, `OPTIONS`, `TRACE`)",
+          "isCorrect": true
+        },
+        {
+          "text": "Repeating it any number of times leaves the server in the same state",
+          "isCorrect": false
+        },
+        {
+          "text": "The server guarantees the method produces no side effects whatsoever, including logging",
+          "isCorrect": false
+        },
+        {
+          "text": "The method may only be sent over HTTPS",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Per RFC 9110 §9.2.1, a method is *safe* when \"its defined semantics are essentially read-only; i.e., the client does not request, and does not expect, any state change on the origin server.\"\n\nTwo traps here:\n\n- **Safe ≠ idempotent.** \"Same state after N calls\" is *idempotency*. `DELETE` is idempotent but not safe (it changes state); `GET` is both.\n- **Safe does not forbid side effects.** The spec explicitly allows a safe request to still write a log line or bump a counter — the point is the client \"cannot be held accountable\" for those incidental effects because it didn't request them.",
+      "references": "[RFC 9110 §9.2.1: Safe Methods](https://www.rfc-editor.org/rfc/rfc9110.html#section-9.2.1)"
+    },
+    {
+      "id": "put-vs-patch-vs-post-partial-update",
+      "title": "Update only a user's `email`, leaving every other field untouched. Which method fits best?",
+      "description": "The full user representation is large, and the client only wants to change one field.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`PATCH` — send only the field(s) to change",
+          "isCorrect": true
+        },
+        {
+          "text": "`PUT` — it's the standard \"update\" method",
+          "isCorrect": false
+        },
+        {
+          "text": "`POST` — create a fresh representation of the user",
+          "isCorrect": false
+        },
+        {
+          "text": "`GET` with the new email passed as a query parameter",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`PATCH` (RFC 5789) applies a *partial* modification — exactly the \"change one field\" case.\n\nWhy not the others?\n\n- **`PUT` has replace semantics** (RFC 9110 §9.3.4): the payload is the *complete* new state of the resource. A `PUT` that omits fields asks the server to clear them, so a partial `PUT` risks wiping data you didn't mean to touch.\n- **`POST`** is for non-idempotent or unspecified processing (often creation); it doesn't communicate \"modify this existing resource.\"\n- **`GET`** is safe/read-only — using it to mutate state violates the uniform interface and lets caches and crawlers trigger writes.",
+      "references": "[RFC 5789: PATCH Method for HTTP](https://www.rfc-editor.org/rfc/rfc5789) · [RFC 9110 §9.3.4: PUT](https://www.rfc-editor.org/rfc/rfc9110.html#section-9.3.4)"
+    },
+    {
+      "id": "why-patch-not-idempotent",
+      "title": "Why is `PATCH` not guaranteed to be idempotent, while `PUT` is?",
+      "description": "Consider this JSON Patch (RFC 6902) request body:\n\n```json\n[{ \"op\": \"add\", \"path\": \"/items/-\", \"value\": \"sku-9\" }]\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "A patch can describe a *relative* change — here `/items/-` appends, so replaying it adds `sku-9` again; `PUT` replaces the whole representation, so repeats converge to one state",
+          "isCorrect": true
+        },
+        {
+          "text": "`PATCH` always sends less data than `PUT`, and smaller requests are never idempotent",
+          "isCorrect": false
+        },
+        {
+          "text": "`PATCH` is unsafe, and no unsafe method can ever be idempotent",
+          "isCorrect": false
+        },
+        {
+          "text": "`PUT` is cached by intermediaries while `PATCH` is not, which is what makes `PUT` idempotent",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "In JSON Patch, the path token `-` means \"append to the array.\" Applying the patch once gives `items: [..., \"sku-9\"]`; applying the **same** request again gives `items: [..., \"sku-9\", \"sku-9\"]`. Two applications produce different states ⇒ not idempotent. RFC 5789 states plainly that PATCH is \"neither safe nor idempotent.\"\n\n`PUT` is idempotent because it carries the *entire* target state: sending it N times leaves the resource exactly as one send would.\n\nNote the nuance in the second distractor: a `PATCH` *can* be made idempotent (e.g., a patch that only sets absolute values), but the method gives you no guarantee — so clients and intermediaries must not assume it.",
+      "references": "[RFC 5789: PATCH (not safe or idempotent)](https://www.rfc-editor.org/rfc/rfc5789#section-1) · [RFC 6902: JSON Patch](https://www.rfc-editor.org/rfc/rfc6902)"
+    },
+    {
+      "id": "idempotency-key-double-charge",
+      "title": "A `POST /charges` times out before the response arrives; the client retries. How do you prevent a double charge?",
+      "description": "The card was charged on the first attempt, but the response was lost in transit, so the client cannot tell whether it succeeded.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The client sends a unique `Idempotency-Key` header; the server stores the first result under that key and **replays the stored response** on any retry with the same key, charging only once",
+          "isCorrect": true
+        },
+        {
+          "text": "Switch the endpoint to `PUT`, since `PUT` is idempotent and `POST` is not",
+          "isCorrect": false
+        },
+        {
+          "text": "Nothing is needed — TCP guarantees each request executes at most once",
+          "isCorrect": false
+        },
+        {
+          "text": "Return `409 Conflict` on the retry so the client abandons the charge",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`POST` is neither safe nor idempotent, so an at-least-once retry policy risks duplicate side effects. The **idempotency key** pattern (popularized by Stripe, now an IETF draft header) makes an unsafe operation safely retryable: the client generates a unique key per *logical* operation and sends it on every retry. The server persists the operation's outcome keyed by that value and returns the same stored response for replays, rather than re-executing.\n\nWhy the distractors fail:\n\n- **`PUT`** is idempotent only because the client picks the target URI; for \"create a new charge\" the server assigns identity, so swapping the verb doesn't dedupe intent.\n- **TCP** guarantees in-order byte delivery on a connection, not exactly-once *application* semantics across reconnects and retries.\n- **`409`** throws away the result; the client still doesn't know if the money moved.\n\n(Reusing the same key with a *different* request body should be rejected — commonly `422` — so a key always maps to one operation.)",
+      "references": "[Stripe: Idempotent requests](https://docs.stripe.com/api/idempotent_requests) · [IETF draft: The Idempotency-Key HTTP Header Field](https://datatracker.ietf.org/doc/draft-ietf-httpapi-idempotency-key-header/)"
+    },
+    {
+      "id": "cursor-vs-offset-design",
+      "title": "An infinite-scroll feed over a constantly-growing table: a user must never see a duplicate or skip an item, and page 10,000 must be as fast as page 1. Which pagination design fits?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Cursor (keyset) pagination — return an opaque cursor encoding the last row's sort key, and fetch the next page with `WHERE (created_at, id) < :cursor ORDER BY created_at DESC, id DESC LIMIT n`",
+          "isCorrect": true
+        },
+        {
+          "text": "Offset/limit pagination, because it lets the user jump to any page number",
+          "isCorrect": false
+        },
+        {
+          "text": "Offset/limit with a larger page size to cut the total number of requests",
+          "isCorrect": false
+        },
+        {
+          "text": "Re-sort the table randomly on each request to spread load",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Keyset (cursor) pagination anchors each page on the last item's **stable, indexed sort key** instead of a numeric offset. Two payoffs:\n\n1. **Constant performance at depth.** `WHERE (created_at, id) < :cursor LIMIT n` is an index range scan — it jumps straight to the position. `OFFSET 200000` forces the database to read and *discard* 200,000 rows first.\n2. **Stability under concurrent writes.** The window is defined by a value, not a count, so rows inserted or deleted elsewhere don't shift it and cause skips/dupes.\n\nThe trade-off — which is why the offset distractor is tempting — is that keyset pagination gives up random \"jump to page 137\" access and requires a unique, totally-ordered sort key (hence the `(created_at, id)` tiebreaker).",
+      "references": "[Use The Index, Luke: Paging Through Results](https://use-the-index-luke.com/no-offset)"
+    },
+    {
+      "id": "offset-pagination-drawbacks",
+      "title": "Which of these are genuine drawbacks of `OFFSET`/`LIMIT` pagination that keyset pagination avoids?",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "Rows can be skipped or returned twice when items are inserted or deleted between page fetches",
+          "isCorrect": true
+        },
+        {
+          "text": "Deep pages get slower because the database scans and discards every skipped row",
+          "isCorrect": true
+        },
+        {
+          "text": "It cannot return rows in any sorted order",
+          "isCorrect": false
+        },
+        {
+          "text": "Clients lose the ability to jump directly to an arbitrary page number",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The first two are real. **Drift example** (page size 2, sorted by `id` DESC): page 1 (`OFFSET 0`) over `[10, 9, 8]` returns `10, 9`. A new row `11` arrives. Page 2 (`OFFSET 2`) now runs over `[11, 10, 9, 8]`, skips `11, 10`, and returns `9, 8` — so **`9` appears twice**. A deletion before the window instead causes a *skip*. And `OFFSET n` is O(n) because the engine must walk and throw away the first `n` rows.\n\nThe other two are false: offset pagination obviously supports `ORDER BY`, and \"jump to any page number\" is actually a *capability* of offset (and a thing keyset gives up) — not a drawback of it.",
+      "references": "[Use The Index, Luke: We need tool support for keyset pagination](https://use-the-index-luke.com/no-offset)"
+    },
+    {
+      "id": "status-409-conflict",
+      "title": "Your API does optimistic concurrency with a `version` field in the request body. A client sends `version: 3`, but the stored resource is already at `version: 5` — someone updated it first. No `If-Match` header was sent. Which status code?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`409 Conflict`",
+          "isCorrect": true
+        },
+        {
+          "text": "`412 Precondition Failed`",
+          "isCorrect": false
+        },
+        {
+          "text": "`400 Bad Request`",
+          "isCorrect": false
+        },
+        {
+          "text": "`404 Not Found`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`409 Conflict` (RFC 9110 §15.5.10) means \"the request could not be completed due to a conflict with the current state of the target resource\" — exactly a lost-update / stale-version situation that your application detects.\n\nThe key contrast with `412`: **`412 Precondition Failed` is reserved for failed HTTP conditional headers** (`If-Match`, `If-Unmodified-Since`). Here the concurrency check lives in the request body and your application logic, not in an HTTP precondition, so `409` is the right signal. `400` is for malformed requests (this one is well-formed), and `404` would wrongly imply the resource doesn't exist.",
+      "references": "[RFC 9110 §15.5.10: 409 Conflict](https://www.rfc-editor.org/rfc/rfc9110.html#section-15.5.10)"
+    },
+    {
+      "id": "status-412-precondition-failed",
+      "title": "A client does a conditional update with `If-Match: \"v5\"` to avoid lost updates, but the resource's current `ETag` is `\"v7\"`. Per RFC 9110, what 3-digit status code must the server return?",
+      "description": "Enter the numeric status code.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [412]
+      },
+      "explanation": "`412 Precondition Failed` (RFC 9110 §15.5.13) fires when a condition in the request headers \"evaluated to false when tested on the server.\" The flow: the server hands out an `ETag` (a version fingerprint) on `GET`; the client echoes it back in `If-Match` on the next write. If the stored `ETag` no longer matches, the resource changed underneath the client, the precondition fails, and the server returns `412` instead of clobbering the newer state.\n\nThis is the HTTP-native form of optimistic concurrency. Compare with the previous question: when the version check is done via an HTTP conditional header it's `412`; when it's an application-level conflict with no conditional header, it's `409`.",
+      "references": "[RFC 9110 §15.5.13: 412 Precondition Failed](https://www.rfc-editor.org/rfc/rfc9110.html#section-15.5.13) · [RFC 9110 §13.1.1: If-Match](https://www.rfc-editor.org/rfc/rfc9110.html#section-13.1.1)"
+    },
+    {
+      "id": "status-422-vs-400",
+      "title": "A client `POST`s well-formed JSON to create a user, but `email` is `\"not-an-email\"` and fails validation. The body parsed fine. Which status code is most precise?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`422 Unprocessable Content` — the syntax is valid but the content fails semantic validation",
+          "isCorrect": true
+        },
+        {
+          "text": "`400 Bad Request` — any client error in the body must be a `400`",
+          "isCorrect": false
+        },
+        {
+          "text": "`500 Internal Server Error`",
+          "isCorrect": false
+        },
+        {
+          "text": "`409 Conflict`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`422 Unprocessable Content` (RFC 9110 §15.5.21) is for when \"the server understands the content type ... and the syntax of the request content is correct, but it was unable to process the contained instructions\" — i.e. the JSON parsed but a business/validation rule rejected it. (RFC 9110 pulled `422` into core HTTP and renamed it from the older \"Unprocessable Entity.\")\n\n`400 Bad Request` properly signals *malformed* syntax — invalid JSON, a missing required structural element. Some APIs do collapse everything into `400`, and that's a defensible house style, but when you want to distinguish \"I couldn't even parse this\" from \"I parsed it and it's semantically wrong,\" `422` is the standardized code for the latter. `500` would wrongly blame the server, and `409` implies a state conflict, not bad input.",
+      "references": "[RFC 9110 §15.5.21: 422 Unprocessable Content](https://www.rfc-editor.org/rfc/rfc9110.html#section-15.5.21)"
+    },
+    {
+      "id": "status-429-rate-limit",
+      "title": "A client exceeds its rate limit. What's the correct status code, and which header should tell it when to try again?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`429 Too Many Requests`, with a `Retry-After` header",
+          "isCorrect": true
+        },
+        {
+          "text": "`403 Forbidden`, with a `Retry-After` header",
+          "isCorrect": false
+        },
+        {
+          "text": "`429 Too Many Requests`, with a `Location` header",
+          "isCorrect": false
+        },
+        {
+          "text": "`503 Service Unavailable` for every throttled client",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`429 Too Many Requests` (RFC 6585 §4) is the dedicated rate-limiting code, and the response \"may include a `Retry-After` header indicating how long to wait before making a new request\" — the standard, machine-readable way to tell a client to back off (it accepts either seconds or an HTTP date).\n\nThe distractors: `403 Forbidden` means \"authenticated but not allowed,\" not \"slow down.\" `Location` is for redirects/created resources, not retry timing. And `503` says the *whole service* is unavailable — using it for a single over-quota client misleads every other healthy consumer and confuses load balancers.",
+      "references": "[RFC 6585 §4: 429 Too Many Requests](https://www.rfc-editor.org/rfc/rfc6585#section-4) · [RFC 9110 §10.2.3: Retry-After](https://www.rfc-editor.org/rfc/rfc9110.html#section-10.2.3)"
+    },
+    {
+      "id": "versioning-backward-compatible-change",
+      "title": "Which response change is backward-compatible — safe to ship to existing clients without cutting a new API version?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Adding a new optional field to the JSON response body",
+          "isCorrect": true
+        },
+        {
+          "text": "Removing a field that clients read",
+          "isCorrect": false
+        },
+        {
+          "text": "Renaming `created` to `createdAt`",
+          "isCorrect": false
+        },
+        {
+          "text": "Changing `id` from a JSON number to a string",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Adding an optional field is *additive*: under the **tolerant reader** principle (an application of Postel's Law — \"be conservative in what you send, be liberal in what you accept\"), well-behaved clients ignore fields they don't recognize, so they keep working.\n\nThe other three are **breaking changes** — removing, renaming, or retyping a field will crash or misparse existing consumers — and each demands a new *major* version. Designing for additive evolution (and documenting the contract) is what lets you avoid a `/v2` for as long as possible; reserve version bumps for genuinely incompatible changes.",
+      "references": "[Martin Fowler: TolerantReader](https://martinfowler.com/bliki/TolerantReader.html)"
+    },
+    {
+      "id": "problem-details-media-type",
+      "title": "Per RFC 9457 (Problem Details for HTTP APIs), what media type does a server put on `Content-Type` for a JSON error document?",
+      "description": "Enter the full media type string.",
+      "type": "input",
+      "validation": {
+        "mode": "text",
+        "acceptedAnswers": ["application/problem+json"]
+      },
+      "explanation": "RFC 9457 (which obsoletes RFC 7807) standardizes a machine-readable error envelope so every endpoint reports failures the same way. The JSON form is served as `application/problem+json` and carries members like:\n\n```json\n{\n  \"type\": \"https://example.com/probs/out-of-credit\",\n  \"title\": \"You do not have enough credit.\",\n  \"status\": 403,\n  \"detail\": \"Your balance is 30, but the cost is 50.\",\n  \"instance\": \"/account/12345/msgs/abc\"\n}\n```\n\n`type` is a stable URI a client can branch on, `title` is a human-readable summary, `status` mirrors the HTTP status, and `detail`/`instance` describe this specific occurrence. (There's an XML sibling, `application/problem+xml`.) Standardizing this means clients write one error parser instead of one per endpoint.",
+      "references": "[RFC 9457: Problem Details for HTTP APIs](https://www.rfc-editor.org/rfc/rfc9457)"
+    },
+    {
+      "id": "error-envelope-200-antipattern",
+      "title": "An API returns HTTP `200` for everything and signals failure with `{ \"ok\": false }` in the body. What's the core problem?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Generic clients, caches, proxies, and monitoring rely on the status code to tell success from failure; forcing every error through `200` breaks that contract and hides failures from standard tooling",
+          "isCorrect": true
+        },
+        {
+          "text": "It wastes bandwidth because `200` responses are larger on the wire than `4xx` ones",
+          "isCorrect": false
+        },
+        {
+          "text": "HTTP forbids a response body on `200` responses",
+          "isCorrect": false
+        },
+        {
+          "text": "Servers are unable to log `200` responses",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The status code is part of HTTP's uniform interface, and the whole ecosystem branches on it: client libraries throw on `4xx`/`5xx`, retry logic backs off on `5xx`, caches store `2xx`, and dashboards alert on error rates. Collapse every error into `200` and all of that misfires — errors vanish from monitoring, retries never trigger, and *every* client is forced to parse the body just to learn whether the call actually worked.\n\nThe right design pairs an accurate status code with a structured body (e.g., RFC 9457 `application/problem+json`): the code drives infrastructure, the body carries the detail. The distractors are simply false — `200` may carry a body, has no special size, and is logged like any other response.",
+      "references": "[RFC 9110 §15: Status Codes](https://www.rfc-editor.org/rfc/rfc9110.html#section-15) · [RFC 9457: Problem Details for HTTP APIs](https://www.rfc-editor.org/rfc/rfc9457)"
+    }
+  ]
+}

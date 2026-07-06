@@ -1,0 +1,2523 @@
+{
+  "schemaVersion": 1,
+  "id": "master-javascript-promise-async-execution",
+  "title": "Master JavaScript Promise & Async Execution",
+  "description": "Step through the event loop, microtask & macrotask queues, async/await suspension, and tricky async patterns. Detailed MDN-linked explanations reveal after every answer.",
+  "language": "en",
+  "tags": ["javascript", "async"],
+  "questions": [
+    {
+      "id": "event-loop-sync-micro-macro",
+      "title": "In what order do the values log?",
+      "description": "```js\nconsole.log(\"1\");\nsetTimeout(() => console.log(\"2\"), 0);\nPromise.resolve().then(() => console.log(\"3\"));\nnew Promise((resolve) => {\n  resolve();\n  console.log(\"4\");\n}).then(() => console.log(\"5\"));\nconsole.log(\"6\");\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`1, 2, 3, 4, 5, 6`",
+          "isCorrect": false
+        },
+        {
+          "text": "`1, 4, 6, 3, 5, 2`",
+          "isCorrect": true
+        },
+        {
+          "text": "`1, 4, 6, 5, 3, 2`",
+          "isCorrect": false
+        },
+        {
+          "text": "`1, 4, 6, 2, 3, 5`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The event loop runs all synchronous code first, then drains the microtask queue, and only then picks the next macrotask.\n\n1. `\"1\"` logs synchronously.\n2. `setTimeout` schedules a **macrotask**.\n3. `Promise.resolve().then(...)` enqueues `\"3\"` as a **microtask**.\n4. The `new Promise` executor runs *synchronously*: `resolve()` settles the promise, then `\"4\"` logs. The `.then` for `\"5\"` becomes the second microtask.\n5. `\"6\"` logs synchronously.\n6. Microtasks drain in order: `\"3\"`, `\"5\"`. Finally the macrotask logs `\"2\"`.\n\nThe key trap: code after `resolve()` inside an executor still runs, because `.then` callbacks never run synchronously.",
+      "references": "[MDN: Execution model](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Execution_model)"
+    },
+    {
+      "id": "event-loop-microtasks-before-macrotask",
+      "title": "In what order do the values log?",
+      "description": "```js\nsetTimeout(() => console.log(\"timeout\"), 0);\nPromise.resolve()\n  .then(() => console.log(\"p1\"))\n  .then(() => console.log(\"p2\"));\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`timeout, p1, p2`",
+          "isCorrect": false
+        },
+        {
+          "text": "`p1, timeout, p2`",
+          "isCorrect": false
+        },
+        {
+          "text": "`p1, p2, timeout`",
+          "isCorrect": true
+        },
+        {
+          "text": "`timeout, p2, p1`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The event loop drains the **entire** microtask queue before processing the next macrotask — even microtasks that were enqueued *while* draining.\n\nHere `p1` runs as a microtask, and completing it resolves the next promise in the chain, which enqueues `p2` as another microtask. Since the queue must be fully empty before a macrotask runs, `p2` also beats the setTimeout callback, no matter how long the promise chain is.\n\nA common wrong intuition is that the runtime alternates one microtask, one macrotask — it does not.",
+      "references": "[MDN: setTimeout](https://developer.mozilla.org/en-US/docs/Web/API/Window/setTimeout)"
+    },
+    {
+      "id": "event-loop-timer-delays",
+      "title": "In what order do the values log?",
+      "description": "```js\nconsole.log(\"1\");\nsetTimeout(() => console.log(\"2\"), 50);\nsetTimeout(() => console.log(\"3\"), 0);\nPromise.resolve().then(() => console.log(\"4\"));\nconsole.log(\"5\");\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`1, 5, 4, 3, 2`",
+          "isCorrect": true
+        },
+        {
+          "text": "`1, 4, 5, 3, 2`",
+          "isCorrect": false
+        },
+        {
+          "text": "`1, 5, 3, 4, 2`",
+          "isCorrect": false
+        },
+        {
+          "text": "`1, 5, 4, 2, 3`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Three rules combine here: synchronous code first (`1`, `5`), then microtasks (`4`), then macrotasks ordered by when their timers expire.\n\nThe `0`ms timer (`3`) fires before the `50`ms timer (`2`) even though it was registered later — setTimeout ordering depends on expiry time, not registration order, when delays differ.\n\nNote that `setTimeout(..., 0)` still never runs before the microtask queue is empty: the delay is a *minimum*, and the callback must wait for its turn in the event loop.",
+      "references": "[MDN: setTimeout](https://developer.mozilla.org/en-US/docs/Web/API/Window/setTimeout)"
+    },
+    {
+      "id": "event-loop-executor-synchronous",
+      "title": "In what order do the values log?",
+      "description": "```js\nconst p1 = new Promise((resolve) => {\n  console.log(\"executor 1\");\n  resolve(1);\n});\nconst p2 = new Promise((resolve) => {\n  console.log(\"executor 2\");\n  resolve(2);\n});\np1.then((v) => console.log(\"p1 then\", v));\np2.then((v) => console.log(\"p2 then\", v));\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`executor 1, executor 2, p1 then 1, p2 then 2`",
+          "isCorrect": true
+        },
+        {
+          "text": "`executor 1, p1 then 1, executor 2, p2 then 2`",
+          "isCorrect": false
+        },
+        {
+          "text": "`p1 then 1, p2 then 2, executor 1, executor 2`",
+          "isCorrect": false
+        },
+        {
+          "text": "`executor 1, executor 2, p2 then 2, p1 then 1`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The Promise constructor calls its executor **synchronously, during construction**. Both `executor 1` and `executor 2` log before any `.then` callback can run, because `.then` callbacks are always deferred to the microtask queue.\n\nOnce the synchronous script finishes, the two queued microtasks run in registration order: `p1 then 1`, then `p2 then 2`.\n\nThis synchronous-executor rule is why promises can wrap code that starts work immediately (like opening a connection) while still delivering results asynchronously.",
+      "references": "[MDN: Promise](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/Promise)"
+    },
+    {
+      "id": "event-loop-micro-inside-macro",
+      "title": "In what order do the values log?",
+      "description": "```js\nconsole.log(\"1\");\nsetTimeout(() => {\n  console.log(\"2\");\n  Promise.resolve().then(() => console.log(\"3\"));\n}, 0);\nPromise.resolve().then(() => {\n  console.log(\"4\");\n  setTimeout(() => console.log(\"5\"), 0);\n});\nconsole.log(\"6\");\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`1, 6, 4, 2, 3, 5`",
+          "isCorrect": true
+        },
+        {
+          "text": "`1, 6, 4, 5, 2, 3`",
+          "isCorrect": false
+        },
+        {
+          "text": "`1, 6, 2, 3, 4, 5`",
+          "isCorrect": false
+        },
+        {
+          "text": "`1, 4, 6, 2, 3, 5`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Tasks spawned from inside other tasks land in different places:\n\n1. Sync: `1`, `6`. Queues: macrotask `[2]`, microtask `[4]`.\n2. Microtask `4` runs and schedules a **new macrotask** (`5`), which goes to the *back* of the macrotask queue, behind `2`.\n3. Macrotask `2` runs and schedules a **microtask** (`3`). After each macrotask, the microtask queue drains completely — so `3` runs *before* the next macrotask.\n4. Finally macrotask `5` runs.\n\nRule of thumb: microtasks scheduled inside a macrotask run immediately after it; macrotasks scheduled inside a microtask wait their turn at the back of the line."
+    },
+    {
+      "id": "event-loop-drain-between-macrotasks",
+      "title": "Two timers are registered with the same delay. In what order do the values log?",
+      "description": "```js\nsetTimeout(() => {\n  console.log(\"A\");\n  Promise.resolve().then(() => console.log(\"B\"));\n}, 0);\nsetTimeout(() => console.log(\"C\"), 0);\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`A, B, C`",
+          "isCorrect": true
+        },
+        {
+          "text": "`A, C, B`",
+          "isCorrect": false
+        },
+        {
+          "text": "`C, A, B`",
+          "isCorrect": false
+        },
+        {
+          "text": "`A, C` (B never logs)",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Between two consecutive macrotasks, the event loop always drains the microtask queue completely.\n\nThe first timer callback logs `A` and enqueues a microtask for `B`. Even though the second timer (`C`) is already expired and waiting, the event loop checks microtasks first — so `B` runs before `C`.\n\nThis is the foundation of every \"microtasks have priority\" puzzle: each macrotask gets a full microtask drain *after* it, and only then does the next macrotask start.",
+      "references": "[MDN: Execution model](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Execution_model)"
+    },
+    {
+      "id": "event-loop-pending-at-log",
+      "title": "What is the state of `p` at the moment `console.log` reads it?",
+      "description": "```js\nconst p = Promise.resolve(1).then((v) => v + 1);\nconsole.log(p);\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Pending — the `.then` callback has not run yet",
+          "isCorrect": true
+        },
+        {
+          "text": "Fulfilled with `2` — `Promise.resolve` settles immediately",
+          "isCorrect": false
+        },
+        {
+          "text": "Fulfilled with `1` — the original value before `.then`",
+          "isCorrect": false
+        },
+        {
+          "text": "Rejected — you cannot log a promise object",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`p` is the **new promise returned by `.then`**, not the original `Promise.resolve(1)`. Even though the source promise is already fulfilled, the `.then` callback can only run as a microtask — after the current synchronous code (including the `console.log`) finishes.\n\nAt log time the callback hasn't produced a value yet, so `p` is still *pending* (Node prints `Promise { <pending> }`).\n\nThis illustrates that `then()` always returns a fresh promise whose fate is decided later, never synchronously.",
+      "references": "[MDN: then](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/then)"
+    },
+    {
+      "id": "event-loop-microtask-sources",
+      "title": "Which of these schedule work on the **microtask** queue? (Select all that apply.)",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "`Promise.prototype.then` / `catch` / `finally` callbacks",
+          "isCorrect": true
+        },
+        {
+          "text": "`queueMicrotask(callback)`",
+          "isCorrect": true
+        },
+        {
+          "text": "The code after `await` in an async function",
+          "isCorrect": true
+        },
+        {
+          "text": "`setTimeout(callback, 0)`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Promise reaction callbacks, `queueMicrotask`, and `await` continuations all share the **same microtask queue** — an `await` literally suspends the function and schedules its continuation as a microtask.\n\n`setTimeout`, even with a `0`ms delay, schedules a **macrotask** (a \"task\" in spec language). That single difference explains most ordering puzzles: all pending microtasks always run before the next `setTimeout` callback, regardless of registration order.",
+      "references": "[MDN: queueMicrotask](https://developer.mozilla.org/en-US/docs/Web/API/Window/queueMicrotask)"
+    },
+    {
+      "id": "event-loop-first-log",
+      "title": "Which word is logged **first**?",
+      "description": "```js\nsetTimeout(() => console.log(\"timer\"), 0);\nPromise.resolve().then(() => console.log(\"promise\"));\nconsole.log(\"script\");\n```",
+      "type": "input",
+      "validation": {
+        "mode": "text",
+        "acceptedAnswers": ["script"]
+      },
+      "explanation": "Synchronous code always runs to completion before *any* queued callback — that's the \"run-to-completion\" guarantee of the JavaScript execution model.\n\n`setTimeout` and `.then` only *schedule* work; neither can interrupt the currently running script. So `script` logs first, then the microtask (`promise`), then the macrotask (`timer`).\n\nFull output: `script, promise, timer`.",
+      "references": "[MDN: Execution model](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Execution_model)"
+    },
+    {
+      "id": "event-loop-when-microtasks-drain",
+      "title": "When does the event loop process the microtask queue?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "After the current task finishes, draining it completely before the next macrotask",
+          "isCorrect": true
+        },
+        {
+          "text": "It processes exactly one microtask after each macrotask",
+          "isCorrect": false
+        },
+        {
+          "text": "Only after all macrotasks in the queue have finished",
+          "isCorrect": false
+        },
+        {
+          "text": "On a fixed timer, roughly every few milliseconds",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "After every task — the initial script counts as one, and each macrotask callback counts as one — the engine drains the microtask queue **completely**, including microtasks that were enqueued during the drain itself.\n\nThis \"drain to empty\" rule is why a chain of `.then` calls fully finishes before the next `setTimeout` fires, and why infinitely re-queueing microtasks can starve the event loop entirely (no rendering, no timers).",
+      "references": "[MDN: Microtask guide](https://developer.mozilla.org/en-US/docs/Web/API/HTML_DOM_API/Microtask_guide)"
+    },
+    {
+      "id": "executor-continues-after-reject",
+      "title": "In what order do the values log?",
+      "description": "```js\nnew Promise((resolve, reject) => {\n  console.log(\"1\");\n  reject(\"err\");\n  console.log(\"2\");\n}).catch((e) => console.log(\"caught\", e));\nconsole.log(\"3\");\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`1, caught err, 3` — reject stops the executor",
+          "isCorrect": false
+        },
+        {
+          "text": "`1, 2, 3, caught err`",
+          "isCorrect": true
+        },
+        {
+          "text": "`1, 2, caught err, 3`",
+          "isCorrect": false
+        },
+        {
+          "text": "`1, 3, 2, caught err`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Calling `reject()` (or `resolve()`) inside an executor does **not** throw, return, or otherwise stop the executor — it only changes the promise's state. `\"2\"` still logs synchronously right after the rejection.\n\nThe `.catch` handler is a microtask, so it runs after all synchronous code, including `\"3\"`.\n\nIf you want to exit the executor at the rejection point, you must `return` explicitly: `return reject(\"err\")` is a common idiom.",
+      "references": "[MDN: catch](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/catch)"
+    },
+    {
+      "id": "executor-first-settle-wins",
+      "title": "A promise is resolved and rejected multiple times. What logs?",
+      "description": "```js\nconst p = new Promise((resolve, reject) => {\n  resolve(\"first\");\n  reject(\"second\");\n  resolve(\"third\");\n});\np.then((v) => console.log(\"then\", v)).catch((e) => console.log(\"catch\", e));\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`then first`",
+          "isCorrect": true
+        },
+        {
+          "text": "`catch second`",
+          "isCorrect": false
+        },
+        {
+          "text": "`then third` — the last call wins",
+          "isCorrect": false
+        },
+        {
+          "text": "`then first, catch second, then third`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A promise can settle exactly **once**. The first call to `resolve` or `reject` locks in the state; every later call is silently ignored — no error, no warning.\n\nHere `resolve(\"first\")` wins, so the promise is fulfilled with `\"first\"` and the `.catch` never fires.\n\nThis immutability is core to the Promise design: once you hold a settled promise, its value can never change underneath you, no matter who else has a reference to the `resolve`/`reject` functions.",
+      "references": "[MDN: Promise](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise)"
+    },
+    {
+      "id": "executor-throw-rejects",
+      "title": "What does throwing inside an executor do?",
+      "description": "```js\nnew Promise(() => {\n  throw new Error(\"boom\");\n}).catch((e) => console.log(\"caught\", e.message));\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Logs `caught boom` — the throw becomes a rejection",
+          "isCorrect": true
+        },
+        {
+          "text": "The error crashes the script before `.catch` is attached",
+          "isCorrect": false
+        },
+        {
+          "text": "The promise stays pending forever",
+          "isCorrect": false
+        },
+        {
+          "text": "Logs `caught undefined` — the error object is lost",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The `new Promise` machinery wraps the executor call in an implicit try/catch: a synchronous `throw` inside the executor **rejects** the promise with the thrown value, exactly as if `reject(error)` had been called.\n\nOne caveat: this only applies *before* the promise settles. If you `throw` after already calling `resolve()`, the throw is swallowed — the promise is locked to its first settlement.\n\nThis is why wrapping legacy code in a Promise constructor is safe even if it throws synchronously.",
+      "references": "[MDN: Promise](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/Promise)"
+    },
+    {
+      "id": "executor-never-settles",
+      "title": "The executor never calls `resolve` or `reject`. What logs?",
+      "description": "```js\nconst p = new Promise(() => {});\np.then(() => console.log(\"done\"));\nconsole.log(\"end\");\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`end` only — the promise stays pending forever",
+          "isCorrect": true
+        },
+        {
+          "text": "`end, done`",
+          "isCorrect": false
+        },
+        {
+          "text": "`done, end`",
+          "isCorrect": false
+        },
+        {
+          "text": "`end`, then a TimeoutError is thrown",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A promise has no built-in timeout. If the executor never calls `resolve` or `reject`, the promise remains *pending* forever, and every handler attached to it simply never runs. There is no error and no warning — `\"done\"` is just never logged.\n\nForever-pending promises are a real bug class: an `await` on one suspends that async function permanently. Defensive patterns like a `Promise.race` against a timeout promise exist precisely to guard against this.",
+      "references": "[MDN: race](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/race)"
+    },
+    {
+      "id": "executor-missing",
+      "title": "What happens when you construct a promise without an executor: `new Promise()`?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "A `TypeError` is thrown synchronously",
+          "isCorrect": true
+        },
+        {
+          "text": "It returns a forever-pending promise",
+          "isCorrect": false
+        },
+        {
+          "text": "It returns a promise resolved with `undefined`",
+          "isCorrect": false
+        },
+        {
+          "text": "A `SyntaxError` is reported at parse time",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The Promise constructor requires its argument to be callable. `new Promise()` (or `new Promise(42)`) throws `TypeError: Promise resolver undefined is not a function` **synchronously**, at construction time — there is no promise to attach a `.catch` to.\n\nIf you just need an already-settled promise, use the static helpers instead: `Promise.resolve(value)` or `Promise.reject(error)`. They skip the executor entirely.",
+      "references": "[MDN: Promise](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/Promise)"
+    },
+    {
+      "id": "executor-resolve-with-promise",
+      "title": "A promise is resolved with another promise. In what order do the values log?",
+      "description": "```js\nconst inner = new Promise((r) => setTimeout(() => r(\"inner\"), 20));\nconst outer = new Promise((resolve) => resolve(inner));\nouter.then((v) => console.log(\"outer got\", v));\nconsole.log(\"sync\");\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`sync, outer got inner`",
+          "isCorrect": true
+        },
+        {
+          "text": "`sync, outer got [object Promise]`",
+          "isCorrect": false
+        },
+        {
+          "text": "`outer got inner, sync`",
+          "isCorrect": false
+        },
+        {
+          "text": "`sync` only — resolving with a promise is a TypeError",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Calling `resolve(somePromise)` does **not** fulfill the outer promise with the promise object. Instead the outer promise *adopts the state* of the inner one: it stays pending until `inner` settles, then settles the same way with the same value.\n\nSo `outer` waits ~20ms for the timer, then fulfills with the string `\"inner\"` — handlers never see the wrapper promise.\n\nThis recursive unwrapping is why `.then` chains and `await` always deliver plain values, never nested `Promise<Promise<...>>`.",
+      "references": "[MDN: Promise#description](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise#description)"
+    },
+    {
+      "id": "executor-resolve-later",
+      "title": "The resolver is captured and called later. In what order do the values log?",
+      "description": "```js\nlet resolveFn;\nconst p = new Promise((r) => {\n  resolveFn = r;\n});\np.then((v) => console.log(\"resolved\", v));\nconsole.log(\"before\");\nresolveFn(99);\nconsole.log(\"after\");\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`before, resolved 99, after`",
+          "isCorrect": false
+        },
+        {
+          "text": "`before, after, resolved 99`",
+          "isCorrect": true
+        },
+        {
+          "text": "`resolved 99, before, after`",
+          "isCorrect": false
+        },
+        {
+          "text": "`before, after` — resolving outside the executor does nothing",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Resolving a promise only *schedules* its handlers — it never invokes them synchronously. When `resolveFn(99)` runs, the `.then` callback is enqueued as a microtask, but the current synchronous code keeps going, so `\"after\"` logs first.\n\nThis guarantee (handlers are always asynchronous, even if the promise is already settled) protects you from \"sometimes sync, sometimes async\" callbacks — a notorious source of bugs known as releasing Zalgo.\n\nCapturing `resolve` externally like this is the basis of the deferred pattern and `Promise.withResolvers()`.",
+      "references": "[izs.me: Designing APIs for Asynchrony](https://blog.izs.me/2013/08/designing-apis-for-asynchrony/)"
+    },
+    {
+      "id": "executor-custom-thenable",
+      "title": "`Promise.resolve` receives a custom thenable. In what order do the values log?",
+      "description": "```js\nconst thenable = {\n  then(resolve) {\n    console.log(\"then called\");\n    resolve(\"done\");\n  },\n};\nconsole.log(\"start\");\nPromise.resolve(thenable).then((v) => console.log(\"value\", v));\nconsole.log(\"end\");\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`start, then called, end, value done`",
+          "isCorrect": false
+        },
+        {
+          "text": "`start, end, then called, value done`",
+          "isCorrect": true
+        },
+        {
+          "text": "`start, end, value done, then called`",
+          "isCorrect": false
+        },
+        {
+          "text": "`then called, start, end, value done`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A *thenable* is any object with a `then` method. `Promise.resolve` assimilates thenables — but it calls their `then` method **asynchronously**, in a microtask, never during the current synchronous run.\n\nSo `start` and `end` log first; then the engine calls `thenable.then(resolve, reject)` as a microtask (`then called`), and resolving it schedules the final handler (`value done`).\n\nThenable assimilation is how promises interoperate with third-party promise libraries — and it's the source of the famous \"extra microtask tick\" in later questions.",
+      "references": "[MDN: resolve](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/resolve)"
+    },
+    {
+      "id": "chain-transforms-values",
+      "title": "In what order do the values log?",
+      "description": "```js\nPromise.resolve(1)\n  .then((v) => {\n    console.log(v);\n    return v * 2;\n  })\n  .then((v) => {\n    console.log(v);\n    return v * 2;\n  })\n  .then((v) => console.log(v));\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`1, 2, 4`",
+          "isCorrect": true
+        },
+        {
+          "text": "`1, 4, 8`",
+          "isCorrect": false
+        },
+        {
+          "text": "`2, 4, 8`",
+          "isCorrect": false
+        },
+        {
+          "text": "`1, 1, 1`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Each `.then` returns a **new promise** that fulfills with its callback's return value, so the chain transforms the value step by step: `1` comes in, `2` is passed on, then `4`.\n\nThe common mistake is doubling too eagerly (`1, 4, 8`): each callback doubles its *input*, which is the previous callback's output — not some accumulated future value.\n\nThink of a chain as a pipeline: each stage sees exactly what the previous stage returned.",
+      "references": "[MDN: then](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/then)"
+    },
+    {
+      "id": "chain-missing-return",
+      "title": "The first callback has no `return`. What logs?",
+      "description": "```js\nPromise.resolve(\"start\")\n  .then((v) => {\n    console.log(\"got\", v);\n  })\n  .then((v) => console.log(\"next\", v));\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`got start, next start` — the value flows through",
+          "isCorrect": false
+        },
+        {
+          "text": "`got start, next undefined`",
+          "isCorrect": true
+        },
+        {
+          "text": "`got start` only — the chain stops",
+          "isCorrect": false
+        },
+        {
+          "text": "`got start`, then a TypeError",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A `.then` callback that finishes without an explicit `return` returns `undefined`, and that becomes the fulfillment value of the next promise in the chain. The original `\"start\"` does **not** flow through automatically.\n\nThis is one of the most common real-world promise bugs: a logging or side-effect `.then` inserted in the middle of a chain silently replaces the value with `undefined`.\n\nIf you need a passthrough side effect, return the value (`.then((v) => { log(v); return v; })`) — or use `finally`, which ignores its return value by design.",
+      "references": "[MDN: finally](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/finally)"
+    },
+    {
+      "id": "chain-then-non-function",
+      "title": "`.then` is called with a non-function argument. What logs?",
+      "description": "```js\nPromise.resolve(1).then(2).then((v) => console.log(v));\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`1`",
+          "isCorrect": true
+        },
+        {
+          "text": "`2`",
+          "isCorrect": false
+        },
+        {
+          "text": "`undefined`",
+          "isCorrect": false
+        },
+        {
+          "text": "A TypeError — `.then` requires a function",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Per the spec, non-function arguments to `.then` are **silently ignored** and replaced with an identity passthrough. `then(2)` behaves like `then((v) => v)`, so `1` flows through unchanged to the final callback.\n\nNo error is thrown — which can hide bugs like `.then(handler())` (calling the handler immediately and passing its result) instead of `.then(handler)`.\n\nThe same passthrough rule is what lets a rejection skip over `.then(onFulfilled)` links until it finds a rejection handler.",
+      "references": "[MDN: then](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/then)"
+    },
+    {
+      "id": "chain-then-returns-promise-ticks",
+      "title": "One callback returns a promise. Where does `b` land relative to the `t` chain?",
+      "description": "```js\nPromise.resolve()\n  .then(() => {\n    console.log(\"a\");\n    return Promise.resolve(\"b\");\n  })\n  .then((v) => console.log(v));\n\nPromise.resolve()\n  .then(() => console.log(\"t1\"))\n  .then(() => console.log(\"t2\"))\n  .then(() => console.log(\"t3\"))\n  .then(() => console.log(\"t4\"));\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`a, t1, b, t2, t3, t4` — same tick as a plain return value",
+          "isCorrect": false
+        },
+        {
+          "text": "`a, t1, t2, b, t3, t4` — one extra tick",
+          "isCorrect": false
+        },
+        {
+          "text": "`a, t1, t2, t3, b, t4` — two extra ticks",
+          "isCorrect": true
+        },
+        {
+          "text": "`a, b, t1, t2, t3, t4` — the returned promise resolves immediately",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Returning a **promise** from a `.then` callback delays the outer chain by **two extra microtask ticks** compared to returning a plain value.\n\nWhy two? The engine must (1) call `.then` on the returned thenable to subscribe to it — that's one scheduled job — and (2) when it reports back, resolve the outer promise — a second job. Only then is the next chain callback enqueued.\n\nIf the callback had returned the string `\"b\"` directly, `b` would log right after `t1`. This \"thenable assimilation\" cost is invisible in normal code but decisive in ordering puzzles. (Verified on V8/Node.)"
+    },
+    {
+      "id": "chain-fan-out",
+      "title": "Several handlers are attached to the same promise. What logs?",
+      "description": "```js\nconst p = Promise.resolve(1).then((v) => {\n  console.log(\"then1\", v);\n  return v + 1;\n});\np.then((v) => console.log(\"then2\", v));\np.then((v) => console.log(\"then3\", v));\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`then1 1, then2 2, then3 2`",
+          "isCorrect": true
+        },
+        {
+          "text": "`then1 1, then2 2` — a promise can be consumed once",
+          "isCorrect": false
+        },
+        {
+          "text": "`then1 1, then2 1, then3 1`",
+          "isCorrect": false
+        },
+        {
+          "text": "`then1 1, then3 2, then2 2`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Promises are **multicast**: any number of handlers can subscribe to the same promise, and each receives the same settled value, in registration order. `p` is the promise returned by the first `.then`, so it fulfills with `2`, and both `then2` and `then3` see `2`.\n\nNote what `p.then(...); p.then(...)` is *not*: it is not a chain. Both branches read from `p` directly — neither sees the other's return value.\n\nThis fan-out behavior makes promises safe to cache and share, unlike one-shot callbacks.",
+      "references": "[MDN: Promise](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise)"
+    },
+    {
+      "id": "chain-vs-fork",
+      "title": "One chain and one fork on the same promise. In what order do the values log?",
+      "description": "```js\nconst p = Promise.resolve(\"v\");\np.then(() => console.log(\"a\")).then(() => console.log(\"b\"));\np.then(() => console.log(\"c\"));\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`a, b, c`",
+          "isCorrect": false
+        },
+        {
+          "text": "`a, c, b`",
+          "isCorrect": true
+        },
+        {
+          "text": "`c, a, b`",
+          "isCorrect": false
+        },
+        {
+          "text": "`a, b` — only one branch may consume `p`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Both branches register on the already-fulfilled `p`, so the microtask queue starts as `[a, c]`. Running `a` resolves the *next* promise in its chain, which only **then** enqueues `b` — behind `c`.\n\nThis is the rule that makes parallel chains interleave: a chained callback is never pre-queued; it gets enqueued only when its predecessor's promise settles.\n\nDistinguishing a **chain** (`p.then(...).then(...)`) from a **fork** (`p.then(...); p.then(...)`) is essential for reading ordering puzzles."
+    },
+    {
+      "id": "chain-interleave",
+      "title": "Two independent chains. In what order do the values log?",
+      "description": "```js\nPromise.resolve()\n  .then(() => console.log(1))\n  .then(() => console.log(2));\n\nPromise.resolve()\n  .then(() => console.log(3))\n  .then(() => console.log(4));\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`1, 2, 3, 4`",
+          "isCorrect": false
+        },
+        {
+          "text": "`1, 3, 2, 4`",
+          "isCorrect": true
+        },
+        {
+          "text": "`3, 4, 1, 2`",
+          "isCorrect": false
+        },
+        {
+          "text": "`1, 3, 4, 2`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Independent chains **interleave** rather than running to completion one at a time. Initially the queue holds the first callback of each chain: `[1, 3]`. Running `1` enqueues `2` (behind `3`); running `3` enqueues `4` (behind `2`).\n\nEach chain advances exactly one link per \"round\", because the next link is only scheduled when the previous one finishes.\n\nThis round-robin pattern is a direct consequence of the FIFO microtask queue — and a favorite interview trap.",
+      "references": "[MDN: Microtask guide](https://developer.mozilla.org/en-US/docs/Web/API/HTML_DOM_API/Microtask_guide)"
+    },
+    {
+      "id": "chain-catch-recovers",
+      "title": "In what order do the values log?",
+      "description": "```js\nconsole.log(\"start\");\nPromise.reject(\"oops\")\n  .catch((e) => {\n    console.log(\"caught\", e);\n    return \"recovered\";\n  })\n  .then((v) => console.log(\"then\", v));\nconsole.log(\"end\");\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`start, caught oops, then recovered, end`",
+          "isCorrect": false
+        },
+        {
+          "text": "`start, end, caught oops, then recovered`",
+          "isCorrect": true
+        },
+        {
+          "text": "`start, end, then recovered, caught oops`",
+          "isCorrect": false
+        },
+        {
+          "text": "`start, end, caught oops` — a rejected chain skips `.then`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Rejection handlers are microtasks like any other, so both synchronous logs (`start`, `end`) come first.\n\nThe key concept: a `.catch` handler that returns normally **recovers** the chain. Its return value (`\"recovered\"`) fulfills the next promise, so the following `.then` runs as if nothing had failed.\n\n`.catch(fn)` is literally `.then(undefined, fn)` — it's just another link that maps a rejection to a new outcome.",
+      "references": "[MDN: catch](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/catch)"
+    },
+    {
+      "id": "chain-finally-passthrough",
+      "title": "What does `finally` do to the value flowing through?",
+      "description": "```js\nPromise.resolve(\"value\")\n  .finally(() => {\n    console.log(\"cleanup\");\n    return \"ignored\";\n  })\n  .then((v) => console.log(\"got\", v));\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`cleanup, got value` — finally's return value is ignored",
+          "isCorrect": true
+        },
+        {
+          "text": "`cleanup, got ignored` — finally replaces the value",
+          "isCorrect": false
+        },
+        {
+          "text": "`cleanup, got undefined`",
+          "isCorrect": false
+        },
+        {
+          "text": "`got value, cleanup` — finally runs last",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`finally` is for side effects: its callback receives **no arguments** and its return value is **discarded** — the original value (or rejection) passes through untouched. Here `\"ignored\"` is thrown away and the chain still delivers `\"value\"`.\n\nThere is one exception: if the `finally` callback *throws* (or returns a rejected promise), that failure replaces the passing value.\n\nThis makes `finally` ideal for cleanup like hiding a spinner — it can observe completion but cannot accidentally rewrite the result.",
+      "references": "[MDN: finally](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/finally)"
+    },
+    {
+      "id": "chain-then-returns-new-promise",
+      "title": "Is the promise returned by `.then` the same object?",
+      "description": "```js\nconst p1 = Promise.resolve(1);\nconst p2 = p1.then((v) => v + 1);\nconsole.log(p1 === p2);\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`false`",
+          "isCorrect": true
+        },
+        {
+          "text": "`true`",
+          "isCorrect": false
+        },
+        {
+          "text": "`undefined`",
+          "isCorrect": false
+        },
+        {
+          "text": "A TypeError is thrown",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Every call to `.then` (and `.catch`, `.finally`) returns a **brand-new promise** representing the outcome of that particular handler — never the original.\n\nThis is what makes chaining work: `p2` fulfills with the *handler's* result (`2`), not with `p1`'s value (`1`). It also means attaching a `.catch` to the wrong link (`p1.catch(...)` vs `p2.catch(...)`) protects different stages of the pipeline.\n\nPromises are immutable once settled; transformation always happens by deriving new promises.",
+      "references": "[MDN: then](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/then)"
+    },
+    {
+      "id": "catch-is-then-sugar",
+      "title": "Which call is `promise.catch(handler)` exactly equivalent to?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`promise.then(undefined, handler)`",
+          "isCorrect": true
+        },
+        {
+          "text": "`promise.then(handler)`",
+          "isCorrect": false
+        },
+        {
+          "text": "`promise.then(handler, handler)`",
+          "isCorrect": false
+        },
+        {
+          "text": "`promise.finally(handler)`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`catch(handler)` is defined in the spec as a thin wrapper that calls `this.then(undefined, handler)`. The `undefined` fulfillment slot means fulfilled values pass straight through, while rejections are routed to the handler.\n\nUnderstanding this equivalence demystifies chain behavior: a `.catch` is just another `.then` link that only reacts to the rejected path, and like any link it returns a new promise — which is why returning a value from `.catch` *recovers* the chain.",
+      "references": "[MDN: catch](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/catch)"
+    },
+    {
+      "id": "then-second-arg-vs-catch",
+      "title": "The fulfillment handler throws. Which handler catches it?",
+      "description": "```js\nPromise.resolve(\"ok\")\n  .then(\n    () => {\n      throw new Error(\"inside\");\n    },\n    (e) => console.log(\"second arg\", e.message)\n  )\n  .catch((e) => console.log(\"catch\", e.message));\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`catch inside` — the same level's rejection handler cannot catch it",
+          "isCorrect": true
+        },
+        {
+          "text": "`second arg inside`",
+          "isCorrect": false
+        },
+        {
+          "text": "`second arg inside, catch inside` — both run",
+          "isCorrect": false
+        },
+        {
+          "text": "Nothing logs — the error is swallowed",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The two arguments of a single `.then(onFulfilled, onRejected)` handle the **incoming** promise's two outcomes — they never handle each other. The source promise here is *fulfilled*, so `onFulfilled` runs; when it throws, the error rejects the **next** promise in the chain, where the downstream `.catch` picks it up.\n\nThis is the practical argument for preferring `.then(f).catch(g)` over `.then(f, g)`: a trailing `.catch` also covers errors thrown *inside* `f`, while the two-argument form does not.",
+      "references": "[MDN: then](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/then)"
+    },
+    {
+      "id": "finally-receives-nothing",
+      "title": "What arguments does a `finally` callback receive?",
+      "description": "```js\nPromise.resolve(42)\n  .finally((v) => console.log(\"finally got\", v))\n  .then((v) => console.log(\"then got\", v));\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`finally got undefined, then got 42`",
+          "isCorrect": true
+        },
+        {
+          "text": "`finally got 42, then got 42`",
+          "isCorrect": false
+        },
+        {
+          "text": "`finally got 42, then got undefined`",
+          "isCorrect": false
+        },
+        {
+          "text": "`then got 42` only — finally requires a zero-argument function",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A `finally` callback is invoked with **no arguments** — by design it cannot know (or care) whether the promise fulfilled or rejected, only that it settled. So `v` is `undefined` inside the callback, while the original `42` continues down the chain untouched.\n\nIf your cleanup logic needs the value or the error, `finally` is the wrong tool — use `.then(onFulfilled, onRejected)` or duplicate the logic in `.then`/`.catch`.",
+      "references": "[MDN: finally](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/finally)"
+    },
+    {
+      "id": "finally-throw-replaces",
+      "title": "The `finally` callback throws. What logs?",
+      "description": "```js\nPromise.resolve(\"data\")\n  .finally(() => {\n    throw new Error(\"cleanup failed\");\n  })\n  .then((v) => console.log(\"then\", v))\n  .catch((e) => console.log(\"catch\", e.message));\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`catch cleanup failed`",
+          "isCorrect": true
+        },
+        {
+          "text": "`then data` — finally cannot affect the chain",
+          "isCorrect": false
+        },
+        {
+          "text": "`then data, catch cleanup failed`",
+          "isCorrect": false
+        },
+        {
+          "text": "Nothing logs — the throw is ignored like a return value",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`finally` ignores its callback's **return value**, but a **thrown error** (or returned rejected promise) is different: it replaces the outcome and rejects the chain. The original `\"data\"` is lost, the `.then` is skipped, and the `.catch` receives the cleanup error.\n\nThe asymmetry is intentional: returning something from cleanup is almost always accidental, while throwing signals that cleanup itself failed — which callers must hear about.\n\nThis mirrors `try/finally` in synchronous code, where a `throw` in the `finally` block overrides the original result too."
+    },
+    {
+      "id": "then-throw-catch-heals",
+      "title": "In what order do the values log?",
+      "description": "```js\nPromise.resolve()\n  .then(() => {\n    throw new Error(\"oops\");\n  })\n  .catch((e) => console.log(\"caught\", e.message))\n  .then(() => console.log(\"after catch\"));\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`caught oops` — the chain ends at the catch",
+          "isCorrect": false
+        },
+        {
+          "text": "`caught oops, after catch`",
+          "isCorrect": true
+        },
+        {
+          "text": "`after catch, caught oops`",
+          "isCorrect": false
+        },
+        {
+          "text": "An uncaught error is reported",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Throwing inside a `.then` callback rejects the promise it returns — exactly equivalent to returning `Promise.reject(error)`. The `.catch` handles it (`caught oops`) and, by returning normally (here `undefined`), produces a **fulfilled** promise.\n\nSo the final `.then` runs: a `.catch` that doesn't re-throw \"heals\" the chain. If you want the failure to keep propagating after logging it, you must `throw e` again inside the catch handler.\n\nThis fulfilled-after-catch behavior is the promise analogue of a `try/catch` block that swallows the exception."
+    },
+    {
+      "id": "rejection-skips-thens",
+      "title": "What happens to the `.then` between the rejection and the `.catch`?",
+      "description": "```js\nPromise.reject(new Error(\"e1\"))\n  .then(() => console.log(\"skipped\"))\n  .catch((e) => console.log(\"caught\", e.message))\n  .then(() => console.log(\"after\"));\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`caught e1, after` — the first `.then` never runs",
+          "isCorrect": true
+        },
+        {
+          "text": "`skipped, caught e1, after`",
+          "isCorrect": false
+        },
+        {
+          "text": "`caught e1` only",
+          "isCorrect": false
+        },
+        {
+          "text": "`skipped, after` — the catch is bypassed",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A `.then` with only a fulfillment handler passes rejections through untouched (its missing `onRejected` defaults to a re-throwing passthrough). The rejection therefore \"tunnels\" past `skipped` straight to the first link that has a rejection handler — the `.catch`.\n\nAfter the catch recovers, the chain is fulfilled again and `after` runs.\n\nMental model: a rejected state travels down the chain, skipping every `onFulfilled`, until something handles it — just like an exception unwinding past stack frames without `catch` blocks."
+    },
+    {
+      "id": "catch-rethrow",
+      "title": "The first `.catch` re-throws. What logs?",
+      "description": "```js\nPromise.reject(new Error(\"original\"))\n  .catch((e) => {\n    console.log(\"first\", e.message);\n    throw new Error(\"wrapped\");\n  })\n  .catch((e) => console.log(\"second\", e.message));\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`first original, second wrapped`",
+          "isCorrect": true
+        },
+        {
+          "text": "`first original, second original`",
+          "isCorrect": false
+        },
+        {
+          "text": "`first original` — a catch always ends error handling",
+          "isCorrect": false
+        },
+        {
+          "text": "`first original`, then an uncaught `wrapped` error",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Throwing inside a `.catch` rejects the promise that the `.catch` returns — sending the chain back into the rejected state with the **new** error. The second `.catch` therefore sees `wrapped`, not `original`.\n\nRe-throwing is the standard way to handle an error partially (log it, translate it, wrap it with context) while still letting callers know the operation failed.\n\nWithout the second `.catch`, the `wrapped` error would become an unhandled rejection — handling an error and then throwing a new one re-creates the obligation to handle it.",
+      "references": "[MDN: unhandledrejection event](https://developer.mozilla.org/en-US/docs/Web/API/Window/unhandledrejection_event)"
+    },
+    {
+      "id": "catch-after-recovery-skipped",
+      "title": "Two `.catch` links in a row. What logs?",
+      "description": "```js\nPromise.reject(new Error(\"err\"))\n  .catch(() => {\n    console.log(\"catch1\");\n    return \"recovered\";\n  })\n  .catch(() => console.log(\"catch2\"))\n  .then((v) => console.log(\"then\", v));\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`catch1, then recovered` — catch2 is skipped",
+          "isCorrect": true
+        },
+        {
+          "text": "`catch1, catch2, then recovered`",
+          "isCorrect": false
+        },
+        {
+          "text": "`catch1, catch2, then undefined`",
+          "isCorrect": false
+        },
+        {
+          "text": "`catch1, then undefined`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Rejection handlers only run when the incoming promise is **rejected**. After `catch1` recovers (returns `\"recovered\"` without throwing), the chain is fulfilled — so `catch2`, which only has a rejection handler, passes the fulfilled value straight through without running.\n\nThe `.then` then receives `\"recovered\"`.\n\nSymmetry to remember: fulfilled values skip `.catch` links exactly the way rejections skip `.then(onFulfilled)` links. Each link reacts to one path and forwards the other."
+    },
+    {
+      "id": "async-no-await-runs-sync",
+      "title": "An async function with no `await`. In what order do the values log?",
+      "description": "```js\nconsole.log(\"start\");\nasync function foo() {\n  console.log(\"foo\");\n  return 1;\n}\nfoo().then((v) => console.log(v));\nconsole.log(\"end\");\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`start, foo, end, 1`",
+          "isCorrect": true
+        },
+        {
+          "text": "`start, end, foo, 1`",
+          "isCorrect": false
+        },
+        {
+          "text": "`start, foo, 1, end`",
+          "isCorrect": false
+        },
+        {
+          "text": "`start, end, 1, foo`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Calling an async function runs its body **synchronously** up to the first `await` — and with no `await` at all, the entire body runs synchronously, so `foo` logs before `end`.\n\nThe only asynchronous part is the return: the value `1` is wrapped in a promise, so the `.then` callback is deferred to the microtask queue and logs last.\n\nTakeaway: the `async` keyword alone doesn't make code run later; only `await` (or the promise machinery around the return value) introduces deferral.",
+      "references": "[MDN: async function](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/async_function)"
+    },
+    {
+      "id": "await-suspends",
+      "title": "In what order do the values log?",
+      "description": "```js\nconsole.log(\"a\");\nasync function bar() {\n  console.log(\"b\");\n  await Promise.resolve();\n  console.log(\"c\");\n}\nbar();\nconsole.log(\"d\");\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`a, b, c, d`",
+          "isCorrect": false
+        },
+        {
+          "text": "`a, b, d, c`",
+          "isCorrect": true
+        },
+        {
+          "text": "`a, d, b, c`",
+          "isCorrect": false
+        },
+        {
+          "text": "`a, b, d` — c never logs",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`await` is a suspension point. `bar()` runs synchronously through `b`, then `await` suspends the function and **returns control to the caller** — even though the awaited promise is already resolved.\n\nThe continuation (everything after the `await`) is scheduled as a microtask, so `d` logs before `c`.\n\nThis is the single most important async/await fact: code after `await` *never* runs synchronously, no matter how trivially settled the awaited value is.",
+      "references": "[MDN: await](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/await)"
+    },
+    {
+      "id": "await-non-promise",
+      "title": "Both `await`s receive `null`, not a promise. In what order do the values log?",
+      "description": "```js\nasync function main() {\n  console.log(\"1\");\n  await null;\n  console.log(\"2\");\n  await null;\n  console.log(\"3\");\n}\nmain();\nconsole.log(\"4\");\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`1, 2, 3, 4` — awaiting a non-promise is a no-op",
+          "isCorrect": false
+        },
+        {
+          "text": "`1, 4, 2, 3`",
+          "isCorrect": true
+        },
+        {
+          "text": "`4, 1, 2, 3`",
+          "isCorrect": false
+        },
+        {
+          "text": "`1, 2, 4, 3`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`await` works on **any** value: non-thenables are wrapped as if by `Promise.resolve(value)`, so `await null` still suspends the function for one microtask tick.\n\nTrace: `1` logs, the first `await` suspends `main`, the outer script logs `4`; then each microtask resumption logs `2` and `3` in turn.\n\nEvery `await` is an asynchronous boundary — there is no \"fast path\" that keeps running synchronously for plain values. (V8 optimizes already-resolved awaits down to one tick, but never to zero.)"
+    },
+    {
+      "id": "await-two-functions-interleave",
+      "title": "Two async functions run \"concurrently\". What does the final log show?",
+      "description": "```js\nconst out = [];\nasync function x() {\n  out.push(\"x1\");\n  await null;\n  out.push(\"x2\");\n  await null;\n  out.push(\"x3\");\n}\nasync function y() {\n  out.push(\"y1\");\n  await null;\n  out.push(\"y2\");\n}\nx();\ny();\nout.push(\"sync\");\nsetTimeout(() => console.log(out.join(\",\")), 0);\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`x1,x2,x3,y1,y2,sync`",
+          "isCorrect": false
+        },
+        {
+          "text": "`x1,y1,sync,x2,y2,x3`",
+          "isCorrect": true
+        },
+        {
+          "text": "`sync,x1,y1,x2,y2,x3`",
+          "isCorrect": false
+        },
+        {
+          "text": "`x1,y1,sync,x2,x3,y2`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Each function runs synchronously to its first `await` (`x1`, `y1`), then the outer script finishes (`sync`). From there the two functions **interleave**: their continuations alternate through the microtask queue in the order they suspended.\n\nDrain: resume `x` → `x2` (suspends again, re-queued at the back), resume `y` → `y2`, resume `x` → `x3`.\n\nThis tick-by-tick interleaving is JavaScript's cooperative concurrency: single-threaded, but multiple async functions make progress in turns at every `await` boundary."
+    },
+    {
+      "id": "await-nested-async-chain",
+      "title": "Nested async calls. In what order do the values log?",
+      "description": "```js\nasync function a() {\n  console.log(\"a1\");\n  await b();\n  console.log(\"a2\");\n}\nasync function b() {\n  console.log(\"b1\");\n  await c();\n  console.log(\"b2\");\n}\nasync function c() {\n  console.log(\"c1\");\n}\na();\nconsole.log(\"main\");\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`a1, main, b1, c1, b2, a2`",
+          "isCorrect": false
+        },
+        {
+          "text": "`a1, b1, c1, main, b2, a2`",
+          "isCorrect": true
+        },
+        {
+          "text": "`a1, b1, c1, b2, a2, main`",
+          "isCorrect": false
+        },
+        {
+          "text": "`main, a1, b1, c1, b2, a2`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Calls drill down synchronously: `a1`, then `b()` runs to `b1`, then `c()` runs to `c1` and returns a fulfilled promise. Now `b`'s `await` suspends `b`, which makes `a`'s `await` suspend `a`, and control returns to the script: `main`.\n\nThe unwinding then happens one microtask at a time: `b` resumes (`b2`) and completes, which fulfills the promise `a` is awaiting, so `a` resumes (`a2`) one tick later.\n\nNested `await`s form a chain of suspensions that resolve **inside-out**, each costing a microtask tick."
+    },
+    {
+      "id": "await-callee-sync-part",
+      "title": "When `a` awaits `b()`, when does `b`'s body run?",
+      "description": "```js\nasync function a() {\n  console.log(\"a1\");\n  await b();\n  console.log(\"a2\");\n}\nasync function b() {\n  console.log(\"b1\");\n}\na();\nconsole.log(\"c\");\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`a1, b1, c, a2` — b's body runs synchronously during the call",
+          "isCorrect": true
+        },
+        {
+          "text": "`a1, c, b1, a2` — await defers the call itself",
+          "isCorrect": false
+        },
+        {
+          "text": "`a1, b1, a2, c`",
+          "isCorrect": false
+        },
+        {
+          "text": "`a1, c, a2, b1`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "In `await b()`, the expression `b()` is an ordinary function call — it evaluates **first, synchronously**. `b`'s whole body runs (logging `b1`) and returns a fulfilled promise; only *then* does `await` suspend `a`.\n\nSo the order is: `a1`, `b1` (inline), `c` (caller continues after suspension), `a2` (microtask resumption).\n\nCommon misreading: \"await delays the call.\" It doesn't — `await` only operates on the call's *result*. The work before `b`'s own first `await` always happens immediately."
+    },
+    {
+      "id": "async-return-is-promise",
+      "title": "What does calling an async function return?",
+      "description": "```js\nasync function f() {\n  return 7;\n}\nconst result = f();\nconsole.log(result instanceof Promise);\nresult.then((v) => console.log(\"value\", v));\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`true`, then `value 7` — the return value is wrapped in a promise",
+          "isCorrect": true
+        },
+        {
+          "text": "`false`, then `value 7` — 7 is returned directly",
+          "isCorrect": false
+        },
+        {
+          "text": "`true`, then `value undefined`",
+          "isCorrect": false
+        },
+        {
+          "text": "A TypeError — you cannot call `.then` on a number",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "An async function **always** returns a promise, no matter what the body returns. `return 7` fulfills that promise with `7`; `return` with nothing fulfills it with `undefined`; a `throw` rejects it.\n\nThe caller can therefore treat any async function uniformly: `await` it or attach `.then`.\n\nThis wrapping happens even for the synchronous no-`await` case — which is why an async function can never return a raw value to its caller, by design.",
+      "references": "[MDN: async function](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/async_function)"
+    },
+    {
+      "id": "async-return-promise-extra-ticks",
+      "title": "Three async functions return the same value three ways. In what order do the labels log?",
+      "description": "```js\nasync function returnsPromise() {\n  return Promise.resolve(\"P\");\n}\nasync function returnsAwait() {\n  return await Promise.resolve(\"A\");\n}\nasync function returnsValue() {\n  return \"V\";\n}\nreturnsPromise().then((v) => console.log(\"promise\", v));\nreturnsAwait().then((v) => console.log(\"await\", v));\nreturnsValue().then((v) => console.log(\"value\", v));\n\nPromise.resolve()\n  .then(() => console.log(\"t1\"))\n  .then(() => console.log(\"t2\"))\n  .then(() => console.log(\"t3\"));\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`value V, t1, await A, t2, promise P, t3`",
+          "isCorrect": true
+        },
+        {
+          "text": "`promise P, await A, value V, t1, t2, t3`",
+          "isCorrect": false
+        },
+        {
+          "text": "`value V, await A, promise P, t1, t2, t3`",
+          "isCorrect": false
+        },
+        {
+          "text": "`t1, t2, t3, value V, await A, promise P`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Measured against the `t1/t2/t3` ruler chain (verified on V8/Node):\n\n- `return \"V\"` settles immediately — its `.then` fires on **tick 1**.\n- `return await promise` costs **one extra tick** (the `await` resumption) — tick 2.\n- `return Promise.resolve(...)` costs **two extra ticks** — the engine must subscribe to the returned thenable and then resolve the outer promise — tick 3.\n\nSo inside async functions, `return await p` is actually *faster* than `return p` by one tick, contrary to the popular \"never use return await\" advice (which predates this and also loses stack traces and `try/catch` coverage)."
+    },
+    {
+      "id": "await-outside-async",
+      "title": "What happens when you use `await` inside a regular (non-async) function?",
+      "description": "```js\nfunction f() {\n  const v = await somePromise;\n  return v;\n}\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "A `SyntaxError` at parse time — the code never runs",
+          "isCorrect": true
+        },
+        {
+          "text": "A `TypeError` at runtime when `f` is called",
+          "isCorrect": false
+        },
+        {
+          "text": "It works, but `v` is a promise instead of the value",
+          "isCorrect": false
+        },
+        {
+          "text": "It works in Node but not in browsers",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`await` is only valid inside async functions (and at the top level of ES modules). In a regular function it is a **syntax error**, reported when the source is parsed — before a single line executes.\n\nThis is stricter than a runtime error: the entire script/module fails to load.\n\nSubtlety: in non-module (\"sloppy script\") code outside any function, `await` parses as a plain identifier, which produces different confusing errors — one more reason modern tooling defaults to modules.",
+      "references": "[MDN: await](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/await)"
+    },
+    {
+      "id": "top-level-await",
+      "title": "Where is **top-level** `await` (outside any function) allowed?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "At the top level of ES modules",
+          "isCorrect": true
+        },
+        {
+          "text": "Anywhere, in any script type",
+          "isCorrect": false
+        },
+        {
+          "text": "Nowhere — `await` always requires an async function",
+          "isCorrect": false
+        },
+        {
+          "text": "Only inside Node.js CommonJS files",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Top-level await is an ES2022 feature of **modules**: `<script type=\"module\">`, `.mjs` files, or packages with `\"type\": \"module\"`. The module itself behaves like a big async function, and importers wait for its awaited work before executing.\n\nIt is *not* allowed in classic scripts or CommonJS (`require`-based) files — there, `await` at the top level is a syntax error.\n\nUse it sparingly: a slow top-level `await` delays every module that imports yours.",
+      "references": "[MDN: Modules#top level await](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Modules#top_level_await)"
+    },
+    {
+      "id": "async-iife-args-eval",
+      "title": "Async IIFEs are passed to `Promise.all`. In what order do the values log?",
+      "description": "```js\nasync function run() {\n  console.log(\"start\");\n  const [a, b] = await Promise.all([\n    (async () => {\n      console.log(\"a\");\n      return 1;\n    })(),\n    (async () => {\n      console.log(\"b\");\n      return 2;\n    })(),\n  ]);\n  console.log(a, b);\n}\nrun();\nconsole.log(\"after\");\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`start, a, b, after, 1 2`",
+          "isCorrect": true
+        },
+        {
+          "text": "`start, after, a, b, 1 2`",
+          "isCorrect": false
+        },
+        {
+          "text": "`start, a, b, 1 2, after`",
+          "isCorrect": false
+        },
+        {
+          "text": "`start, after, 1 2` — the IIFEs never run",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Function arguments are evaluated **before** the function is called — so both async IIFEs execute (synchronously, having no `await`) and log `a` and `b` while building the array, before `Promise.all` even runs.\n\nThen `await` suspends `run`, letting the outer script log `after`; the combined promise resolves and `1 2` logs last.\n\nLesson: passing promises *into* a combinator means the underlying work has already started. `Promise.all` doesn't start anything — it only waits."
+    },
+    {
+      "id": "await-rejected-try-catch",
+      "title": "In what order do the values log?",
+      "description": "```js\nasync function foo() {\n  try {\n    const v = await Promise.reject(\"error\");\n    console.log(\"value\", v);\n  } catch (e) {\n    console.log(\"caught\", e);\n  }\n}\nfoo();\nconsole.log(\"sync\");\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`caught error, sync`",
+          "isCorrect": false
+        },
+        {
+          "text": "`sync, caught error`",
+          "isCorrect": true
+        },
+        {
+          "text": "`value error, sync`",
+          "isCorrect": false
+        },
+        {
+          "text": "`sync` — the rejection is unhandled",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`await` converts a rejected promise into a **thrown exception** at the `await` expression — which a normal `try/catch` block can handle. The `console.log(\"value\", ...)` line is skipped, just like code after a synchronous throw.\n\nTiming still applies: the rejection is delivered via the microtask queue, so `sync` (the caller's code) logs before `caught error`.\n\nThis bridging of promises into `try/catch` is the main ergonomic win of async/await over `.then`/`.catch` chains."
+    },
+    {
+      "id": "await-same-promise-twice",
+      "title": "The same promise is awaited twice. What logs?",
+      "description": "```js\nconst p = new Promise((r) => setTimeout(() => r(\"cached\"), 10));\nasync function f() {\n  console.log(await p);\n  console.log(await p);\n}\nf();\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`cached, cached` — a settled promise can be awaited any number of times",
+          "isCorrect": true
+        },
+        {
+          "text": "`cached, undefined` — the value is consumed by the first await",
+          "isCorrect": false
+        },
+        {
+          "text": "`cached`, then the second await hangs forever",
+          "isCorrect": false
+        },
+        {
+          "text": "A TypeError — a promise cannot be awaited twice",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A promise **caches its settled state forever**. The first `await` waits ~10ms for the timer; the second `await` finds `p` already fulfilled and resumes on the next microtask tick with the same value.\n\nPromises are not streams or one-shot channels — any number of consumers (`await`s, `.then`s) can read the same result at any time, even long after settlement.\n\nThis makes promises ideal for memoization: store the promise (not the value), and every caller awaits the same in-flight or completed operation."
+    },
+    {
+      "id": "await-plain-number",
+      "title": "Inside an async function, what number does the expression `await 5` evaluate to?",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [5]
+      },
+      "explanation": "Awaiting a non-thenable wraps it as if by `Promise.resolve(5)` and then unwraps it again — so the expression evaluates to `5` itself.\n\nThe value is unchanged, but the *timing* is not: the function still suspends for one microtask tick. `await` on a plain value is therefore a (slightly wasteful) way to yield to the microtask queue.\n\nDetail: if the value has a `.then` method (a thenable), `await` will call it instead of passing the object through — only non-thenables pass unchanged.",
+      "references": "[MDN: await](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/await)"
+    },
+    {
+      "id": "all-order-preserved",
+      "title": "The second promise finishes first. What does `Promise.all` deliver?",
+      "description": "```js\nconst slow = new Promise((r) => setTimeout(() => r(\"slow\"), 30));\nconst fast = new Promise((r) => setTimeout(() => r(\"fast\"), 10));\nPromise.all([slow, fast]).then(([a, b]) => console.log(a, b));\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`slow fast` — results follow input order",
+          "isCorrect": true
+        },
+        {
+          "text": "`fast slow` — results follow completion order",
+          "isCorrect": false
+        },
+        {
+          "text": "`slow fast` or `fast slow`, non-deterministically",
+          "isCorrect": false
+        },
+        {
+          "text": "`fast undefined` — only settled promises are included",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`Promise.all` preserves **input order** in its result array, regardless of which promise settles first. Position `0` is always `slow`'s value, position `1` always `fast`'s — completion timing only affects *when* the combined promise fulfills (here, after the slowest, ~30ms).\n\nThis guarantee is what makes destructuring like `const [user, posts] = await Promise.all([...])` safe.\n\nIf you instead need results *as they complete*, you want a different pattern (e.g. `for await` over promises or a queue), not `Promise.all`.",
+      "references": "[MDN: all](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/all)"
+    },
+    {
+      "id": "all-rejects-fast-no-cancel",
+      "title": "One input rejects immediately. In what order do the values log?",
+      "description": "```js\nconst ok = new Promise((r) =>\n  setTimeout(() => {\n    console.log(\"ok finished\");\n    r(\"ok\");\n  }, 20)\n);\nconst bad = Promise.reject(new Error(\"bad\"));\nPromise.all([ok, bad])\n  .then(() => console.log(\"all ok\"))\n  .catch((e) => console.log(\"caught\", e.message));\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`caught bad, ok finished`",
+          "isCorrect": true
+        },
+        {
+          "text": "`ok finished, caught bad`",
+          "isCorrect": false
+        },
+        {
+          "text": "`caught bad` — the pending promise is cancelled",
+          "isCorrect": false
+        },
+        {
+          "text": "`ok finished, all ok`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`Promise.all` **short-circuits on the first rejection**: it rejects right away (microtask, so `caught bad` logs first) without waiting for the others.\n\nBut note the second line: the pending promise is *not cancelled* — JavaScript promises aren't cancellable, and the 20ms timer still fires (`ok finished`). Its result is simply ignored.\n\nIn real code this matters: \"abandoned\" operations keep consuming resources and running side effects. To actually stop work you need explicit cancellation, e.g. `AbortController`.",
+      "references": "[MDN: AbortController](https://developer.mozilla.org/en-US/docs/Web/API/AbortController)"
+    },
+    {
+      "id": "all-empty-array",
+      "title": "`Promise.all` receives an empty array. What logs?",
+      "description": "```js\nPromise.all([]).then((v) => console.log(\"resolved\", JSON.stringify(v)));\nconsole.log(\"sync\");\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`sync, resolved []` — it fulfills with an empty array",
+          "isCorrect": true
+        },
+        {
+          "text": "`sync` only — with no inputs it stays pending forever",
+          "isCorrect": false
+        },
+        {
+          "text": "`sync`, then a TypeError",
+          "isCorrect": false
+        },
+        {
+          "text": "`resolved [], sync`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "With zero inputs, the condition \"all inputs have fulfilled\" is vacuously true, so `Promise.all([])` fulfills **immediately** (well — on the next microtask tick, hence after `sync`) with `[]`.\n\nThis edge case makes `Promise.all(items.map(fn))` safe when `items` happens to be empty — the code proceeds with an empty result array instead of hanging.\n\nContrast with `Promise.race([])`, which stays pending forever — a later question covers that asymmetry."
+    },
+    {
+      "id": "all-non-promise-values",
+      "title": "The input mixes plain values and promises. What logs?",
+      "description": "```js\nPromise.all([1, Promise.resolve(2), \"three\"]).then((v) =>\n  console.log(v.join(\"-\"))\n);\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`1-2-three`",
+          "isCorrect": true
+        },
+        {
+          "text": "A TypeError — all inputs must be promises",
+          "isCorrect": false
+        },
+        {
+          "text": "`2` — non-promises are filtered out",
+          "isCorrect": false
+        },
+        {
+          "text": "`1-[object Promise]-three`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`Promise.all` passes every input through `Promise.resolve()`, so plain values are treated as already-fulfilled promises of themselves. The result array is `[1, 2, \"three\"]` — values unwrapped, order preserved.\n\nThis coercion makes mixed arrays ergonomic: you can combine cached values with in-flight requests without special-casing.\n\nThe same rule applies to `race`, `any`, and `allSettled` — all the promise concurrency methods accept any iterable of values-or-thenables.",
+      "references": "[MDN: Promise#promise concurrency](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise#promise_concurrency)"
+    },
+    {
+      "id": "race-first-settlement-wins",
+      "title": "A fulfillment at 10ms races a rejection at 30ms. What logs?",
+      "description": "```js\nconst win = new Promise((r) => setTimeout(() => r(\"win\"), 10));\nconst lose = new Promise((_, rej) =>\n  setTimeout(() => rej(new Error(\"lose\")), 30)\n);\nPromise.race([win, lose])\n  .then((v) => console.log(\"then\", v))\n  .catch((e) => console.log(\"catch\", e.message));\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`then win`",
+          "isCorrect": true
+        },
+        {
+          "text": "`then win, catch lose`",
+          "isCorrect": false
+        },
+        {
+          "text": "`catch lose` — rejections always win a race",
+          "isCorrect": false
+        },
+        {
+          "text": "`then win` or `catch lose`, non-deterministically",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`Promise.race` settles with the **first settlement of any kind** — fulfillment *or* rejection. Here the 10ms fulfillment wins, so the race fulfills with `\"win\"`; the later rejection is ignored (the race is already settled and cannot change).\n\nHad the rejection fired first, the race would reject — `race` gives no preference to either outcome, unlike `Promise.any`, which skips rejections while waiting for a fulfillment.\n\nThe ignored `lose` rejection does **not** become an unhandled rejection: `race` subscribed to it, which counts as handling.",
+      "references": "[MDN: race](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/race)"
+    },
+    {
+      "id": "race-empty-array",
+      "title": "`Promise.race` receives an empty array. What logs?",
+      "description": "```js\nPromise.race([]).then(() => console.log(\"settled\"));\nconsole.log(\"end\");\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`end` only — the race never settles",
+          "isCorrect": true
+        },
+        {
+          "text": "`end, settled` — an empty race fulfills with undefined",
+          "isCorrect": false
+        },
+        {
+          "text": "`settled, end`",
+          "isCorrect": false
+        },
+        {
+          "text": "`end`, then a TypeError",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A race settles when its first input settles — with **no inputs, nothing can ever win**, so `Promise.race([])` stays pending forever and `settled` never logs.\n\nNote the asymmetry with `Promise.all([])`, which fulfills immediately with `[]`: \"all of nothing\" is trivially done, but \"the first of nothing\" never happens.\n\nForever-pending promises are silent: no error, no warning. An `await Promise.race(maybeEmpty)` is a subtle way to hang an async function — guard against empty input lists."
+    },
+    {
+      "id": "any-ignores-rejections",
+      "title": "The fastest promise rejects. What does `Promise.any` deliver?",
+      "description": "```js\nasync function race() {\n  try {\n    const result = await Promise.any([\n      new Promise((r) => setTimeout(() => r(\"slow\"), 60)),\n      new Promise((_, rej) => setTimeout(() => rej(new Error(\"fast-err\")), 10)),\n      new Promise((r) => setTimeout(() => r(\"medium\"), 30)),\n    ]);\n    console.log(\"winner\", result);\n  } catch (e) {\n    console.log(\"caught\", e instanceof AggregateError);\n  }\n}\nrace();\nconsole.log(\"sync\");\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`sync, winner medium`",
+          "isCorrect": true
+        },
+        {
+          "text": "`sync, caught true` — the first rejection settles it",
+          "isCorrect": false
+        },
+        {
+          "text": "`sync, winner slow`",
+          "isCorrect": false
+        },
+        {
+          "text": "`winner medium, sync`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`Promise.any` waits for the **first fulfillment** and ignores rejections along the way. The 10ms rejection doesn't settle it; the 30ms `medium` fulfillment does — `slow` arrives too late.\n\nIt only rejects if *every* input rejects (with an `AggregateError`), which doesn't happen here, so the `catch` is never reached.\n\nMnemonic: `race` = first **settlement** wins; `any` = first **success** wins. `any` is the right tool for \"try several mirrors/endpoints, take whichever answers first\".",
+      "references": "[MDN: any](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/any)"
+    },
+    {
+      "id": "any-aggregate-error",
+      "title": "Every input rejects. What logs?",
+      "description": "```js\nconst promises = [\n  Promise.reject(\"error1\"),\n  Promise.reject(\"error2\"),\n  Promise.reject(\"error3\"),\n];\nPromise.any(promises)\n  .then((v) => console.log(\"value\", v))\n  .catch((err) => {\n    console.log(err instanceof AggregateError);\n    console.log(err.errors.join(\",\"));\n  });\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`true`, then `error1,error2,error3`",
+          "isCorrect": true
+        },
+        {
+          "text": "`false`, then `error1` — only the first rejection is kept",
+          "isCorrect": false
+        },
+        {
+          "text": "`true`, then `error3` — only the last rejection is kept",
+          "isCorrect": false
+        },
+        {
+          "text": "An unhandled rejection crashes before the catch runs",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "When all inputs reject, `Promise.any` rejects with an `AggregateError` whose `errors` array holds **every** rejection reason, in **input order** (not settlement order).\n\nSo the catch logs `true` and `error1,error2,error3` — no reason is lost.\n\n`AggregateError` is the only place the language bundles multiple failures into one; if you need the same for `Promise.all`-style logic, that's what `Promise.allSettled` plus your own filtering is for.",
+      "references": "[MDN: AggregateError](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/AggregateError)"
+    },
+    {
+      "id": "allsettled-result-shape",
+      "title": "One of three steps fails under `Promise.allSettled`. What logs?",
+      "description": "```js\nasync function step1() {\n  return \"s1\";\n}\nasync function step2() {\n  throw new Error(\"s2 failed\");\n}\nasync function step3() {\n  return \"s3\";\n}\nasync function run() {\n  const results = await Promise.allSettled([step1(), step2(), step3()]);\n  for (const r of results) {\n    if (r.status === \"fulfilled\") console.log(\"ok\", r.value);\n    else console.log(\"err\", r.reason.message);\n  }\n}\nrun();\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`ok s1, err s2 failed, ok s3`",
+          "isCorrect": true
+        },
+        {
+          "text": "`ok s1, ok s3` — rejected entries are omitted",
+          "isCorrect": false
+        },
+        {
+          "text": "`err s2 failed` — the first failure rejects everything",
+          "isCorrect": false
+        },
+        {
+          "text": "`ok s1, err s2 failed` — processing stops at the failure",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`Promise.allSettled` waits for **every** input to settle and never short-circuits. Each result is a descriptor object: `{ status: \"fulfilled\", value }` or `{ status: \"rejected\", reason }`, in input order.\n\nSo all three log: success, failure, success — the middle rejection doesn't affect its neighbors.\n\nReach for `allSettled` when operations are independent and you want a complete report (e.g. batch uploads); reach for `all` when one failure makes the rest meaningless.",
+      "references": "[MDN: allSettled](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/allSettled)"
+    },
+    {
+      "id": "allsettled-never-rejects",
+      "title": "Which combinator's returned promise **never rejects**?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`Promise.allSettled`",
+          "isCorrect": true
+        },
+        {
+          "text": "`Promise.all`",
+          "isCorrect": false
+        },
+        {
+          "text": "`Promise.race`",
+          "isCorrect": false
+        },
+        {
+          "text": "`Promise.any`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`Promise.allSettled` always fulfills (once every input settles) with an array of status descriptors — failures are *data*, not control flow. The only theoretical exception is passing a non-iterable, which rejects with a `TypeError`.\n\nThe others can all reject: `all` on the first input rejection, `race` if the first settlement is a rejection, and `any` if **all** inputs reject (`AggregateError`).\n\nPractical consequence: a bare `await Promise.allSettled(...)` needs no `try/catch`, but you must remember to inspect each `status` yourself."
+    },
+    {
+      "id": "race-timeout-pattern",
+      "title": "A 50ms operation races a 20ms timeout. What logs?",
+      "description": "```js\nfunction withTimeout(promise, ms) {\n  return Promise.race([\n    promise,\n    new Promise((_, rej) =>\n      setTimeout(() => rej(new Error(\"timeout\")), ms)\n    ),\n  ]);\n}\nconst data = new Promise((r) => setTimeout(() => r(\"data\"), 50));\nwithTimeout(data, 20)\n  .then((v) => console.log(\"got\", v))\n  .catch((e) => console.log(\"error\", e.message));\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`error timeout`",
+          "isCorrect": true
+        },
+        {
+          "text": "`got data`",
+          "isCorrect": false
+        },
+        {
+          "text": "`got data, error timeout`",
+          "isCorrect": false
+        },
+        {
+          "text": "`error timeout, got data`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "This is the classic **timeout pattern**: race the real operation against a promise that rejects after a deadline. Here the timeout (20ms) fires before the data (50ms), so the race rejects with `timeout` and the `.catch` runs. The `.then` never runs — the race settled once, permanently.\n\nCaveats worth knowing: the losing operation is *not cancelled* (it still completes at 50ms, ignored), and the timer keeps running even on success. Production versions pair this with `AbortController` and `clearTimeout`. The platform now offers `AbortSignal.timeout()` for exactly this.",
+      "references": "[MDN: timeout static](https://developer.mozilla.org/en-US/docs/Web/API/AbortSignal/timeout_static)"
+    },
+    {
+      "id": "combinators-short-circuit",
+      "title": "Which combinators can settle **before** all of their inputs have settled? (Select all that apply.)",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "`Promise.all` — rejects on the first input rejection",
+          "isCorrect": true
+        },
+        {
+          "text": "`Promise.race` — settles with the first settlement",
+          "isCorrect": true
+        },
+        {
+          "text": "`Promise.any` — fulfills with the first fulfillment",
+          "isCorrect": true
+        },
+        {
+          "text": "`Promise.allSettled` — always waits for every input",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Three of the four concurrency combinators can short-circuit:\n\n- `all` gives up early on the first **rejection** (but must wait for all fulfillments).\n- `race` is pure short-circuit: the very first settlement of any kind decides it.\n- `any` commits early on the first **fulfillment** (but must wait through all rejections).\n\nOnly `allSettled` unconditionally waits for every input. Remember: short-circuiting settles the *combined* promise early — the remaining input promises keep running regardless.",
+      "references": "[MDN: Promise#promise concurrency](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise#promise_concurrency)"
+    },
+    {
+      "id": "async-throw-equals-reject",
+      "title": "An async function throws. In what order do the values log?",
+      "description": "```js\nasync function f() {\n  throw new Error(\"boom\");\n}\nf().catch((e) => console.log(\"caught\", e.message));\nconsole.log(\"sync\");\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`caught boom, sync` — the throw happens during the call",
+          "isCorrect": false
+        },
+        {
+          "text": "`sync, caught boom`",
+          "isCorrect": true
+        },
+        {
+          "text": "An uncaught exception stops the script before `sync`",
+          "isCorrect": false
+        },
+        {
+          "text": "`sync` — async throws cannot be caught with `.catch`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A `throw` inside an async function does **not** propagate synchronously to the caller — it rejects the promise the function returns. The call `f()` itself completes normally, handing back a rejected promise; the `.catch` handler then runs as a microtask, after `sync`.\n\nSo `async function f() { throw x; }` is observably equivalent to `function f() { return Promise.reject(x); }` for the caller.\n\nThis is why wrapping the *call* in `try/catch` without `await` catches nothing: the error lives in the returned promise, not the call stack."
+    },
+    {
+      "id": "fire-and-forget-rejection",
+      "title": "An async function is called without `await`. What logs (besides any runtime warning)?",
+      "description": "```js\nasync function risky() {\n  console.log(\"risky start\");\n  await Promise.reject(\"fail\");\n  console.log(\"risky after\");\n}\nasync function wrapper() {\n  console.log(\"wrapper start\");\n  risky(); // note: no await\n  console.log(\"wrapper end\");\n}\nwrapper().catch((e) => console.log(\"wrapper catch\", e));\nPromise.resolve().then(() => console.log(\"microtask\"));\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`wrapper start, risky start, wrapper end, microtask` — plus an unhandled rejection",
+          "isCorrect": true
+        },
+        {
+          "text": "`wrapper start, risky start, wrapper end, wrapper catch fail, microtask`",
+          "isCorrect": false
+        },
+        {
+          "text": "`wrapper start, wrapper end, risky start, microtask`",
+          "isCorrect": false
+        },
+        {
+          "text": "`wrapper start, risky start, risky after, wrapper end, microtask`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Without `await`, `risky()` is **fire-and-forget**: its promise is created, dropped on the floor, and its later rejection has no handler. `wrapper` itself finishes successfully, so `wrapper().catch(...)` never fires — a `.catch` only covers the chain it's attached to.\n\nThe rejection surfaces instead as an unhandled rejection (a console error in browsers; process-crashing by default in Node).\n\nIf you intentionally don't await, still attach a handler: `risky().catch(log)` — or use `void risky()` only when the function handles its own errors.",
+      "references": "[MDN: unhandledrejection event](https://developer.mozilla.org/en-US/docs/Web/API/Window/unhandledrejection_event)"
+    },
+    {
+      "id": "throw-in-settimeout",
+      "title": "Can this `try/catch` (or a promise `.catch`) catch an error thrown in a timer callback?",
+      "description": "```js\ntry {\n  setTimeout(() => {\n    throw new Error(\"async boom\");\n  }, 0);\n} catch (e) {\n  console.log(\"caught\", e.message);\n}\nconsole.log(\"end\");\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`end`, then an uncaught error — the try/catch cannot help",
+          "isCorrect": true
+        },
+        {
+          "text": "`caught async boom, end`",
+          "isCorrect": false
+        },
+        {
+          "text": "`end, caught async boom`",
+          "isCorrect": false
+        },
+        {
+          "text": "`end` — the error is silently discarded",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The `try` block only covers the **synchronous** act of *scheduling* the timer, which succeeds instantly. By the time the callback throws, the `try/catch` frame is long gone — the callback runs later, on a fresh, empty call stack. The error becomes an **uncaught exception** (`window.onerror` / process crash), not a promise rejection, so no `.catch` can see it either.\n\nTo handle errors in timer callbacks you must put the `try/catch` *inside* the callback — or better, wrap the timer in a promise so failures become rejections that flow through normal promise channels."
+    },
+    {
+      "id": "foreach-async-pitfall",
+      "title": "`forEach` with an async callback. In what order do the values log?",
+      "description": "```js\nconst items = [1, 2];\nasync function process() {\n  items.forEach(async (n) => {\n    await Promise.resolve();\n    console.log(\"item\", n);\n  });\n  console.log(\"done\");\n}\nprocess();\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`item 1, item 2, done`",
+          "isCorrect": false
+        },
+        {
+          "text": "`done, item 1, item 2`",
+          "isCorrect": true
+        },
+        {
+          "text": "`item 1, done, item 2`",
+          "isCorrect": false
+        },
+        {
+          "text": "`done` — the async callbacks never run",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`forEach` is promise-blind: it calls each callback and **ignores the returned promise**. Both async callbacks start, suspend at their `await`, and `forEach` returns immediately — so `done` logs first, and the items log later as microtasks.\n\nThere is no way to make `forEach` wait. Worse, rejections inside the callbacks become unhandled.\n\nFor sequential iteration use `for...of` with `await`; for parallel, `await Promise.all(items.map(async ...))`. This `forEach` trap is one of the most common async bugs in real codebases.",
+      "references": "[MDN: forEach](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/forEach)"
+    },
+    {
+      "id": "error-chain-recovery-rethrow",
+      "title": "Errors are thrown, caught, and thrown again along one chain. What logs?",
+      "description": "```js\nPromise.resolve()\n  .then(() => {\n    throw new Error(\"err1\");\n  })\n  .then(() => console.log(\"then2\"))\n  .catch((e) => {\n    console.log(\"catch1\", e.message);\n    return \"recovered\";\n  })\n  .then((v) => {\n    throw new Error(\"err2\");\n  })\n  .catch((e) => console.log(\"catch2\", e.message))\n  .then(() => console.log(\"final\"));\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`catch1 err1, catch2 err2, final`",
+          "isCorrect": true
+        },
+        {
+          "text": "`then2, catch1 err1, catch2 err2, final`",
+          "isCorrect": false
+        },
+        {
+          "text": "`catch1 err1, catch2 err2` — a second failure ends the chain",
+          "isCorrect": false
+        },
+        {
+          "text": "`catch1 err1, final` — err2 is unhandled",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Follow the state of the chain link by link:\n\n1. `err1` rejects → `then2` (fulfillment-only) is **skipped**.\n2. `catch1` handles it and returns a value → chain fulfilled again.\n3. The next `.then` runs and throws `err2` → rejected again.\n4. `catch2` handles it → fulfilled → `final` runs.\n\nA promise chain is a little state machine alternating between fulfilled and rejected tracks; each link either reacts to the current track or forwards it. Reading chains this way makes even long ones mechanical to trace."
+    },
+    {
+      "id": "catch-null-downstream",
+      "title": "A rejection is \"handled\" by returning `null`. What logs?",
+      "description": "```js\nasync function fetchData() {\n  throw new Error(\"network error\");\n}\nasync function transform(data) {\n  return data.toUpperCase();\n}\nasync function main() {\n  const data = await fetchData().catch(() => null);\n  const result = await transform(data);\n  console.log(result);\n}\nmain().catch((e) => console.log(\"main error:\", e.message));\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`main error: Cannot read properties of null (reading 'toUpperCase')`",
+          "isCorrect": true
+        },
+        {
+          "text": "`main error: network error`",
+          "isCorrect": false
+        },
+        {
+          "text": "`null`",
+          "isCorrect": false
+        },
+        {
+          "text": "`NULL` — toUpperCase works on the string \"null\"",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The `.catch(() => null)` swallows the network error and fulfills with `null` — so `main` carries on as if the fetch succeeded. The real failure then happens *downstream*: `null.toUpperCase()` throws a `TypeError`, which rejects `transform`'s promise and is finally caught by `main().catch`.\n\nThe original `network error` is gone; what surfaces is a confusing null-access error far from the root cause.\n\nLesson: recover with a sentinel like `null` only if the very next code checks for it. Otherwise let the error propagate — or rethrow with added context."
+    },
+    {
+      "id": "finally-before-propagation",
+      "title": "An error passes through a `try/finally` with no `catch`. What logs?",
+      "description": "```js\nasync function inner() {\n  throw new Error(\"inner error\");\n}\nasync function middle() {\n  try {\n    await inner();\n  } finally {\n    console.log(\"middle finally\");\n  }\n}\nasync function outer() {\n  try {\n    await middle();\n  } catch (e) {\n    console.log(\"outer catch\", e.message);\n  }\n}\nouter();\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`middle finally, outer catch inner error`",
+          "isCorrect": true
+        },
+        {
+          "text": "`outer catch inner error, middle finally`",
+          "isCorrect": false
+        },
+        {
+          "text": "`middle finally` — finally swallows the error",
+          "isCorrect": false
+        },
+        {
+          "text": "An unhandled rejection — finally breaks the propagation chain",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A `finally` block without a `catch` does **not** swallow the exception: it runs its cleanup, then lets the error continue propagating. So `middle finally` logs first, `middle`'s promise rejects with the original error, and `outer`'s `catch` receives it.\n\nThe ordering is guaranteed — `middle`'s promise cannot settle until `middle` finishes executing, and that includes the `finally` block.\n\nThis mirrors synchronous `try...finally` exactly: cleanup is interposed on the unwinding path without altering the outcome.",
+      "references": "[MDN: try...catch](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/try...catch)"
+    },
+    {
+      "id": "unhandled-rejection-window",
+      "title": "When must a rejection handler be attached to avoid an `unhandledrejection` event?",
+      "description": "```js\nconst p = Promise.reject(new Error(\"x\"));\n// option A: p.catch(handle)            <- same synchronous script\n// option B: setTimeout(() => p.catch(handle), 100)\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Before the microtask queue drains at the end of the current task — option A is safe, option B is too late",
+          "isCorrect": true
+        },
+        {
+          "text": "Any time before the process or page exits",
+          "isCorrect": false
+        },
+        {
+          "text": "Within the same expression — even option A is too late",
+          "isCorrect": false
+        },
+        {
+          "text": "It makes no difference; the event always fires for every rejection",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The runtime checks for unhandled rejections **after the current task's microtask queue drains**. A handler attached synchronously in the same script (option A) is registered in time, so no event fires. Attaching it in a later task (option B) is too late: the `unhandledrejection` event has already fired (browsers then emit `rejectionhandled` when you attach late; Node by default has already crashed the process).\n\nPractical rule: never park a rejected (or possibly-rejecting) promise without a handler across task boundaries — attach `.catch` in the same tick you create it.",
+      "references": "[MDN: unhandledrejection event](https://developer.mozilla.org/en-US/docs/Web/API/Window/unhandledrejection_event)"
+    },
+    {
+      "id": "try-catch-finally-await-order",
+      "title": "In what order do the values log?",
+      "description": "```js\nasync function f() {\n  try {\n    await Promise.reject(new Error(\"fail\"));\n  } catch (e) {\n    console.log(\"catch\", e.message);\n  } finally {\n    console.log(\"finally\");\n  }\n  console.log(\"after try\");\n}\nf();\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`catch fail, finally, after try`",
+          "isCorrect": true
+        },
+        {
+          "text": "`finally, catch fail, after try`",
+          "isCorrect": false
+        },
+        {
+          "text": "`catch fail, after try, finally`",
+          "isCorrect": false
+        },
+        {
+          "text": "`catch fail, finally` — code after a failed try block is unreachable",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Once `await` turns the rejection into a thrown exception, ordinary `try...catch...finally` sequencing takes over: the `catch` block handles it, the `finally` block runs next, and — because the exception was *handled* — execution continues normally after the statement (`after try`).\n\nThe function completes successfully; its promise fulfills with `undefined`.\n\nasync/await's superpower is exactly this: asynchronous failures flow through the same well-understood structured control flow as synchronous ones.",
+      "references": "[MDN: try...catch](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/try...catch)"
+    },
+    {
+      "id": "reject-vs-throw-equivalence",
+      "title": "One function throws, the other returns `Promise.reject`. What logs?",
+      "description": "```js\nasync function a() {\n  throw new Error(\"A\");\n}\nfunction b() {\n  return Promise.reject(new Error(\"B\"));\n}\na().catch((e) => console.log(\"a\", e.message));\nb().catch((e) => console.log(\"b\", e.message));\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`a A, b B` — both produce rejected promises",
+          "isCorrect": true
+        },
+        {
+          "text": "`b B` — the throw in `a` crashes the script first",
+          "isCorrect": false
+        },
+        {
+          "text": "`a A` only — `b` is not async, so `.catch` is unavailable",
+          "isCorrect": false
+        },
+        {
+          "text": "`b B, a A` — explicit rejections settle before throws",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "For callers, the two are equivalent: each call returns a promise already rejected with an `Error`, and each `.catch` fires as a microtask in registration order (`a` first).\n\nNote `b` isn't even `async` — any function that returns a promise participates in the same machinery; the `async` keyword just automates wrapping and enables `await` inside.\n\nStyle guidance: prefer `throw` inside async functions (works with `try/catch`, reads like sync code) and reserve `Promise.reject` for non-async helpers or eagerly-failing validation in promise-returning APIs."
+    },
+    {
+      "id": "queuemicrotask-registration-order",
+      "title": "`queueMicrotask` and `.then` are mixed. In what order do the values log?",
+      "description": "```js\nqueueMicrotask(() => console.log(\"A\"));\nPromise.resolve().then(() => console.log(\"B\"));\nqueueMicrotask(() => console.log(\"C\"));\nPromise.resolve().then(() => console.log(\"D\"));\nconsole.log(\"E\");\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`E, A, B, C, D`",
+          "isCorrect": true
+        },
+        {
+          "text": "`E, A, C, B, D` — queueMicrotask callbacks run first",
+          "isCorrect": false
+        },
+        {
+          "text": "`E, B, D, A, C` — promise callbacks run first",
+          "isCorrect": false
+        },
+        {
+          "text": "`A, B, C, D, E`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`queueMicrotask` and promise reactions share **one** microtask queue — there is no priority between the two APIs. Callbacks run in pure registration order: `A, B, C, D`, after the synchronous `E`.\n\nA tempting wrong model is that one mechanism \"batches\" before the other; in reality `Promise.resolve().then(cb)` is essentially `queueMicrotask(cb)` plus promise bookkeeping.\n\n(Historical note: the original version of this question shipped with the \"grouped by API\" answer marked correct — running the code disproves it.)",
+      "references": "[MDN: queueMicrotask](https://developer.mozilla.org/en-US/docs/Web/API/Window/queueMicrotask)"
+    },
+    {
+      "id": "queuemicrotask-nested",
+      "title": "Microtasks enqueue more microtasks. In what order do the values log?",
+      "description": "```js\nPromise.resolve().then(() => {\n  console.log(\"A\");\n  queueMicrotask(() => console.log(\"B\"));\n  Promise.resolve().then(() => console.log(\"C\"));\n});\nqueueMicrotask(() => console.log(\"D\"));\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`A, D, B, C`",
+          "isCorrect": true
+        },
+        {
+          "text": "`A, B, C, D`",
+          "isCorrect": false
+        },
+        {
+          "text": "`D, A, B, C`",
+          "isCorrect": false
+        },
+        {
+          "text": "`A, D, C, B`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Initial queue after the synchronous script: `[A-callback, D]`. Running the `A` callback logs `A` and appends `B` then `C` to the **end** of the very same queue — behind the already-waiting `D`.\n\nDrain continues in FIFO order: `D`, then `B`, then `C` — all within one drain cycle; newly added microtasks never preempt older ones, but they *do* run before any macrotask.\n\nThis \"append to the live queue\" behavior is what allows microtask loops to starve the event loop — covered in the next questions."
+    },
+    {
+      "id": "microtask-starvation",
+      "title": "Microtasks keep scheduling more microtasks. In what order do the values log?",
+      "description": "```js\nlet count = 0;\nfunction scheduleMicrotask() {\n  if (count < 3) {\n    count++;\n    Promise.resolve().then(() => {\n      console.log(\"micro\", count);\n      scheduleMicrotask();\n    });\n  }\n}\nscheduleMicrotask();\nsetTimeout(() => console.log(\"macro\"), 0);\nconsole.log(\"sync\");\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`sync, micro 1, micro 2, micro 3, macro`",
+          "isCorrect": true
+        },
+        {
+          "text": "`sync, micro 1, macro, micro 2, micro 3`",
+          "isCorrect": false
+        },
+        {
+          "text": "`sync, macro, micro 1, micro 2, micro 3`",
+          "isCorrect": false
+        },
+        {
+          "text": "`micro 1, micro 2, micro 3, sync, macro`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Each microtask schedules the next one, and the event loop keeps draining until the queue is **completely empty** — so all three `micro` logs happen before the already-expired timer gets a turn.\n\nRemove the `count < 3` guard and the program never reaches the macrotask: timers, rendering, and I/O callbacks would all be blocked forever. This failure mode is called **microtask starvation**.\n\nIt's the flip side of the priority rule from earlier questions: microtasks always win, so an unbounded supply of them means everything else loses.",
+      "references": "[MDN: Microtask guide#using microtasks](https://developer.mozilla.org/en-US/docs/Web/API/HTML_DOM_API/Microtask_guide#using_microtasks)"
+    },
+    {
+      "id": "queuemicrotask-vs-await-continuation",
+      "title": "An async function competes with `queueMicrotask`. In what order do the values log?",
+      "description": "```js\nasync function main() {\n  console.log(\"1\");\n  await Promise.resolve();\n  console.log(\"2\");\n  queueMicrotask(() => console.log(\"3\"));\n  await Promise.resolve();\n  console.log(\"4\");\n}\nmain();\nqueueMicrotask(() => console.log(\"5\"));\nconsole.log(\"6\");\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`1, 6, 2, 5, 3, 4`",
+          "isCorrect": true
+        },
+        {
+          "text": "`1, 6, 5, 2, 3, 4`",
+          "isCorrect": false
+        },
+        {
+          "text": "`1, 6, 5, 2, 4, 3`",
+          "isCorrect": false
+        },
+        {
+          "text": "`1, 2, 6, 5, 3, 4`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Trace the queue. Sync phase: `1` (inside `main`), suspension at the first `await` enqueues `resume-main`; then the script queues `5` and logs `6`. Queue: `[resume-main, 5]`.\n\n- `resume-main`: logs `2`, queues `3`, second `await` queues `resume-main-2`. Queue: `[5, 3, resume-main-2]`.\n- `5`, then `3`, then `resume-main-2` logs `4`.\n\nKey ordering fact: `main`'s continuation was enqueued **before** the outer `queueMicrotask(5)`, because the `await` ran first — so `2` beats `5`. An `await` continuation is just a microtask whose position depends on when the suspension happened."
+    },
+    {
+      "id": "queuemicrotask-vs-chained-then",
+      "title": "Chained `.then`s interleave with `queueMicrotask`. What does the final log show?",
+      "description": "```js\nconst log = [];\nqueueMicrotask(() => log.push(\"qm1\"));\nPromise.resolve()\n  .then(() => log.push(\"pt1\"))\n  .then(() => log.push(\"pt2\"));\nqueueMicrotask(() => {\n  log.push(\"qm2\");\n  queueMicrotask(() => log.push(\"qm3\"));\n});\nPromise.resolve().then(() => log.push(\"pt3\"));\nsetTimeout(() => console.log(log.join(\",\")), 0);\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`qm1,pt1,qm2,pt3,pt2,qm3`",
+          "isCorrect": true
+        },
+        {
+          "text": "`qm1,pt1,pt2,qm2,qm3,pt3`",
+          "isCorrect": false
+        },
+        {
+          "text": "`qm1,qm2,qm3,pt1,pt2,pt3`",
+          "isCorrect": false
+        },
+        {
+          "text": "`qm1,pt1,qm2,pt2,pt3,qm3`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Initial queue: `[qm1, pt1, qm2, pt3]` — registration order. The crucial detail: `pt2` is **not** pre-queued; it's only enqueued when `pt1` runs and settles its link.\n\nDrain: `qm1` → `pt1` (appends `pt2` at the back) → `qm2` (appends `qm3`) → `pt3` → `pt2` → `qm3`.\n\nResult: `qm1,pt1,qm2,pt3,pt2,qm3`. Chained `.then` callbacks lag one drain-step behind everything registered up front, which is why `pt3` (registered directly on a resolved promise) beats `pt2` (second link of a chain). Verified by execution — this exact question is easy to get wrong by hand."
+    },
+    {
+      "id": "timer-nesting-clamp",
+      "title": "In browsers, what happens to `setTimeout(fn, 0)` when timers are deeply nested?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "After about 5 levels of nesting, the delay is clamped to a minimum of 4ms",
+          "isCorrect": true
+        },
+        {
+          "text": "Nothing — 0ms always means \"as soon as possible\" at any depth",
+          "isCorrect": false
+        },
+        {
+          "text": "Nested timers are clamped to one frame (16ms)",
+          "isCorrect": false
+        },
+        {
+          "text": "Browsers throw after 100 nested timers to prevent runaway loops",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The HTML spec orders browsers to enforce a **4ms minimum delay once `setTimeout`/`setInterval` nesting exceeds 5 levels** — a self-rescheduling 0ms timer chain actually ticks every ~4ms. The first few levels may also be clamped to ~1ms depending on the browser. (Background tabs throttle far more aggressively — to 1s or beyond.)\n\nThis is why `setTimeout(fn, 0)` loops are poor for high-frequency work: use `queueMicrotask` (no yield to rendering), `requestAnimationFrame` (per frame), or `MessageChannel` tricks instead. Details: Reasons for delays longer than specified.",
+      "references": "[MDN: queueMicrotask](https://developer.mozilla.org/en-US/docs/Web/API/Window/queueMicrotask) · [MDN: setTimeout#reasons for delays longer than specified](https://developer.mozilla.org/en-US/docs/Web/API/Window/setTimeout#reasons_for_delays_longer_than_specified)"
+    },
+    {
+      "id": "timer-same-delay-fifo",
+      "title": "Two timers with the identical delay. In what order do they fire?",
+      "description": "```js\nsetTimeout(() => console.log(\"first\"), 10);\nsetTimeout(() => console.log(\"second\"), 10);\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`first, second` — equal delays fire in registration order",
+          "isCorrect": true
+        },
+        {
+          "text": "`second, first` — the most recent timer fires first",
+          "isCorrect": false
+        },
+        {
+          "text": "The order is non-deterministic",
+          "isCorrect": false
+        },
+        {
+          "text": "Only one fires; equal delays coalesce into a single timer",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Timers with the same expiry time fire in the order their `setTimeout` calls executed — the timer list behaves FIFO for equal deadlines, and the spec guarantees this ordering.\n\nEach callback is its own macrotask: `first` runs to completion (including draining any microtasks it spawns) before `second` starts. They do not merge or race.\n\nThis guarantee extends across different delays scheduled at different times: whichever timer *expires* earlier runs earlier, with registration order as the tie-breaker."
+    },
+    {
+      "id": "timer-cleartimeout",
+      "title": "A timer is cancelled right after scheduling. What logs?",
+      "description": "```js\nconst id = setTimeout(() => console.log(\"never\"), 0);\nclearTimeout(id);\nconsole.log(\"done\");\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`done` — the callback never runs",
+          "isCorrect": true
+        },
+        {
+          "text": "`done, never` — 0ms timers cannot be cancelled",
+          "isCorrect": false
+        },
+        {
+          "text": "`never, done`",
+          "isCorrect": false
+        },
+        {
+          "text": "`done`, then a TypeError from the cleared timer",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`clearTimeout` removes the pending timer before the event loop ever gets a chance to run it — even a `0`ms timer, because the current script always finishes first, and the cancellation happens within it.\n\nThis synchronous-code-first guarantee is what makes cancel-after-schedule patterns reliable: you can always schedule a timeout and revoke it later in the same tick.\n\nContrast this with promises: a timer is cancellable before it fires, but a promise, once created, cannot be \"un-scheduled\" — only ignored.",
+      "references": "[MDN: clearTimeout](https://developer.mozilla.org/en-US/docs/Web/API/Window/clearTimeout)"
+    },
+    {
+      "id": "timer-blocked-by-sync",
+      "title": "A 10ms timer vs. a 50ms busy-wait. In what order do the values log?",
+      "description": "```js\nsetTimeout(() => console.log(\"timer\"), 10);\nconst end = Date.now() + 50;\nwhile (Date.now() < end) {\n  // busy-wait, blocking the thread for ~50ms\n}\nconsole.log(\"loop done\");\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`loop done, timer` — the timer fires late, after ~50ms",
+          "isCorrect": true
+        },
+        {
+          "text": "`timer, loop done` — 10ms elapses during the loop, so the timer interrupts it",
+          "isCorrect": false
+        },
+        {
+          "text": "`loop done` only — the missed deadline cancels the timer",
+          "isCorrect": false
+        },
+        {
+          "text": "Non-deterministic — depends on CPU speed",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A `setTimeout` delay is a **minimum**, not a guarantee — and nothing can interrupt running JavaScript. The thread is busy in the `while` loop when the 10ms deadline passes; the timer callback just sits in the task queue until the script yields, so it fires after ~50ms.\n\nThis is the run-to-completion model: timers, clicks, and network callbacks all wait for the current code to finish.\n\nIt's also why long synchronous work freezes UIs, and why sub-millisecond timer precision is impossible to promise in JavaScript.",
+      "references": "[MDN: setTimeout#reasons for delays longer than specified](https://developer.mozilla.org/en-US/docs/Web/API/Window/setTimeout#reasons_for_delays_longer_than_specified)"
+    },
+    {
+      "id": "timer-delay-overflow",
+      "title": "What happens with a gigantic delay: `setTimeout(fn, 2 ** 31)`?",
+      "description": "```js\nsetTimeout(() => console.log(\"fired\"), 2 ** 31);\nconsole.log(\"sync\");\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`sync, fired` — the delay overflows and the timer fires almost immediately",
+          "isCorrect": true
+        },
+        {
+          "text": "`sync`, then `fired` after about 25 days",
+          "isCorrect": false
+        },
+        {
+          "text": "`sync`, then a RangeError",
+          "isCorrect": false
+        },
+        {
+          "text": "`sync` only — oversized delays are silently dropped",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Timer delays are stored as **32-bit signed integers** in browsers and Node. The maximum is `2³¹ − 1` ms (~24.8 days); `2 ** 31` overflows, and the runtime falls back to a tiny delay — Node warns `TimeoutOverflowWarning` and sets it to 1ms, browsers wrap to an immediate fire.\n\nSo the \"far future\" timer fires right away — a genuinely surprising production bug when scheduling, say, 30-day expirations with raw timeouts.\n\nFor long horizons, store a deadline timestamp and re-schedule in shorter hops, or use a proper job scheduler.",
+      "references": "[MDN: setTimeout#maximum delay value](https://developer.mozilla.org/en-US/docs/Web/API/Window/setTimeout#maximum_delay_value)"
+    },
+    {
+      "id": "timer-from-microtask",
+      "title": "A microtask schedules a timer while one is already pending. In what order do the values log?",
+      "description": "```js\nPromise.resolve().then(() => {\n  console.log(\"micro\");\n  setTimeout(() => console.log(\"timer from micro\"), 0);\n});\nsetTimeout(() => console.log(\"existing timer\"), 0);\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`micro, existing timer, timer from micro`",
+          "isCorrect": true
+        },
+        {
+          "text": "`micro, timer from micro, existing timer`",
+          "isCorrect": false
+        },
+        {
+          "text": "`existing timer, micro, timer from micro`",
+          "isCorrect": false
+        },
+        {
+          "text": "`micro, existing timer` — a timer set inside a microtask is dropped",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The microtask runs first (before any macrotask) and logs `micro`. The timer it schedules joins the macrotask queue **behind** the already-pending `existing timer`, since both have 0ms delays and the existing one was registered earlier.\n\nSo: `micro` → `existing timer` → `timer from micro`.\n\nGeneral rule for mixed scheduling: a microtask can delay *when* you ask for a macrotask, but it can't jump the macrotask queue — new tasks always join at the back of their queue at the moment they're scheduled."
+    },
+    {
+      "id": "interval-vs-recursive-timeout",
+      "title": "What is the key behavioral difference between `setInterval(fn, 100)` and a recursive `setTimeout(fn, 100)`?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "setInterval schedules on a fixed cadence regardless of how long `fn` takes; recursive setTimeout guarantees ~100ms of quiet between runs",
+          "isCorrect": true
+        },
+        {
+          "text": "There is no difference; setInterval is implemented as recursive setTimeout",
+          "isCorrect": false
+        },
+        {
+          "text": "setInterval callbacks are microtasks, setTimeout callbacks are macrotasks",
+          "isCorrect": false
+        },
+        {
+          "text": "Recursive setTimeout drifts, while setInterval is guaranteed drift-free",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`setInterval` aims for a fixed cadence: the next firing is scheduled relative to the *previous deadline*, not to when your callback finished. If `fn` takes 80ms, only ~20ms separates runs — and if `fn` runs longer than the interval, executions can bunch up back-to-back (browsers skip intermediate firings rather than queueing them).\n\nRecursive `setTimeout` schedules the next run *after* the current one completes, guaranteeing a minimum gap — usually what you actually want for polling.\n\nNeither is drift-free: both are subject to event-loop delays and clamping; for wall-clock accuracy, compute against `Date.now()` each tick.",
+      "references": "[MDN: setInterval](https://developer.mozilla.org/en-US/docs/Web/API/Window/setInterval)"
+    },
+    {
+      "id": "for-await-async-generator",
+      "title": "A `for await` loop over a synchronous-looking async generator. In what order do the values log?",
+      "description": "```js\nasync function asyncForOf() {\n  async function* gen() {\n    yield 1;\n    yield 2;\n    yield 3;\n  }\n  for await (const val of gen()) {\n    console.log(\"val\", val);\n  }\n  console.log(\"done\");\n}\nconsole.log(\"before\");\nasyncForOf();\nconsole.log(\"after\");\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`before, val 1, val 2, val 3, done, after`",
+          "isCorrect": false
+        },
+        {
+          "text": "`before, after, val 1, val 2, val 3, done`",
+          "isCorrect": true
+        },
+        {
+          "text": "`before, val 1, after, val 2, val 3, done`",
+          "isCorrect": false
+        },
+        {
+          "text": "`before, after, done, val 1, val 2, val 3`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Even though the generator yields plain numbers with no real async work, the **async iteration protocol** wraps every `next()` result in a promise — and `for await...of` awaits each one. The first `await` suspends `asyncForOf`, so `after` logs before any value.\n\nEach iteration then resumes as its own microtask: `val 1`, `val 2`, `val 3`, `done`.\n\nGuaranteed minimum of one microtask tick per iteration is the protocol's price for uniformity: consumers never need to know whether the source is sync-fast or genuinely async.",
+      "references": "[MDN: for-await...of](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/for-await...of)"
+    },
+    {
+      "id": "async-generator-await-inside",
+      "title": "The generator awaits a timer between yields. In what order do the values log?",
+      "description": "```js\nasync function* gen() {\n  yield 1;\n  yield await new Promise((r) => setTimeout(() => r(2), 10));\n  yield 3;\n}\n(async () => {\n  for await (const v of gen()) {\n    console.log(\"v\", v);\n  }\n  console.log(\"done\");\n})();\nconsole.log(\"sync\");\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`sync, v 1, v 2, v 3, done`",
+          "isCorrect": true
+        },
+        {
+          "text": "`v 1, sync, v 2, v 3, done`",
+          "isCorrect": false
+        },
+        {
+          "text": "`sync, v 1, v 3, v 2, done` — the slow yield is reordered",
+          "isCorrect": false
+        },
+        {
+          "text": "`sync, v 2, v 1, v 3, done`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "An async generator may freely `await` between yields; the consuming loop simply waits longer for that `next()` promise. Values are **always delivered in yield order** — `v 2` arrives ~10ms late but never out of order, because the loop doesn't request the third value until the second has been consumed.\n\nThis demand-driven, one-at-a-time flow is the core of async iteration: backpressure is built in, since the producer only advances when the consumer asks.\n\nContrast with `Promise.all`, which starts everything eagerly and delivers all at once.",
+      "references": "[MDN: async function*](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/async_function*)"
+    },
+    {
+      "id": "for-await-promise-array",
+      "title": "`for await` over an array of promises with mixed timing. In what order do the values log?",
+      "description": "```js\nconst promises = [\n  Promise.resolve(\"a\"),\n  new Promise((r) => setTimeout(() => r(\"b\"), 10)),\n  Promise.resolve(\"c\"),\n];\n(async () => {\n  for await (const v of promises) {\n    console.log(v);\n  }\n})();\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`a, b, c` — input order, waiting for each in turn",
+          "isCorrect": true
+        },
+        {
+          "text": "`a, c, b` — completion order",
+          "isCorrect": false
+        },
+        {
+          "text": "`b, a, c`",
+          "isCorrect": false
+        },
+        {
+          "text": "A TypeError — for await requires an async iterable",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`for await...of` also accepts a plain (sync) iterable of promises: it takes them **in input order** and awaits each before moving on. `c` is ready long before `b`, but the loop doesn't look at it until `b` has resolved.\n\nSo this construct is sequential consumption, not a \"fastest first\" stream. Total wait here is governed by the slowest *prefix*, like `await`ing one by one.\n\nNote all three promises are already running concurrently (they were created up front) — only the *consumption* is serialized.",
+      "references": "[MDN: for-await...of](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/for-await...of)"
+    },
+    {
+      "id": "async-iterator-protocol",
+      "title": "What does the `next()` method of an **async iterator** return?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "A promise that fulfills with `{ value, done }`",
+          "isCorrect": true
+        },
+        {
+          "text": "A `{ value, done }` object synchronously, like a sync iterator",
+          "isCorrect": false
+        },
+        {
+          "text": "A promise that fulfills with just the value",
+          "isCorrect": false
+        },
+        {
+          "text": "A `{ value: Promise, done: boolean }` object synchronously",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The async iteration protocol wraps the *entire result object* in a promise: `next()` returns `Promise<{ value, done }>`. Even `done` is unknown until the promise settles — the consumer can't know whether iteration ended without awaiting.\n\nThis is why `for await` must suspend on every step, and why the \"synchronous-looking async generator\" still ticks through microtasks.\n\nCompare the rejected design alternative `{ value: Promise, done: boolean }`: it couldn't represent \"I don't know yet whether there's a next item\", which streams genuinely need.",
+      "references": "[MDN: Iteration protocols#the async iterator and async iterable protocols](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Iteration_protocols#the_async_iterator_and_async_iterable_protocols)"
+    },
+    {
+      "id": "sequential-vs-parallel-loop",
+      "title": "Sequential awaiting vs `Promise.all`. Which label logs first?",
+      "description": "```js\nconst delay = (ms, v) =>\n  new Promise((r) => setTimeout(() => r(v), ms));\n\nasync function sequential() {\n  const results = [];\n  for (const n of [10, 20, 30]) {\n    results.push(await delay(n, n * 2));\n  }\n  console.log(\"sequential\", results.join(\",\"));\n}\nasync function parallel() {\n  const results = await Promise.all(\n    [10, 20, 30].map((n) => delay(n, n * 2))\n  );\n  console.log(\"parallel\", results.join(\",\"));\n}\nsequential();\nparallel();\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`parallel 20,40,60` first (~30ms), then `sequential 20,40,60` (~60ms)",
+          "isCorrect": true
+        },
+        {
+          "text": "`sequential 20,40,60` first — it was called first",
+          "isCorrect": false
+        },
+        {
+          "text": "Both log at the same time with the same values",
+          "isCorrect": false
+        },
+        {
+          "text": "`parallel` logs values in completion order: `20,40,60` vs sequential's `60,40,20`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Both produce the same values, but timing differs sharply:\n\n- **sequential** starts each timer only after the previous resolves: 10 + 20 + 30 ≈ 60ms total.\n- **parallel** creates all three promises up front via `map`, so the timers run concurrently: total ≈ max(10, 20, 30) = 30ms.\n\nBeing called first doesn't help `sequential` — it spends most of its life suspended.\n\nThe `await`-in-a-loop pattern is right when each step *depends* on the previous; for independent work, build the promises first and `Promise.all` them.",
+      "references": "[MDN: all](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/all)"
+    },
+    {
+      "id": "for-of-await-serializes",
+      "title": "In what order do the values log?",
+      "description": "```js\nasync function processAll() {\n  for (const item of [1, 2, 3]) {\n    await Promise.resolve();\n    console.log(\"item\", item);\n  }\n  console.log(\"done\");\n}\nprocessAll();\nconsole.log(\"sync\");\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`item 1, item 2, item 3, done, sync`",
+          "isCorrect": false
+        },
+        {
+          "text": "`sync, item 1, item 2, item 3, done`",
+          "isCorrect": true
+        },
+        {
+          "text": "`item 1, sync, item 2, item 3, done`",
+          "isCorrect": false
+        },
+        {
+          "text": "`sync, done, item 1, item 2, item 3`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The loop hits `await` *before* the first log, suspending `processAll` — so `sync` wins. Then each iteration resumes as one microtask: log the item, loop around, suspend again.\n\nAll three items (and `done`) drain in a single microtask cascade before any macrotask could run, since `Promise.resolve()` never touches the timer queue.\n\nNote how `for...of` + `await` differs from the `forEach` pitfall: here the loop genuinely waits each iteration, preserving order and letting `done` come last — `forEach` would have fired everything and logged `done` first."
+    },
+    {
+      "id": "sleep-pattern",
+      "title": "A promise-based `sleep`. In what order do the values log?",
+      "description": "```js\nfunction sleep(ms) {\n  return new Promise((r) => setTimeout(r, ms));\n}\nasync function main() {\n  console.log(\"A\");\n  await sleep(0);\n  console.log(\"B\");\n  await sleep(0);\n  console.log(\"C\");\n}\nmain();\nconsole.log(\"D\");\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`A, D, B, C`",
+          "isCorrect": true
+        },
+        {
+          "text": "`A, B, C, D`",
+          "isCorrect": false
+        },
+        {
+          "text": "`D, A, B, C`",
+          "isCorrect": false
+        },
+        {
+          "text": "`A, B, D, C`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`sleep` wraps `setTimeout` in a promise — the standard way to pause an async function. `main` logs `A`, suspends on a timer-backed promise, and the script logs `D`.\n\nEach `await sleep(0)` yields all the way to the **macrotask** queue: the timer must fire, resolve the promise, and only then does a microtask resume `main` (`B`, then the cycle repeats for `C`).\n\nThat full event-loop round trip is what distinguishes `await sleep(0)` from `await Promise.resolve()` — the next question makes the contrast explicit.",
+      "references": "[MDN: setTimeout](https://developer.mozilla.org/en-US/docs/Web/API/Window/setTimeout)"
+    },
+    {
+      "id": "sleep-zero-vs-promise-resolve",
+      "title": "Microtask yield vs macrotask yield. In what order do the values log?",
+      "description": "```js\nasync function micro() {\n  await Promise.resolve();\n  console.log(\"micro yield\");\n}\nasync function macro() {\n  await new Promise((r) => setTimeout(r, 0));\n  console.log(\"macro yield\");\n}\nmacro();\nmicro();\nsetTimeout(() => console.log(\"timer\"), 0);\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`micro yield, macro yield, timer`",
+          "isCorrect": true
+        },
+        {
+          "text": "`macro yield, micro yield, timer` — macro() was called first",
+          "isCorrect": false
+        },
+        {
+          "text": "`micro yield, timer, macro yield`",
+          "isCorrect": false
+        },
+        {
+          "text": "`timer, macro yield, micro yield`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`macro()` runs first and registers its 0ms timer (timer #1); `micro()` suspends on an already-resolved promise; the script registers timer #2.\n\nDrain order: the microtask resumes `micro` first (`micro yield`). Then timer #1 fires, resolving `macro`'s promise — its continuation is a microtask that runs before the next macrotask (`macro yield`). Finally timer #2 (`timer`).\n\nChoose deliberately: `await Promise.resolve()` (or `queueMicrotask`) yields only to other microtasks; `await sleep(0)` lets timers, I/O, and rendering breathe. They are different tools, not interchangeable."
+    },
+    {
+      "id": "promisify-callback",
+      "title": "A callback API is wrapped in a promise. In what order do the values log?",
+      "description": "```js\nfunction readData(cb) {\n  setTimeout(() => cb(null, \"file contents\"), 10);\n}\nfunction readDataAsync() {\n  return new Promise((resolve, reject) => {\n    readData((err, data) => (err ? reject(err) : resolve(data)));\n  });\n}\nreadDataAsync().then((d) => console.log(\"got\", d));\nconsole.log(\"sync\");\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`sync, got file contents`",
+          "isCorrect": true
+        },
+        {
+          "text": "`got file contents, sync`",
+          "isCorrect": false
+        },
+        {
+          "text": "`sync` only — resolve inside a nested callback has no effect",
+          "isCorrect": false
+        },
+        {
+          "text": "`sync, got null` — the first callback argument wins",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "This is **promisification**: adapting a Node-style `(err, data)` callback API into a promise. The executor starts the legacy operation; the callback later routes failure to `reject` and success to `resolve`. Synchronous code (`sync`) runs first as always.\n\nThe error-first convention maps cleanly: `err ? reject(err) : resolve(data)` — after which the consumer composes with `await`, `.then`, and combinators like any modern API.\n\nNode automates this exact transform with `util.promisify`; since promises settle once, any duplicate callback invocations are safely ignored.",
+      "references": "[Node.js: util.promisify(original)](https://nodejs.org/api/util.html#utilpromisifyoriginal)"
+    },
+    {
+      "id": "retry-attempt-count",
+      "title": "How many times is `flaky` called in total?",
+      "description": "```js\nlet attempts = 0;\nasync function flaky() {\n  attempts++;\n  if (attempts < 3) throw new Error(\"fail\");\n  return \"ok\";\n}\nasync function retry(fn, times) {\n  let lastError;\n  for (let i = 0; i < times; i++) {\n    try {\n      return await fn();\n    } catch (e) {\n      lastError = e;\n    }\n  }\n  throw lastError;\n}\nretry(flaky, 5).then((v) => console.log(v, attempts));\n```",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [3]
+      },
+      "explanation": "The retry loop calls `fn`, and `return await fn()` exits the **whole function** on the first success. Attempts 1 and 2 throw (caught and absorbed by the loop), attempt 3 returns `\"ok\"` — so `flaky` runs exactly **3** times; the remaining 2 permitted attempts never happen.\n\nNote the `await` inside `try`: with plain `return fn()` the rejection would escape *past* the try/catch (the function has already returned), and no retry would ever occur. This is the classic case where `return await` is not redundant but load-bearing."
+    },
+    {
+      "id": "map-async-returns-promises",
+      "title": "`map` with an async callback. What logs?",
+      "description": "```js\nasync function double(n) {\n  return n * 2;\n}\nconst results = [1, 2, 3].map(double);\nconsole.log(Array.isArray(results), results[0] instanceof Promise);\nPromise.all(results).then((v) => console.log(v.join(\",\")));\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`true true`, then `2,4,6`",
+          "isCorrect": true
+        },
+        {
+          "text": "`true false`, then `2,4,6` — map unwraps async results",
+          "isCorrect": false
+        },
+        {
+          "text": "`false true` — map over async callbacks returns a promise",
+          "isCorrect": false
+        },
+        {
+          "text": "`true true`, then `[object Promise],[object Promise],[object Promise]`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "An async callback always returns a promise, and `map` stores return values as-is — so `results` is a plain array of three `Promise` objects, not numbers (`true true`).\n\n`Promise.all` is the canonical second step: it awaits them all and restores plain values (`2,4,6`).\n\n`array.map(asyncFn)` → `Promise.all(...)` is the standard parallel-processing idiom; forgetting the `Promise.all` and treating `results[0]` as a number is the corresponding standard bug.",
+      "references": "[MDN: map](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/map)"
+    },
+    {
+      "id": "start-then-await-concurrent",
+      "title": "Both operations are started **before** the first `await`. What logs?",
+      "description": "```js\nconst delay = (ms, v) =>\n  new Promise((r) => setTimeout(() => r(v), ms));\nasync function run() {\n  const start = Date.now();\n  const pa = delay(30, \"a\");\n  const pb = delay(30, \"b\");\n  const a = await pa;\n  const b = await pb;\n  const elapsed = Date.now() - start;\n  console.log(a, b, elapsed >= 55 ? \"sequential\" : \"concurrent\");\n}\nrun();\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`a b concurrent` — both timers ran simultaneously (~30ms total)",
+          "isCorrect": true
+        },
+        {
+          "text": "`a b sequential` — two awaits always mean ~60ms",
+          "isCorrect": false
+        },
+        {
+          "text": "`b a concurrent`",
+          "isCorrect": false
+        },
+        {
+          "text": "A deadlock — pb cannot resolve while pa is being awaited",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The work starts when the **promise is created**, not when it's awaited. Both `delay` calls run their timers concurrently from the first two lines; by the time `await pb` executes (after ~30ms of waiting on `pa`), `pb` is already settled and resumes in a tick.\n\nTotal: ~30ms, not ~60ms — hence `concurrent`.\n\nThe \"create first, await later\" pattern gets you parallelism without `Promise.all`, though `Promise.all([pa, pb])` is still preferred: it fails fast and avoids unhandled-rejection windows if `pb` rejects while you're still awaiting `pa`."
+    },
+    {
+      "id": "race-loser-still-runs",
+      "title": "After the race is decided, what happens to the slow promise?",
+      "description": "```js\nconst fast = new Promise((r) => setTimeout(() => r(\"fast\"), 10));\nconst slow = new Promise((r) =>\n  setTimeout(() => {\n    console.log(\"slow finished\");\n    r(\"slow\");\n  }, 30)\n);\nPromise.race([fast, slow]).then((v) => console.log(\"winner\", v));\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`winner fast, slow finished` — the loser keeps running",
+          "isCorrect": true
+        },
+        {
+          "text": "`winner fast` only — losing a race cancels the promise",
+          "isCorrect": false
+        },
+        {
+          "text": "`slow finished, winner fast`",
+          "isCorrect": false
+        },
+        {
+          "text": "`winner fast, winner slow` — race settles once per input",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`Promise.race` settles with the first result, but it has **no power over the inputs**: `slow`'s timer still fires at 30ms, runs its side effects (`slow finished`), and resolves a promise nobody reads anymore.\n\nJavaScript promises represent results, not controllable operations — there is no built-in cancellation.\n\nIn real systems this means losing branches keep holding sockets, CPU, and locks. Pair racing with `AbortController` so the loser can actually stop working when the race is over.",
+      "references": "[MDN: race](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/race) · [MDN: AbortController](https://developer.mozilla.org/en-US/docs/Web/API/AbortController)"
+    },
+    {
+      "id": "abort-controller-fetch",
+      "title": "An in-flight `fetch` is aborted via `AbortController`. What happens to its promise?",
+      "description": "```js\nconst controller = new AbortController();\nconst promise = fetch(\"/big-file\", { signal: controller.signal });\ncontroller.abort();\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "It rejects with a `DOMException` named `AbortError`",
+          "isCorrect": true
+        },
+        {
+          "text": "It fulfills with a partial response",
+          "isCorrect": false
+        },
+        {
+          "text": "It stays pending forever",
+          "isCorrect": false
+        },
+        {
+          "text": "It fulfills with `null`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`AbortController` is the platform's standard cancellation primitive. Calling `abort()` makes `fetch` stop the network work and **reject** its promise with a `DOMException` whose `name` is `\"AbortError\"` — cancellation arrives through the normal rejection channel.\n\nIdiomatic handling distinguishes it from real failures: `if (e.name === \"AbortError\") return;` in the catch.\n\nThe same `signal` is accepted by many APIs (`addEventListener`, streams, some libraries), and `AbortSignal.timeout(ms)` builds deadline signals directly — composing cancellation where bare promises cannot.",
+      "references": "[MDN: AbortController](https://developer.mozilla.org/en-US/docs/Web/API/AbortController)"
+    },
+    {
+      "id": "async-await-truths",
+      "title": "Which statements about async/await are **true**? (Select all that apply.)",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "An async function always returns a promise",
+          "isCorrect": true
+        },
+        {
+          "text": "`try/catch` can handle a rejection from an awaited promise",
+          "isCorrect": true
+        },
+        {
+          "text": "`await` suspends only the async function itself, not the whole thread",
+          "isCorrect": true
+        },
+        {
+          "text": "`await` blocks the main thread until the promise settles",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "async/await is syntax over promises, not a new concurrency model:\n\n- The return value is always wrapped in a promise (even bare `return;` → promise of `undefined`).\n- `await` rethrows rejections at the await site, so ordinary `try/catch` works.\n- Suspension is **cooperative**: the function parks itself and the event loop keeps running everything else.\n\nThe blocking claim is the classic misconception — nothing in JavaScript blocks the thread while waiting on a promise; only synchronous code (like a busy-wait loop) can do that.",
+      "references": "[MDN: async function](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/async_function)"
+    },
+    {
+      "id": "grand-finale-ordering",
+      "title": "The grand finale — every mechanism at once. In what order do the numbers log?",
+      "description": "```js\nconsole.log(\"1\");\nsetTimeout(() => console.log(\"2\"), 0);\n(async () => {\n  console.log(\"3\");\n  await null;\n  console.log(\"4\");\n  queueMicrotask(() => console.log(\"5\"));\n  await null;\n  console.log(\"6\");\n})();\nPromise.resolve()\n  .then(() => console.log(\"7\"))\n  .then(() => console.log(\"8\"));\nqueueMicrotask(() => console.log(\"9\"));\nconsole.log(\"10\");\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`1, 3, 10, 4, 7, 9, 5, 6, 8, 2`",
+          "isCorrect": true
+        },
+        {
+          "text": "`1, 3, 10, 7, 9, 4, 5, 6, 8, 2`",
+          "isCorrect": false
+        },
+        {
+          "text": "`1, 3, 10, 4, 7, 9, 6, 5, 8, 2`",
+          "isCorrect": false
+        },
+        {
+          "text": "`1, 10, 3, 4, 7, 9, 5, 6, 8, 2`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Sync phase: `1`, the IIFE runs to its first `await` (`3`), then `10`. Queue: `[resume@4, then7, qm9]`; timer `2` waits in the macrotask queue.\n\nDrain: `resume@4` logs `4`, enqueues `5`, suspends again (enqueues `resume@6`) → queue `[then7, qm9, 5, resume@6]`. `7` runs and only now enqueues chained `8`. Then `9`, `5`, `6`, `8`. Macrotask last: `2`.\n\nEverything from this quiz in one trace: sync-first, await suspension points, FIFO microtasks, chains enqueueing lazily, and the macrotask running only after the queue is fully drained. (Verified by execution.)"
+    }
+  ]
+}

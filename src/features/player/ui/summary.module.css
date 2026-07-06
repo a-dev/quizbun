@@ -1,0 +1,55 @@
+.list {
+  display: grid;
+  gap: 1rem;
+
+  margin: 0;
+  padding-block: 1.5rem;
+  padding-inline: 0;
+  border-top: 1px solid var(--color-border-subtle);
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.item {
+  /* Two intrinsic rows, no breakpoint: the meta row (number · badge · Review)
+     sits above the full-width preview, so the preview never gets crushed on
+     narrow viewports the way a single flex row did. */
+  display: grid;
+  grid-template-areas:
+    "position badge action"
+    "preview  preview preview";
+  grid-template-columns: auto auto 1fr;
+  gap: 0.4rem 0.5rem;
+  align-items: center;
+}
+
+.position {
+  grid-area: position;
+  font-weight: var(--fw-medium);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-secondary);
+}
+
+.badge {
+  grid-area: badge;
+}
+
+.review {
+  grid-area: action;
+  justify-self: end;
+}
+
+.preview {
+  composes: multi-line-truncate-2 from "#styles/utils.module.css";
+
+  grid-area: preview;
+
+  min-inline-size: 0;
+  margin: 0;
+
+  font-size: var(--fs-s);
+  color: var(--color-text-secondary);
+}
+
+.retake {
+  width: fit-content;
+}

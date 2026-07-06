@@ -1,0 +1,30 @@
+---
+import Layout from "@/app/layout.astro";
+import { loadPublicQuizzes } from "@/shared/lib/content";
+import { SectionTitle } from "@/shared/ui/section-title";
+
+import { QuizzesCatalog } from "@/_pages/quizzes";
+
+import { layout, cx } from "#styles";
+
+const { summaries, tags } = loadPublicQuizzes();
+const quizCount = summaries.length;
+---
+
+<Layout
+  title="Quizzes · Quizbun"
+  description="Browse the public Quizbun Catalog and filter explanation-first quizzes by Tag."
+>
+  <section aria-label="Public quizzes" class={layout.section}>
+    <SectionTitle
+      title="Quizzes"
+      counter={`${quizCount} ${quizCount === 1 ? "quiz" : "quizzes"} available`}
+    />
+    <QuizzesCatalog
+      client:load
+      summaries={summaries}
+      tags={tags}
+      initialPage={1}
+    />
+  </section>
+</Layout>

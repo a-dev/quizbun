@@ -1,0 +1,506 @@
+{
+  "schemaVersion": 1,
+  "id": "typescript-type-system-deep-cuts",
+  "title": "TypeScript Type System: Deep Cuts",
+  "description": "Narrowing you can trust, the `any`/`unknown`/`never`/`void` lattice, structural-typing surprises, and literal widening with `as const` & `satisfies`. Every explanation compiles the snippet so a wrong answer becomes a lesson.",
+  "language": "en",
+  "tags": ["typescript", "javascript"],
+  "questions": [
+    {
+      "id": "typeof-object-includes-null",
+      "title": "After this `typeof` guard, what is the type of `x`?",
+      "description": "```ts\nfunction handle(x: string | string[] | null) {\n  if (typeof x === \"object\") {\n    // x: ???\n  }\n}\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`string[]`",
+          "isCorrect": false
+        },
+        {
+          "text": "`string[] | null`",
+          "isCorrect": true
+        },
+        {
+          "text": "`string[] | string`",
+          "isCorrect": false
+        },
+        {
+          "text": "`object`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`typeof null` is the string `\"object\"` — a famous JavaScript wart that TypeScript faithfully models. So `typeof x === \"object\"` is true for the array **and** for `null`, while `string` (whose `typeof` is `\"string\"`) is excluded. The branch narrows to `string[] | null`, which means `x.length` here would error with *'x' is possibly null*.\n\nTo exclude `null`, guard on truthiness first: `if (x && typeof x === \"object\")`, or `if (Array.isArray(x))`.",
+      "references": "[MDN: typeof — `typeof null`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/typeof#typeof_null)"
+    },
+    {
+      "id": "in-operator-narrowing",
+      "title": "Which guard narrows `Fish | Bird` by checking for a property?",
+      "description": "```ts\ntype Fish = { swim: () => void };\ntype Bird = { fly: () => void };\n\nfunction move(animal: Fish | Bird) {\n  if (/* ??? */) {\n    animal.swim();\n  } else {\n    animal.fly();\n  }\n}\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`\"swim\" in animal`",
+          "isCorrect": true
+        },
+        {
+          "text": "`animal.swim !== undefined`",
+          "isCorrect": false
+        },
+        {
+          "text": "`typeof animal === \"Fish\"`",
+          "isCorrect": false
+        },
+        {
+          "text": "`animal instanceof Fish`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The `in` operator is a narrowing type guard: `\"swim\" in animal` tells the compiler the object has a `swim` property, so the true branch narrows to `Fish` and the `else` to `Bird`.\n\nThe distractors fail for concrete reasons:\n\n- `animal.swim !== undefined` doesn't type-check — you can't read `.swim` off the union before narrowing.\n- `typeof animal === \"Fish\"` is impossible: `typeof` only ever yields runtime tags like `\"object\"`, never a type name.\n- `instanceof Fish` needs `Fish` to be a class/constructor value; here it's only a *type*, which doesn't exist at runtime.",
+      "references": "[TypeScript Handbook: The `in` operator narrowing](https://www.typescriptlang.org/docs/handbook/2/narrowing.html#the-in-operator-narrowing)"
+    },
+    {
+      "id": "type-predicate-required",
+      "title": "Why is `val` still `unknown` inside the `if`?",
+      "description": "```ts\nfunction isString(x: unknown): boolean {\n  return typeof x === \"string\";\n}\n\nfunction f(val: unknown) {\n  if (isString(val)) {\n    val.toUpperCase(); // Error: 'val' is of type 'unknown'\n  }\n}\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The return type is `boolean`, not a type predicate `x is string`, so the call carries no narrowing information.",
+          "isCorrect": true
+        },
+        {
+          "text": "`unknown` can never be narrowed by a function call.",
+          "isCorrect": false
+        },
+        {
+          "text": "`typeof x === \"string\"` doesn't work on a parameter typed `unknown`.",
+          "isCorrect": false
+        },
+        {
+          "text": "You must annotate `val` as `any` for the guard to take effect.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A function that returns `boolean` is a black box to the compiler — it learns nothing about `val` from the result. To make a *custom type guard*, declare the return type as a **type predicate**:\n\n```ts\nfunction isString(x: unknown): x is string {\n  return typeof x === \"string\";\n}\n```\n\nNow `if (isString(val))` narrows `val` to `string` in the true branch and `val.toUpperCase()` compiles. (The body of `isString` itself is fine either way — `typeof` guards work on `unknown` — the problem is purely that the *signature* didn't advertise the narrowing.)",
+      "references": "[TypeScript Handbook: Using type predicates](https://www.typescriptlang.org/docs/handbook/2/narrowing.html#using-type-predicates)"
+    },
+    {
+      "id": "narrowing-lost-in-closure",
+      "title": "Why does `token.length` error inside the listener?",
+      "description": "```ts\nlet token: string | null = readToken();\n\nif (token !== null) {\n  // here token: string\n  document.addEventListener(\"click\", () => {\n    console.log(token.length); // Error: 'token' is possibly 'null'\n  });\n}\n\ntoken = null;\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`token` is reassigned in scope, so the compiler discards the narrowing inside the closure — the callback may run after `token` becomes `null`.",
+          "isCorrect": true
+        },
+        {
+          "text": "Arrow functions never inherit narrowed types from their enclosing scope.",
+          "isCorrect": false
+        },
+        {
+          "text": "`addEventListener` strips the narrowed type from any captured variable.",
+          "isCorrect": false
+        },
+        {
+          "text": "`!== null` doesn't narrow `string | null`; you must use `typeof`.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Control-flow narrowing is a fact about a *point in the code*. A closure runs later, so the compiler only trusts narrowing inside it when the variable can't change — i.e. when it's `const` or an effectively-never-reassigned `let`/parameter. Here `token = null` later in scope makes `token` reassignable, so inside the callback its type reverts to the declared `string | null`.\n\nProof: **delete the `token = null` line** and the error disappears — `token` becomes effectively const and the narrowing survives into the closure. Robust fixes: copy to a `const` (`const t = token; ... t.length`), or assert at point of use.",
+      "references": "[TypeScript Handbook: Narrowing — assignments & closures](https://www.typescriptlang.org/docs/handbook/2/narrowing.html)"
+    },
+    {
+      "id": "exhaustiveness-never-default",
+      "title": "What forces a compile error when a new union member is forgotten?",
+      "description": "```ts\ntype Shape =\n  | { kind: \"circle\"; r: number }\n  | { kind: \"square\"; s: number };\n\nfunction area(shape: Shape): number {\n  switch (shape.kind) {\n    case \"circle\": return Math.PI * shape.r ** 2;\n    case \"square\": return shape.s ** 2;\n    default:\n      const _exhaustive: never = shape; // the guard\n      return _exhaustive;\n  }\n}\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "In `default`, `shape` is narrowed to `never` only if every case is handled; a new member leaves a real type that won't assign to `never`.",
+          "isCorrect": true
+        },
+        {
+          "text": "The `switch` statement requires a `default` case to be exhaustive.",
+          "isCorrect": false
+        },
+        {
+          "text": "`never` makes the function throw at runtime when an unknown shape arrives.",
+          "isCorrect": false
+        },
+        {
+          "text": "Assigning to `_exhaustive` re-runs the discriminated-union check at runtime.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "After the `circle` and `square` cases, the discriminated union is fully consumed, so in `default` TypeScript narrows `shape` to `never`. Assigning `never` to a `never`-typed variable is fine.\n\nNow add `| { kind: \"triangle\"; b: number; h: number }` to `Shape` but forget its `case`. In `default`, `shape` narrows to the *triangle* type — which is **not** assignable to `never` — so `const _exhaustive: never = shape` fails to compile, pointing at exactly the missing case. This is a purely compile-time safety net; the `never` type produces no runtime behavior on its own.",
+      "references": "[TypeScript Handbook: Exhaustiveness checking](https://www.typescriptlang.org/docs/handbook/2/narrowing.html#exhaustiveness-checking)"
+    },
+    {
+      "id": "unknown-must-be-narrowed",
+      "title": "Which line fails to compile?",
+      "description": "```ts\nfunction probe(a: any, u: unknown) {\n  a.foo.bar();      // Line 1\n  u.foo;            // Line 2\n}\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Only Line 2",
+          "isCorrect": true
+        },
+        {
+          "text": "Only Line 1",
+          "isCorrect": false
+        },
+        {
+          "text": "Both lines",
+          "isCorrect": false
+        },
+        {
+          "text": "Neither line",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`any` *opts out* of type checking: every property access and call on `a` is allowed (and unchecked), so Line 1 compiles. `unknown` is the type-safe counterpart — it accepts any value but permits **no** operations until you narrow it, so `u.foo` errors with *'u' is of type 'unknown'*.\n\nThe takeaway: prefer `unknown` for values of uncertain shape (API responses, `JSON.parse`, caught errors). You're then forced to prove the shape before use:\n\n```ts\nif (typeof u === \"object\" && u !== null && \"foo\" in u) {\n  u.foo; // now allowed\n}\n```",
+      "references": "[TypeScript Handbook: `unknown`](https://www.typescriptlang.org/docs/handbook/2/functions.html#unknown)"
+    },
+    {
+      "id": "unknown-is-the-top-type",
+      "title": "Which type is the type-safe *top type* of TypeScript?",
+      "description": "The top type accepts a value of any other type, yet permits no operations on it until you narrow.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`unknown`",
+          "isCorrect": true
+        },
+        {
+          "text": "`any`",
+          "isCorrect": false
+        },
+        {
+          "text": "`object`",
+          "isCorrect": false
+        },
+        {
+          "text": "`never`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Every type is assignable **to** `unknown`, which makes it the top of the lattice — but unlike `any`, you can't *do* anything with an `unknown` until you narrow it, so safety is preserved. `any` also accepts everything, yet it additionally lets you perform any operation (and is assignable *back* to every type), so it sits outside the sound lattice rather than at its top. `never` is the opposite end — the **bottom** type, assignable to everything but inhabited by no value. `object` only accepts non-primitives, so `42` or `\"hi\"` wouldn't assign to it.",
+      "references": "[TypeScript 3.0 release notes: New `unknown` top type](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-0.html#new-unknown-top-type)"
+    },
+    {
+      "id": "void-return-accepts-value",
+      "title": "Does this compile?",
+      "description": "```ts\nconst out: number[] = [];\n[1, 2, 3].forEach((n) => out.push(n));\n```\nThe `forEach` callback type is `(value: number, ...) => void`, but `Array.prototype.push` returns a `number` (the new length).",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Yes — a function that returns a value is assignable to a `void`-returning callback type; the return value is simply ignored.",
+          "isCorrect": true
+        },
+        {
+          "text": "No — `push` returns `number`, which is not assignable to the callback's `void` return type.",
+          "isCorrect": false
+        },
+        {
+          "text": "Yes, but only because `out` is typed `number[]` rather than `unknown[]`.",
+          "isCorrect": false
+        },
+        {
+          "text": "No — you must wrap the body in braces so the arrow returns `undefined`.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A `void` return type means *\"the caller will ignore whatever this returns\"* — not *\"this must return nothing.\"* So a function returning any type is assignable to a `() => void` parameter. This deliberate rule is what lets the ubiquitous `arr.forEach(x => out.push(x))` compile despite `push` returning a number.\n\nBecause the value is contractually ignored, the *result* of calling such a callback is still typed `void`:\n\n```ts\ntype VoidFn = () => void;\nconst f: VoidFn = () => 42; // OK\nconst r = f();             // r: void — the 42 is unreachable through this type\n```",
+      "references": "[TypeScript Handbook: Assignability of functions — return type `void`](https://www.typescriptlang.org/docs/handbook/2/functions.html#return-type-void)"
+    },
+    {
+      "id": "never-assignable-to-everything",
+      "title": "Is the assignment to `name` a type error?",
+      "description": "```ts\nfunction fail(msg: string): never {\n  throw new Error(msg);\n}\n\nconst name: string = fail(\"boom\");\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "No — `never` is the bottom type and is assignable to every type, including `string`.",
+          "isCorrect": false
+        },
+        {
+          "text": "No, and it's also fine at runtime since `never` resolves to `undefined`.",
+          "isCorrect": false
+        },
+        {
+          "text": "Yes — `never` cannot be assigned to `string`.",
+          "isCorrect": false
+        },
+        {
+          "text": "No type error — but `name` is never actually assigned, because `fail` throws before returning.",
+          "isCorrect": true
+        }
+      ],
+      "explanation": "Both true statements matter, so read the options carefully. The assignment **type-checks** precisely because `never` is the bottom type: it's assignable to every type, so `const name: string = fail(...)` is legal. But the most complete answer also captures runtime reality — `fail` has return type `never` exactly because it *can't* return normally (it always throws), so control never reaches the binding of `name`.\n\nThe option claiming a type error is wrong (that would be true of `unknown`, not `never`), and `never` has no runtime value at all — it does not 'resolve to `undefined`'.",
+      "references": "[TypeScript Handbook: The `never` type](https://www.typescriptlang.org/docs/handbook/2/narrowing.html#the-never-type)"
+    },
+    {
+      "id": "intersection-string-and-number",
+      "title": "Reduce the intersection: what single type is `string & number`?",
+      "description": "Fill in the result of `type T = string & number;` — answer with one lowercase word.",
+      "type": "input",
+      "validation": {
+        "mode": "text",
+        "acceptedAnswers": [
+          "never"
+        ]
+      },
+      "explanation": "An intersection `A & B` is the set of values that are **both** an `A` and a `B`. No value is simultaneously a `string` and a `number`, so the set is empty — and the type of the empty set is `never`. This is one of the quiet places `never` appears without you writing it:\n\n```ts\ntype T = string & number;     // never\ntype U = \"a\" & \"b\";          // never\ntype V = { x: 1 } & { x: 2 };  // x: never\n```\n\nThe same logic powers exhaustiveness checks, where narrowing away every union member leaves `never`.",
+      "references": "[TypeScript Handbook: Intersection types](https://www.typescriptlang.org/docs/handbook/2/objects.html#intersection-types)"
+    },
+    {
+      "id": "where-never-appears",
+      "title": "Where does `never` (not `any`) silently show up?",
+      "description": "Select every snippet whose described type is `never`.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "The return type of a function whose body only ever `throw`s.",
+          "isCorrect": true
+        },
+        {
+          "text": "The discriminant's type in the `default` of a fully exhaustive `switch`.",
+          "isCorrect": true
+        },
+        {
+          "text": "The inferred type of `let x;` declared with no initializer.",
+          "isCorrect": false
+        },
+        {
+          "text": "The return type of `JSON.parse(text)`.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`never` is the type with no values, so it surfaces wherever a value is impossible:\n\n- A function that always `throw`s never returns a value → return type `never`.\n- Once a discriminated union is fully narrowed, nothing is left for `default`, so the discriminant is `never` (the basis of exhaustiveness checks).\n\nThe other two are classic **`any`** sources, not `never`:\n\n- `let x;` with no initializer is an *evolving* `any` (it adapts to the first assignment).\n- `JSON.parse` is declared to return `any`, which is exactly why wrapping it to return `unknown` is a popular safety upgrade.",
+      "references": "[TypeScript Handbook: `never`](https://www.typescriptlang.org/docs/handbook/2/functions.html#never) · [`JSON.parse` typing](https://www.typescriptlang.org/docs/handbook/2/everyday-types.html#any)"
+    },
+    {
+      "id": "excess-property-check-fresh-literal",
+      "title": "Which assignment errors on the extra `z` property?",
+      "description": "```ts\ntype Point = { x: number; y: number };\n\nconst a: Point = { x: 1, y: 2, z: 3 };   // Line A\n\nconst tmp = { x: 1, y: 2, z: 3 };\nconst b: Point = tmp;                      // Line B\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Only Line A",
+          "isCorrect": true
+        },
+        {
+          "text": "Only Line B",
+          "isCorrect": false
+        },
+        {
+          "text": "Both lines",
+          "isCorrect": false
+        },
+        {
+          "text": "Neither line",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "TypeScript is *structural*: a value is assignable if it has at least the required members. By that rule, `{ x, y, z }` is a perfectly good `Point`. So why does Line A error?\n\n**Excess-property checks** are an extra guard that fires only when a **fresh object literal** is assigned (or passed) directly to a typed target — TypeScript assumes a literal with surprise properties is a typo or a misread API, and flags `z`. Line B launders the very same object through a variable (`tmp`), so it's no longer 'fresh': only the structural rule applies, `tmp` has `x` and `y`, and it assigns cleanly. Other escape hatches: an `as Point` assertion, or giving `Point` an index signature.",
+      "references": "[TypeScript Handbook: Excess property checks](https://www.typescriptlang.org/docs/handbook/2/objects.html#excess-property-checks)"
+    },
+    {
+      "id": "structural-unrelated-types-assignable",
+      "title": "Does `const p: Point = v;` compile?",
+      "description": "```ts\ninterface Point { x: number; y: number }\ninterface Vector { x: number; y: number } // unrelated declaration\n\nconst v: Vector = { x: 1, y: 2 };\nconst p: Point = v;\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Yes — `Point` and `Vector` have identical shapes, so they're interchangeable regardless of their names.",
+          "isCorrect": true
+        },
+        {
+          "text": "No — they are distinct named types and `Vector` does not `implements Point`.",
+          "isCorrect": false
+        },
+        {
+          "text": "No — interfaces are nominal in TypeScript; only classes are structural.",
+          "isCorrect": false
+        },
+        {
+          "text": "Yes, but only after an explicit `as Point` assertion.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "TypeScript's type system is **structural**, not nominal: compatibility is decided by shape, not by name or declared relationship. `Point` and `Vector` expose exactly the same members, so each is assignable to the other with no `implements`, no inheritance, and no cast. (This applies to classes too — a class instance fits any interface whose members it satisfies.)\n\nWhen you genuinely want two same-shaped types to be *incompatible*, you must opt into nominal typing yourself — see branded types in the next question.",
+      "references": "[TypeScript Handbook: Type Compatibility (structural)](https://www.typescriptlang.org/docs/handbook/type-compatibility.html)"
+    },
+    {
+      "id": "fewer-parameter-callback",
+      "title": "Why does a one-argument callback satisfy `map`?",
+      "description": "```ts\n// map's callback type is (value: number, index: number, array: number[]) => U\nconst doubled = [1, 2, 3].map((x) => x * 2); // one parameter — no error\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "A function with fewer parameters is assignable to a function type with more — extra arguments may be ignored.",
+          "isCorrect": true
+        },
+        {
+          "text": "`map` special-cases single-parameter callbacks at the type level.",
+          "isCorrect": false
+        },
+        {
+          "text": "TypeScript auto-fills the missing `index` and `array` parameters as `undefined`.",
+          "isCorrect": false
+        },
+        {
+          "text": "It only works because the array's element type is `number`.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Function-type compatibility allows the *source* function to declare **fewer** parameters than the *target* expects — a caller is always free to pass extra arguments a function ignores. So `(x) => x * 2` is assignable where `(value, index, array) => U` is wanted; `map` still passes all three at runtime, the callback just doesn't name the last two.\n\nThis mirrors everyday JavaScript (`['a','b'].forEach(console.log)` would pass index and array to `console.log` too) and is why you rarely spell out `index`/`array` unless you need them.",
+      "references": "[TypeScript Handbook: Comparing functions (parameter count)](https://www.typescriptlang.org/docs/handbook/type-compatibility.html#comparing-two-functions)"
+    },
+    {
+      "id": "branded-types-nominal",
+      "title": "Why does `getUser(raw)` fail but `getUser(raw as UserId)` succeed?",
+      "description": "```ts\ntype UserId = string & { readonly __brand: \"UserId\" };\n\nfunction getUser(id: UserId) { /* ... */ }\n\nconst raw = \"u_123\";\ngetUser(raw);            // Error\ngetUser(raw as UserId);  // OK\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The brand adds a phantom property that no plain `string` has, so `string` isn't assignable to `UserId` without an explicit assertion.",
+          "isCorrect": true
+        },
+        {
+          "text": "`UserId` is a nominal type keyword that disables structural typing for strings.",
+          "isCorrect": false
+        },
+        {
+          "text": "`__brand` must be assigned a real value at runtime before the call type-checks.",
+          "isCorrect": false
+        },
+        {
+          "text": "Template-literal types reject any string that isn't a known literal.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A **branded type** intersects a base type with a unique, fictitious member (`{ readonly __brand: \"UserId\" }`). Structurally, an ordinary `string` lacks that `__brand` property, so it isn't assignable to `UserId` — this manufactures *nominal* behavior on top of a structural system, so you can't accidentally pass any old string where a validated `UserId` is required.\n\nThe brand exists only in the type world; `__brand` is never actually present at runtime. You mint a `UserId` deliberately — typically inside a validating factory that ends with `return value as UserId` — which is why the explicit assertion in the second call is the intended escape hatch.",
+      "references": "[TypeScript Deep Dive: Nominal typing (branding)](https://basarat.gitbook.io/typescript/main-1/nominaltyping)"
+    },
+    {
+      "id": "object-property-widening",
+      "title": "What is the type of `config.mode`?",
+      "description": "```ts\nconst config = { mode: \"dark\" };\n// hover config.mode -> ???\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`string`",
+          "isCorrect": true
+        },
+        {
+          "text": "`\"dark\"`",
+          "isCorrect": false
+        },
+        {
+          "text": "`\"dark\" | string`",
+          "isCorrect": false
+        },
+        {
+          "text": "`readonly \"dark\"`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`const` freezes the *binding* `config`, not the object it points to. Because `config.mode` can still be reassigned (`config.mode = \"light\"`), TypeScript **widens** the property to `string` — the literal `\"dark\"` would be too restrictive for a mutable slot.\n\nContrast a top-level primitive `const`, where the binding can't change so the literal is kept: `const mode = \"dark\"` has type `\"dark\"`. To preserve the literal *inside* an object, add `as const`:\n\n```ts\nconst config = { mode: \"dark\" } as const; // mode: \"dark\" (readonly)\n```",
+      "references": "[TypeScript Handbook: Literal inference & widening](https://www.typescriptlang.org/docs/handbook/2/everyday-types.html#literal-inference)"
+    },
+    {
+      "id": "let-vs-const-widening",
+      "title": "What are the inferred types of `a` and `b`?",
+      "description": "```ts\nconst a = \"hello\";\nlet b = \"hello\";\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`a: \"hello\"`, `b: string`",
+          "isCorrect": true
+        },
+        {
+          "text": "`a: string`, `b: \"hello\"`",
+          "isCorrect": false
+        },
+        {
+          "text": "both `\"hello\"`",
+          "isCorrect": false
+        },
+        {
+          "text": "both `string`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A `const` binding to a string literal can never be reassigned, so TypeScript infers the narrow **literal type** `\"hello\"`. A `let` binding can be reassigned to any other string, so the compiler *widens* the inferred type to `string` up front.\n\nThis is why `const` is often the better default for building precise types — and why values destined for a literal union frequently need either `const`, an explicit annotation, or `as const` to keep from widening.",
+      "references": "[TypeScript Handbook: `const` literal types](https://www.typescriptlang.org/docs/handbook/2/everyday-types.html#literal-inference)"
+    },
+    {
+      "id": "as-const-array-tuple",
+      "title": "What is the type of `pair`?",
+      "description": "```ts\nconst pair = [3, 4] as const;\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`readonly [3, 4]`",
+          "isCorrect": true
+        },
+        {
+          "text": "`number[]`",
+          "isCorrect": false
+        },
+        {
+          "text": "`[number, number]`",
+          "isCorrect": false
+        },
+        {
+          "text": "`(3 | 4)[]`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Without the assertion, `const pair = [3, 4]` infers `number[]` — a mutable array of unknown length. A **`const` assertion** does three things at once: it narrows each element to its literal type (`3`, `4`), turns the array into a fixed-length **tuple**, and marks the whole thing `readonly`. The result is `readonly [3, 4]`.\n\nThat exact, frozen shape is what makes `as const` the idiom for config objects, action-type unions, and anything you'll feed to `keyof typeof` or a literal-union derivation.",
+      "references": "[TypeScript 3.4 release notes: `const` assertions](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-4.html#const-assertions)"
+    },
+    {
+      "id": "satisfies-vs-annotation-vs-cast",
+      "title": "Which keeps the precise inferred type *and* validates against the constraint?",
+      "description": "```ts\ntype Color = \"red\" | \"green\" | \"blue\";\n\n// A) const theme: Record<string, Color> = { primary: \"blue\" };\n// B) const theme = { primary: \"blue\" } satisfies Record<string, Color>;\n// C) const theme = { primary: \"blue\" } as Record<string, Color>;\n```\nGoal: `theme.primary` should keep type `\"blue\"`, and a typo like `\"bleu\"` must be rejected.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "B — `satisfies`",
+          "isCorrect": true
+        },
+        {
+          "text": "A — annotation",
+          "isCorrect": false
+        },
+        {
+          "text": "C — `as` assertion",
+          "isCorrect": false
+        },
+        {
+          "text": "All three behave identically here",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The three tools differ in *which direction* they trade type precision for checking:\n\n- **A) Annotation** validates the value, but then `theme` *is* `Record<string, Color>`: `theme.primary` widens to `Color` (you lose `\"blue\"`), and `theme.anything` is allowed. Checked, but imprecise.\n- **C) `as` assertion** performs no real validation — a typo like `{ primary: \"bleu\" }` slips through — and it overrides the inferred type. Precise-looking, but unsafe.\n- **B) `satisfies`** checks the literal against `Record<string, Color>` (so `\"bleu\"` is rejected) **without** changing the inferred type. `theme` stays `{ primary: \"blue\" }`, so `theme.primary` is the literal `\"blue\"`. The constraint also acts as a contextual type, which is what stops `\"blue\"` from widening to `string`.\n\n`satisfies` (TypeScript 4.9+) is the modern answer to *\"validate the shape, but let me keep the narrow types.\"*",
+      "references": "[TypeScript 4.9 release notes: the `satisfies` operator](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-4-9.html#the-satisfies-operator)"
+    },
+    {
+      "id": "as-const-phrase",
+      "title": "Which assertion makes `[3, 4]` infer as a readonly tuple `readonly [3, 4]`?",
+      "description": "Answer with the two-word TypeScript assertion you append to the literal.",
+      "type": "input",
+      "validation": {
+        "mode": "text",
+        "acceptedAnswers": [
+          "as const"
+        ]
+      },
+      "explanation": "Appending **`as const`** applies a *const assertion*: literals keep their narrowest types, arrays become `readonly` tuples, and object properties become `readonly`. So `[3, 4] as const` is typed `readonly [3, 4]` instead of the widened `number[]`.\n\nUnlike a normal `as T` cast (which changes the type to *exactly* `T`), `as const` doesn't name a target type — it just tells the compiler to infer the most specific, immutable type possible.",
+      "references": "[TypeScript 3.4 release notes: `const` assertions](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-4.html#const-assertions)"
+    }
+  ]
+}

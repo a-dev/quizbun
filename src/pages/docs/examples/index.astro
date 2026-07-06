@@ -1,0 +1,42 @@
+---
+import { listDocExamples } from "@/shared/lib/docs";
+import { withBase } from "@/shared/lib/routing";
+import DocsLayout from "@/app/docs-layout.astro";
+
+const examples = listDocExamples();
+---
+
+<DocsLayout
+  title="Example quizzes"
+  description="The four canonical example quizzes for the Quiz Object Standard: single choice, multiple choice, text input, and numeric input."
+>
+  <h1>Example quizzes</h1>
+
+  <p>
+    These are the canonical v1 examples — copy one as a starting point instead
+    of reverse-engineering the format. Each validates against
+    <a href={withBase("docs/standard/")}>the Standard</a> and satisfies the Public
+    catalog profile. Paste one into the
+    <a href={withBase("import/")}>import page</a> to try it, or use it as the seed
+    for your own quiz.
+  </p>
+
+  {
+    examples.map((example) => (
+      <section aria-labelledby={example.fileName}>
+        <h2 id={example.fileName}>
+          <code>{example.fileName}</code>
+        </h2>
+        <p>{example.description}</p>
+        <p>
+          <a href={withBase(`docs/examples/${example.fileName}`)} download>
+            Download {example.fileName}
+          </a>
+        </p>
+        <pre tabindex="0">
+          <code>{example.json}</code>
+        </pre>
+      </section>
+    ))
+  }
+</DocsLayout>

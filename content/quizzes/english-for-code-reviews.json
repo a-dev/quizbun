@@ -1,0 +1,1348 @@
+{
+  "schemaVersion": 1,
+  "id": "english-for-code-reviews",
+  "title": "English for Code Reviews",
+  "description": "Practical English for pull requests and code reviews, organized as a small curriculum: commit subjects and PR titles, PR descriptions, the grammar that trips up non-native speakers (articles, uncountable nouns, prepositions, verb patterns), review vocabulary and abbreviations (*nit*, *LGTM*, *PTAL*, *WIP*, *non-blocking*), phrasal verbs, softening comments without losing clarity, replying to reviews as an author, and the confusable word pairs that show up in review threads.",
+  "language": "en",
+  "tags": ["languages", "work"],
+  "author": "Quizbun",
+  "questions": [
+    {
+      "id": "imperative-commit-subject",
+      "title": "Which commit subject follows the conventional imperative mood?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Fix race condition in session refresh",
+          "isCorrect": true
+        },
+        {
+          "text": "Fixed race condition in session refresh",
+          "isCorrect": false
+        },
+        {
+          "text": "Fixes race condition in session refresh",
+          "isCorrect": false
+        },
+        {
+          "text": "Fixing race condition in session refresh",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The convention is the **imperative mood** — the base form of the verb, as if giving a command: *Fix*, *Add*, *Remove*. The test from the Git documentation: the subject should complete the sentence \"If applied, this commit will ___\" — \"will *fix* the race condition\" works; \"will *fixed*\" does not. Past tense (*Fixed*) and third person (*Fixes*) read naturally in changelogs but break this convention."
+    },
+    {
+      "id": "imperative-base-form",
+      "title": "Complete the Git documentation test: \"If applied, this commit will ___ the flaky retry test.\" Type the base form of the verb *removed*.",
+      "description": "One word.",
+      "type": "input",
+      "validation": {
+        "mode": "text",
+        "acceptedAnswers": ["remove"]
+      },
+      "explanation": "The **base form** (also called the bare infinitive) is the verb with no ending at all: *remove*, not *removed*, *removes*, or *removing*. After the modal *will*, English always uses the base form — which is exactly why the \"If applied, this commit will ___\" test forces your subject line into the imperative mood. If your subject does not fit in that blank, it is not imperative."
+    },
+    {
+      "id": "commit-subject-style",
+      "title": "Which subject line follows the classic Git style conventions (plain style, no Conventional Commits prefix)?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Add retry logic to webhook client",
+          "isCorrect": true
+        },
+        {
+          "text": "Add retry logic to webhook client.",
+          "isCorrect": false
+        },
+        {
+          "text": "added retry logic to webhook client",
+          "isCorrect": false
+        },
+        {
+          "text": "Adds Retry Logic To Webhook Client",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Classic Git style: **capitalize the first word, no trailing period**, imperative mood, and aim for about 50 characters. A subject is a *headline*, not a sentence — headlines in English drop the final period. Note that the Conventional Commits style (`feat: add retry logic…`) lowercases the description after the type prefix, so check which convention your team uses before correcting anyone."
+    },
+    {
+      "id": "pr-title-specificity",
+      "title": "Which PR title is most useful to reviewers and future readers of the history?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Fix login redirect loop on expired sessions",
+          "isCorrect": true
+        },
+        {
+          "text": "Fix bug",
+          "isCorrect": false
+        },
+        {
+          "text": "This PR fixes the bug where the login page redirects forever when the session is expired",
+          "isCorrect": false
+        },
+        {
+          "text": "URGENT!!! login broken, pls review",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A good PR title works like a changelog entry: **imperative, specific, and scannable**. \"Fix bug\" is imperative but says nothing; the long \"This PR fixes…\" version buries the information in a full sentence (and the words *This PR* are redundant — readers know where they are); the urgent one substitutes pressure for content. Specific nouns (*login redirect loop*, *expired sessions*) are what make a title searchable months later."
+    },
+    {
+      "id": "bump-meaning",
+      "title": "A PR is titled \"Bump `zod` to 4.2\". What does *bump* mean here?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Increase the dependency to a newer version",
+          "isCorrect": true
+        },
+        {
+          "text": "Remove the dependency from the project",
+          "isCorrect": false
+        },
+        {
+          "text": "Pin the dependency so it can never change",
+          "isCorrect": false
+        },
+        {
+          "text": "Revert the dependency to an older version",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "To **bump** a version is to increase it — the word evokes a small upward push. It is part of a family of informal verbs you will meet constantly in PRs: *drop* support (remove it), *land* a change (get it merged), *ship* a feature (release it), *pin* a version (lock it to an exact number). These verbs are short, vivid, and worth learning as vocabulary, because they rarely appear in textbooks."
+    },
+    {
+      "id": "pr-description-tense",
+      "title": "Which tense is conventional for describing what a pull request does?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "This PR adds pagination to the catalog.",
+          "isCorrect": true
+        },
+        {
+          "text": "This PR added pagination to the catalog.",
+          "isCorrect": false
+        },
+        {
+          "text": "This PR will be adding pagination to the catalog.",
+          "isCorrect": false
+        },
+        {
+          "text": "This PR is add pagination to the catalog.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Use the **present simple**: \"This PR *adds*…\". A diff is timeless — it describes what the change does whenever it is applied, like a function's documentation, so past tense (*added*) and future continuous (*will be adding*) both feel off. The last option is simply ungrammatical: after *is* you would need *adding* (present continuous), and that tense suggests an ongoing temporary action, which a diff is not."
+    },
+    {
+      "id": "purpose-so-that",
+      "title": "Choose the connector that expresses purpose: \"Cache the parsed schema ___ we don't re-read it on every request.\"",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "so that",
+          "isCorrect": true
+        },
+        {
+          "text": "because",
+          "isCorrect": false
+        },
+        {
+          "text": "despite",
+          "isCorrect": false
+        },
+        {
+          "text": "unless",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "**So that** introduces a purpose — the goal you want to achieve: \"Cache it *so that* we don't re-read it.\" *Because* introduces a reason that is already true, which changes the meaning entirely (\"because we don't re-read it\" claims we already avoid re-reading). In informal writing the *that* often drops: \"Cache it *so* we don't re-read it\" — perfectly natural in a PR description. Purpose clauses are the backbone of good *why* sections in commit bodies."
+    },
+    {
+      "id": "eg-vs-ie",
+      "title": "Choose the correct abbreviation: \"Use a stable kebab-case id (___, `user-profile-card`).\"",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "e.g.",
+          "isCorrect": true
+        },
+        {
+          "text": "i.e.",
+          "isCorrect": false
+        },
+        {
+          "text": "etc.",
+          "isCorrect": false
+        },
+        {
+          "text": "viz.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "**E.g.** (Latin *exempli gratia*) means \"for example\" — it introduces one example out of many possible ones, which is what `user-profile-card` is. **I.e.** (*id est*) means \"that is\" and *restates* the whole thing in other words; using it here would claim that `user-profile-card` is the only valid id. Memory trick: **e**.g. = **e**xample, **i**.e. = **i**n other words. Both normally take a comma after them in American style."
+    },
+    {
+      "id": "testing-notes-grammar",
+      "title": "Select every sentence that is grammatically acceptable in a PR's \"Testing\" section.",
+      "description": "Select all that apply. Note that PR descriptions allow some shortcuts that formal prose does not.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "I've tested this manually in Safari and Chrome.",
+          "isCorrect": true
+        },
+        {
+          "text": "Tested on staging with 10k rows.",
+          "isCorrect": true
+        },
+        {
+          "text": "I am tested this on staging.",
+          "isCorrect": false
+        },
+        {
+          "text": "This change were verified by QA.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Two different styles are both fine: the full sentence with **present perfect** (\"I've tested…\" — a past action with present relevance), and the **elliptical note style** that drops the subject *I* (\"Tested on staging…\"), which is idiomatic in bullet points and PR templates. \"I am tested\" wrongly combines *be* with a past participle as if it were passive — it would mean someone tested *you*. \"This change were\" breaks subject–verb agreement: a singular subject needs *was*."
+    },
+    {
+      "id": "dangling-modifier",
+      "title": "Which sentence avoids the dangling modifier?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "After fixing the bug, I re-ran the full test suite.",
+          "isCorrect": true
+        },
+        {
+          "text": "After fixing the bug, the test suite passed.",
+          "isCorrect": false
+        },
+        {
+          "text": "Having fixed the bug, the tests went green.",
+          "isCorrect": false
+        },
+        {
+          "text": "After fixing the bug, CI was green on the first try.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "An opening phrase like \"After fixing the bug\" grammatically attaches to the **subject of the main clause** — so the reader briefly parses that *the test suite* fixed the bug. Only the first option gives the phrase its true subject, *I*. This is called a **dangling modifier**, and PR descriptions are full of them because authors compress narrative into short sentences. The fix is always the same: make the doer of the opening action the subject of the sentence."
+    },
+    {
+      "id": "respectively-meaning",
+      "title": "\"The `timeout` and `retries` options default to `30` and `3`, respectively.\" What does *respectively* tell the reader?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The values map to the items in the same order: `timeout` is 30, `retries` is 3",
+          "isCorrect": true
+        },
+        {
+          "text": "The values are approximate and may change",
+          "isCorrect": false
+        },
+        {
+          "text": "Each option respects the other's value",
+          "isCorrect": false
+        },
+        {
+          "text": "The values apply only in production",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "**Respectively** pairs two lists **in order**: first with first, second with second. It compresses two sentences into one, which is why it is so common in technical writing. Caution for your own PRs: it forces the reader to mentally zip two lists together, so with more than two pairs it often hurts readability — a small table or two plain sentences can be kinder."
+    },
+    {
+      "id": "articles-before-nouns",
+      "title": "Fill in the blank: \"I found ____ bug in the export logic.\" Type the missing article.",
+      "description": "One word.",
+      "type": "input",
+      "validation": {
+        "mode": "text",
+        "acceptedAnswers": ["a"]
+      },
+      "explanation": "*Bug* is a countable noun being mentioned for the first time, so it needs the indefinite article: **a** bug. Once both sides know which bug you mean, switch to the definite article: \"*the* bug is in `export.ts`\". Articles are the hardest part of English for speakers of languages that do not have them — a useful default for code reviews: first mention → *a/an*, every mention after → *the*."
+    },
+    {
+      "id": "uncountable-feedback",
+      "title": "Which sentence is grammatically correct?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Thanks for the feedback on my PR.",
+          "isCorrect": true
+        },
+        {
+          "text": "Thanks for the feedbacks on my PR.",
+          "isCorrect": false
+        },
+        {
+          "text": "Thanks for a feedback on my PR.",
+          "isCorrect": false
+        },
+        {
+          "text": "Thanks for feedbacks on my PR.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "**Feedback** is uncountable in English: no plural *feedbacks*, no *a feedback*. The same applies to other words developers use daily — *advice*, *information*, *documentation*, *progress*. To count them, add a countable container: *a piece of feedback*, *two review comments*. Uncountable nouns also take *less* and *much* rather than *fewer* and *many*: *much feedback*, *less documentation*."
+    },
+    {
+      "id": "uncountable-code",
+      "title": "Which sentence is grammatically correct?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "This PR removes a lot of dead code.",
+          "isCorrect": true
+        },
+        {
+          "text": "This PR removes many dead codes.",
+          "isCorrect": false
+        },
+        {
+          "text": "This PR removes a dead code.",
+          "isCorrect": false
+        },
+        {
+          "text": "This PR removes several dead code.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "In the programming sense, **code is uncountable** — like *water* or *music*. You cannot have *a code* or *many codes*; \"codes\" exists only in other meanings (secret codes, legal codes, status codes). To count it, name a countable unit instead: *a function*, *a module*, *three files*, *a snippet of code*, *a codebase*. \"A lot of\" works with both countable and uncountable nouns, which makes it a safe everyday choice."
+    },
+    {
+      "id": "uncountable-nouns-set",
+      "title": "Select every noun that is uncountable in English.",
+      "description": "Select all that apply. Uncountable nouns have no plural form and never take *a/an*.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "feedback",
+          "isCorrect": true
+        },
+        {
+          "text": "advice",
+          "isCorrect": true
+        },
+        {
+          "text": "progress",
+          "isCorrect": true
+        },
+        {
+          "text": "documentation",
+          "isCorrect": true
+        },
+        {
+          "text": "bug",
+          "isCorrect": false
+        },
+        {
+          "text": "comment",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "*Feedback*, *advice*, *progress*, and *documentation* are all **uncountable**: \"good progress\", never \"a progress\" or \"progresses\". *Bug* and *comment* are ordinary countable nouns: \"two bugs\", \"a comment\". The countable/uncountable split does not follow logic — *suggestion* is countable but *advice* is not, *report* is countable but *documentation* is not — so these high-frequency developer nouns are worth memorizing as a set."
+    },
+    {
+      "id": "the-same",
+      "title": "Fill in the blank: \"Could you follow ___ same naming pattern as in `parseQuiz`?\" Type the missing article.",
+      "description": "One word.",
+      "type": "input",
+      "validation": {
+        "mode": "text",
+        "acceptedAnswers": ["the"]
+      },
+      "explanation": "**Same** virtually always takes **the**: *the same pattern*, *the same error*, *the same as before*. This is one of the most reliable article rules in English — \"a same\" is essentially never correct, because *same* by definition points to something already identified, which is exactly what *the* signals. If you remember only a handful of article rules, make this one of them."
+    },
+    {
+      "id": "less-vs-fewer",
+      "title": "Choose the correct pair: \"After the refactor we have ___ files and ___ duplication.\"",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "fewer / less",
+          "isCorrect": true
+        },
+        {
+          "text": "less / fewer",
+          "isCorrect": false
+        },
+        {
+          "text": "fewer / fewer",
+          "isCorrect": false
+        },
+        {
+          "text": "less / less",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "**Fewer** goes with countable plurals (*fewer files*, *fewer bugs*, *fewer dependencies*); **less** goes with uncountables (*less duplication*, *less code*, *less complexity*). In casual speech native speakers often say *less files*, and nobody will misunderstand you — but reviews and PR descriptions are written records, and the precise pair reads as more careful. The same split applies to questions: *how many files?* but *how much code?*"
+    },
+    {
+      "id": "zero-article-generalizations",
+      "title": "You want to state a general truth in a design discussion. Which sentence does it correctly?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Unit tests are cheaper to run than integration tests.",
+          "isCorrect": true
+        },
+        {
+          "text": "The unit tests are cheaper to run than the integration tests.",
+          "isCorrect": false
+        },
+        {
+          "text": "A unit tests are cheaper to run than integration tests.",
+          "isCorrect": false
+        },
+        {
+          "text": "Unit test are cheaper to run than integration test.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Generalizations about a whole category use the **zero article** with a plural noun: \"*Unit tests* are cheaper…\" — no *the*. Adding *the* is grammatical but changes the meaning: \"*the* unit tests\" refers to specific tests both of you know about (say, the ones in this PR), not the concept in general. The other options break agreement: *a* cannot precede a plural, and a plural verb (*are*) needs a plural subject (*tests*)."
+    },
+    {
+      "id": "depends-on",
+      "title": "Fill in the blank: \"Whether Options are shuffled depends ___ the Renderer, not the Standard.\" Type the missing preposition.",
+      "description": "One word.",
+      "type": "input",
+      "validation": {
+        "mode": "text",
+        "acceptedAnswers": ["on"]
+      },
+      "explanation": "It is always **depend on** (or *upon*, slightly formal) — never *depend of* or *depend from*, which are direct translations from Romance and Slavic languages and among the most common preposition slips in review threads. Verb–preposition pairs are vocabulary, not logic: learn them as single units. Related pairs that appear constantly in reviews: *consist of*, *result in*, *lead to*, *differ from*."
+    },
+    {
+      "id": "consistent-with",
+      "title": "Choose the correct preposition: \"Please keep the error format consistent ___ the rest of the codebase.\"",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "with",
+          "isCorrect": true
+        },
+        {
+          "text": "to",
+          "isCorrect": false
+        },
+        {
+          "text": "of",
+          "isCorrect": false
+        },
+        {
+          "text": "against",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The pair is **consistent with**. Adjective–preposition pairs are as fixed as verb ones, and reviews use a small recurring set: *consistent with*, *identical to*, *similar to*, *different from*, *independent of*, *compatible with*. When you learn a new adjective, learn its preposition at the same time — dictionaries always list it."
+    },
+    {
+      "id": "branch-module-prepositions",
+      "title": "Choose the correct pair: \"The fix lives ___ the `seed/css` branch, ___ the `validate` module.\"",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "on / in",
+          "isCorrect": true
+        },
+        {
+          "text": "in / on",
+          "isCorrect": false
+        },
+        {
+          "text": "at / in",
+          "isCorrect": false
+        },
+        {
+          "text": "on / at",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Convention: **on a branch**, but **in a file, module, function, or directory**. The mental picture helps: a branch is a line you stand *on*; files and modules are containers you put code *in*. More of the standard set: *on GitHub*, *on line 42*, *in the repo*, *in production* (but *on staging* and *in staging* both occur — environments are less settled). These are conventions, not deep grammar, so expect some variation between teams."
+    },
+    {
+      "id": "discuss-no-about",
+      "title": "Which sentence is grammatically correct?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Let's discuss the naming in the team channel.",
+          "isCorrect": true
+        },
+        {
+          "text": "Let's discuss about the naming in the team channel.",
+          "isCorrect": false
+        },
+        {
+          "text": "Let's discuss on the naming in the team channel.",
+          "isCorrect": false
+        },
+        {
+          "text": "Let's make a discuss about the naming.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "**Discuss is transitive** — it takes its object directly: *discuss the naming*, with no *about*. The confusion comes from the noun, which does take *about*: \"a discussion *about* naming\" is perfectly correct. Other verbs with the same trap: *mention* (not *mention about*), *answer* (not *answer to* a question), *enter* (not *enter into* a room). If you want *about*, use *talk about* or *have a discussion about*."
+    },
+    {
+      "id": "explain-to-me",
+      "title": "Choose the correct completion: \"Could you explain the tradeoff ___?\"",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "to me",
+          "isCorrect": true
+        },
+        {
+          "text": "me",
+          "isCorrect": false
+        },
+        {
+          "text": "for me",
+          "isCorrect": false
+        },
+        {
+          "text": "at me",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The pattern is **explain something *to* someone** — \"explain me the tradeoff\" is one of the most recognizable non-native patterns in English. The trap exists because *give*, *send*, and *show* do allow \"give me X\"; *explain*, *describe*, *suggest*, and *recommend* do not — they always need *to*: \"Could you describe the failure *to* us?\", \"He suggested a fix *to* me.\""
+    },
+    {
+      "id": "suggest-pattern",
+      "title": "Select every grammatically correct sentence.",
+      "description": "Select all that apply. The verb *suggest* has strict grammar that differs from *want* or *ask*.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "I suggest extracting this into a helper.",
+          "isCorrect": true
+        },
+        {
+          "text": "I suggest we extract this into a helper.",
+          "isCorrect": true
+        },
+        {
+          "text": "I suggest to extract this into a helper.",
+          "isCorrect": false
+        },
+        {
+          "text": "I suggest you to extract this into a helper.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "**Suggest** takes either a gerund (*suggest extracting*) or a clause (*suggest (that) we extract*) — never a to-infinitive. \"Suggest to extract\" and \"suggest you to extract\" are classic errors caused by analogy with *want* (\"I want you to extract\"), which does take the infinitive. **Recommend** follows exactly the same rules: *recommend extracting*, *recommend that we extract*. Since *suggest* and *recommend* are the two most useful verbs in review comments, this pattern pays for itself daily."
+    },
+    {
+      "id": "third-person-s",
+      "title": "Fill in the blank: \"This function ___ an empty array when no Question matches.\" Type the correct form of *return*.",
+      "description": "One word.",
+      "type": "input",
+      "validation": {
+        "mode": "text",
+        "acceptedAnswers": ["returns"]
+      },
+      "explanation": "Third-person singular subjects (*this function*, *the parser*, *it*) take the **-s form** in the present simple: *returns*, *throws*, *caches*. It is the simplest rule in English grammar and also the one most often dropped when writing fast — precisely because most other forms take no ending. A practical habit: when you describe behavior in a PR (\"the function returns…\", \"this hook fires…\"), the subject is almost always third-person singular, so the verb almost always needs the *-s*."
+    },
+    {
+      "id": "nit-meaning",
+      "title": "In a review comment, what does the prefix \"nit:\" signal?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "A minor, non-blocking suggestion the author may freely ignore",
+          "isCorrect": true
+        },
+        {
+          "text": "A critical issue that must be fixed before merging",
+          "isCorrect": false
+        },
+        {
+          "text": "A request to split the pull request into smaller ones",
+          "isCorrect": false
+        },
+        {
+          "text": "An automated comment generated by CI",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "\"Nit\" is short for **nitpick** — literally picking tiny eggs out of hair, figuratively pointing out trivial flaws. Prefixing a comment with \"nit:\" tells the author: *this is small, optional, and not blocking approval*. Marking severity explicitly is part of review etiquette in English-speaking teams; it lets authors prioritize real issues over style preferences."
+    },
+    {
+      "id": "lgtm-meaning",
+      "title": "In review shorthand, what does \"LGTM\" stand for? Type the four words.",
+      "description": "Four words.",
+      "type": "input",
+      "validation": {
+        "mode": "text",
+        "acceptedAnswers": ["looks good to me"]
+      },
+      "explanation": "**Looks good to me** — the standard way to signal approval, usually accompanying the formal \"Approve\" action. The *to me* part matters: it frames approval as one reviewer's judgment, not absolute truth, which is typical of how English review culture hedges even positive statements. A common combined form is \"LGTM with nits\" — approved, with optional minor suggestions the author can take or leave."
+    },
+    {
+      "id": "ptal-meaning",
+      "title": "A teammate comments \"PTAL\" on your PR after you pushed changes. What are they saying?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Please take a look — the PR is ready for (re-)review",
+          "isCorrect": true
+        },
+        {
+          "text": "Pull the latest changes and rebase",
+          "isCorrect": false
+        },
+        {
+          "text": "Passed tests, awaiting lint",
+          "isCorrect": false
+        },
+        {
+          "text": "Please tag a lead for final approval",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "**PTAL = \"Please take a look.\"** Reviewers use it to hand a PR to someone; authors use it after addressing comments to mean \"please take *another* look.\" Notice the idiom inside it: in English you *take* a look (also *have* a look, British) — you do not *make* or *give* a look. \"Take a look at X\" is one of the most frequent collocations in all of code review."
+    },
+    {
+      "id": "wip-meaning",
+      "title": "What does the \"WIP\" prefix in a PR title stand for? Type the three words.",
+      "description": "Three words.",
+      "type": "input",
+      "validation": {
+        "mode": "text",
+        "acceptedAnswers": ["work in progress"]
+      },
+      "explanation": "**Work in progress** — the PR is visible but not ready for full review; expect force-pushes and unfinished pieces. Grammar note: *progress* is uncountable, so the phrase is \"work in progress\", never \"work in a progress\". GitHub's *draft PR* feature now expresses the same intent formally, but the abbreviation survives in titles, commit messages, and chat. Related: *RFC* in a title often means \"I want opinions on the direction, not a line-by-line review.\""
+    },
+    {
+      "id": "tldr-meaning",
+      "title": "A PR description starts with a \"TL;DR:\" line. What does the abbreviation literally stand for?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Too long; didn't read",
+          "isCorrect": true
+        },
+        {
+          "text": "Top-level design review",
+          "isCorrect": false
+        },
+        {
+          "text": "Total lines; detailed review",
+          "isCorrect": false
+        },
+        {
+          "text": "Too late; deferred review",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "**Too long; didn't read** — born as a dismissive internet reply, it evolved into a label for a one-or-two-sentence summary placed *before* the long version. In a PR description, a TL;DR line is a kindness to reviewers: state what changed and why in one breath, then elaborate. The semicolon joins two independent clauses (\"it was too long\" + \"I didn't read it\"), which is also a tiny lesson in English punctuation."
+    },
+    {
+      "id": "non-blocking-meaning",
+      "title": "A reviewer writes: \"non-blocking: consider caching this lookup.\" What does it mean for the author?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The PR can merge without addressing this comment",
+          "isCorrect": true
+        },
+        {
+          "text": "The comment must be resolved before CI will pass",
+          "isCorrect": false
+        },
+        {
+          "text": "The reviewer is blocked and cannot continue reviewing",
+          "isCorrect": false
+        },
+        {
+          "text": "The suggested code must not block the event loop",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "**Non-blocking** borrows its meaning from concurrency and applies it to process: this comment does not *block* the merge. Its counterpart \"blocking:\" marks comments that must be resolved first. Explicit severity labels (*blocking / non-blocking / nit / question / praise*) are a hallmark of mature review culture — they replace guesswork about tone with a shared vocabulary, which is especially valuable across language barriers."
+    },
+    {
+      "id": "bikeshedding-meaning",
+      "title": "A teammate says \"let's not bikeshed the parameter name.\" What is *bikeshedding*?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Spending disproportionate energy on trivial details while bigger issues go unexamined",
+          "isCorrect": true
+        },
+        {
+          "text": "Splitting one large PR into several smaller ones",
+          "isCorrect": false
+        },
+        {
+          "text": "Approving a PR without actually reading it",
+          "isCorrect": false
+        },
+        {
+          "text": "Refactoring unrelated code inside the same PR",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "**Bikeshedding** comes from Parkinson's *law of triviality*: a committee approves a nuclear power plant in minutes (too complex to debate) but argues for hours about the bike shed's color (everyone has an opinion). In reviews, it names the gravitational pull of easy topics — naming, formatting, comment style — over hard ones like data models and failure modes. Saying \"let's not bikeshed this\" is an accepted, non-rude way to redirect attention."
+    },
+    {
+      "id": "roll-back-meaning",
+      "title": "\"The release broke checkout, so we had to roll it back.\" What did the team do?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Returned production to the previous version",
+          "isCorrect": true
+        },
+        {
+          "text": "Postponed the release to a later date",
+          "isCorrect": false
+        },
+        {
+          "text": "Re-deployed the same version after a restart",
+          "isCorrect": false
+        },
+        {
+          "text": "Documented the failure in a postmortem",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "To **roll back** is to return a system to its previous state — the image is rolling a wheel backwards. As one word, **rollback**, it becomes the noun: \"we did a rollback.\" Its cousin in version control is **revert**, which undoes a specific commit by creating a new one. Direction matters in this family: *roll back* (undo), *roll forward* (fix by moving ahead), *roll out* (gradually deploy) — three phrasal verbs you will meet in every incident channel."
+    },
+    {
+      "id": "heads-up-meaning",
+      "title": "\"Just a heads-up: this will conflict with the refactor in #42.\" What kind of message is this?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "A friendly advance warning, with no action demanded",
+          "isCorrect": true
+        },
+        {
+          "text": "A formal objection that blocks the merge",
+          "isCorrect": false
+        },
+        {
+          "text": "An instruction to rebase immediately",
+          "isCorrect": false
+        },
+        {
+          "text": "An approval with conditions",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A **heads-up** is an advance warning — from the shout \"Heads up!\" when something flies toward you. \"Just a heads-up:\" frames information as helpful rather than demanding; the *just* here is a genuine softener, not condescension. As a verb phrase: \"I'll give you a heads-up before merging.\" Note the hyphen when it is a noun: *a heads-up*, just like *a follow-up*."
+    },
+    {
+      "id": "as-of-meaning",
+      "title": "\"As of v2.0, `parse()` is deprecated.\" What does *as of* mean?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Starting from v2.0 and continuing onward",
+          "isCorrect": true
+        },
+        {
+          "text": "Only in v2.0, not in later versions",
+          "isCorrect": false
+        },
+        {
+          "text": "Before v2.0",
+          "isCorrect": false
+        },
+        {
+          "text": "In approximately v2.0",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "**As of** marks the point where a state begins and still holds: deprecated from v2.0 onward. It also anchors snapshots in time: \"as of today, all checks pass\" (true now, no promise about tomorrow). It never means *only in* or *around* — if you need those, say \"in v2.0 only\" or \"around v2.0\". Changelogs, deprecation notices, and migration guides lean on this little phrase constantly."
+    },
+    {
+      "id": "phrasal-verb-pronoun",
+      "title": "Which sentence is grammatically correct?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Good catch — thanks for pointing it out.",
+          "isCorrect": true
+        },
+        {
+          "text": "Good catch — thanks for pointing out it.",
+          "isCorrect": false
+        },
+        {
+          "text": "Good catch — thanks for point it out.",
+          "isCorrect": false
+        },
+        {
+          "text": "Good catch — thanks for pointing it.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "**Point out** is a *separable* phrasal verb, and separable phrasal verbs have one iron rule: a **pronoun must go between** the verb and the particle — *point it out*, never *point out it*. Full nouns can go on either side: \"point out the bug\" and \"point the bug out\" are both fine. The same rule governs review regulars like *check it out*, *clean it up*, *back it out*, and *try it out*. (And after a preposition like *for*, the verb takes *-ing*: \"thanks for point**ing**\".)"
+    },
+    {
+      "id": "check-out-vs-checkout",
+      "title": "Choose the correct form: \"Please ___ the branch and test locally.\"",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "check out",
+          "isCorrect": true
+        },
+        {
+          "text": "checkout",
+          "isCorrect": false
+        },
+        {
+          "text": "checks out",
+          "isCorrect": false
+        },
+        {
+          "text": "checked-out",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "As a **verb, it is two words**: *check out* the branch. As one word, **checkout** is a noun or adjective: \"the checkout process\", \"a sparse checkout\" (the Git subcommand `git checkout` is a command name, not English grammar). The same two-words-verb / one-word-noun pattern covers a whole family you type daily: *log in / login*, *set up / setup*, *roll back / rollback*, *sign off / signoff*. If a verb is happening, split it."
+    },
+    {
+      "id": "follow-up-hyphen",
+      "title": "Choose the correct form: \"I'll address the naming in a ___ PR.\"",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "follow-up",
+          "isCorrect": true
+        },
+        {
+          "text": "follow up",
+          "isCorrect": false
+        },
+        {
+          "text": "followed-up",
+          "isCorrect": false
+        },
+        {
+          "text": "following-up",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Before a noun it is the hyphenated adjective/noun **follow-up**: *a follow-up PR*, *I filed a follow-up*. As a verb it splits into two words: \"I'll *follow up* next week.\" Promising a follow-up is also a key review move in English: it lets you accept a comment as valid while deferring it — \"Agreed, but it's out of scope here; I'll handle it in a follow-up\" keeps the current PR small without dismissing the reviewer."
+    },
+    {
+      "id": "softening-review-comments",
+      "title": "Which phrasings soften a review comment while keeping the request clear?",
+      "description": "Select every option that is both polite and actionable.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "Could we extract this into a helper? It is repeated in three places.",
+          "isCorrect": true
+        },
+        {
+          "text": "Consider renaming this to `parseQuiz` — `handle` hides what it does.",
+          "isCorrect": true
+        },
+        {
+          "text": "This is wrong. Rewrite it.",
+          "isCorrect": false
+        },
+        {
+          "text": "Maybe somehow improve this somewhere if you want.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Effective review English pairs a **softener** with a **concrete action and reason**: \"Could we extract…? It is repeated…\" and \"Consider renaming… — `handle` hides what it does\" both do this. \"This is wrong. Rewrite it.\" has the action but no respect; \"Maybe somehow improve this\" has the softness but nothing actionable. Politeness without specificity is as unhelpful as bluntness."
+    },
+    {
+      "id": "asking-why-politely",
+      "title": "You want to understand why the author chose a mutex. Which question asks for the reasoning without sounding accusatory?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Is there a reason this uses a mutex instead of a channel?",
+          "isCorrect": true
+        },
+        {
+          "text": "Why would you ever use a mutex here?",
+          "isCorrect": false
+        },
+        {
+          "text": "Who decided to use a mutex?",
+          "isCorrect": false
+        },
+        {
+          "text": "A mutex? Really?",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Bare \"why did you…?\" questions read as demands to justify yourself, and \"why would you *ever*\" adds open disbelief. The neutral templates English reviewers reach for: **\"Is there a reason…?\"**, **\"What's the advantage of…?\"**, **\"I'm curious why…\"** — they presuppose the author *had* a reason, which is both polite and usually true. Asking this way also protects you: when there *is* a good reason, you have not spent your credibility on a wrong accusation."
+    },
+    {
+      "id": "indirect-question-order",
+      "title": "Which sentence uses correct word order?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Could you explain why this needs a lock?",
+          "isCorrect": true
+        },
+        {
+          "text": "Could you explain why does this need a lock?",
+          "isCorrect": false
+        },
+        {
+          "text": "Could you explain why needs this a lock?",
+          "isCorrect": false
+        },
+        {
+          "text": "Could you explain that why this needs a lock?",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "When a question is **embedded** inside another sentence (\"Could you explain…\", \"I wonder…\", \"Do you know…\"), it switches to **statement word order**: *why this needs* a lock, not *why does this need*. The auxiliary *do/does/did* disappears entirely. This is one of the highest-frequency word-order errors among fluent non-native speakers, and review comments — full of polite embedded questions — are exactly where it shows up."
+    },
+    {
+      "id": "hedging-phrases",
+      "title": "Select every opener that appropriately hedges an opinion in a review comment.",
+      "description": "Select all that apply. A good hedge leaves room for the author to correct you without conflict.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "I might be missing something, but doesn't this race with the cleanup job?",
+          "isCorrect": true
+        },
+        {
+          "text": "Correct me if I'm wrong, but I think this loses the original error.",
+          "isCorrect": true
+        },
+        {
+          "text": "It looks like this branch is unreachable after the early return.",
+          "isCorrect": true
+        },
+        {
+          "text": "Obviously this is broken — anyone can see the off-by-one.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "**Hedges** (*I might be missing something*, *correct me if I'm wrong*, *it looks like*, *it seems*) do two jobs at once: they keep the comment polite, and they keep *you* safe when you are wrong — and every reviewer is regularly wrong. \"Obviously\" does the opposite: it stakes your authority on being right *and* implies the author missed something anyone can see. Hedging is not weakness in English review culture; unhedged certainty is what reads as junior."
+    },
+    {
+      "id": "condescending-words",
+      "title": "Which words tend to make \"___ use a map here\" sound dismissive?",
+      "description": "Select all that apply.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "Just",
+          "isCorrect": true
+        },
+        {
+          "text": "Simply",
+          "isCorrect": true
+        },
+        {
+          "text": "Obviously",
+          "isCorrect": true
+        },
+        {
+          "text": "Maybe",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "**Just**, **simply**, and **obviously** are *minimizers*: they assert the change is trivial — and if it were trivial, the author would presumably have done it. The unspoken message is \"this is easy and you missed it.\" *Maybe* points the other way; it is a hedge that opens space for discussion. Caution rather than a ban: *just* is harmless in other roles (\"just a heads-up\", \"I just pushed\") — the sting is specific to *instructions*, where dropping the word costs nothing: \"Use a map here\" is already fine."
+    },
+    {
+      "id": "would-softener",
+      "title": "Choose the verb that softens the suggestion: \"It ___ be cleaner to inline this check.\"",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "would",
+          "isCorrect": true
+        },
+        {
+          "text": "will",
+          "isCorrect": false
+        },
+        {
+          "text": "shall",
+          "isCorrect": false
+        },
+        {
+          "text": "must",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "**Would** frames the statement as hypothetical — *if you did this, the result would be cleaner* — which presents a judgment as an option to consider. *Will* states a verdict about the future; *must* issues an order; *shall* sounds like a legal contract. This conditional distancing is the engine of polite English: compare \"Can you…\" → \"Could you…\", \"I want\" → \"I'd like\", \"This is better\" → \"This would be better\". One letter of difference, a real difference in temperature."
+    },
+    {
+      "id": "we-instead-of-you",
+      "title": "Why do experienced reviewers often write \"Could we rename this?\" instead of \"Could you rename this?\"",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "\"We\" frames the codebase as shared ownership, making the comment about the code rather than the person",
+          "isCorrect": true
+        },
+        {
+          "text": "The reviewer is offering to make the change themselves",
+          "isCorrect": false
+        },
+        {
+          "text": "English grammar requires \"we\" after \"could\"",
+          "isCorrect": false
+        },
+        {
+          "text": "\"You\" is grammatically incorrect in questions",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The **inclusive \"we\"** signals that author and reviewer are on the same side, maintaining shared code — the request stops being \"you made a mistake, fix it\" and becomes \"let's improve our code.\" It is a social convention, not grammar; \"could you\" is perfectly correct and fine for neutral requests. The same instinct drives \"What if we…?\" and \"Should we…?\" openers. Used honestly, it builds trust; used to dress up commands, it fools no one — pair it with genuine openness to the answer *no*."
+    },
+    {
+      "id": "passive-voice-blameless",
+      "title": "Which phrasing keeps the comment about the code rather than the person?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The cache key is never invalidated, so stale entries survive re-imports.",
+          "isCorrect": true
+        },
+        {
+          "text": "You never invalidate the cache key, so your stale entries survive.",
+          "isCorrect": false
+        },
+        {
+          "text": "You forgot to invalidate the cache key.",
+          "isCorrect": false
+        },
+        {
+          "text": "Why didn't you invalidate the cache key?",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Making **the code the subject** — via passive voice (*is never invalidated*) or plain description (*the key stays stale*) — removes \"you\" from bug reports entirely. The other options each point a finger: *you never*, *you forgot*, *why didn't you*. Style guides tell you to avoid the passive because it hides the actor; in blameless review culture, hiding the actor is exactly the point. Use it for problems; switch back to active for praise — \"you simplified this nicely\" should absolutely keep its *you*."
+    },
+    {
+      "id": "good-catch-meaning",
+      "title": "You reply \"Good catch!\" to a review comment. What are you saying?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The reviewer spotted a real problem I missed — I'm acknowledging it",
+          "isCorrect": true
+        },
+        {
+          "text": "The comment is wrong, said sarcastically",
+          "isCorrect": false
+        },
+        {
+          "text": "The exception handling needs another catch block",
+          "isCorrect": false
+        },
+        {
+          "text": "The tests pass and the PR is ready to merge",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A **catch** here is something caught before it escaped — the metaphor of catching a falling object or a fish. \"Good catch!\" concedes the point *gracefully*: it thanks the reviewer instead of getting defensive, which is a skill in any language. Companions in the genre: \"Nice find\", \"Fair point\", \"You're right — fixed.\" Reviews go faster when being wrong cheaply is normal, and these little phrases are what make it cheap."
+    },
+    {
+      "id": "addressed-meaning",
+      "title": "The author replies \"Addressed in `e4f2a91`.\" What does that mean?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The concern was dealt with in that commit",
+          "isCorrect": true
+        },
+        {
+          "text": "The comment was forwarded to the team at that address",
+          "isCorrect": false
+        },
+        {
+          "text": "That commit was reverted",
+          "isCorrect": false
+        },
+        {
+          "text": "The author disagrees and will not change the code",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "To **address** a concern is to deal with it — the same verb as addressing a problem or an audience, nothing to do with postal addresses here. \"Addressed in `<commit>`\" is the standard reply formula because it is verifiable: the reviewer can click the hash and confirm. Related reply vocabulary: **\"Done\"** (shortest honest answer), **\"Fixed in `abc123`\"**, and **\"Resolved\"** (which on GitHub also names the button that collapses the thread — by convention, often the reviewer's to press, not the author's)."
+    },
+    {
+      "id": "asking-clarification",
+      "title": "A review comment confuses you. Which reply asks for clarification most effectively?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "I'm not sure I follow — could you give an example of the failure you have in mind?",
+          "isCorrect": true
+        },
+        {
+          "text": "What?",
+          "isCorrect": false
+        },
+        {
+          "text": "This comment makes no sense.",
+          "isCorrect": false
+        },
+        {
+          "text": "OK, I'll change it somehow.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The strong version does three things: admits the confusion is yours (**\"I'm not sure I follow\"** — an idiom meaning *I don't understand*), asks a *specific* question, and requests an example — the fastest clarifier in technical conversation. \"What?\" is brusque in writing even when innocent in speech; \"makes no sense\" blames the reviewer; and vaguely agreeing while confused is the worst outcome — you will implement the wrong thing politely. Never code against a comment you do not actually understand."
+    },
+    {
+      "id": "will-spontaneous-decision",
+      "title": "Choose the natural completion: \"Good point — ___ extract this into a helper.\"",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "I'll",
+          "isCorrect": true
+        },
+        {
+          "text": "I",
+          "isCorrect": false
+        },
+        {
+          "text": "I'm",
+          "isCorrect": false
+        },
+        {
+          "text": "I would",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Decisions made **at the moment of speaking** take **will** (contracted: *I'll*): the reviewer convinced you just now, so \"I'll extract it\" is the natural form. Present simple (*I extract*) describes habits, not decisions; *I'm extracting* suggests you are already mid-edit; *I would* makes it hypothetical — in replies it often signals a polite refusal (\"I would, but it breaks the API\"). Tiny verb, real signal: *I'll fix it* commits you; *I would fix it* hedges."
+    },
+    {
+      "id": "yet-in-negatives",
+      "title": "Fill in the blank: \"I haven't addressed the naming comments ___ — I'll push tonight.\" Type the missing word.",
+      "description": "One word.",
+      "type": "input",
+      "validation": {
+        "mode": "text",
+        "acceptedAnswers": ["yet"]
+      },
+      "explanation": "**Yet** belongs in negatives and questions about things expected to happen: \"I haven't addressed them *yet*\", \"Is CI green *yet*?\" Its partner **already** lives in affirmatives: \"I've *already* fixed it.\" The pair encodes expectation, which makes them perfect for status updates — *not yet* promises the thing is coming. Watch the difference from **still**: \"I *still* haven't addressed them\" adds frustration that it is taking too long. In a status reply, *yet* is neutral; *still* is an apology or a complaint."
+    },
+    {
+      "id": "disagreeing-politely",
+      "title": "A reviewer asks for a change you believe is wrong. Which response handles the disagreement best?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "I see your point, but I'd prefer to keep the early return — it guards the null case that bit us in #87. Happy to discuss.",
+          "isCorrect": true
+        },
+        {
+          "text": "No.",
+          "isCorrect": false
+        },
+        {
+          "text": "That makes no sense, the current code is obviously correct.",
+          "isCorrect": false
+        },
+        {
+          "text": "Fine, whatever you say.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The pattern is **acknowledge → disagree with a reason → leave the door open**: \"I see your point, but… because… Happy to discuss.\" Each piece earns its place — the acknowledgment shows you read the comment, the *because* makes it a technical argument instead of a preference contest, and the invitation keeps it collaborative. \"No\" is a wall; \"obviously correct\" is an insult; \"fine, whatever\" is *passive-aggressive* — surface agreement carrying audible resentment, and English readers hear it instantly."
+    },
+    {
+      "id": "affect-vs-effect",
+      "title": "Which sentence is correct?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "This change shouldn't affect the public API.",
+          "isCorrect": true
+        },
+        {
+          "text": "This change shouldn't effect the public API.",
+          "isCorrect": false
+        },
+        {
+          "text": "This change shouldn't have an affect on the public API.",
+          "isCorrect": false
+        },
+        {
+          "text": "This change has no affect.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Default rule: **affect is the verb** (*to influence*), **effect is the noun** (*the result*): \"it affects the API\", \"it has no effect\", \"side effects\". Memory hook: **A**ffect = **A**ction (verb), **E**ffect = **E**nd result (noun). The exceptions are rarer and formal — *to effect change* (to bring it about) and *affect* as a psychology noun — fine to ignore in PRs. In code review you will write *side effect* and *no effect* weekly, so the noun spelling earns its keep."
+    },
+    {
+      "id": "its-vs-it-s",
+      "title": "Fill in the blank: \"The parser caches ___ result between runs.\" Type the missing word.",
+      "description": "One word.",
+      "type": "input",
+      "validation": {
+        "mode": "text",
+        "acceptedAnswers": ["its"]
+      },
+      "explanation": "**Its** (no apostrophe) is the possessive: the result *belonging to* the parser. **It's** is only ever the contraction of *it is* or *it has*. The apostrophe feels possessive because of *John's*, but pronouns refuse it: *its*, *hers*, *theirs*, *ours*. The test that never fails: expand to *it is* — \"the parser caches *it is* result\" is nonsense, so no apostrophe. This typo survives every spellchecker because both words are real, which is why reviewers keep catching it in comments and docs."
+    },
+    {
+      "id": "than-vs-then",
+      "title": "Choose the correct word: \"Validating at import time is cheaper ___ validating on every render.\"",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "than",
+          "isCorrect": true
+        },
+        {
+          "text": "then",
+          "isCorrect": false
+        },
+        {
+          "text": "that",
+          "isCorrect": false
+        },
+        {
+          "text": "as",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "**Than** makes comparisons (*cheaper than*, *faster than*, *rather than*); **then** orders events in time (*lint, then test, then merge*). They sound nearly identical in fast speech, which is exactly why the typo thrives in writing. Anchor the pair to code: *then* is the `then` in `if…then` and `promise.then()` — sequencing. If you are comparing two things, it is *than*, every time. (*As* compares only in the pattern *as cheap as*.)"
+    },
+    {
+      "id": "lose-vs-loose",
+      "title": "Choose the correct word: \"If we cast to `any`, we ___ all the type information.\"",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "lose",
+          "isCorrect": true
+        },
+        {
+          "text": "loose",
+          "isCorrect": false
+        },
+        {
+          "text": "loosen",
+          "isCorrect": false
+        },
+        {
+          "text": "lost",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "**Lose** (one *o*, verb, rhymes with *choose*): to stop having something — *lose data*, *lose type safety*, *lose the race*. **Loose** (double *o*, adjective, rhymes with *juice*): not tight — *loose coupling*, *a loose comparison* (`==`). The double-*o* spelling lures everyone because *choose* takes two. Both appear constantly in technical English — *loose coupling* is praise, *losing data* is an incident — so the one-letter slip can flip your meaning."
+    },
+    {
+      "id": "except-vs-accept",
+      "title": "Choose the correct word: \"All checks pass ___ stylelint.\"",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "except",
+          "isCorrect": true
+        },
+        {
+          "text": "accept",
+          "isCorrect": false
+        },
+        {
+          "text": "expect",
+          "isCorrect": false
+        },
+        {
+          "text": "exempt",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "**Except** = excluding (\"everything but stylelint\"). **Accept** = to receive or agree to — you *accept* a suggestion on GitHub. **Expect** = to anticipate — \"I *expect* CI to pass.\" All three earn daily use in reviews, and *expect/except* in particular swap letters under fast typing. Quick anchors: e**x**cept e**x**cludes; you accept things you agree with; and `expect(result).toBe(3)` in your tests is anticipation, exactly as in English."
+    },
+    {
+      "id": "advise-vs-advice",
+      "title": "Choose the correct word: \"I'd ___ against renaming the public API in a patch release.\"",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "advise",
+          "isCorrect": true
+        },
+        {
+          "text": "advice",
+          "isCorrect": false
+        },
+        {
+          "text": "advices",
+          "isCorrect": false
+        },
+        {
+          "text": "adviced",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "**Advise** (with *s*, pronounced like a *z*) is the verb: \"I'd *advise* against it.\" **Advice** (with *c*, pronounced like an *s*) is the noun — and it is uncountable, so *advices* and *an advice* are never correct; say *a piece of advice*. The same letter pattern marks other verb/noun pairs: *devise/device*, and in British spelling *practise/practice* and *license/licence*. The collocation *advise against + -ing* is a polite, firm way to oppose a change."
+    },
+    {
+      "id": "principle-vs-principal",
+      "title": "Choose the correct word: \"This helper violates the ___ of least privilege.\"",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "principle",
+          "isCorrect": true
+        },
+        {
+          "text": "principal",
+          "isCorrect": false
+        },
+        {
+          "text": "principled",
+          "isCorrect": false
+        },
+        {
+          "text": "principality",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "**Principle** = a rule or fundamental truth: *the principle of least privilege*, *SOLID principles*, *on principle*. **Principal** = main or chief (*the principal cause of the outage*) — or a person/role, as in *principal engineer*. Classic mnemonic: the princi**pal** is your **pal**; a princi**ple** is a ru**le**. Engineering writing uses both — design *principles*, a *principal* engineer — so this pair sits in job titles and architecture docs alike."
+    },
+    {
+      "id": "complement-vs-compliment",
+      "title": "Choose the correct word: \"The new lint rule ___ the formatter — they catch different problems.\"",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "complements",
+          "isCorrect": true
+        },
+        {
+          "text": "compliments",
+          "isCorrect": false
+        },
+        {
+          "text": "complies",
+          "isCorrect": false
+        },
+        {
+          "text": "completes",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "**Complement** (with an *e*) = to complete or combine well with — the lint rule and formatter cover different ground, so each *complements* the other. **Compliment** (with an *i*) = praise: \"thanks for the *compliment* about my error messages.\" Mnemonic: compl**e**ment compl**e**tes; a compl**i**ment is what **I** like to hear. Bonus connection: the bitwise NOT operator computes the *complement* — the part that completes the whole — so the spelling is already in your muscle memory."
+    }
+  ]
+}

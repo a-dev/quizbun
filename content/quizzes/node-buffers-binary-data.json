@@ -1,0 +1,274 @@
+{
+  "schemaVersion": 1,
+  "id": "node-buffers-binary-data",
+  "title": "Node.js Buffers & Binary Data",
+  "description": "How `Buffer`, `Uint8Array`, `ArrayBuffer`, and `DataView` fit together; UTF-8 / hex / base64 encodings; byte order; which operations share memory versus copy; and why turning binary into a string destroys it. Every answer is verified by running the code in Node.",
+  "language": "en",
+  "tags": ["nodejs", "javascript"],
+  "questions": [
+    {
+      "id": "buffer-extends-uint8array",
+      "title": "`Buffer` is a subclass of which built-in JavaScript typed array?",
+      "description": "Name the standard typed array that Node's `Buffer` extends, so that every Buffer is also an instance of it.",
+      "type": "input",
+      "validation": {
+        "mode": "text",
+        "acceptedAnswers": [
+          "Uint8Array"
+        ]
+      },
+      "explanation": "Node's `Buffer` is not a separate language type bolted on — it is a **subclass of `Uint8Array`**, the standard array-of-bytes view. You can confirm it directly:\n\n```js\nBuffer.from([1, 2, 3]) instanceof Uint8Array;                      // true\nObject.getPrototypeOf(Buffer.prototype) === Uint8Array.prototype;  // true\n```\n\nThe relationship is **one-way**: every Buffer is a Uint8Array, but a plain Uint8Array is not a Buffer (`new Uint8Array(1) instanceof Buffer` is `false`). Because a Buffer *is* a Uint8Array, you can hand one to any standard API that expects a Uint8Array — `TextDecoder`, Web Crypto, `fetch` bodies. Buffer simply adds Node conveniences on top: string encodings, fixed-width integer reads like `readInt32BE`, `toString('hex')`, and an allocation pool.",
+      "references": "[Node.js: Buffer and TypedArray](https://nodejs.org/api/buffer.html#buffers-and-typedarrays)"
+    },
+    {
+      "id": "arraybuffer-needs-a-view",
+      "title": "What is an `ArrayBuffer`, and how do you read the bytes inside it?",
+      "description": "You write `const ab = new ArrayBuffer(8)`. How do you access the individual bytes?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "It is a fixed-length block of raw memory with no element accessors; you read it through a *view* such as a `TypedArray` or `DataView`.",
+          "isCorrect": true
+        },
+        {
+          "text": "It is itself an array of bytes; you index it directly with `ab[0]`.",
+          "isCorrect": false
+        },
+        {
+          "text": "It is a growable list of numbers; you call `ab.push(byte)` to append data.",
+          "isCorrect": false
+        },
+        {
+          "text": "It is a UTF-8 string buffer; you call `ab.toString()` to read its contents.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "An `ArrayBuffer` is just a fixed-size chunk of raw memory. It deliberately exposes **no way to read or write its contents directly** — `ab[0]` is `undefined` and there is no `.push`. To touch the bytes you wrap it in a *view*:\n\n```js\nconst ab = new ArrayBuffer(8);\nab[0];                         // undefined — no element access\nconst bytes = new Uint8Array(ab); // a view over the same 8 bytes\nbytes[0] = 255;                // now you can read and write\nnew DataView(ab).getUint8(0);  // 255 — a different view of the same memory\n```\n\nThis split is the heart of the binary model: one `ArrayBuffer` owns the memory, and many views (`Uint8Array`, `Float64Array`, `DataView`) can interpret that same memory in different ways. A Node `Buffer` is one such view — a `Uint8Array` — with extra methods.",
+      "references": "[MDN: ArrayBuffer](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer)"
+    },
+    {
+      "id": "uint32array-bytelength",
+      "title": "What is `new Uint32Array(4).byteLength`?",
+      "description": "Four 32-bit unsigned integers. Give the total number of *bytes* the typed array occupies.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [
+          16
+        ]
+      },
+      "explanation": "`length` counts *elements*; `byteLength` counts *bytes*. A `Uint32Array` stores 32-bit (4-byte) integers, so 4 elements occupy 4 × 4 = **16 bytes**.\n\n```js\nconst a = new Uint32Array(4);\na.length;                      // 4  (elements)\na.byteLength;                  // 16 (bytes)\nUint32Array.BYTES_PER_ELEMENT; // 4\n```\n\nThis is exactly why the view type matters: one 16-byte `ArrayBuffer` is 16 elements as a `Uint8Array`, 8 as a `Uint16Array`, 4 as a `Uint32Array`, or 2 as a `Float64Array`. For a Node `Buffer` (a `Uint8Array`), `length` and `byteLength` are always equal because every element is a single byte.",
+      "references": "[MDN: TypedArray.prototype.byteLength](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/TypedArray/byteLength)"
+    },
+    {
+      "id": "buffer-vs-uint8array",
+      "title": "Which statements about `Buffer` versus `Uint8Array` are correct?",
+      "description": "Select every true statement about how Node's `Buffer` relates to the standard `Uint8Array`.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "`Buffer` extends `Uint8Array`, so `buf instanceof Uint8Array` is `true` and a Buffer works anywhere a Uint8Array is accepted.",
+          "isCorrect": true
+        },
+        {
+          "text": "`Buffer` adds methods a plain `Uint8Array` lacks, such as `readInt32BE`, `write`, and `toString('hex')`.",
+          "isCorrect": true
+        },
+        {
+          "text": "`Buffer` is a Node.js global, whereas `Uint8Array` is a standard JavaScript built-in that also exists in browsers.",
+          "isCorrect": true
+        },
+        {
+          "text": "A plain `Uint8Array` is an instance of `Buffer`, so `new Uint8Array(8) instanceof Buffer` is `true`.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The first three are true; the subclass relationship runs in **one direction only**.\n\n```js\nBuffer.from([1]) instanceof Uint8Array;  // true  (Buffer is a Uint8Array)\nnew Uint8Array(1) instanceof Buffer;     // false (but not the reverse)\ntypeof Uint8Array.prototype.readInt32BE; // 'undefined' — a Buffer-only method\nBuffer.from([1, 2, 3]).toString('hex');  // '010203'\nnew Uint8Array([1, 2, 3]).toString();    // '1,2,3' — inherited Array-style join\n```\n\nMental model: `Buffer` = `Uint8Array` + Node conveniences (string encodings, fixed-width integer reads and writes, an internal allocation pool). Prefer a plain `Uint8Array` in code meant to run in both Node and the browser; reach for `Buffer` when you want its encoding and numeric helpers.",
+      "references": "[Node.js: Buffers and TypedArrays](https://nodejs.org/api/buffer.html#buffers-and-typedarrays)"
+    },
+    {
+      "id": "utf8-bytelength-cafe",
+      "title": "How many bytes is the string `café` in UTF-8?",
+      "description": "Give the result of `Buffer.byteLength('café', 'utf8')` — the number of bytes, not the number of characters.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [
+          5
+        ]
+      },
+      "explanation": "`c`, `a`, and `f` are one byte each in UTF-8, but `é` (U+00E9) needs **two** bytes (`0xC3 0xA9`), so the total is **5 bytes** — even though the string is only 4 characters long.\n\n```js\n'café'.length;                     // 4  (UTF-16 code units / characters)\nBuffer.byteLength('café', 'utf8'); // 5  (bytes on the wire)\nBuffer.from('café').toString('hex'); // '636166c3a9'\n```\n\nThis gap between *character count* and *byte count* is the root of countless bugs: a `Content-Length` header, a fixed-size buffer, or a substring offset computed from `.length` will all be wrong for non-ASCII text. When you need bytes, measure bytes with `Buffer.byteLength`, not `String.length`.",
+      "references": "[Node.js: Buffer.byteLength()](https://nodejs.org/api/buffer.html#static-method-bufferbytelengthstring-encoding)"
+    },
+    {
+      "id": "base64-decode-roundtrip",
+      "title": "What does `Buffer.from('SGVsbG8=', 'base64').toString('utf8')` return?",
+      "description": "Decode the Base64 text `SGVsbG8=` back to a UTF-8 string and type the result.",
+      "type": "input",
+      "validation": {
+        "mode": "text",
+        "acceptedAnswers": [
+          "Hello"
+        ]
+      },
+      "explanation": "`Buffer` is Node's converter between encodings. The Base64 text `SGVsbG8=` decodes to the five bytes `48 65 6c 6c 6f`, which are the ASCII codes for `Hello`.\n\n```js\nBuffer.from('SGVsbG8=', 'base64').toString('utf8'); // 'Hello'\nBuffer.from('Hello').toString('base64');            // 'SGVsbG8=' (round-trip)\nBuffer.from('Hello').toString('hex');               // '48656c6c6f'\n```\n\nThe pattern is always *bytes in one encoding → Buffer → bytes out in another*: `Buffer.from(input, fromEncoding)` then `.toString(toEncoding)`. Supported encodings include `utf8`, `hex`, `base64`, `base64url`, `latin1`, and `ascii`. Note the Buffer is the real value here — the strings are just two different textual *representations* of the same underlying bytes.",
+      "references": "[Node.js: Buffers and character encodings](https://nodejs.org/api/buffer.html#buffers-and-character-encodings)"
+    },
+    {
+      "id": "string-concat-corrupts-binary",
+      "title": "Reading a binary file, you write `let data = ''` then `stream.on('data', c => data += c)`. Why is the result corrupted?",
+      "description": "You accumulate raw binary chunks into a string with `+=` instead of collecting Buffers. What goes wrong?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`data += chunk` decodes each Buffer to UTF-8; bytes that are not valid UTF-8 become the replacement character `�`, and that loss is irreversible.",
+          "isCorrect": true
+        },
+        {
+          "text": "String concatenation is too slow, so chunks arrive faster than they can be appended and some are dropped.",
+          "isCorrect": false
+        },
+        {
+          "text": "`+=` keeps only the last chunk because strings are immutable, so earlier data is overwritten.",
+          "isCorrect": false
+        },
+        {
+          "text": "The bytes are fine in memory; the data only looks wrong when printed because the terminal cannot display binary.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Adding a `Buffer` to a string coerces it with `.toString()`, i.e. **UTF-8 decoding**. Any byte that is not valid UTF-8 is replaced by U+FFFD (`�`), and once that substitution happens the original byte is gone — decoding is lossy and not reversible:\n\n```js\nconst bin = Buffer.from([0xff, 0xfe, 0xfd]); // 3 bytes, not valid UTF-8\nlet data = '';\ndata += bin;                       // implicit .toString('utf8')\ndata.length;                       // 3  → three '�' (U+FFFD) characters\nBuffer.from(data).toString('hex'); // 'efbfbdefbfbdefbfbd' — 9 bytes, not the original 3!\n```\n\nThe bytes round-trip to something completely different, so an image, a ZIP, or a gzip stream assembled this way is destroyed. The fix is to **never turn binary into a string**: collect the chunks as Buffers and join them with `Buffer.concat`.\n\n```js\nconst chunks = [];\nstream.on('data', (c) => chunks.push(c));\nstream.on('end', () => {\n  const data = Buffer.concat(chunks); // bytes intact, nothing decoded\n});\n```",
+      "references": "[Node.js: Buffer.concat()](https://nodejs.org/api/buffer.html#static-method-bufferconcatlist-totallength)"
+    },
+    {
+      "id": "multibyte-split-across-chunks",
+      "title": "Decoding a UTF-8 stream as `chunk.toString()` per chunk sometimes yields `�`. Why?",
+      "description": "Each chunk is decoded on its own and the resulting strings are concatenated. A multi-byte character can land exactly on a chunk boundary.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "A multi-byte character can be split across two chunks; each half is invalid UTF-8 alone and decodes to `�`. Concatenate the *bytes* first, or use `StringDecoder`.",
+          "isCorrect": true
+        },
+        {
+          "text": "`toString()` randomly fails on long inputs, so some characters are lost.",
+          "isCorrect": false
+        },
+        {
+          "text": "UTF-8 is not supported by `Buffer.toString()`; you must pass `'utf16'` to avoid `�`.",
+          "isCorrect": false
+        },
+        {
+          "text": "The stream delivers chunks out of order, scrambling the characters.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A stream splits data by *byte count*, with no regard for character boundaries. The euro sign `€` is the three bytes `e2 82 ac`; if one chunk ends after `e2 82` and the next begins with `ac`, decoding each chunk on its own produces two invalid fragments:\n\n```js\nconst euro = Buffer.from('€');      // <Buffer e2 82 ac>\nconst c1 = euro.subarray(0, 2);     // e2 82  (incomplete sequence)\nconst c2 = euro.subarray(2);        // ac     (orphan continuation byte)\nc1.toString() + c2.toString();      // '��'  — corrupted, each half is invalid\nBuffer.concat([c1, c2]).toString(); // '€'   — join the bytes, then decode once\n```\n\nTwo correct fixes: (1) buffer the raw chunks and decode once at the end with `Buffer.concat`, or (2) use Node's `string_decoder`, which holds back an incomplete trailing sequence until the rest arrives:\n\n```js\nconst { StringDecoder } = require('node:string_decoder');\nconst d = new StringDecoder('utf8');\nd.write(c1); // ''   — withholds the partial character\nd.write(c2); // '€'  — completes it on the next chunk\n```",
+      "references": "[Node.js: StringDecoder](https://nodejs.org/api/string_decoder.html)"
+    },
+    {
+      "id": "uint8array-wraps-modulo",
+      "title": "What is `[...new Uint8Array([256, -1, 300])]`?",
+      "description": "A `Uint8Array` holds bytes in the range 0–255. What happens to out-of-range initializer values?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`[0, 255, 44]` — each value is taken modulo 256 (only the low 8 bits are kept).",
+          "isCorrect": true
+        },
+        {
+          "text": "`[255, 0, 255]` — values are clamped into the 0–255 range.",
+          "isCorrect": false
+        },
+        {
+          "text": "`[256, -1, 300]` — the numbers are stored unchanged.",
+          "isCorrect": false
+        },
+        {
+          "text": "It throws a `RangeError` because the values do not fit in a byte.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Writing to a `Uint8Array` keeps only the low 8 bits — it **wraps modulo 256** rather than clamping or throwing:\n\n```js\n[...new Uint8Array([256, -1, 300])]; // [0, 255, 44]\n// 256 % 256 = 0,  -1 wraps to 255,  300 % 256 = 44\nBuffer.from([257])[0];               // 1  — Buffer is a Uint8Array, same rule\n```\n\nIf you want *saturation* instead (negatives become 0, values above 255 become 255), that is a different type — `Uint8ClampedArray`, used by the Canvas API for pixel data:\n\n```js\n[...new Uint8ClampedArray([256, -1, 300])]; // [255, 0, 255]\n```\n\nKnowing which rule applies prevents a class of silent bugs where a computed byte quietly wraps around instead of raising an error.",
+      "references": "[MDN: Uint8Array](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array)"
+    },
+    {
+      "id": "endianness-same-bytes",
+      "title": "The bytes `00 00 00 01` read as a 32-bit integer give `1` one way and `16777216` the other. What causes the difference?",
+      "description": "Same four bytes, two different numbers. What determines which value you get?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Byte order (endianness): big-endian reads `00 00 00 01` as `1`; little-endian reads it as `0x01000000` = `16777216`.",
+          "isCorrect": true
+        },
+        {
+          "text": "Signedness: one reading interprets the bytes as signed and the other as unsigned.",
+          "isCorrect": false
+        },
+        {
+          "text": "Number base: one result is hexadecimal and the other is decimal.",
+          "isCorrect": false
+        },
+        {
+          "text": "A misread: `16777216` means the four bytes were misaligned in memory.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A multi-byte integer can be laid out *most-significant byte first* (big-endian) or *least-significant byte first* (little-endian). The same bytes therefore encode different numbers:\n\n```js\nconst buf = Buffer.from([0x00, 0x00, 0x00, 0x01]);\nbuf.readUInt32BE(0); // 1         — 0x00000001\nbuf.readUInt32LE(0); // 16777216  — 0x01000000\n```\n\nThis is why `DataView` exists and why a plain `Uint32Array` is risky for *external* data: `DataView` forces you to state the byte order, but a `Uint32Array` silently uses the host platform's order (little-endian on x86 and ARM):\n\n```js\nconst ab = Uint8Array.of(0, 0, 0, 1).buffer;\nnew DataView(ab).getUint32(0);       // 1        (big-endian is the default)\nnew DataView(ab).getUint32(0, true); // 16777216 (littleEndian = true)\nnew Uint32Array(ab)[0];              // 16777216 (whatever the CPU uses)\n```\n\nNetwork protocols and many binary file formats are big-endian (`network byte order`), so decode them with an explicit big-endian reader like `readUInt32BE` rather than trusting the platform default.",
+      "references": "[MDN: DataView](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/DataView)"
+    },
+    {
+      "id": "share-vs-copy-memory",
+      "title": "Which of these operations return something that *shares* memory with the source rather than copying it?",
+      "description": "Sharing memory means a write through one reference is visible through the other. Select every operation that shares.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "`buf.subarray(0, 2)` — a view onto the same bytes, so writing to it changes `buf`.",
+          "isCorrect": true
+        },
+        {
+          "text": "`Buffer.from(arrayBuffer)` — wraps the existing `ArrayBuffer` in place, with no copy.",
+          "isCorrect": true
+        },
+        {
+          "text": "`Buffer.concat([a, b])` — its result stays linked to `a` and `b`.",
+          "isCorrect": false
+        },
+        {
+          "text": "`new Uint8Array(buf)` — its result stays linked to `buf`.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Some operations hand you a new *view* over existing bytes (writes are shared); others allocate fresh memory and copy. Each claim, verified by mutating the source afterward:\n\n```js\nconst a = Buffer.from([1, 2, 3, 4]);\nconst sub = a.subarray(0, 2);\na[0] = 9; sub[0];                      // 9  → subarray SHARES\n\nconst ab = new ArrayBuffer(3);\nconst shared = Buffer.from(ab);\nnew Uint8Array(ab)[0] = 9; shared[0];  // 9  → Buffer.from(arrayBuffer) SHARES\n\nconst c = Buffer.concat([Buffer.from([1, 2]), Buffer.from([3, 4])]);\n// c is a brand-new allocation — COPIES, not linked to the inputs\n\nconst u = new Uint8Array(Buffer.from([1, 2, 3]));\n// new Uint8Array(typedArray) COPIES element by element — not linked\n```\n\nThe classic trap: `subarray` **shares** memory, unlike `Array.prototype.slice`, which copies. When you need an independent copy of a slice, use `Uint8Array.prototype.slice` (which does copy) or `Buffer.from(buf.subarray(start, end))`.",
+      "references": "[Node.js: buf.subarray()](https://nodejs.org/api/buffer.html#bufsubarraystart-end)"
+    },
+    {
+      "id": "alloc-vs-allocunsafe",
+      "title": "What is the difference between `Buffer.alloc(1024)` and `Buffer.allocUnsafe(1024)`?",
+      "description": "Both create a 1 KB Buffer. One is faster; one is safe to read immediately. Which is which, and why?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`alloc` zero-fills the memory; `allocUnsafe` skips that step for speed, so it may expose leftover bytes from previously used memory.",
+          "isCorrect": true
+        },
+        {
+          "text": "`allocUnsafe` can be freed manually while `alloc` is garbage-collected — the names are about memory management.",
+          "isCorrect": false
+        },
+        {
+          "text": "`allocUnsafe` may throw when memory is low; `alloc` never throws.",
+          "isCorrect": false
+        },
+        {
+          "text": "`alloc` creates a fixed-size Buffer; `allocUnsafe` creates a growable one.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Both return a 1024-byte Buffer, but `Buffer.alloc` **zero-fills** it first, while `Buffer.allocUnsafe` returns a region of (often pooled) memory **without clearing it** — so it can still hold whatever bytes were there before, including data from elsewhere in your process:\n\n```js\nBuffer.alloc(8).toString('hex'); // '0000000000000000' — always zeroed\nBuffer.allocUnsafe(8);           // e.g. <Buffer a0 3f 00 ...> — leftover bytes\n```\n\nThat is the `unsafe` part: it is faster (it skips the fill and may reuse Node's internal memory pool), but if you transmit or persist it before overwriting every byte, you can **leak sensitive data**. Rule of thumb: default to `Buffer.alloc`; only use `allocUnsafe` when you will immediately and completely overwrite the buffer — for example, reading into it from a file or socket.",
+      "references": "[Node.js: Buffer.allocUnsafe()](https://nodejs.org/api/buffer.html#static-method-bufferallocunsafesize)"
+    }
+  ]
+}

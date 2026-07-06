@@ -1,0 +1,289 @@
+{
+  "schemaVersion": 1,
+  "id": "webrtc-data-channels-vs-websockets",
+  "title": "WebRTC Data Channels vs WebSockets: P2P, SCTP & Configurable Reliability",
+  "description": "When real-time delivery goes peer-to-peer: how WebRTC data channels differ from WebSockets — SCTP-over-DTLS-over-UDP transport, configurable reliability and ordering, signaling (often carried over a WebSocket), NAT traversal with STUN/TURN, and mandatory encryption. The reliability modes are verified in Node.",
+  "language": "en",
+  "tags": ["networking", "real-time", "websockets"],
+  "questions": [
+    {
+      "id": "webrtc-p2p-vs-websocket",
+      "title": "How does a WebRTC data channel's topology fundamentally differ from a WebSocket's?",
+      "description": "Think about who sits between the two endpoints exchanging data.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "A data channel is peer-to-peer (browser ↔ browser), whereas a WebSocket is client ↔ server.",
+          "isCorrect": true
+        },
+        {
+          "text": "Both are strictly client ↔ server.",
+          "isCorrect": false
+        },
+        {
+          "text": "Both are strictly peer-to-peer.",
+          "isCorrect": false
+        },
+        {
+          "text": "A data channel is server ↔ server only.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A WebRTC `RTCDataChannel` carries application data **directly between two peers** (typically two browsers), with no server relaying each message once the connection is up. A WebSocket always runs **client ↔ server**. That single difference drives everything else about WebRTC — the need for signaling, NAT traversal, and built-in encryption. Tellingly, the data channel API was deliberately modeled on WebSocket (`send()`, `onmessage`, `onopen`, `onclose`) so the programming model feels familiar even though the topology is completely different.",
+      "references": "[MDN: RTCDataChannel](https://developer.mozilla.org/en-US/docs/Web/API/RTCDataChannel)"
+    },
+    {
+      "id": "webrtc-signaling-channel",
+      "title": "WebRTC peers must first exchange SDP offers/answers and ICE candidates. What does the spec say about transporting this \"signaling\"?",
+      "description": "Before any peer-to-peer data flows, the two sides have to find and describe each other.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "It's deliberately left to the application — WebRTC defines no signaling protocol, and apps commonly use a WebSocket (or HTTP) for it.",
+          "isCorrect": true
+        },
+        {
+          "text": "WebRTC ships a built-in signaling server you're required to run.",
+          "isCorrect": false
+        },
+        {
+          "text": "Signaling is exchanged automatically over STUN.",
+          "isCorrect": false
+        },
+        {
+          "text": "Signaling requires a dedicated UDP broadcast on the local network.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "WebRTC is intentionally **signaling-agnostic**: the spec says nothing about *how* peers swap their SDP descriptions and ICE candidates — that's your job. In practice almost everyone uses a **WebSocket** (or plain HTTP) to a small signaling server to broker the introduction, after which the data flows peer-to-peer. This is why WebRTC and WebSocket are complementary rather than competitors: the WebSocket bootstraps the WebRTC connection. STUN is for discovering network candidates, not for carrying signaling.",
+      "references": "[MDN: Signaling and video calling](https://developer.mozilla.org/en-US/docs/Web/API/WebRTC_API/Signaling_and_video_calling)"
+    },
+    {
+      "id": "webrtc-datachannel-sctp",
+      "title": "WebRTC data channels carry application data over which message-oriented transport protocol (itself layered on DTLS/UDP)?",
+      "description": "Not TCP and not raw UDP — a protocol that adds multiplexing and configurable reliability. Give its acronym.",
+      "type": "input",
+      "validation": {
+        "mode": "text",
+        "acceptedAnswers": [
+          "SCTP",
+          "Stream Control Transmission Protocol"
+        ]
+      },
+      "explanation": "Data channels run over **SCTP** (Stream Control Transmission Protocol), tunneled inside DTLS over UDP. SCTP is what gives data channels their superpowers: it's message-oriented (preserves message boundaries), multiplexes many channels over one association, and exposes **configurable reliability and ordering** per channel. The full stack is: `RTCDataChannel → SCTP → DTLS → ICE/UDP`. (Media takes a different path — SRTP — but data uses SCTP.)",
+      "references": "[RFC 8831: WebRTC Data Channels](https://datatracker.ietf.org/doc/html/rfc8831)"
+    },
+    {
+      "id": "webrtc-reliability-config",
+      "title": "Which statements about `RTCDataChannel` reliability and ordering are correct?",
+      "description": "Select every true statement about how a data channel can be configured.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "By default a data channel is reliable and ordered, behaving like TCP.",
+          "isCorrect": true
+        },
+        {
+          "text": "Setting `ordered: false` allows messages to be delivered out of order.",
+          "isCorrect": true
+        },
+        {
+          "text": "`maxRetransmits` and `maxPacketLifeTime` are mutually exclusive — setting both is invalid.",
+          "isCorrect": true
+        },
+        {
+          "text": "A data channel can only ever be fully reliable, exactly like a WebSocket.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Unlike a WebSocket (always reliable + ordered because it's TCP), a data channel is tunable. Verified with a classifier over the spec's rules:\n\n```text\n{}                            -> reliable, ordered (TCP-like)\n{ ordered: false }            -> reliable, unordered\n{ maxRetransmits: 0 }         -> unreliable (fire-and-forget)\n{ maxPacketLifeTime: 1000 }   -> partially reliable (time-bounded)\n{ maxRetransmits, maxPacketLifeTime } -> INVALID (mutually exclusive)\n```\n\nDefault is reliable + ordered; `ordered: false` relaxes ordering; and you may set **at most one** of `maxRetransmits` / `maxPacketLifeTime` to bound retransmission — setting both throws. The false option ignores all of this configurability.",
+      "references": "[MDN: RTCPeerConnection.createDataChannel()](https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection/createDataChannel)"
+    },
+    {
+      "id": "webrtc-unreliable-games",
+      "title": "A fast multiplayer game sends 60 position updates per second. Why might you choose an unreliable, unordered data channel?",
+      "description": "Consider whether an old position update is still worth delivering once a newer one exists.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The newest position supersedes older ones, so retransmitting or reordering stale updates only adds latency — dropping them keeps the game responsive.",
+          "isCorrect": true
+        },
+        {
+          "text": "Unreliable channels are encrypted while reliable ones are not.",
+          "isCorrect": false
+        },
+        {
+          "text": "Reliable channels cannot carry binary data.",
+          "isCorrect": false
+        },
+        {
+          "text": "Ordering is simply impossible over UDP, so you have no choice.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "For ephemeral state like a player's position, freshness beats completeness — the same lesson as coalescing stale frames in the scaling quiz, and as choosing at-most-once in the delivery-guarantees quiz. A reliable, ordered channel would retransmit and reorder *stale* positions, delivering outdated data late (classic head-of-line blocking on data nobody needs anymore). An unreliable, unordered channel just lets the latest update win. Both channel types are encrypted and both carry binary fine; ordering is perfectly possible over UDP via SCTP — you're choosing to switch it off on purpose.",
+      "references": "[MDN: Using WebRTC data channels](https://developer.mozilla.org/en-US/docs/Web/API/WebRTC_API/Using_data_channels)"
+    },
+    {
+      "id": "webrtc-stun-turn",
+      "title": "Two browsers behind home routers want a direct peer-to-peer data channel. What do STUN and TURN each do?",
+      "description": "NAT and firewalls usually block unsolicited inbound connections. How do peers get through?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "STUN helps a peer discover its public IP/port so a direct connection can be attempted; TURN relays the traffic through a server when a direct connection can't be made.",
+          "isCorrect": true
+        },
+        {
+          "text": "STUN encrypts the channel and TURN compresses it.",
+          "isCorrect": false
+        },
+        {
+          "text": "Both are signaling servers whose job is to exchange SDP.",
+          "isCorrect": false
+        },
+        {
+          "text": "STUN handles audio and TURN handles video; neither touches data channels.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "WebRTC's ICE framework gathers candidate addresses and tries them in order. **STUN** (Session Traversal Utilities for NAT) lets a peer learn its public-facing IP/port (its \"server-reflexive\" candidate) so two peers can attempt a direct, NAT-punched connection. When that fails — e.g. symmetric NATs or strict firewalls — **TURN** (Traversal Using Relays around NAT) provides a relay server that forwards the traffic, trading the bandwidth cost for connectivity. Neither does encryption, compression, or signaling — those are DTLS and your signaling channel, respectively.",
+      "references": "[MDN: WebRTC connectivity](https://developer.mozilla.org/en-US/docs/Web/API/WebRTC_API/Connectivity)"
+    },
+    {
+      "id": "webrtc-encryption-mandatory",
+      "title": "WebRTC data channels are protected with DTLS. Is encryption optional or mandatory in WebRTC? (one word)",
+      "description": "Contrast this with WebSocket, where `ws://` (plaintext) is a legal choice.",
+      "type": "input",
+      "validation": {
+        "mode": "text",
+        "acceptedAnswers": [
+          "mandatory",
+          "required",
+          "compulsory"
+        ]
+      },
+      "explanation": "Encryption in WebRTC is **mandatory** — there is no unencrypted mode. Data channels are secured with **DTLS** (Datagram TLS), and media with SRTP keyed via that same DTLS handshake. This is a deliberate contrast with WebSocket, where `ws://` (plaintext) is permitted and you must opt into `wss://`. WebRTC removed the choice: every connection is encrypted by design.",
+      "references": "[RFC 8827: WebRTC Security Architecture](https://datatracker.ietf.org/doc/html/rfc8827)"
+    },
+    {
+      "id": "webrtc-sctp-message-oriented",
+      "title": "Like WebSocket, a data channel hands you whole messages, not a raw byte stream. Which SCTP property provides that?",
+      "description": "Think about the difference between a TCP byte stream and a UDP datagram.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "SCTP is message-oriented (datagram-like), so each `send()` is delivered as one discrete message — unlike TCP's continuous byte stream.",
+          "isCorrect": true
+        },
+        {
+          "text": "SCTP is byte-stream-oriented like TCP, and the browser reassembles messages for you.",
+          "isCorrect": false
+        },
+        {
+          "text": "DTLS adds message boundaries on top of an underlying TCP byte stream.",
+          "isCorrect": false
+        },
+        {
+          "text": "UDP guarantees both message boundaries and ordering.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "SCTP is **message-oriented**: each `dataChannel.send(msg)` is delivered to the peer's `onmessage` as that exact, complete message, with boundaries preserved (like a UDP datagram, but with optional reliability and ordering on top). TCP, by contrast, is a continuous byte stream where you must frame messages yourself (which is exactly what the WebSocket protocol's framing layer does over TCP). DTLS only encrypts; it adds no framing. And while UDP preserves datagram boundaries, it provides no reliability or ordering options — SCTP is what adds those.",
+      "references": "[RFC 8831: WebRTC Data Channels](https://datatracker.ietf.org/doc/html/rfc8831)"
+    },
+    {
+      "id": "websocket-over-webrtc-server-authoritative",
+      "title": "You need server-authoritative real-time messaging — the server must validate and broadcast every message. WebSocket or WebRTC data channel, and why?",
+      "description": "Who needs to see each message for this design to work?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "WebSocket — it's client ↔ server by design, so the server sees and controls every message; WebRTC's peer-to-peer model bypasses the server.",
+          "isCorrect": true
+        },
+        {
+          "text": "WebRTC — it's always lower latency, so it's the right choice for everything.",
+          "isCorrect": false
+        },
+        {
+          "text": "WebRTC — because WebSocket can't transport JSON.",
+          "isCorrect": false
+        },
+        {
+          "text": "Either one — they have identical topologies and are interchangeable.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "WebRTC's strength — direct peer-to-peer data — is a liability when you *need* the server in the loop for validation, anti-cheat, moderation, persistence, or fan-out to many clients. A server-authoritative or hub-and-spoke broadcast design fits a **WebSocket**, where every message naturally passes through the server. WebRTC shines for the opposite case: direct peer data (P2P games between two players, file transfer, low-latency links) and offloading bandwidth from your servers. They are not interchangeable — the topology is the whole point.",
+      "references": "[MDN: RTCDataChannel](https://developer.mozilla.org/en-US/docs/Web/API/RTCDataChannel)"
+    },
+    {
+      "id": "webrtc-vs-websocket-facts",
+      "title": "Which statements correctly contrast WebRTC data channels with WebSockets?",
+      "description": "Select every true statement.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "WebRTC needs a separate signaling channel (often a WebSocket) to establish the connection.",
+          "isCorrect": true
+        },
+        {
+          "text": "WebRTC data channels offer configurable reliability/ordering, whereas a WebSocket is always reliable and ordered.",
+          "isCorrect": true
+        },
+        {
+          "text": "The RTCDataChannel API mirrors WebSocket's (`send`, `onmessage`, `onopen`, `onclose`).",
+          "isCorrect": true
+        },
+        {
+          "text": "Once established, a WebSocket connection is peer-to-peer, just like WebRTC.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Three real contrasts: WebRTC requires out-of-band **signaling** (commonly a WebSocket) to exchange SDP and ICE candidates; its data channels expose **tunable** reliability/ordering while a WebSocket inherits TCP's fixed reliable-ordered behavior; and its API was intentionally shaped to **look like** WebSocket. The false statement is the key misconception: a WebSocket is always client ↔ server — it never becomes peer-to-peer, no matter how the connection is established.",
+      "references": "[MDN: Using WebRTC data channels](https://developer.mozilla.org/en-US/docs/Web/API/WebRTC_API/Using_data_channels)"
+    },
+    {
+      "id": "webrtc-protocol-stack",
+      "title": "What is the correct protocol stack beneath a WebRTC data channel message?",
+      "description": "Order the layers from the data channel down to the network.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Data channel → SCTP → DTLS → UDP (with ICE handling connectivity/NAT traversal).",
+          "isCorrect": true
+        },
+        {
+          "text": "Data channel → TCP → TLS → IP.",
+          "isCorrect": false
+        },
+        {
+          "text": "Data channel → HTTP/2 → QUIC → UDP.",
+          "isCorrect": false
+        },
+        {
+          "text": "Data channel → WebSocket → DTLS → TCP.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The data channel layers are: **SCTP** (message multiplexing + configurable reliability/ordering) inside **DTLS** (mandatory encryption) over **UDP**, with **ICE** selecting a working network path and handling NAT traversal. It deliberately avoids TCP/TLS (that stack is more like WebSocket's) — using UDP is what lets WebRTC offer unreliable, low-latency delivery when you want it. It is not built on HTTP/2, QUIC, or a WebSocket.",
+      "references": "[RFC 8831: WebRTC Data Channels](https://datatracker.ietf.org/doc/html/rfc8831)"
+    },
+    {
+      "id": "webrtc-maxretransmits-zero",
+      "title": "What value of `maxRetransmits` configures a fully unreliable (fire-and-forget) data channel that never retransmits a lost message?",
+      "description": "Give the single integer value.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [
+          0
+        ]
+      },
+      "explanation": "`maxRetransmits: 0` makes the channel **unreliable**: a lost message is never retransmitted, so delivery is fire-and-forget like raw UDP. Any positive integer N makes it **partially reliable** (retransmit up to N times before giving up), and omitting both `maxRetransmits` and `maxPacketLifeTime` leaves the channel **fully reliable** (TCP-like). Verified with a classifier:\n\n```js\nclassify({ maxRetransmits: 0 }); // \"unreliable (fire-and-forget)\"\nclassify({ maxRetransmits: 3 }); // \"partially reliable (<=3 retransmits)\"\nclassify({});                    // \"reliable (TCP-like)\"\n```",
+      "references": "[MDN: RTCPeerConnection.createDataChannel()](https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection/createDataChannel)"
+    }
+  ]
+}

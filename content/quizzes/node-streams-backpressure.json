@@ -1,0 +1,273 @@
+{
+  "schemaVersion": 1,
+  "id": "node-streams-backpressure",
+  "title": "Node.js Streams & Backpressure",
+  "description": "Readable, Writable, and Transform streams, `.pipe()` vs `stream.pipeline()`, what backpressure actually protects, and how object mode changes the rules. Every answer is verified by running the code in Node.",
+  "language": "en",
+  "tags": ["nodejs", "javascript", "async"],
+  "questions": [
+    {
+      "id": "transform-extends-duplex",
+      "title": "A Transform stream is a specialized form of which base stream class?",
+      "description": "Name the stream class with both a readable and a writable side that Transform builds on.",
+      "type": "input",
+      "validation": {
+        "mode": "text",
+        "acceptedAnswers": [
+          "Duplex",
+          "Duplex stream"
+        ]
+      },
+      "explanation": "A `Transform` extends `Duplex`. A `Duplex` has an *independent* readable side and writable side (think of a TCP socket: you read from it and write to it, and the two directions are unrelated). A `Transform` is the special case where the readable output is **computed from** the writable input — you write chunks in, a transformed version comes out.\n\nYou can confirm the hierarchy directly:\n\n```js\nconst { Transform, Duplex } = require(\"node:stream\");\nconsole.log(Object.getPrototypeOf(Transform.prototype) === Duplex.prototype); // true\n```\n\nSo the chain is `Transform → Duplex → (Readable + Writable)`. `zlib.createGzip()` and `crypto.createHash()` are everyday Transforms.",
+      "references": "[Node.js: Class stream.Transform](https://nodejs.org/api/stream.html#class-streamtransform)"
+    },
+    {
+      "id": "write-returns-false",
+      "title": "What does `writable.write(chunk)` returning `false` tell you?",
+      "description": "A `write()` call returns `false`. Pick the correct interpretation.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The internal buffer has reached `highWaterMark`; you should stop writing and wait for the `'drain'` event.",
+          "isCorrect": true
+        },
+        {
+          "text": "The chunk was rejected and discarded — you must call `write()` again with the same chunk.",
+          "isCorrect": false
+        },
+        {
+          "text": "The stream has already been closed and will accept no more data.",
+          "isCorrect": false
+        },
+        {
+          "text": "The next `write()` will throw unless you pause first.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A `false` return is a **flow-control signal, not an error**. The chunk you just passed is still accepted and buffered — `false` only means the buffered amount has reached `highWaterMark`, so a well-behaved producer should pause and resume on `'drain'`.\n\nProof that the chunk is not dropped:\n\n```js\nconst { Writable } = require(\"node:stream\");\nconst w = new Writable({ highWaterMark: 4, write(c, e, cb) { setTimeout(cb, 1000); } });\nconsole.log(w.write(\"zzzz\")); // false  (buffered length 4 >= hwm 4)\nconsole.log(w.writableLength);  // 4      (the chunk is buffered, not lost)\n```\n\nIgnoring `false` is legal — Node keeps buffering — but that is exactly how you defeat backpressure and grow memory without bound.",
+      "references": "[Node.js: writable.write()](https://nodejs.org/api/stream.html#writablewritechunk-encoding-callback)"
+    },
+    {
+      "id": "what-backpressure-protects",
+      "title": "What does backpressure in Node streams actually protect?",
+      "description": "Backpressure is the signal a slow consumer sends a fast producer. What resource is it guarding?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Memory — it stops a fast producer from growing the consumer's buffer without bound.",
+          "isCorrect": true
+        },
+        {
+          "text": "Ordering — it keeps chunks from arriving out of sequence.",
+          "isCorrect": false
+        },
+        {
+          "text": "CPU time — it caps how much work the event loop does per tick.",
+          "isCorrect": false
+        },
+        {
+          "text": "Bandwidth — it compresses data so fewer bytes travel over the network.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Backpressure is flow control whose job is to keep buffered (unconsumed) data from piling up in **process memory**. When a producer outruns a consumer, the unread chunks have to live *somewhere* — the stream's internal buffer, i.e. RAM. Backpressure is the feedback loop (`write()` returning `false`, then `'drain'`) that throttles the producer so the buffer hovers near `highWaterMark` instead of growing until the process runs out of heap.\n\nIt is *not* about ordering (streams already deliver chunks in order), nor CPU scheduling, nor bandwidth/compression. Picture a fast tap filling a slow-draining sink: backpressure turns the tap down so the sink never overflows — and the sink is your memory.",
+      "references": "[Node.js: Backpressuring in Streams](https://nodejs.org/en/learn/modules/backpressuring-in-streams)"
+    },
+    {
+      "id": "pipe-vs-pipeline",
+      "title": "Which statements about `.pipe()` and `stream.pipeline()` are correct?",
+      "description": "Select every true statement. Both connect a readable to a writable, but they differ in lifecycle handling.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "Both `.pipe()` and `pipeline()` apply backpressure automatically.",
+          "isCorrect": true
+        },
+        {
+          "text": "`pipeline()` destroys every stream in the chain and reports the failure to its callback or promise.",
+          "isCorrect": true
+        },
+        {
+          "text": "`.pipe()` returns the destination stream, so calls can chain: `a.pipe(b).pipe(c)`.",
+          "isCorrect": true
+        },
+        {
+          "text": "If the destination errors, `.pipe()` automatically destroys the source stream for you.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The common myth is that `.pipe()` does not handle backpressure — it does. The real gap is **error and resource handling**. With `.pipe()`, if one stream errors, the others are left dangling (not destroyed), leaking file descriptors and memory; you have to wire `'error'` handlers and `destroy()` calls on every stream yourself.\n\n`stream.pipeline()` (Node 10+) exists to fix exactly this: it forwards data with backpressure **and** destroys all streams and surfaces the first error.\n\n```js\nconst { pipeline } = require(\"node:stream\");\npipeline(src, transform, dest, (err) => {\n  if (err) console.error(\"failed, all streams destroyed:\", err.message);\n});\n```\n\nVerified contrast: after the destination errors, `src.destroyed` is `false` with `.pipe()` but `true` with `pipeline()`. Prefer `pipeline` (or `stream/promises`) for anything beyond a toy.",
+      "references": "[Node.js: stream.pipeline()](https://nodejs.org/api/stream.html#streampipelinesource-transforms-destination-callback)"
+    },
+    {
+      "id": "custom-stream-methods",
+      "title": "When writing custom streams, which implementation rules are correct?",
+      "description": "Select every true statement about the underscore-prefixed methods you implement.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "A custom `Readable` implements `_read(size)` and emits data via `this.push(chunk)`.",
+          "isCorrect": true
+        },
+        {
+          "text": "A custom `Writable` implements `_write(chunk, encoding, callback)`.",
+          "isCorrect": true
+        },
+        {
+          "text": "A custom `Transform` implements `_transform(chunk, encoding, callback)` and may add `_flush(callback)`.",
+          "isCorrect": true
+        },
+        {
+          "text": "A custom `Transform` requires you to implement `_read` and `_write` yourself, separately.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Each base class defines protected methods you override; you never call them directly — the stream machinery does:\n\n- `Readable`: `_read(size)` → call `this.push(chunk)` to supply data, `this.push(null)` to end.\n- `Writable`: `_write(chunk, encoding, callback)` → call `callback()` when the chunk is handled (or `callback(err)`).\n- `Transform`: `_transform(chunk, encoding, callback)` → produce output via `this.push()` or `callback(null, output)`; optionally `_flush(callback)` for trailing data.\n\nA `Transform` already **is** a `Duplex`, so it implements `_read`/`_write` internally on your behalf — you only supply `_transform` (and maybe `_flush`). The constructor shorthand uses the same names without the underscore:\n\n```js\nconst { Transform } = require(\"node:stream\");\nconst upper = new Transform({\n  transform(chunk, enc, cb) { cb(null, chunk.toString().toUpperCase()); }\n});\n// write \"ab\", \"cd\" → reads \"ABCD\"\n```",
+      "references": "[Node.js: Implementing a Transform stream](https://nodejs.org/api/stream.html#implementing-a-transform-stream)"
+    },
+    {
+      "id": "object-mode-default-hwm",
+      "title": "In object mode, what is a stream's default `highWaterMark`?",
+      "description": "Give the number of objects buffered by default when `objectMode: true` and no `highWaterMark` is set.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [
+          16
+        ]
+      },
+      "explanation": "In object mode, `highWaterMark` is measured in **number of objects**, and the default is **16**. (In byte mode the default is a byte count — historically 16 KiB, raised to 64 KiB in Node 22+ — which is why memorizing the *byte* number is fragile, but the object-mode default of 16 has been stable.)\n\n```js\nconst { Writable } = require(\"node:stream\");\nconst w = new Writable({ objectMode: true, write(o, e, cb) { cb(); } });\nconsole.log(w.writableHighWaterMark); // 16\n```\n\nSo with the default, a producer can get ~16 objects ahead of a slow consumer before `write()` starts returning `false`.",
+      "references": "[Node.js: Buffering and highWaterMark](https://nodejs.org/api/stream.html#buffering)"
+    },
+    {
+      "id": "object-mode-semantics",
+      "title": "What does enabling `objectMode: true` change about a stream?",
+      "description": "Pick the accurate description of object-mode behavior.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`highWaterMark` counts objects instead of bytes, and each chunk passes through as a single value — never concatenated or split.",
+          "isCorrect": true
+        },
+        {
+          "text": "Every chunk is automatically serialized to JSON before it is written.",
+          "isCorrect": false
+        },
+        {
+          "text": "The stream delivers data synchronously instead of asynchronously.",
+          "isCorrect": false
+        },
+        {
+          "text": "Backpressure is turned off, because objects have no measurable byte length.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "By default a stream moves `Buffer`/`string` data, `highWaterMark` is a byte count, and adjacent chunks may be merged or split. Set `objectMode: true` and the stream instead carries arbitrary JavaScript values (objects, arrays, numbers…), **one discrete value per chunk**, with `highWaterMark` becoming a **count of objects**. No JSON serialization happens — the actual reference flows through.\n\nBackpressure still works; it just counts objects:\n\n```js\nconst { Writable } = require(\"node:stream\");\nconst w = new Writable({ objectMode: true, highWaterMark: 2, write(o, e, cb) { setImmediate(cb); } });\nconsole.log(w.write({ n: 1 })); // true  (1 buffered, < 2)\nconsole.log(w.write({ n: 2 })); // false (2 buffered, hwm reached)\nconsole.log(w.write({ n: 3 })); // false\n```\n\nThis is what lets object-mode streams power record-by-record pipelines (CSV rows, DB results) with the same flow control as byte streams.",
+      "references": "[Node.js: Object mode](https://nodejs.org/api/stream.html#object-mode)"
+    },
+    {
+      "id": "ignoring-backpressure",
+      "title": "You write to a slow `Writable` in a tight loop and ignore every `false` return. What happens?",
+      "description": "No `'drain'` waiting, no pausing — just keep calling `write()`.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The internal buffer keeps growing past `highWaterMark` and memory climbs without bound — `highWaterMark` is advisory, not a hard cap.",
+          "isCorrect": true
+        },
+        {
+          "text": "`write()` throws a `RangeError` once the buffer exceeds `highWaterMark`.",
+          "isCorrect": false
+        },
+        {
+          "text": "Extra chunks are silently dropped to keep memory flat.",
+          "isCorrect": false
+        },
+        {
+          "text": "The event loop blocks until the consumer drains the buffer.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`highWaterMark` is a **threshold for the advisory signal, not an enforced ceiling**. Node will happily keep buffering everything you write; nothing throws, nothing is dropped, and the event loop never blocks (writes are non-blocking). The buffer just grows — straight toward an out-of-memory crash if the producer keeps winning.\n\n```js\nconst { Writable } = require(\"node:stream\");\nconst w = new Writable({ highWaterMark: 4, write(c, e, cb) { setTimeout(cb, 1000); } });\nfor (let i = 0; i < 5; i++) w.write(\"zzzz\"); // all return false, all ignored\nconsole.log(w.writableLength); // 20 — far past hwm of 4, no error\n```\n\nThat is the whole point of honoring backpressure: respect `false`, wait for `'drain'`, and the buffer stays bounded. `.pipe()` and `pipeline()` do this for you.",
+      "references": "[Node.js: writable.writableLength](https://nodejs.org/api/stream.html#writablewritablelength)"
+    },
+    {
+      "id": "drain-event",
+      "title": "After `write()` returns `false`, which event signals it is safe to resume writing?",
+      "description": "You paused your producer on backpressure. What do you wait for?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`'drain'`",
+          "isCorrect": true
+        },
+        {
+          "text": "`'finish'`",
+          "isCorrect": false
+        },
+        {
+          "text": "`'ready'`",
+          "isCorrect": false
+        },
+        {
+          "text": "`'resume'`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`'drain'` fires once the buffered amount has fallen back below `highWaterMark`, meaning the writable can accept more data. The canonical backpressure-aware writer looks like:\n\n```js\nfunction writeOne(stream, data, done) {\n  if (!stream.write(data)) stream.once(\"drain\", done); // paused; resume on drain\n  else process.nextTick(done);                          // still room; continue now\n}\n```\n\nThe distractors are real events that mean other things: `'finish'` fires after `end()` once all data is flushed (end of the *writable*), `'resume'` belongs to *readable* streams switching into flowing mode, and there is no generic `'ready'` event for resuming writes after backpressure.",
+      "references": "[Node.js: Event: 'drain'](https://nodejs.org/api/stream.html#event-drain)"
+    },
+    {
+      "id": "transform-flush",
+      "title": "What is a Transform stream's `_flush(callback)` method for?",
+      "description": "When and why would you implement `_flush` on a custom Transform?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "To emit any final buffered output after the last input chunk but before `'end'` — e.g. a compressor flushing its remaining bytes.",
+          "isCorrect": true
+        },
+        {
+          "text": "To discard the internal buffer immediately and free memory.",
+          "isCorrect": false
+        },
+        {
+          "text": "To force the operating system to flush the underlying file descriptor to disk.",
+          "isCorrect": false
+        },
+        {
+          "text": "To reset the stream so the same instance can be piped again.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Some transforms accumulate state and must emit a tail once the input ends. `_flush(callback)` is called **after the last chunk has been written but before the `'end'` event**, giving you a final chance to `this.push()` leftover output. A gzip Transform, for example, holds compression state and must flush the final bytes so the archive is complete.\n\n```js\nconst { Transform } = require(\"node:stream\");\nconst buf = [];\nconst join = new Transform({\n  transform(chunk, enc, cb) { buf.push(chunk.toString()); cb(); },\n  flush(cb) { cb(null, buf.join(\",\")); } // emit the accumulated tail before 'end'\n});\n// write \"a\", \"b\", \"c\", then end() → reads \"a,b,c\"\n```\n\nIt does not free memory, touch file descriptors, or reset the stream for reuse — Node streams are single-use.",
+      "references": "[Node.js: transform._flush()](https://nodejs.org/api/stream.html#transform_flushcallback)"
+    },
+    {
+      "id": "pipe-http-backpressure",
+      "title": "`fs.createReadStream(bigFile).pipe(res)` streams a huge file to a slow HTTP client. How is memory kept bounded?",
+      "description": "`res` is the writable HTTP response and the client reads slowly. What does `pipe()` do under the hood?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "When `res.write()` returns `false`, `pipe()` pauses the readable and resumes it on `res`'s `'drain'`, so reads track the client's speed.",
+          "isCorrect": true
+        },
+        {
+          "text": "It buffers the entire file in memory first, then sends it all at once.",
+          "isCorrect": false
+        },
+        {
+          "text": "It drops the bytes the client cannot keep up with and continues.",
+          "isCorrect": false
+        },
+        {
+          "text": "It blocks the event loop until the client has consumed each chunk.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`pipe()` wires the two streams' flow control together. It watches the destination's `write()` return value: on `false` it calls `source.pause()` (stopping the file reads), and it listens for the destination's `'drain'` to call `source.resume()`. The result is that the file is read only as fast as the socket can send, so at most about one `highWaterMark` of data sits in memory regardless of file size — a 10 GB file can stream in roughly constant memory.\n\nThe distractors describe the failure modes backpressure prevents: buffering everything (memory blow-up), dropping data (corruption), or blocking the loop (Node never blocks on I/O). `pipeline(fs.createReadStream(bigFile), res, cb)` behaves the same way but also cleans up and reports errors.",
+      "references": "[Node.js: readable.pipe()](https://nodejs.org/api/stream.html#readablepipedestination-options)"
+    }
+  ]
+}

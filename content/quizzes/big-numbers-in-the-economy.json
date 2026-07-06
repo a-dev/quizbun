@@ -1,0 +1,929 @@
+{
+  "schemaVersion": 1,
+  "id": "big-numbers-in-the-economy",
+  "title": "Big Numbers in the Economy: Estimate GDP, Inflation Math, and Compound Interest",
+  "description": "Sixty-three questions that turn the economy's most quoted numbers into math you can actually do in your head. Three pillars: **estimating GDP** (the `C + I + G + (X − M)` identity, real vs. nominal, the GDP deflator, per-capita arithmetic, and the famous 2023 figures), **inflation math** (reading the CPI, the Rule of 70, real interest rates, and what hyperinflation really means), and **compound interest** (the Rule of 72, doubling time, CAGR, APR vs. APY, and continuous compounding with *e*). Most answers are numeric so you practice the calculation, not just recognition. Every explanation is followed by a Wikipedia or primary-source reference (BEA or the Federal Reserve) so you can verify the figure and read further — and a few questions deliberately debunk a popular but false 'fact'.",
+  "language": "en",
+  "tags": ["economics", "mathematics"],
+  "author": "Quizbun",
+  "questions": [
+    {
+      "id": "short-scale-trillion-zeros",
+      "title": "On the short scale used in the US and modern UK, how many zeros does one *trillion* have when written out as `1` followed by zeros?",
+      "description": "Enter a whole number (no commas).",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [12]
+      },
+      "explanation": "On the **short scale**, a billion is a thousand million (`10^9`, nine zeros) and a trillion is a thousand billion (`10^12`, **twelve zeros**). Each step up multiplies by 1,000. This is the scale used by the US, modern UK, and most finance and economics reporting. The older **long scale** (still used in parts of continental Europe) defines a billion as a *million* million (`10^12`), which is why cross-country figures can be ambiguous.",
+      "references": "[Wikipedia: Long and short scales](https://en.wikipedia.org/wiki/Long_and_short_scales) · [Wikipedia: Names of large numbers](https://en.wikipedia.org/wiki/Names_of_large_numbers)"
+    },
+    {
+      "id": "billion-in-millions",
+      "title": "On the short scale, one billion equals how many *millions*?",
+      "description": "Enter a whole number (no commas).",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [1000]
+      },
+      "explanation": "A billion (`10^9`) is a thousand million, so **1,000** millions make a billion — and a thousand billions make a trillion. Holding these conversions in mind is what lets you sanity-check headlines: a `$2 billion` budget is `$2,000` million, and a `$2 trillion` deficit is `2,000` times larger again.",
+      "references": "[Wikipedia: 1,000,000,000](https://en.wikipedia.org/wiki/1,000,000,000) · [Wikipedia: Orders of magnitude (numbers)](https://en.wikipedia.org/wiki/Orders_of_magnitude_%28numbers%29)"
+    },
+    {
+      "id": "billion-seconds-in-years",
+      "title": "Roughly how many *years* is one billion seconds?",
+      "description": "Enter the number of years (a value near 30).",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [31.7, 32],
+        "tolerance": 1
+      },
+      "explanation": "A year is about `31,557,600` seconds (365.25 days). Dividing: `1,000,000,000 / 31,557,600 ≈ 31.7` years. The contrast is the classic intuition pump for how much bigger a billion is than a million: a **million** seconds is only about **11.6 days**, but a **billion** seconds is nearly **32 years**. A trillion seconds is about 31,700 years.",
+      "references": "[Wikipedia: Orders of magnitude (time)](https://en.wikipedia.org/wiki/Orders_of_magnitude_%28time%29)"
+    },
+    {
+      "id": "what-is-gdp",
+      "title": "What does *Gross Domestic Product (GDP)* measure?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The market value of all final goods and services produced within a country in a given period",
+          "isCorrect": true
+        },
+        { "text": "The total money held in a country's bank accounts", "isCorrect": false },
+        {
+          "text": "The total wealth (assets) a country has accumulated over its history",
+          "isCorrect": false
+        },
+        { "text": "The government's annual tax revenue", "isCorrect": false }
+      ],
+      "explanation": "GDP is a **flow** of production over a period (a quarter or a year), not a **stock** of accumulated wealth. It counts the market value of all *final* goods and services produced *within a country's borders*, regardless of who owns the producer. Because it counts only final goods, the value of intermediate inputs is excluded to avoid double-counting.",
+      "references": "[Wikipedia: Gross domestic product](https://en.wikipedia.org/wiki/Gross_domestic_product)"
+    },
+    {
+      "id": "gdp-expenditure-identity",
+      "title": "Which equation is the standard *expenditure* formula for GDP?",
+      "type": "single-choice",
+      "options": [
+        { "text": "`GDP = C + I + G + (X − M)`", "isCorrect": true },
+        { "text": "`GDP = C × I × G × NX`", "isCorrect": false },
+        { "text": "`GDP = revenue − costs`", "isCorrect": false },
+        { "text": "`GDP = M × V`", "isCorrect": false }
+      ],
+      "explanation": "The expenditure approach adds up who buys final output: **C**onsumption + **I**nvestment + **G**overnment spending + net exports, where net exports = e**X**ports − i**M**ports. Imports are subtracted because `C`, `I`, and `G` already include spending on foreign-made goods, which are not domestic production. `M × V` is the money side of the separate quantity theory of money.",
+      "references": "[Wikipedia: Gross domestic product](https://en.wikipedia.org/wiki/Gross_domestic_product) · [Wikipedia: Expenditure approach](https://en.wikipedia.org/wiki/Expenditure_approach)"
+    },
+    {
+      "id": "net-exports-term",
+      "title": "In `GDP = C + I + G + (X − M)`, what does the `(X − M)` term represent?",
+      "type": "single-choice",
+      "options": [
+        { "text": "Net exports — exports minus imports", "isCorrect": true },
+        { "text": "Net taxes — taxes minus subsidies", "isCorrect": false },
+        { "text": "Nominal value minus money supply", "isCorrect": false },
+        { "text": "Maximum output minus actual output", "isCorrect": false }
+      ],
+      "explanation": "`(X − M)` is **net exports**: the value of what a country sells abroad (`X`) minus what it buys from abroad (`M`). When a country imports more than it exports, this term is negative and pulls GDP down. It is subtracted-in because consumption, investment, and government spending all include imported goods that were not produced domestically.",
+      "references": "[Wikipedia: Balance of trade](https://en.wikipedia.org/wiki/Balance_of_trade)"
+    },
+    {
+      "id": "gdp-three-approaches",
+      "title": "GDP can be measured three different ways that should, in principle, give the same total. Which are they?",
+      "type": "multiple-choice",
+      "options": [
+        { "text": "The expenditure approach (sum of spending on final goods)", "isCorrect": true },
+        {
+          "text": "The income approach (sum of wages, profits, rents, and taxes-less-subsidies)",
+          "isCorrect": true
+        },
+        { "text": "The production (output / value-added) approach", "isCorrect": true },
+        {
+          "text": "The stock-market approach (total value of all listed companies)",
+          "isCorrect": false
+        },
+        { "text": "The money-supply approach (total cash and deposits)", "isCorrect": false }
+      ],
+      "explanation": "Because one person's spending is another's income, and both equal the value added in production, GDP can be reached three ways: **expenditure**, **income**, and **production (value-added)**. In practice they differ slightly due to measurement, and the gap is reported as a *statistical discrepancy*. Stock-market capitalization and the money supply are stocks of value, not measures of a period's production.",
+      "references": "[Wikipedia: Gross domestic product](https://en.wikipedia.org/wiki/Gross_domestic_product)"
+    },
+    {
+      "id": "excluded-from-gdp",
+      "title": "Which of the following are generally *excluded* from a country's GDP?",
+      "type": "multiple-choice",
+      "options": [
+        { "text": "The resale of a used car between two individuals", "isCorrect": true },
+        { "text": "Buying shares of stock on a secondary market", "isCorrect": true },
+        {
+          "text": "Unpaid household work, such as caring for your own children",
+          "isCorrect": true
+        },
+        {
+          "text": "The value of intermediate goods consumed in producing final goods",
+          "isCorrect": true
+        },
+        { "text": "A barber cutting a paying customer's hair", "isCorrect": false }
+      ],
+      "explanation": "GDP counts the *current-period production of final goods and services that pass through markets*. So it excludes: **used goods** (counted when first produced), purely **financial transfers** like buying existing shares (no new production), **non-market work** like unpaid housework and childcare, and **intermediate goods** (their value is embedded in the final good). A paid haircut is current, final, market production — it counts. The exclusion of home production is a well-known limitation of GDP.",
+      "references": "[Wikipedia: Gross domestic product](https://en.wikipedia.org/wiki/Gross_domestic_product)"
+    },
+    {
+      "id": "nominal-vs-real-gdp",
+      "title": "What is the difference between *nominal* GDP and *real* GDP?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Nominal GDP is valued at current prices; real GDP is adjusted to remove the effect of price changes (inflation)",
+          "isCorrect": true
+        },
+        { "text": "Nominal GDP includes exports; real GDP excludes them", "isCorrect": false },
+        { "text": "Nominal GDP is estimated; real GDP is exact", "isCorrect": false },
+        { "text": "Nominal GDP is per person; real GDP is the national total", "isCorrect": false }
+      ],
+      "explanation": "**Nominal GDP** measures output at the prices of the year it was produced, so it rises when prices rise *or* when real output rises. **Real GDP** is measured in the prices of a fixed base year, stripping out inflation so that changes reflect genuine changes in the quantity of goods and services. Comparing growth over time requires real GDP; otherwise inflation masquerades as growth.",
+      "references": "[Wikipedia: Real versus nominal value (economics)](https://en.wikipedia.org/wiki/Real_versus_nominal_value_%28economics%29) · [Wikipedia: Real gross domestic product](https://en.wikipedia.org/wiki/Real_gross_domestic_product)"
+    },
+    {
+      "id": "gdp-deflator-formula",
+      "title": "What is the formula for the *GDP deflator*?",
+      "type": "single-choice",
+      "options": [
+        { "text": "`(Nominal GDP / Real GDP) × 100`", "isCorrect": true },
+        { "text": "`(Real GDP / Nominal GDP) × 100`", "isCorrect": false },
+        { "text": "`Nominal GDP − Real GDP`", "isCorrect": false },
+        { "text": "`(Exports − Imports) / GDP`", "isCorrect": false }
+      ],
+      "explanation": "The GDP deflator is a broad price index defined as **`(Nominal GDP / Real GDP) × 100`**. By construction it equals 100 in the base year. Unlike the CPI, which tracks a fixed basket of consumer goods, the deflator covers *everything* counted in GDP — including investment and government output — and its basket changes as the economy's output mix changes.",
+      "references": "[Wikipedia: GDP deflator](https://en.wikipedia.org/wiki/GDP_deflator)"
+    },
+    {
+      "id": "compute-real-gdp-from-deflator",
+      "title": "If nominal GDP is `$120` billion and the GDP deflator is `120` (base-year = 100), what is real GDP, in billions of dollars?",
+      "description": "Enter the number of billions (no commas).",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [100],
+        "tolerance": 0.5
+      },
+      "explanation": "Rearrange the deflator formula: `Real GDP = Nominal GDP / (Deflator / 100)`. A deflator of 120 means prices are 20% above the base year, so `Real GDP = 120 / 1.20 = $100` billion. The `$20` billion gap is pure price inflation, not extra output. This is exactly how statisticians 'deflate' a nominal figure back into constant prices.",
+      "references": "[Wikipedia: GDP deflator](https://en.wikipedia.org/wiki/GDP_deflator)"
+    },
+    {
+      "id": "gdp-per-capita-meaning",
+      "title": "What does *GDP per capita* tell you?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Average economic output per person — total GDP divided by population",
+          "isCorrect": true
+        },
+        { "text": "The median income of workers in the country", "isCorrect": false },
+        { "text": "The total wealth owned by the average citizen", "isCorrect": false },
+        { "text": "The government's spending per person", "isCorrect": false }
+      ],
+      "explanation": "GDP per capita is simply `GDP / population`. It is an **average**, so it can be pulled up by a wealthy minority and says nothing about distribution — which is why median income and inequality measures are reported alongside it. It is also output per *person*, not per *worker*, and not the same as personal wealth or income. Still, it is the standard rough gauge of a country's average living standard.",
+      "references": "[Wikipedia: Gross domestic product](https://en.wikipedia.org/wiki/Gross_domestic_product)"
+    },
+    {
+      "id": "compute-gdp-per-capita",
+      "title": "An economy produces `$24` trillion of GDP for a population of `300` million people. What is GDP per capita, in *thousands* of dollars?",
+      "description": "Enter the answer in thousands of dollars — e.g. enter `50` for $50,000.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [80],
+        "tolerance": 0.5
+      },
+      "explanation": "`$24 trillion / 300 million = $24,000,000,000,000 / 300,000,000 = $80,000` per person, i.e. **80** thousand. The trick with big-number division is to cancel powers of ten: `24 × 10^12 ÷ (300 × 10^6) = 0.08 × 10^6 = 80,000`. Real-world reference: US GDP per capita was roughly `$82,000` in 2023.",
+      "references": "[Wikipedia: List of countries by GDP (nominal) per capita](https://en.wikipedia.org/wiki/List_of_countries_by_GDP_%28nominal%29_per_capita)"
+    },
+    {
+      "id": "us-nominal-gdp-2023",
+      "title": "Approximately what was the *nominal* GDP of the United States in 2023, in trillions of US dollars?",
+      "description": "Estimate to the nearest trillion (a value in the high-20s).",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [27.36, 27],
+        "tolerance": 1.5
+      },
+      "explanation": "US nominal GDP for 2023 was about **`$27.4` trillion** (the Bureau of Economic Analysis reported current-dollar GDP of `$27.36` trillion). It is the world's largest national economy. By 2024 it had grown to roughly `$29` trillion. Because these figures are revised and grow every year, the skill is estimating the *order of magnitude* — tens of trillions — not memorizing a digit.",
+      "references": "[Wikipedia: Economy of the United States](https://en.wikipedia.org/wiki/Economy_of_the_United_States) · [U.S. Bureau of Economic Analysis: Gross Domestic Product, Fourth Quarter and Year 2023 (Third Estimate)](https://www.bea.gov/news/2024/gross-domestic-product-fourth-quarter-and-year-2023-third-estimate-gdp-industry-and)"
+    },
+    {
+      "id": "world-gdp-2023",
+      "title": "Approximately, what was *total world* GDP (nominal) in 2023, in trillions of US dollars?",
+      "description": "Estimate to the nearest ten trillion (a value near 100).",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [105, 100],
+        "tolerance": 12
+      },
+      "explanation": "Gross world product in 2023 was roughly **`$105` trillion** in nominal terms (IMF and World Bank estimates cluster around `$100`–`106` trillion). A useful anchor: the United States alone is about a quarter of it, and the US plus China together are roughly 40%.",
+      "references": "[Wikipedia: Gross world product](https://en.wikipedia.org/wiki/Gross_world_product) · [Wikipedia: List of countries by GDP (nominal)](https://en.wikipedia.org/wiki/List_of_countries_by_GDP_%28nominal%29)"
+    },
+    {
+      "id": "largest-economy",
+      "title": "Which had the world's largest *nominal* GDP in 2023?",
+      "type": "single-choice",
+      "options": [
+        { "text": "The United States", "isCorrect": true },
+        { "text": "China", "isCorrect": false },
+        { "text": "Japan", "isCorrect": false },
+        { "text": "India", "isCorrect": false }
+      ],
+      "explanation": "By nominal GDP, the **United States** was the largest economy in 2023 (about `$27` trillion), with **China** second (about `$18` trillion). Note that rankings flip when measured at **purchasing power parity (PPP)**: on a PPP basis China overtook the US around 2016. So 'biggest economy' depends on whether you mean market exchange rates or PPP.",
+      "references": "[Wikipedia: List of countries by GDP (nominal)](https://en.wikipedia.org/wiki/List_of_countries_by_GDP_%28nominal%29)"
+    },
+    {
+      "id": "germany-third-2023",
+      "title": "In 2023, which country became the world's *third*-largest economy by nominal GDP, overtaking Japan?",
+      "type": "single-choice",
+      "options": [
+        { "text": "Germany", "isCorrect": true },
+        { "text": "India", "isCorrect": false },
+        { "text": "The United Kingdom", "isCorrect": false },
+        { "text": "France", "isCorrect": false }
+      ],
+      "explanation": "**Germany** overtook **Japan** for the third spot in 2023, largely because the Japanese yen depreciated sharply against the dollar — a reminder that nominal rankings move with exchange rates, not just real output. The 2023 nominal top five ran: United States, China, Germany, Japan, India.",
+      "references": "[Wikipedia: List of countries by GDP (nominal)](https://en.wikipedia.org/wiki/List_of_countries_by_GDP_%28nominal%29)"
+    },
+    {
+      "id": "ppp-vs-nominal",
+      "title": "Why can a country's *PPP* GDP differ a lot from its *nominal* (market-exchange-rate) GDP?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "PPP adjusts for differences in the cost of living between countries, so cheaper local prices raise the PPP figure",
+          "isCorrect": true
+        },
+        {
+          "text": "PPP counts only exports, while nominal GDP counts only domestic sales",
+          "isCorrect": false
+        },
+        { "text": "PPP measures wealth, while nominal GDP measures income", "isCorrect": false },
+        { "text": "PPP is always exactly double the nominal figure", "isCorrect": false }
+      ],
+      "explanation": "**Purchasing power parity** restates output using a common set of prices, correcting for the fact that the same haircut or meal costs far less in some countries than others. Where local prices are low, PPP GDP is *higher* than the nominal figure, because each dollar buys more. This is why large lower-price economies rank higher under PPP than at market exchange rates.",
+      "references": "[Wikipedia: Purchasing power parity](https://en.wikipedia.org/wiki/Purchasing_power_parity)"
+    },
+    {
+      "id": "gdp-vs-gnp",
+      "title": "What is the key difference between *GDP* and *GNP* (now usually called GNI)?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "GDP counts production within a country's borders; GNP/GNI counts production by a country's residents, wherever in the world it occurs",
+          "isCorrect": true
+        },
+        { "text": "GDP is nominal and GNP is always real", "isCorrect": false },
+        { "text": "GDP excludes government, GNP includes it", "isCorrect": false },
+        { "text": "They are two names for exactly the same number", "isCorrect": false }
+      ],
+      "explanation": "**GDP** is location-based: all production *inside* the country. **GNP / Gross National Income** is ownership-based: production by the country's residents and firms, including income earned abroad, but excluding income earned domestically by foreigners. For most large economies the two are close, but they diverge for countries with large foreign investment income flows (e.g. Ireland).",
+      "references": "[Wikipedia: Gross national income](https://en.wikipedia.org/wiki/Gross_national_income)"
+    },
+    {
+      "id": "real-gdp-growth-from-nominal",
+      "title": "If nominal GDP grew `5%` over a year while inflation (the GDP deflator) rose `2%`, approximately what was *real* GDP growth, in percent?",
+      "description": "Enter a percentage (no percent sign).",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [3, 2.94],
+        "tolerance": 0.2
+      },
+      "explanation": "To a close approximation, **real growth ≈ nominal growth − inflation = 5% − 2% = 3%**. The exact figure is `(1.05 / 1.02) − 1 = 2.94%`; the subtraction shortcut is excellent for the small rates seen in most years. This is the same logic as the GDP deflator: strip the price change out of the value change to see the real-quantity change.",
+      "references": "[Wikipedia: Real gross domestic product](https://en.wikipedia.org/wiki/Real_gross_domestic_product)"
+    },
+    {
+      "id": "recession-rule-of-thumb",
+      "title": "What is the common journalistic *rule of thumb* for a recession?",
+      "type": "single-choice",
+      "options": [
+        { "text": "Two consecutive quarters of falling real GDP", "isCorrect": true },
+        { "text": "Any single month in which the stock market falls", "isCorrect": false },
+        { "text": "Inflation above 10% for a year", "isCorrect": false },
+        { "text": "A government budget deficit", "isCorrect": false }
+      ],
+      "explanation": "The popular rule of thumb is **two consecutive quarters of declining real GDP**. It is only a rule of thumb: in the US, recessions are officially dated by the **NBER**, which weighs depth, diffusion, and duration across many indicators (employment, income, spending) — not GDP alone. So an economy can meet the two-quarter rule without an official recession, and vice versa.",
+      "references": "[Wikipedia: Recession](https://en.wikipedia.org/wiki/Recession)"
+    },
+    {
+      "id": "debt-to-gdp-meaning",
+      "title": "What does a country's *debt-to-GDP ratio* express?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Government debt as a percentage of one year's GDP, comparing a stock of debt to the flow of annual output",
+          "isCorrect": true
+        },
+        { "text": "The amount each citizen personally owes to the government", "isCorrect": false },
+        { "text": "The interest rate the government pays on its debt", "isCorrect": false },
+        { "text": "The share of GDP collected as taxes", "isCorrect": false }
+      ],
+      "explanation": "Debt-to-GDP puts the **stock** of accumulated government debt over the **flow** of annual GDP. Because debt is compared to a country's income-generating capacity, a `$30` trillion debt is more manageable for a `$27` trillion economy than for a `$1` trillion one. A ratio above 100% simply means debt exceeds one year's output — common among large advanced economies.",
+      "references": "[Wikipedia: Debt-to-GDP ratio](https://en.wikipedia.org/wiki/Debt-to-GDP_ratio)"
+    },
+    {
+      "id": "us-debt-to-gdp-magnitude",
+      "title": "By the early 2020s, US *gross* federal debt was approximately what fraction of GDP?",
+      "type": "single-choice",
+      "options": [
+        { "text": "More than 100% (around 120%)", "isCorrect": true },
+        { "text": "About 25%", "isCorrect": false },
+        { "text": "About 50%", "isCorrect": false },
+        { "text": "Exactly 0% — the US has no national debt", "isCorrect": false }
+      ],
+      "explanation": "US gross federal debt crossed 100% of GDP around 2012–2013 and stood near **120%** of GDP in the early 2020s. (Debt *held by the public*, which excludes intragovernmental holdings, is lower — closer to 95–100%.) Either way, the order of magnitude is 'a bit more than one year's GDP.'",
+      "references": "[Wikipedia: National debt of the United States](https://en.wikipedia.org/wiki/National_debt_of_the_United_States)"
+    },
+    {
+      "id": "what-is-inflation",
+      "title": "What is *inflation*?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "A sustained rise in the general price level, which reduces the purchasing power of money",
+          "isCorrect": true
+        },
+        { "text": "A rise in the price of one specific product", "isCorrect": false },
+        { "text": "An increase in a country's total output", "isCorrect": false },
+        { "text": "An increase in the value of money over time", "isCorrect": false }
+      ],
+      "explanation": "Inflation is a **sustained, general** rise in prices across the economy, not a one-off jump in a single product. Its mirror image is a fall in the **purchasing power** of money: when prices double, a dollar buys half as much. A rise in *one* price is a relative price change; rising *output* is growth, not inflation.",
+      "references": "[Wikipedia: Inflation](https://en.wikipedia.org/wiki/Inflation)"
+    },
+    {
+      "id": "what-is-cpi",
+      "title": "What does the *Consumer Price Index (CPI)* measure?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The average change over time in the prices paid for a representative basket of consumer goods and services",
+          "isCorrect": true
+        },
+        { "text": "The total amount of money consumers spend each year", "isCorrect": false },
+        { "text": "The number of products available in shops", "isCorrect": false },
+        { "text": "The interest rate charged on consumer loans", "isCorrect": false }
+      ],
+      "explanation": "The CPI tracks the price of a fixed **basket** of goods and services typically bought by households, weighted by how much people spend on each. The percentage change in the CPI is the headline **inflation rate**. Because the basket is fixed for a time, the CPI can overstate the cost of living when people substitute toward cheaper goods — a known bias.",
+      "references": "[Wikipedia: Consumer price index](https://en.wikipedia.org/wiki/Consumer_price_index)"
+    },
+    {
+      "id": "inflation-rate-from-cpi",
+      "title": "If a price index rises from `200` to `210` over one year, what is the inflation rate, in percent?",
+      "description": "Enter a percentage (no percent sign).",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [5],
+        "tolerance": 0.05
+      },
+      "explanation": "Inflation rate = `(new index − old index) / old index × 100 = (210 − 200) / 200 × 100 = 5%`. The *level* of an index (200 vs. 210) is meaningless on its own — it depends on the base year — so inflation is always a **percentage change** between two periods.",
+      "references": "[Wikipedia: Inflation](https://en.wikipedia.org/wiki/Inflation) · [Wikipedia: Consumer price index](https://en.wikipedia.org/wiki/Consumer_price_index)"
+    },
+    {
+      "id": "real-value-after-inflation",
+      "title": "After a cumulative `25%` rise in prices, what is the real purchasing power of `$100`, expressed in original dollars?",
+      "description": "Enter a dollar amount (no dollar sign, no commas).",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [80],
+        "tolerance": 0.5
+      },
+      "explanation": "Deflate, don't subtract: `Real value = nominal / (1 + inflation) = 100 / 1.25 = $80`. A common mistake is to subtract 25% and say `$75`; that is wrong because the 25% rise applies to the *new, higher* prices. Equivalently, prices are now `1.25×`, so each dollar buys `1 / 1.25 = 0.8` of what it used to.",
+      "references": "[Wikipedia: Real versus nominal value (economics)](https://en.wikipedia.org/wiki/Real_versus_nominal_value_%28economics%29) · [Wikipedia: Purchasing power](https://en.wikipedia.org/wiki/Purchasing_power)"
+    },
+    {
+      "id": "rule-of-70-prices",
+      "title": "Using the Rule of 70, about how many years does it take for prices to *double* at a steady `7%` annual inflation?",
+      "description": "Enter the number of years.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [10],
+        "tolerance": 0.5
+      },
+      "explanation": "The **Rule of 70** estimates doubling time as `70 / growth rate`, so `70 / 7 = 10` years. It comes from the exact formula `t = ln(2) / ln(1 + r)`, and since `ln(2) ≈ 0.693 ≈ 0.70`, dividing 70 by the percentage rate is a quick mental shortcut. Economists often prefer 70 (over 72) for inflation and growth because it is more accurate at the low single-digit rates typical of those series.",
+      "references": "[Wikipedia: Rule of 72](https://en.wikipedia.org/wiki/Rule_of_72)"
+    },
+    {
+      "id": "cumulative-inflation-doubling",
+      "title": "At a steady `3.5%` annual inflation, prices double in roughly how many years (Rule of 70)?",
+      "description": "Enter the number of years.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [20],
+        "tolerance": 1
+      },
+      "explanation": "`70 / 3.5 = 20` years. This is why even 'low' inflation compounds dramatically: at 3.5% a year, the price level doubles in a generation, and a retiree on a fixed income sees their purchasing power halve. The exact answer is `ln(2) / ln(1.035) = 20.1` years — the rule is essentially spot-on at these rates.",
+      "references": "[Wikipedia: Rule of 72](https://en.wikipedia.org/wiki/Rule_of_72)"
+    },
+    {
+      "id": "fed-inflation-target-value",
+      "title": "What annual inflation rate does the US Federal Reserve target over the longer run?",
+      "description": "Enter a percentage (no percent sign).",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [2],
+        "tolerance": 0.01
+      },
+      "explanation": "The Federal Reserve targets **2%** inflation over the longer run, measured by the annual change in the **PCE price index** (not the CPI). Many other central banks — the ECB, Bank of England, Bank of Canada, Bank of Japan — also aim for about 2%. The target is deliberately above zero to provide a buffer against deflation and to give monetary policy room to cut real rates.",
+      "references": "[Wikipedia: Inflation targeting](https://en.wikipedia.org/wiki/Inflation_targeting) · [Federal Reserve: The Fed Explained — Inflation](https://www.federalreserve.gov/faqs/economy_14400.htm)"
+    },
+    {
+      "id": "fed-inflation-target-year",
+      "title": "In which year did the US Federal Reserve first formally announce its explicit 2% inflation target?",
+      "description": "Enter a four-digit year.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [2012]
+      },
+      "explanation": "The FOMC adopted the explicit numerical target in its first **Statement on Longer-Run Goals and Monetary Policy Strategy**, published on January 25, **2012**, under Chairman Ben Bernanke. It has been reaffirmed (and refined) every year since. Before 2012 the Fed had an implicit comfort zone but no announced number.",
+      "references": "[Wikipedia: Inflation targeting](https://en.wikipedia.org/wiki/Inflation_targeting) · [Federal Reserve: FOMC statement (December 12, 2012)](https://www.federalreserve.gov/newsevents/pressreleases/monetary20121212a.htm)"
+    },
+    {
+      "id": "deflation-meaning",
+      "title": "What is *deflation*?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "A sustained fall in the general price level — a negative inflation rate",
+          "isCorrect": true
+        },
+        {
+          "text": "A slowdown in the rate of inflation that is still positive",
+          "isCorrect": false
+        },
+        { "text": "A fall in GDP for two quarters", "isCorrect": false },
+        { "text": "A reduction in the money supply", "isCorrect": false }
+      ],
+      "explanation": "**Deflation** is a *negative* inflation rate: the general price level actually falls. It can be dangerous because consumers delay purchases expecting lower prices, debts grow heavier in real terms, and central banks struggle to cut nominal rates below zero. Do not confuse it with **disinflation**, which is merely a *slowing* of still-positive inflation.",
+      "references": "[Wikipedia: Deflation](https://en.wikipedia.org/wiki/Deflation)"
+    },
+    {
+      "id": "disinflation-vs-deflation",
+      "title": "Inflation falls from `6%` last year to `3%` this year, but prices are still rising. What is this called?",
+      "type": "single-choice",
+      "options": [
+        { "text": "Disinflation", "isCorrect": true },
+        { "text": "Deflation", "isCorrect": false },
+        { "text": "Stagflation", "isCorrect": false },
+        { "text": "Hyperinflation", "isCorrect": false }
+      ],
+      "explanation": "**Disinflation** is a *decline in the inflation rate* while it remains positive — prices still rise, just more slowly. **Deflation** would require the rate to go *below zero* (prices actually falling). The two are constantly confused in headlines; the test is the sign of the rate, not the direction it is moving.",
+      "references": "[Wikipedia: Disinflation](https://en.wikipedia.org/wiki/Disinflation) · [Wikipedia: Deflation](https://en.wikipedia.org/wiki/Deflation)"
+    },
+    {
+      "id": "stagflation-meaning",
+      "title": "What does *stagflation* describe?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "High inflation occurring together with stagnant growth and high unemployment",
+          "isCorrect": true
+        },
+        { "text": "A period of falling prices and rising output", "isCorrect": false },
+        { "text": "Rapid growth with very low inflation", "isCorrect": false },
+        { "text": "A stock-market crash", "isCorrect": false }
+      ],
+      "explanation": "**Stagflation** combines stagnation (weak growth, high unemployment) with high inflation — a painful pairing that the simple Phillips-curve trade-off said should not happen. The 1970s oil-shock era was the textbook case and forced economists to rethink the inflation–unemployment relationship.",
+      "references": "[Wikipedia: Stagflation](https://en.wikipedia.org/wiki/Stagflation)"
+    },
+    {
+      "id": "hyperinflation-threshold",
+      "title": "By the classic definition (Phillip Cagan, 1956), an episode becomes *hyperinflation* once the inflation rate exceeds what, per month?",
+      "type": "single-choice",
+      "options": [
+        { "text": "50% per month", "isCorrect": true },
+        { "text": "2% per month", "isCorrect": false },
+        { "text": "10% per year", "isCorrect": false },
+        { "text": "100% per year", "isCorrect": false }
+      ],
+      "explanation": "Economist **Phillip Cagan**, in his 1956 study *The Monetary Dynamics of Hyperinflation*, defined hyperinflation as beginning the month inflation exceeds **50% per month** (and ending when it stays below 50% for a year). Fifty percent a month sounds modest but compounds ferociously — see the next question.",
+      "references": "[Wikipedia: Hyperinflation](https://en.wikipedia.org/wiki/Hyperinflation)"
+    },
+    {
+      "id": "hyperinflation-compounded-annual",
+      "title": "Cagan's threshold of `50%` inflation *per month*, compounded for a year, comes to approximately what *annual* rate?",
+      "type": "single-choice",
+      "options": [
+        { "text": "About 12,900%", "isCorrect": true },
+        { "text": "About 600%", "isCorrect": false },
+        { "text": "About 50%", "isCorrect": false },
+        { "text": "About 129%", "isCorrect": false }
+      ],
+      "explanation": "Compounding multiplies, it does not add: `1.50^12 = 129.75`, so the annual rate is `(129.75 − 1) × 100 ≈ 12,875%` — prices end the year roughly **130 times** higher. This is why 'just' 50% a month is catastrophic, and why naively multiplying `50% × 12 = 600%` badly understates it.",
+      "references": "[Wikipedia: Hyperinflation](https://en.wikipedia.org/wiki/Hyperinflation) · [Wikipedia: Compound interest](https://en.wikipedia.org/wiki/Compound_interest)"
+    },
+    {
+      "id": "worst-hyperinflation-ever",
+      "title": "Which country suffered the *worst* hyperinflation ever recorded, with prices doubling about every 15 hours?",
+      "type": "single-choice",
+      "options": [
+        { "text": "Hungary, in 1946", "isCorrect": true },
+        { "text": "Zimbabwe, in 2008", "isCorrect": false },
+        { "text": "Germany (Weimar Republic), in 1923", "isCorrect": false },
+        { "text": "Venezuela, in 2018", "isCorrect": false }
+      ],
+      "explanation": "**Hungary in July 1946** holds the record: prices doubled roughly **every 15 hours**, and the pengő became so worthless that a new currency, the forint, replaced it at an astronomical exchange rate. Zimbabwe (2008) is the second-worst on record, with prices doubling roughly daily; Weimar Germany (1923) and Venezuela (2010s) were severe but milder than these two.",
+      "references": "[Wikipedia: Hungarian pengő](https://en.wikipedia.org/wiki/Hungarian_peng%C5%91) · [Wikipedia: Hyperinflation](https://en.wikipedia.org/wiki/Hyperinflation)"
+    },
+    {
+      "id": "zimbabwe-hyperinflation",
+      "title": "At the November 2008 peak of Zimbabwe's hyperinflation, prices roughly doubled how often?",
+      "type": "single-choice",
+      "options": [
+        { "text": "About once a day", "isCorrect": true },
+        { "text": "About once a year", "isCorrect": false },
+        { "text": "About once a month", "isCorrect": false },
+        { "text": "About once a decade", "isCorrect": false }
+      ],
+      "explanation": "At its November 2008 peak, Zimbabwe's daily inflation rate was around **98%**, meaning prices **roughly doubled every day** (estimates put the doubling time near 24–25 hours). The central bank eventually issued a `$100` trillion banknote, and the country abandoned its own currency. It is the second-most-severe hyperinflation on record, after Hungary 1946.",
+      "references": "[Wikipedia: Hyperinflation in Zimbabwe](https://en.wikipedia.org/wiki/Hyperinflation_in_Zimbabwe)"
+    },
+    {
+      "id": "nominal-vs-real-interest-rate",
+      "title": "What is the difference between a *nominal* and a *real* interest rate?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The real rate is the nominal rate adjusted for inflation — what you earn in actual purchasing power",
+          "isCorrect": true
+        },
+        {
+          "text": "The nominal rate applies to loans, the real rate to savings",
+          "isCorrect": false
+        },
+        { "text": "The real rate is always higher than the nominal rate", "isCorrect": false },
+        { "text": "They are the same unless the bank charges fees", "isCorrect": false }
+      ],
+      "explanation": "The **nominal** rate is the headline number on your account or loan. The **real** rate subtracts inflation to show the change in actual purchasing power. If your savings earn 5% but prices rise 5%, your real return is about **zero** — you can buy no more than before. Real rates can even be negative when inflation outpaces the nominal rate.",
+      "references": "[Wikipedia: Real interest rate](https://en.wikipedia.org/wiki/Real_interest_rate)"
+    },
+    {
+      "id": "fisher-approximation",
+      "title": "A bond pays a `6%` nominal interest rate and inflation is `2%`. Approximately what is the real interest rate, in percent?",
+      "description": "Enter a percentage (no percent sign).",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [4, 3.92],
+        "tolerance": 0.2
+      },
+      "explanation": "The Fisher approximation: **real ≈ nominal − inflation = 6% − 2% = 4%**. The exact Fisher equation is `(1 + real) = (1 + nominal) / (1 + inflation)`, giving `1.06 / 1.02 − 1 = 3.92%`. The simple subtraction is very accurate at low rates and is how investors quickly judge whether a yield beats inflation.",
+      "references": "[Wikipedia: Fisher equation](https://en.wikipedia.org/wiki/Fisher_equation) · [Wikipedia: Real interest rate](https://en.wikipedia.org/wiki/Real_interest_rate)"
+    },
+    {
+      "id": "fisher-equation-exact",
+      "title": "Which is the *exact* Fisher equation relating the nominal rate `i`, real rate `r`, and inflation `π`?",
+      "type": "single-choice",
+      "options": [
+        { "text": "`(1 + i) = (1 + r)(1 + π)`", "isCorrect": true },
+        { "text": "`i = r × π`", "isCorrect": false },
+        { "text": "`i = r / π`", "isCorrect": false },
+        { "text": "`(1 + i) = (1 + r) / (1 + π)`", "isCorrect": false }
+      ],
+      "explanation": "The exact relationship is **`(1 + i) = (1 + r)(1 + π)`**. Expanding gives `i = r + π + rπ`; the cross-term `rπ` is tiny at low rates, which is why the everyday shortcut `i ≈ r + π` (equivalently `r ≈ i − π`) works so well. The equation is named after economist Irving Fisher.",
+      "references": "[Wikipedia: Fisher equation](https://en.wikipedia.org/wiki/Fisher_equation)"
+    },
+    {
+      "id": "quantity-theory-of-money",
+      "title": "What does the *equation of exchange*, `M × V = P × Q`, relate?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Money supply and its velocity to the price level and real output",
+          "isCorrect": true
+        },
+        { "text": "Exports and imports to the exchange rate", "isCorrect": false },
+        { "text": "Government spending to tax revenue", "isCorrect": false },
+        { "text": "Savings to investment", "isCorrect": false }
+      ],
+      "explanation": "In the equation of exchange, **M** is the money supply, **V** its velocity (how often a unit of money is spent), **P** the price level, and **Q** real output. Note `P × Q` is just nominal GDP. The quantity theory of money argues that, with V and Q relatively stable, increases in M feed through mainly to P — i.e. printing money causes inflation, which is the mechanism behind every hyperinflation.",
+      "references": "[Wikipedia: Quantity theory of money](https://en.wikipedia.org/wiki/Quantity_theory_of_money)"
+    },
+    {
+      "id": "velocity-of-money",
+      "title": "In `M × V = P × Q`, what is the *velocity of money* `V`?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The average number of times a unit of currency is spent on final goods in a period",
+          "isCorrect": true
+        },
+        { "text": "The speed at which central banks print new money", "isCorrect": false },
+        { "text": "The interest rate on overnight loans", "isCorrect": false },
+        { "text": "The rate at which money loses value to inflation", "isCorrect": false }
+      ],
+      "explanation": "**Velocity** is how frequently each unit of money turns over: `V = (P × Q) / M = nominal GDP / money supply`. If GDP is `$27` trillion and the money supply is `$18` trillion, velocity is `1.5`. A falling velocity (people holding money rather than spending it) can offset money-supply growth, which is why 'more money' does not mechanically produce proportional inflation in the short run.",
+      "references": "[Wikipedia: Velocity of money](https://en.wikipedia.org/wiki/Velocity_of_money)"
+    },
+    {
+      "id": "compound-interest-formula",
+      "title": "Which is the standard *compound interest* formula for a final amount `A`?",
+      "type": "single-choice",
+      "options": [
+        { "text": "`A = P(1 + r/n)^(nt)`", "isCorrect": true },
+        { "text": "`A = P(1 + r × t)`", "isCorrect": false },
+        { "text": "`A = P × r × t`", "isCorrect": false },
+        { "text": "`A = P + r + t`", "isCorrect": false }
+      ],
+      "explanation": "`A = P(1 + r/n)^(nt)`, where `P` is the principal, `r` the annual rate (as a decimal), `n` the number of compounding periods per year, and `t` the number of years. The exponent `nt` is the engine: interest earns interest. The second option, `A = P(1 + r × t)`, is **simple** interest, which grows only linearly.",
+      "references": "[Wikipedia: Compound interest](https://en.wikipedia.org/wiki/Compound_interest)"
+    },
+    {
+      "id": "simple-vs-compound-interest",
+      "title": "How does *compound* interest differ from *simple* interest?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Compound interest is earned on both the principal and previously accumulated interest; simple interest is earned only on the original principal",
+          "isCorrect": true
+        },
+        {
+          "text": "Compound interest uses a fixed rate; simple interest uses a variable rate",
+          "isCorrect": false
+        },
+        { "text": "Simple interest is always higher over long periods", "isCorrect": false },
+        { "text": "They are identical for periods longer than one year", "isCorrect": false }
+      ],
+      "explanation": "**Simple** interest is computed only on the original principal, so it grows *linearly*. **Compound** interest adds each period's interest to the balance, so future interest is earned on interest too — growth becomes *exponential*. Over long horizons the gap is enormous, which is the whole point of long-term investing.",
+      "references": "[Wikipedia: Compound interest](https://en.wikipedia.org/wiki/Compound_interest)"
+    },
+    {
+      "id": "simple-interest-calc",
+      "title": "How much *total interest* does `$1,000` earn at `10%` *simple* interest over `3` years, in dollars?",
+      "description": "Enter a dollar amount (no dollar sign, no commas).",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [300],
+        "tolerance": 0.5
+      },
+      "explanation": "Simple interest = `P × r × t = 1000 × 0.10 × 3 = $300` ($100 per year for three years). For comparison, **compound** interest at the same rate would give `1000 × 1.10^3 = $1,331`, i.e. `$331` of interest — the extra `$31` is interest-on-interest.",
+      "references": "[Wikipedia: Compound interest](https://en.wikipedia.org/wiki/Compound_interest)"
+    },
+    {
+      "id": "compound-interest-calc",
+      "title": "What does `$1,000` grow to at `5%` interest *compounded annually* over `10` years? Give the amount to the nearest dollar.",
+      "description": "Enter a dollar amount (no dollar sign, no commas).",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [1628.89, 1629],
+        "tolerance": 1
+      },
+      "explanation": "`A = P(1 + r)^t = 1000 × 1.05^10 = 1000 × 1.62889 ≈ $1,628.89`, so about **`$1,629`**. Notice the money grew by nearly 63% even though the rate was 'only' 5% — the Rule of 72 predicts a near-doubling at `72 / 5 ≈ 14.4` years, consistent with reaching `1.63×` at 10 years.",
+      "references": "[Wikipedia: Compound interest](https://en.wikipedia.org/wiki/Compound_interest)"
+    },
+    {
+      "id": "rule-of-72-definition",
+      "title": "What does the *Rule of 72* let you estimate?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The number of years for an investment to double, by dividing 72 by the annual percentage rate",
+          "isCorrect": true
+        },
+        { "text": "The percentage of income you should save", "isCorrect": false },
+        { "text": "The maximum safe debt-to-GDP ratio", "isCorrect": false },
+        { "text": "The number of years until retirement", "isCorrect": false }
+      ],
+      "explanation": "The Rule of 72 estimates **doubling time**: `years to double ≈ 72 / rate`. At 6% money doubles in about 12 years; at 9%, about 8. It is an approximation of the exact `ln(2) / ln(1 + r)`, chosen because 72 divides cleanly by many rates (2, 3, 4, 6, 8, 9, 12).",
+      "references": "[Wikipedia: Rule of 72](https://en.wikipedia.org/wiki/Rule_of_72)"
+    },
+    {
+      "id": "rule-of-72-at-6-percent",
+      "title": "Using the Rule of 72, how many years does it take to double your money at a `6%` annual return?",
+      "description": "Enter the number of years.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [12],
+        "tolerance": 0.5
+      },
+      "explanation": "`72 / 6 = 12` years. The exact figure is `ln(2) / ln(1.06) = 11.9` years, so the rule is within a rounding error here. The Rule of 72 is most accurate for rates near 8%; for very low or very high rates it drifts, and the Rule of 70 or 69.3 does better.",
+      "references": "[Wikipedia: Rule of 72](https://en.wikipedia.org/wiki/Rule_of_72)"
+    },
+    {
+      "id": "rule-of-72-solve-rate",
+      "title": "Using the Rule of 72, what annual return (in percent) is needed to double your money in `9` years?",
+      "description": "Enter a percentage (no percent sign).",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [8],
+        "tolerance": 0.3
+      },
+      "explanation": "The rule works both ways: `rate ≈ 72 / years = 72 / 9 = 8%`. Conveniently, 8% is exactly the rate at which the Rule of 72 is most accurate — the exact doubling time at 8% is `ln(2) / ln(1.08) = 9.006` years.",
+      "references": "[Wikipedia: Rule of 72](https://en.wikipedia.org/wiki/Rule_of_72)"
+    },
+    {
+      "id": "rule-of-72-accuracy",
+      "title": "Around what interest rate is the *Rule of 72* most accurate?",
+      "type": "single-choice",
+      "options": [
+        { "text": "About 8%", "isCorrect": true },
+        { "text": "About 1%", "isCorrect": false },
+        { "text": "About 25%", "isCorrect": false },
+        { "text": "About 50%", "isCorrect": false }
+      ],
+      "explanation": "72 is a compromise that lands closest to the exact doubling time at roughly **8%**. At lower rates (like inflation's 2–3%) the **Rule of 70** is more accurate, and for continuous compounding the **Rule of 69.3** (from `ln(2) ≈ 0.693`) is exact. People use 72 anyway because it has so many whole-number divisors.",
+      "references": "[Wikipedia: Rule of 72](https://en.wikipedia.org/wiki/Rule_of_72)"
+    },
+    {
+      "id": "rule-of-72-variants-true",
+      "title": "Which statements about the Rule of 72 and its cousins are correct?",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "They all approximate the exact doubling-time formula `t = ln(2) / ln(1 + r)`",
+          "isCorrect": true
+        },
+        {
+          "text": "The Rule of 70 tends to be more accurate at low rates like 2%",
+          "isCorrect": true
+        },
+        {
+          "text": "The number 69.3 comes from `ln(2) ≈ 0.693`, ideal for continuous compounding",
+          "isCorrect": true
+        },
+        {
+          "text": "72 is used mainly because it has many whole-number divisors, making mental math easy",
+          "isCorrect": true
+        },
+        {
+          "text": "The rules give the exact doubling time, with no approximation error",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "All three rules (72, 70, 69.3) approximate the same exact formula `t = ln(2) / ln(1 + r)`. The choice trades accuracy for convenience: **69.3** is exact for continuous compounding, **70** shines at low rates, and **72** wins on mental-math friendliness (it divides evenly by 2, 3, 4, 6, 8, 9, 12). They are estimates, not identities, so a small error always remains.",
+      "references": "[Wikipedia: Rule of 72](https://en.wikipedia.org/wiki/Rule_of_72)"
+    },
+    {
+      "id": "doubling-time-exact-formula",
+      "title": "What is the *exact* formula for the time `t` it takes a quantity growing at rate `r` per period to double?",
+      "type": "single-choice",
+      "options": [
+        { "text": "`t = ln(2) / ln(1 + r)`", "isCorrect": true },
+        { "text": "`t = 2 / r`", "isCorrect": false },
+        { "text": "`t = r / ln(2)`", "isCorrect": false },
+        { "text": "`t = 2 × r`", "isCorrect": false }
+      ],
+      "explanation": "Doubling means `(1 + r)^t = 2`. Taking natural logs of both sides: `t × ln(1 + r) = ln(2)`, so `t = ln(2) / ln(1 + r)`. The Rules of 72/70/69.3 are just this formula with `ln(1 + r) ≈ r` and `ln(2) ≈ 0.693` baked in, scaled to whole-percent rates.",
+      "references": "[Wikipedia: Doubling time](https://en.wikipedia.org/wiki/Doubling_time) · [Wikipedia: Rule of 72](https://en.wikipedia.org/wiki/Rule_of_72)"
+    },
+    {
+      "id": "natural-log-of-2",
+      "title": "The Rule of 69.3 comes from the natural logarithm of 2. What is `ln(2)`, to three decimal places?",
+      "description": "Enter a decimal value between 0 and 1.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [0.693],
+        "tolerance": 0.002
+      },
+      "explanation": "`ln(2) ≈ 0.693`. Because the continuous-growth doubling time is `t = ln(2) / r = 0.693 / r`, expressing the rate as a percentage gives the **Rule of 69.3**: `t ≈ 69.3 / rate%`. This is the mathematically exact version for continuous compounding; 70 and 72 are rounder, more convenient cousins.",
+      "references": "[Wikipedia: Natural logarithm of 2](https://en.wikipedia.org/wiki/Natural_logarithm_of_2) · [Wikipedia: Doubling time](https://en.wikipedia.org/wiki/Doubling_time)"
+    },
+    {
+      "id": "continuous-compounding-formula",
+      "title": "Which formula gives the future value under *continuous* compounding?",
+      "type": "single-choice",
+      "options": [
+        { "text": "`A = P·e^(rt)`", "isCorrect": true },
+        { "text": "`A = P(1 + r)^t`", "isCorrect": false },
+        { "text": "`A = P + e × r × t`", "isCorrect": false },
+        { "text": "`A = P · r^(et)`", "isCorrect": false }
+      ],
+      "explanation": "As the number of compounding periods `n` grows without bound, `(1 + r/n)^(nt)` approaches **`e^(rt)`**, where `e ≈ 2.71828`. So continuous compounding gives `A = P·e^(rt)`. It is the theoretical ceiling on how fast a given rate can grow money: more frequent compounding always helps, but the gains shrink toward this limit.",
+      "references": "[Wikipedia: Compound interest](https://en.wikipedia.org/wiki/Compound_interest) · [Wikipedia: E (mathematical constant)](https://en.wikipedia.org/wiki/E_%28mathematical_constant%29)"
+    },
+    {
+      "id": "eulers-number-from-compounding",
+      "title": "`$1` invested at a `100%` annual rate, *compounded continuously* for one year, grows to what value? (This limit defines Euler's number.)",
+      "description": "Enter a value to two or three decimals.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [2.718, 2.72],
+        "tolerance": 0.01
+      },
+      "explanation": "With `P = 1`, `r = 1`, `t = 1`, continuous compounding gives `A = e^1 = e ≈ 2.71828`. This is literally how Euler's number arises: it is the limit of `(1 + 1/n)^n` as compounding becomes infinitely frequent. Compounding 100% once a year gives `$2.00`; monthly gives about `$2.61`; daily about `$2.71`; continuously, `$2.718`.",
+      "references": "[Wikipedia: E (mathematical constant)](https://en.wikipedia.org/wiki/E_%28mathematical_constant%29)"
+    },
+    {
+      "id": "apr-vs-apy",
+      "title": "What is the difference between *APR* (annual percentage rate) and *APY* (annual percentage yield)?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "APY reflects the effect of compounding within the year; APR is the simple annual rate before compounding",
+          "isCorrect": true
+        },
+        { "text": "APR applies to savings, APY only to mortgages", "isCorrect": false },
+        { "text": "APY ignores interest entirely", "isCorrect": false },
+        { "text": "They are always equal", "isCorrect": false }
+      ],
+      "explanation": "**APR** is the nominal yearly rate without accounting for intra-year compounding; **APY** (also called the effective annual rate) folds compounding in, so it is the rate you actually earn or pay. The more often interest compounds, the more APY exceeds APR. Lenders often quote APR (smaller) while savings accounts advertise APY (larger) — same underlying rate, different framing.",
+      "references": "[Wikipedia: Annual percentage yield](https://en.wikipedia.org/wiki/Annual_percentage_yield) · [Wikipedia: Effective interest rate](https://en.wikipedia.org/wiki/Effective_interest_rate)"
+    },
+    {
+      "id": "apr-to-apy-calc",
+      "title": "A `12%` APR is compounded *monthly*. What is the APY (effective annual yield), in percent, to two decimals?",
+      "description": "Enter a percentage (no percent sign).",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [12.68],
+        "tolerance": 0.05
+      },
+      "explanation": "APY = `(1 + APR/n)^n − 1 = (1 + 0.12/12)^12 − 1 = 1.01^12 − 1 = 0.12683`, i.e. **12.68%**. Monthly compounding turns a 12% APR into a 12.68% effective yield — the extra 0.68 point is interest earned on interest during the year. The gap widens with the rate and with more frequent compounding.",
+      "references": "[Wikipedia: Annual percentage yield](https://en.wikipedia.org/wiki/Annual_percentage_yield)"
+    },
+    {
+      "id": "cagr-definition",
+      "title": "What does *CAGR* (compound annual growth rate) measure?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The constant annual rate that would take a value from its start to its end over the period, as if it grew smoothly",
+          "isCorrect": true
+        },
+        { "text": "The simple average of each year's growth rates", "isCorrect": false },
+        { "text": "The total percentage change over the whole period", "isCorrect": false },
+        { "text": "The highest single-year growth rate in the period", "isCorrect": false }
+      ],
+      "explanation": "CAGR is the *geometric* growth rate: `CAGR = (Ending / Beginning)^(1/years) − 1`. It answers 'what steady annual rate would produce this start-to-end change?' and so smooths out volatility. It differs from the **arithmetic average** of yearly returns, which overstates performance whenever returns vary (a +50% then −50% pair averages 0% but actually loses 25%).",
+      "references": "[Wikipedia: Compound annual growth rate](https://en.wikipedia.org/wiki/Compound_annual_growth_rate)"
+    },
+    {
+      "id": "cagr-calc",
+      "title": "An investment grows from `$100` to `$200` over `6` years. What is its CAGR, in percent, to one decimal?",
+      "description": "Enter a percentage (no percent sign).",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [12.2, 12.25],
+        "tolerance": 0.3
+      },
+      "explanation": "`CAGR = (200/100)^(1/6) − 1 = 2^(1/6) − 1 = 1.1225 − 1 = 0.1225`, i.e. about **12.2%** per year. Sanity check with the Rule of 72: doubling in 6 years implies roughly `72 / 6 = 12%` — and indeed the precise CAGR is 12.25%. The two tools agree because both describe the same doubling.",
+      "references": "[Wikipedia: Compound annual growth rate](https://en.wikipedia.org/wiki/Compound_annual_growth_rate)"
+    },
+    {
+      "id": "present-value-meaning",
+      "title": "What is the *present value* of a future sum of money?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "What that future amount is worth today, after discounting at an interest rate",
+          "isCorrect": true
+        },
+        { "text": "The amount after adding future interest", "isCorrect": false },
+        { "text": "The amount after adjusting for taxes", "isCorrect": false },
+        { "text": "The largest the sum will ever become", "isCorrect": false }
+      ],
+      "explanation": "**Present value** runs compounding in reverse: `PV = FV / (1 + r)^t`. Because money can earn a return, a dollar tomorrow is worth less than a dollar today — this is the **time value of money**. Discounting is the foundation of valuing bonds, comparing investment projects, and pricing anything that pays off in the future.",
+      "references": "[Wikipedia: Present value](https://en.wikipedia.org/wiki/Present_value) · [Wikipedia: Time value of money](https://en.wikipedia.org/wiki/Time_value_of_money)"
+    },
+    {
+      "id": "present-value-calc",
+      "title": "At a `10%` discount rate, what is the present value of `$1,331` received `3` years from now, in dollars?",
+      "description": "Enter a dollar amount (no dollar sign, no commas).",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [1000],
+        "tolerance": 1
+      },
+      "explanation": "`PV = FV / (1 + r)^t = 1331 / 1.10^3 = 1331 / 1.331 = $1,000`. This is the mirror image of the earlier compounding question, where `$1,000` grew to `$1,331` at 10% over three years. Discounting and compounding are the same operation read in opposite directions.",
+      "references": "[Wikipedia: Present value](https://en.wikipedia.org/wiki/Present_value)"
+    },
+    {
+      "id": "einstein-eighth-wonder-myth",
+      "title": "A popular quote calls compound interest 'the eighth wonder of the world,' usually attributed to Albert Einstein. Is that attribution real?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "No — there is no reliable evidence Einstein ever said it; the attribution is apocryphal",
+          "isCorrect": true
+        },
+        { "text": "Yes — it appears in his published scientific papers", "isCorrect": false },
+        { "text": "Yes — he said it in his 1921 Nobel Prize lecture", "isCorrect": false },
+        { "text": "Yes — it is carved on his gravestone", "isCorrect": false }
+      ],
+      "explanation": "Despite endless repetition, there is **no credible source** showing Einstein said compound interest is the eighth wonder of the world; quote researchers classify it as apocryphal, with no appearance before decades after his death. The math behind compounding is genuinely powerful — but attaching a famous name to it is a myth. A good habit in economics: verify the *number* and the *quote* before repeating either.",
+      "references": "[Wikiquote: Albert Einstein](https://en.wikiquote.org/wiki/Albert_Einstein)"
+    }
+  ]
+}

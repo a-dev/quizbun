@@ -1,0 +1,107 @@
+---
+import Layout from "@/app/layout.astro";
+import { QuizCard } from "@/entities/quiz";
+import {
+  loadFeaturedQuizIds,
+  loadPublicQuizzes,
+  selectFeaturedQuizzes,
+  selectRecentQuizzes,
+} from "@/shared/lib/content";
+import { withBase } from "@/shared/lib/routing";
+import { ContinueRuns } from "@/features/continue-runs";
+import { LinkAsButton } from "@/shared/ui/button";
+import { SectionTitle } from "@/shared/ui/section-title";
+
+import { Quizbun, QuizbunHowTo, QuizbunLearning, QuizbunPrivate } from "@/_pages/home";
+
+import { ArrowRight } from "@lucide/astro";
+
+import { layout } from "#styles";
+
+const { summaries } = loadPublicQuizzes();
+const quizCount = summaries.length;
+const featuredQuizIds = loadFeaturedQuizIds();
+const featuredQuizzes = selectFeaturedQuizzes(summaries, featuredQuizIds);
+const recentQuizzes = selectRecentQuizzes(summaries, 10);
+---
+
+<Layout
+  title="Quizbun: explanation-first quizzes"
+  description="Quizbun is a static, explanation-first quiz catalog for self-learners, with public quizzes, private local imports, and an AI-first quiz format."
+>
+
+  <Quizbun />
+  <div class="duo">
+    <QuizbunLearning />
+    <QuizbunPrivate />
+  </div>
+  <QuizbunHowTo quizCount={quizCount} />
+  <ContinueRuns client:idle catalogSummaries={summaries} />
+
+  {
+    featuredQuizzes.length > 0 && (
+      <section aria-labelledby="featured-quizzes" class={layout.section}>
+        <SectionTitle title="Featured quizzes" />
+        <div class={layout.quizCardGrid}>
+          {featuredQuizzes.map((summary) => (
+            <QuizCard
+              summary={summary}
+              href={withBase(`quizzes/${encodeURIComponent(summary.id)}/`)}
+              showDescription
+            />
+          ))}
+        </div>
+      </section>
+    )
+  }
+
+  <section aria-labelledby="recently-added" class={layout.section}>
+    <SectionTitle title="Recently added" />
+    {
+      recentQuizzes.length === 0 ? (
+        <p>No public quizzes yet — the first seed quizzes are on their way.</p>
+      ) : (
+        <div class={layout.quizCardGrid}>
+          {recentQuizzes.map((summary) => (
+            <QuizCard
+              summary={summary}
+              href={withBase(`quizzes/${encodeURIComponent(summary.id)}/`)}
+              showDescription
+              showCreatedAt
+            />
+          ))}
+        </div>
+      )
+    }
+    <div class="button">
+      <LinkAsButton href={withBase("quizzes/")} variant="primary" size="m"
+        >Browse all quizzes
+        <ArrowRight size="16" aria-hidden="true" />
+        </LinkAsButton
+      >
+    </div>
+  </section>
+</Layout>
+
+<style>
+  .duo {
+    display: grid;
+    gap: clamp(1rem, 4vw, 3rem);
+    align-items: start;
+
+    max-inline-size: var(--max-content-width);
+    margin-block: clamp(3rem, 10vw, 8rem) 2rem;
+    margin-inline: auto;
+  }
+
+  @media (width >= 48rem) {
+    .duo {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  .button{
+    width: fit-content;
+    margin-inline-start: auto;
+  }
+</style>

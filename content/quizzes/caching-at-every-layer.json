@@ -1,0 +1,407 @@
+{
+  "schemaVersion": 1,
+  "id": "caching-at-every-layer",
+  "title": "Caching at Every Layer",
+  "description": "Follow one request from the browser outward through every cache it can hit — the HTTP cache (`Cache-Control`, `ETag`, `Last-Modified`, revalidation), the CDN edge, the client query cache (React Query / SWR), and server-side memoization — then face the hard part: invalidation. Covers strong vs. weak validators, `stale-while-revalidate`, cache stampedes and request coalescing, negative caching, and cache keys. Every explanation proves its answer against the relevant RFC.",
+  "language": "en",
+  "tags": ["system-design", "http", "performance"],
+  "questions": [
+    {
+      "id": "two-hard-things",
+      "title": "Who coined the \"two hard things in Computer Science\" quip?",
+      "description": "Complete the attribution: *\"There are only two hard things in Computer Science: cache invalidation and naming things.\"*",
+      "type": "single-choice",
+      "options": [
+        { "text": "Phil Karlton", "isCorrect": true },
+        { "text": "Donald Knuth", "isCorrect": false },
+        { "text": "Leslie Lamport", "isCorrect": false },
+        { "text": "Martin Fowler", "isCorrect": false }
+      ],
+      "explanation": "The line is attributed to **Phil Karlton**, a Netscape engineer. It survives because both halves are real: a name is a cache of intent that goes stale when meaning drifts, and invalidation is *deciding when a stored copy no longer reflects the truth* — the theme of this entire quiz. Knuth gave us \"premature optimization is the root of all evil\"; Lamport's fame is distributed systems (\"a distributed system is one where a computer you didn't know existed can render your own unusable\"); Fowler popularized the quote but did not originate it.",
+      "references": "[martinfowler.com: TwoHardThings](https://www.martinfowler.com/bliki/TwoHardThings.html)"
+    },
+    {
+      "id": "no-cache-meaning",
+      "title": "What does `Cache-Control: no-cache` actually permit?",
+      "description": "A response carries `Cache-Control: no-cache`.",
+      "type": "single-choice",
+      "options": [
+        { "text": "The cache may store the response, but must revalidate with the origin before reusing it", "isCorrect": true },
+        { "text": "The cache must not store the response anywhere", "isCorrect": false },
+        { "text": "The response may be reused freely for the rest of the session", "isCorrect": false },
+        { "text": "Only the browser cache is forbidden; shared caches may reuse it", "isCorrect": false }
+      ],
+      "explanation": "The name is a famous trap. `no-cache` does **not** mean \"don't store\" — it means *store, but don't reuse without successful revalidation*. The cache keeps the copy and, on the next request, sends a conditional request (`If-None-Match` / `If-Modified-Since`); if the origin answers `304 Not Modified`, the stored body is served without re-downloading. That's why `no-cache` paired with an `ETag` is efficient: you skip the body, not the round trip. The directive that forbids storage entirely is `no-store` — a different question.",
+      "references": "[RFC 9111 §5.2.2.4: no-cache](https://www.rfc-editor.org/rfc/rfc9111#name-no-cache)"
+    },
+    {
+      "id": "no-store-meaning",
+      "title": "When does `no-store` belong on a response?",
+      "type": "single-choice",
+      "options": [
+        { "text": "A bank statement page that must never be written to disk or memory by any cache", "isCorrect": true },
+        { "text": "A logo that changes once a year and should be cached for a long time", "isCorrect": false },
+        { "text": "An API response that should be reused but checked for freshness each time", "isCorrect": false },
+        { "text": "A fingerprinted JS bundle that will never change under its URL", "isCorrect": false }
+      ],
+      "explanation": "`no-store` is the strongest directive: *no part of the request or response may be stored in any cache* — not the browser disk cache, not an intermediary. It's for genuinely sensitive, non-reusable content (statements, one-time tokens). The other options each want the opposite of \"don't store\": the logo wants a long `max-age`; the API wants `no-cache` (store + always revalidate); the fingerprinted bundle wants `max-age=31536000, immutable`. Reaching for `no-store` on cacheable content is a common, silent performance leak.",
+      "references": "[RFC 9111 §5.2.2.5: no-store](https://www.rfc-editor.org/rfc/rfc9111#name-no-store)"
+    },
+    {
+      "id": "private-vs-public",
+      "title": "What does `Cache-Control: private` tell caches?",
+      "type": "single-choice",
+      "options": [
+        { "text": "Only a single-user (browser) cache may store it; shared caches must not", "isCorrect": true },
+        { "text": "The response is encrypted and must be served over HTTPS", "isCorrect": false },
+        { "text": "No cache of any kind may store the response", "isCorrect": false },
+        { "text": "It may only be stored by shared caches, not the browser", "isCorrect": false }
+      ],
+      "explanation": "`private` is about *who* may store, not about encryption. It marks the response as intended for one user, so a **shared** cache (CDN, proxy) must not keep it, while the user's own browser cache may. `public` is the inverse hint: it lets a shared cache store a response that would otherwise be held back (for example, one tied to an `Authorization` request). Confusing `private` with \"secret/encrypted\" is the misconception baked into the distractors — `private` provides no confidentiality, only a storage-audience rule.",
+      "references": "[RFC 9111 §5.2.2.7: private](https://www.rfc-editor.org/rfc/rfc9111#name-private)"
+    },
+    {
+      "id": "cdn-leak-missing-private",
+      "title": "Why is the CDN serving one user's data to everyone, and what's the fix?",
+      "description": "An app puts each logged-in user's dashboard behind a CDN. Users start seeing *other people's* names. The origin sends:\n\n```http\nCache-Control: max-age=60\n```",
+      "type": "single-choice",
+      "options": [
+        { "text": "The response is cacheable by the shared CDN with no `private`; per-user responses need `Cache-Control: private, no-store` (or `private`)", "isCorrect": true },
+        { "text": "`max-age` is too high; lowering it to `10` fixes the leak", "isCorrect": false },
+        { "text": "The CDN needs `Vary: Accept-Encoding` added", "isCorrect": false },
+        { "text": "The browser cache is leaking; add `no-cache`", "isCorrect": false }
+      ],
+      "explanation": "A bare `max-age=60` with no `private` is a *shared-cacheable* response. The CDN stores the first user's dashboard under the URL key and replays it to the next visitor for 60 seconds — a classic cross-user data leak. The fix is to scope storage: `private` forbids the shared cache from keeping it, and `no-store` is safer still for sensitive pages. Lowering `max-age` only shrinks the leak window; `Vary: Accept-Encoding` controls compression variants, not user identity; blaming the browser cache misreads the layer — the browser cache is per-user and was never the problem.",
+      "references": "[RFC 9111 §5.2.2.7: private](https://www.rfc-editor.org/rfc/rfc9111#name-private)"
+    },
+    {
+      "id": "s-maxage-overrides",
+      "title": "How long does each cache treat this response as fresh?",
+      "description": "A response is sent with `Cache-Control: max-age=60, s-maxage=600`.",
+      "type": "single-choice",
+      "options": [
+        { "text": "Browser cache: 60s; shared cache (CDN/proxy): 600s", "isCorrect": true },
+        { "text": "Both caches: 60s — `s-maxage` is only a hint", "isCorrect": false },
+        { "text": "Both caches: 600s — the larger value always wins", "isCorrect": false },
+        { "text": "Browser cache: 600s; shared cache: 60s", "isCorrect": false }
+      ],
+      "explanation": "`s-maxage` overrides `max-age` **for shared caches only** and is ignored by a private (browser) cache. So the browser honours `max-age=60` while the CDN honours `s-maxage=600`. This split is the bread-and-butter of edge caching: keep the browser copy short so users see updates quickly, but let the edge hold a longer copy to shield the origin. (`s-maxage` also implies `proxy-revalidate`.) The \"larger value wins\" and \"only a hint\" distractors miss that the two numbers target different cache tiers on purpose.",
+      "references": "[RFC 9111 §5.2.2.10: s-maxage](https://www.rfc-editor.org/rfc/rfc9111#name-s-maxage)"
+    },
+    {
+      "id": "not-modified-status",
+      "title": "Which numeric HTTP status lets the cache reuse its copy *without* re-sending the body?",
+      "description": "A cache sends `If-None-Match` with the stored `ETag`. The representation is unchanged.",
+      "type": "input",
+      "validation": { "mode": "numeric", "acceptedAnswers": [304] },
+      "explanation": "`304 Not Modified` is the whole point of validators. The origin confirms \"your copy is still good\" in a tiny headers-only response, and the cache serves the body it already has. This is why `no-cache` and `max-age=0, must-revalidate` are cheap when paired with an `ETag` or `Last-Modified`: you pay one round trip but save the payload. Contrast `200 OK` (full body re-sent) and `412 Precondition Failed` (used for write preconditions like `If-Match`, not GET revalidation).",
+      "references": "[RFC 9110 §15.4.5: 304 Not Modified](https://www.rfc-editor.org/rfc/rfc9110#name-304-not-modified)"
+    },
+    {
+      "id": "status-304-no-body",
+      "title": "Which constraint does a correct `304 Not Modified` response obey?",
+      "type": "single-choice",
+      "options": [
+        { "text": "It must not include a message body; the cache reuses the stored representation", "isCorrect": true },
+        { "text": "It must repeat the full body so the cache can verify the bytes", "isCorrect": false },
+        { "text": "It must drop the `ETag` header to signal the match", "isCorrect": false },
+        { "text": "It must include `Content-Length: 0` and an empty body block", "isCorrect": false }
+      ],
+      "explanation": "A `304` is deliberately bodyless — re-sending the payload would defeat revalidation. The origin returns status + updated headers (it *should* keep `ETag`, and may refresh `Cache-Control`, `Date`, etc.), and the cache serves the body it already stored. Requiring a body, or stripping the `ETag`, would break the mechanism. Note this differs from `204 No Content`, which also has no body but means \"request succeeded, nothing to return\" rather than \"your cached copy is still valid.\"",
+      "references": "[RFC 9110 §15.4.5: 304 Not Modified](https://www.rfc-editor.org/rfc/rfc9110#name-304-not-modified)"
+    },
+    {
+      "id": "conditional-header-pairing",
+      "title": "When a cache revalidates a stored GET response, which header pairing does it use?",
+      "type": "single-choice",
+      "options": [
+        { "text": "`If-None-Match` carries the `ETag`; `If-Modified-Since` carries the `Last-Modified` date", "isCorrect": true },
+        { "text": "`If-Match` carries the `ETag`; `If-Unmodified-Since` carries the `Last-Modified` date", "isCorrect": false },
+        { "text": "`If-None-Match` carries the `Last-Modified` date; `If-Modified-Since` carries the `ETag`", "isCorrect": false },
+        { "text": "The client sends `ETag`; the server replies with `If-Modified-Since`", "isCorrect": false }
+      ],
+      "explanation": "Revalidation echoes back the validators the cache stored: the `ETag` returns in `If-None-Match`, and the `Last-Modified` date returns in `If-Modified-Since`. A match yields `304`. The `If-Match` / `If-Unmodified-Since` pair looks similar but serves the opposite purpose — *write* preconditions for optimistic concurrency (\"only PUT if it hasn't changed\"), where a mismatch yields `412`. And validators flow server→client first (`ETag`, `Last-Modified` are response headers); the client only sends the conditional `If-*` variants.",
+      "references": "[MDN: HTTP conditional requests](https://developer.mozilla.org/en-US/docs/Web/HTTP/Conditional_requests)"
+    },
+    {
+      "id": "weak-etag-meaning",
+      "title": "What does the `W/` prefix on an ETag signify?",
+      "description": "An origin sends:\n\n```http\nETag: W/\"7e3a91\"\n```",
+      "type": "single-choice",
+      "options": [
+        { "text": "A weak validator: the representations are semantically equivalent but may differ byte-for-byte", "isCorrect": true },
+        { "text": "The ETag is a wildcard that matches any request", "isCorrect": false },
+        { "text": "The response was served over a WebSocket", "isCorrect": false },
+        { "text": "The ETag is weakly encrypted and should be treated as untrusted", "isCorrect": false }
+      ],
+      "explanation": "`W/` marks a **weak** ETag: two representations sharing it are *semantically equivalent* but not guaranteed identical at the byte level. That's useful when trivial differences shouldn't bust the cache — e.g. the same page gzipped vs. not, or with a regenerated timestamp comment. A **strong** ETag (no prefix) promises byte-for-byte equality. The prefix is neither a wildcard (`*` is the wildcard in `If-None-Match: *`) nor anything about transport or encryption.",
+      "references": "[RFC 9110 §8.8.1: Weak versus Strong](https://www.rfc-editor.org/rfc/rfc9110#name-weak-versus-strong)"
+    },
+    {
+      "id": "strong-validator-range",
+      "title": "Why must a range request's validator be a **strong** ETag, not a weak one?",
+      "description": "A client resumes a partial download with `Range` + `If-Range`.",
+      "type": "single-choice",
+      "options": [
+        { "text": "Combining new bytes with already-held bytes requires byte-for-byte identity, which only a strong validator guarantees", "isCorrect": true },
+        { "text": "Weak ETags expire faster than strong ones", "isCorrect": false },
+        { "text": "Range requests are not allowed to use `ETag` at all, only `Last-Modified`", "isCorrect": false },
+        { "text": "Weak ETags are too short to encode a byte offset", "isCorrect": false }
+      ],
+      "explanation": "Range requests stitch a freshly fetched byte range onto bytes the client already holds. If the representation differs by even one byte, the result is corrupt — so the comparison must use a **strong** validator that promises exact equality. A weak ETag only promises *semantic* equivalence, which isn't enough to splice bytes safely; per the spec, weak validators must not be used where byte-range reassembly is involved. ETag length is irrelevant, and `ETag` is perfectly valid in `If-Range` — it just has to be strong.",
+      "references": "[RFC 9110 §8.8.1: Weak versus Strong](https://www.rfc-editor.org/rfc/rfc9110#name-weak-versus-strong)"
+    },
+    {
+      "id": "last-modified-granularity",
+      "title": "Why can `Last-Modified` (without an `ETag`) serve a stale body even though revalidation \"succeeded\"?",
+      "type": "single-choice",
+      "options": [
+        { "text": "HTTP dates have one-second resolution, so two edits within the same second are indistinguishable", "isCorrect": true },
+        { "text": "`Last-Modified` is always in the client's local time zone", "isCorrect": false },
+        { "text": "Browsers ignore `Last-Modified` unless `ETag` is also present", "isCorrect": false },
+        { "text": "`Last-Modified` only works for images, not HTML or JSON", "isCorrect": false }
+      ],
+      "explanation": "HTTP-date is formatted to whole seconds, so its resolution is exactly **1 second**. If a file is modified twice within the same second, the timestamp doesn't change, and `If-Modified-Since` returns `304` for content that actually changed — a stale serve. `ETag` sidesteps this because it can be derived from a content hash or version counter that changes on every edit. (HTTP dates are always GMT/UTC, not local; `Last-Modified` is content-type agnostic.) This sub-second blind spot is exactly why strong ETags are preferred for fast-changing resources.",
+      "references": "[MDN: Last-Modified](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Last-Modified)"
+    },
+    {
+      "id": "swr-directive-name",
+      "title": "Which directive lets a cache return a stale response *immediately* while it revalidates in the background?",
+      "description": "It's a `Cache-Control` extension directive defined in RFC 5861. Write the token exactly as it appears in the header.",
+      "type": "input",
+      "validation": { "mode": "text", "acceptedAnswers": ["stale-while-revalidate"] },
+      "explanation": "`stale-while-revalidate=<seconds>` decouples freshness from latency: for up to N seconds *after* a response goes stale, the cache may serve the old copy instantly and kick off an async revalidation so the *next* request gets fresh data. Nobody waits on the origin. This HTTP directive is the namesake of the client-side \"SWR\" pattern (and the SWR React library). Its sibling, `stale-if-error`, covers a different failure mode — serving stale when the origin is *down* rather than merely stale.",
+      "references": "[RFC 5861 §3: stale-while-revalidate](https://www.rfc-editor.org/rfc/rfc5861#section-3)"
+    },
+    {
+      "id": "swr-directive-semantics",
+      "title": "What does the user experience **700 seconds** after the response was stored?",
+      "description": "A response carries `Cache-Control: max-age=600, stale-while-revalidate=86400`.",
+      "type": "single-choice",
+      "options": [
+        { "text": "The stale copy is returned immediately, and the cache revalidates in the background for next time", "isCorrect": true },
+        { "text": "The request blocks until the origin returns a fresh copy", "isCorrect": false },
+        { "text": "The cache returns a `504` because the entry is past `max-age`", "isCorrect": false },
+        { "text": "The stale copy is discarded and a `200` with no body is returned", "isCorrect": false }
+      ],
+      "explanation": "At 700s the entry is stale (past `max-age=600`) but well inside the `stale-while-revalidate=86400` window. So the cache serves the stale body **with zero added latency** and asynchronously fetches a fresh copy to satisfy later requests. The user trades a little staleness for a fast response — ideal for dashboards and feeds where \"instant but slightly old\" beats \"fresh but slow.\" Blocking on the origin is exactly the behaviour SWR is designed to avoid; a `504` would only appear under `stale-if-error` semantics when revalidation fails and no stale serve is permitted.",
+      "references": "[web.dev: Keeping things fresh with stale-while-revalidate](https://web.dev/articles/stale-while-revalidate)"
+    },
+    {
+      "id": "stale-if-error",
+      "title": "Which directive lets a cache keep serving a stale copy when revalidation *fails* (origin error or unreachable)?",
+      "type": "single-choice",
+      "options": [
+        { "text": "`stale-if-error`", "isCorrect": true },
+        { "text": "`must-revalidate`", "isCorrect": false },
+        { "text": "`no-cache`", "isCorrect": false },
+        { "text": "`immutable`", "isCorrect": false }
+      ],
+      "explanation": "`stale-if-error=<seconds>` is a resilience directive: within its window, if revalidation hits a `5xx` or a connection failure, the cache may serve the last good (stale) response instead of surfacing the error — a graceful degradation that keeps the site up during an origin blip. It is almost the opposite of `must-revalidate`, which *forbids* serving stale once expired (and forces a `504` if it can't reach the origin). `no-cache` mandates revalidation before reuse; `immutable` suppresses revalidation while fresh.",
+      "references": "[RFC 5861 §4: stale-if-error](https://www.rfc-editor.org/rfc/rfc5861#section-4)"
+    },
+    {
+      "id": "must-revalidate",
+      "title": "What is the practical effect of adding `must-revalidate` to `max-age=60`?",
+      "type": "single-choice",
+      "options": [
+        { "text": "Once the entry is stale, the cache may not serve it without successful revalidation — even if the origin is unreachable", "isCorrect": true },
+        { "text": "It forces revalidation on every request, even while the entry is still fresh", "isCorrect": false },
+        { "text": "It doubles the freshness lifetime to 120 seconds", "isCorrect": false },
+        { "text": "It allows shared caches to ignore `max-age`", "isCorrect": false }
+      ],
+      "explanation": "By default a cache is *allowed* (in some conditions) to serve stale content — e.g. when disconnected. `must-revalidate` removes that latitude: after `max-age` elapses, the stored copy may only be used if revalidation succeeds; if the origin can't be reached, the cache must respond `504 Gateway Timeout` rather than serve stale. It does **not** force revalidation while still fresh (that's what `no-cache` / `max-age=0` do) and it changes no lifetimes. Use it when serving stale would be genuinely harmful (e.g. pricing).",
+      "references": "[RFC 9111 §5.2.2.2: must-revalidate](https://www.rfc-editor.org/rfc/rfc9111#name-must-revalidate)"
+    },
+    {
+      "id": "immutable-directive",
+      "title": "What does `immutable` add over the year-long `max-age` alone?",
+      "description": "A fingerprinted asset is served with `Cache-Control: max-age=31536000, immutable`.",
+      "type": "single-choice",
+      "options": [
+        { "text": "It suppresses the conditional revalidation the browser would otherwise send on an explicit reload while the entry is fresh", "isCorrect": true },
+        { "text": "It makes the asset un-deletable from the cache until `max-age` expires", "isCorrect": false },
+        { "text": "It encrypts the asset so intermediaries can't read it", "isCorrect": false },
+        { "text": "It forces the browser to download a fresh copy on every reload", "isCorrect": false }
+      ],
+      "explanation": "When a user hits *Reload*, browsers normally fire a conditional request to check freshness — wasting a round trip for an asset that, by construction, can never change under its hashed URL (`app.7e3a91.js`). `immutable` tells the browser \"don't bother revalidating while this is fresh,\" eliminating those reload-time `304`s. It doesn't pin the entry against eviction, encrypt anything, or force re-downloads — it removes work, it doesn't add it. This is the pattern that turns content-hashed bundles into truly free repeat loads.",
+      "references": "[RFC 8246: HTTP Immutable Responses](https://www.rfc-editor.org/rfc/rfc8246)"
+    },
+    {
+      "id": "heuristic-freshness-calc",
+      "title": "For how many hours will a cache treat this response as fresh?",
+      "description": "A response has **no** `Cache-Control` and **no** `Expires`, only a `Last-Modified`. The origin generated it (its `Date`) exactly **200 hours** after the resource was last modified. Use the common 10%-of-age heuristic that RFC 9111 suggests; enter a number.",
+      "type": "input",
+      "validation": { "mode": "numeric", "acceptedAnswers": [20] },
+      "explanation": "With no explicit freshness, a cache *may* compute a heuristic lifetime, and RFC 9111 suggests no more than a fraction of the interval since `Last-Modified`, with **10%** as the typical setting (the long-standing Apache `httpd` default). Here that interval is `Date − Last-Modified = 200 h`, so `0.10 × 200 = 20 hours`. The lesson: omitting caching headers does **not** mean \"don't cache\" — it hands the decision to opaque heuristics that can keep content far longer than you expect. Always set freshness explicitly.",
+      "references": "[RFC 9111 §4.2.2: Calculating Heuristic Freshness](https://www.rfc-editor.org/rfc/rfc9111#name-calculating-heuristic-fresh)"
+    },
+    {
+      "id": "vary-header-purpose",
+      "title": "What does `Vary: Accept-Encoding` instruct caches to do?",
+      "type": "single-choice",
+      "options": [
+        { "text": "Key stored variants by the request's `Accept-Encoding`, so a gzip client and an identity client get the right body", "isCorrect": true },
+        { "text": "Refresh the response whenever the `Accept-Encoding` header changes server-side", "isCorrect": false },
+        { "text": "Compress the response with whatever encoding the client prefers", "isCorrect": false },
+        { "text": "Forbid caching unless the client sends `Accept-Encoding`", "isCorrect": false }
+      ],
+      "explanation": "`Vary` extends the cache key beyond the URL. `Vary: Accept-Encoding` means the same URL can map to multiple stored representations — one gzipped, one identity — and the cache must pick the variant matching the request's `Accept-Encoding`. Without it, a cache could hand a gzip body to a client that asked for none (or vice versa). `Vary` is a *keying* instruction, not a compression or refresh trigger — the origin still does the actual encoding; `Vary` just keeps the variants from colliding in the cache.",
+      "references": "[MDN: Vary](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Vary)"
+    },
+    {
+      "id": "vary-user-agent-pitfall",
+      "title": "What's the likely consequence of adding `Vary: User-Agent` to shared, cacheable HTML?",
+      "type": "single-choice",
+      "options": [
+        { "text": "The hit rate collapses, because the near-infinite space of UA strings fragments the cache into countless variants", "isCorrect": true },
+        { "text": "Caching speeds up, since each browser gets a dedicated fast path", "isCorrect": false },
+        { "text": "Nothing changes; `User-Agent` is not a valid `Vary` value", "isCorrect": false },
+        { "text": "The origin stops receiving any traffic at all", "isCorrect": false }
+      ],
+      "explanation": "Every distinct `User-Agent` string becomes a separate cache key. Because UA strings vary by browser, version, OS, and device in essentially unbounded combinations, the shared cache shatters into a huge number of one-hit variants — most requests miss and fall through to the origin, the opposite of what caching is for. The guidance is to `Vary` only on low-cardinality headers you truly branch on (e.g. `Accept-Encoding`). If you must adapt to device class, normalize first (e.g. an edge-computed `Vary: X-Device-Type` with a handful of values) rather than the raw `User-Agent`.",
+      "references": "[MDN: Vary — Dynamic serving](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Vary#dynamic_serving)"
+    },
+    {
+      "id": "age-header",
+      "title": "What does `Age: 550` tell you?",
+      "description": "A response comes back from a CDN with `Cache-Control: max-age=600` and `Age: 550`.",
+      "type": "single-choice",
+      "options": [
+        { "text": "The copy has been in caches for ~550 seconds, so it will be fresh for only ~50 more", "isCorrect": true },
+        { "text": "The response will be deleted from the cache in 550 seconds", "isCorrect": false },
+        { "text": "The origin server has been running for 550 seconds", "isCorrect": false },
+        { "text": "The client must wait 550 seconds before using the response", "isCorrect": false }
+      ],
+      "explanation": "`Age` is a shared cache's estimate of how many seconds have elapsed since the origin generated (or last validated) the response. With `max-age=600` and `Age=550`, the remaining freshness is `600 − 550 = 50` seconds; after that the entry is stale and must be revalidated (or served per `stale-while-revalidate`, if present). A high `Age` relative to `max-age` is a useful signal that you're being served a well-aged edge copy — handy when debugging \"why am I still seeing old content?\"",
+      "references": "[RFC 9111 §5.1: Age](https://www.rfc-editor.org/rfc/rfc9111#name-age)"
+    },
+    {
+      "id": "shared-cache-refuse-store",
+      "title": "Which responses should a shared CDN cache refuse to store by default?",
+      "description": "Several responses arrive at a shared CDN cache. Select **every** one that applies.",
+      "type": "multiple-choice",
+      "options": [
+        { "text": "`Cache-Control: private, max-age=600`", "isCorrect": true },
+        { "text": "`Cache-Control: no-store`", "isCorrect": true },
+        { "text": "A 200 response to a request that carried an `Authorization` header, with no `public`, `s-maxage`, or `must-revalidate`", "isCorrect": true },
+        { "text": "`Cache-Control: public, max-age=600`", "isCorrect": false }
+      ],
+      "explanation": "Three of these are off-limits to a *shared* cache. `private` explicitly excludes shared caches. `no-store` forbids storage everywhere. And by default a shared cache must not store a response to an `Authorization`-bearing request unless a directive like `public`, `s-maxage`, or `must-revalidate` explicitly re-permits it — a guard against leaking authenticated content to other users. Only `public, max-age=600` is freely storable by the CDN. The `Authorization` rule is the subtle one and a frequent source of \"why is my logged-in API response cached at the edge?\" incidents.",
+      "references": "[RFC 9111 §3.5: Storing Responses to Authenticated Requests](https://www.rfc-editor.org/rfc/rfc9111#name-storing-responses-to-authen)"
+    },
+    {
+      "id": "cache-stampede-define",
+      "title": "What is the \"stampede\" that follows a hot key's expiry?",
+      "description": "A very popular key expires in a Redis-backed cache. The pattern is also known as *thundering herd* or *dog-piling*.",
+      "type": "single-choice",
+      "options": [
+        { "text": "Many concurrent requests all miss at once and hammer the origin to recompute the same value simultaneously", "isCorrect": true },
+        { "text": "The cache evicts every other key to make room for the recomputed one", "isCorrect": false },
+        { "text": "The CDN floods the cache with duplicate copies of the response", "isCorrect": false },
+        { "text": "Clients retry so fast that the browser cache overflows to disk", "isCorrect": false }
+      ],
+      "explanation": "A stampede happens at the *moment of expiry* of a hot key: the cached value vanishes, and every in-flight request misses simultaneously, so they all stampede the origin (database, upstream API) to regenerate the **same** value at once. The redundant recomputation can saturate the backend and cause a latency spike or outage — precisely when traffic is highest. The fix space is about *collapsing* that concurrent work (next question), not about eviction or duplicate storage, which the distractors describe.",
+      "references": "[Wikipedia: Cache stampede](https://en.wikipedia.org/wiki/Cache_stampede)"
+    },
+    {
+      "id": "cache-stampede-mitigations",
+      "title": "Which techniques genuinely mitigate a cache stampede on a hot key?",
+      "description": "Select **every** technique that applies.",
+      "type": "multiple-choice",
+      "options": [
+        { "text": "Request coalescing / single-flight: collapse concurrent identical misses into one origin fetch and share the result", "isCorrect": true },
+        { "text": "Serve the stale value while a single worker revalidates in the background", "isCorrect": true },
+        { "text": "Probabilistic early expiration: refresh a hot key slightly *before* it expires so one request, not all, recomputes", "isCorrect": true },
+        { "text": "Add random jitter to TTLs so many keys don't expire at the same instant", "isCorrect": true },
+        { "text": "Set `max-age=0` so every request always recomputes at the origin", "isCorrect": false }
+      ],
+      "explanation": "All four real mitigations share one idea — *don't let N requests do the same work N times*. **Single-flight** lets one request fetch while the rest await its result. **Serve-stale-while-revalidate** keeps answering from the old value so only one refresh runs. **Probabilistic early expiration** (the XFetch approach) has a single early request volunteer to recompute before expiry, so the key is never simultaneously cold and hot. **TTL jitter** desynchronizes mass-expiry so caches don't all miss together. Setting `max-age=0` does the opposite: it guarantees a permanent stampede by forcing every request to the origin.",
+      "references": "[Vattani, Chierichetti & Lowenstein: *Optimal Probabilistic Cache Stampede Prevention* (VLDB 2015)](https://www.vldb.org/pvldb/vol8/p886-vattani.pdf)"
+    },
+    {
+      "id": "negative-caching",
+      "title": "What is this `404`-caching technique called, and what is its main risk?",
+      "description": "A lookup service caches `404 Not Found` results for a short time.",
+      "type": "single-choice",
+      "options": [
+        { "text": "Negative caching: it shields the backend from repeated lookups of missing keys, but can briefly mask a resource that has since been created", "isCorrect": true },
+        { "text": "Write-through caching: every miss is written back to the database", "isCorrect": false },
+        { "text": "Cache poisoning: an attacker injects a fake 404 into the cache", "isCorrect": false },
+        { "text": "Eviction: 404s are stored to decide which keys to drop first", "isCorrect": false }
+      ],
+      "explanation": "**Negative caching** stores the *non-existence* (or error) result — a `404`, an empty lookup, a DNS `NXDOMAIN` — so that a flood of requests for a missing key doesn't repeatedly pound the backend. (DNS formalizes this: negative answers are cached per the SOA `MINIMUM` TTL, RFC 2308.) The trade-off is freshness in the other direction: if the resource is created moments later, clients keep seeing the cached \"not found\" until the negative entry expires — so negative TTLs are kept short. It's unrelated to write-through (a write policy), poisoning (an attack), or eviction (a capacity policy).",
+      "references": "[RFC 2308 §5: Caching Negative Answers](https://www.rfc-editor.org/rfc/rfc2308#section-5)"
+    },
+    {
+      "id": "request-coalescing-define",
+      "title": "With request coalescing enabled, how many requests reach the origin?",
+      "description": "At an edge cache, 5,000 requests for the same uncached URL arrive within a few milliseconds.",
+      "type": "single-choice",
+      "options": [
+        { "text": "One — the coalesced (single-flight) fetch; the other 4,999 wait and share its response", "isCorrect": true },
+        { "text": "5,000 — coalescing only affects retries, not the first wave", "isCorrect": false },
+        { "text": "Zero — coalescing serves all 5,000 from the empty cache", "isCorrect": false },
+        { "text": "2,500 — coalescing halves origin load by batching pairs", "isCorrect": false }
+      ],
+      "explanation": "Request coalescing (also called *single-flight* or origin/request collapsing) detects that many concurrent requests want the *same* key, sends exactly **one** fetch to the origin, and fans the single response out to all waiters once it returns. So 5,000 near-simultaneous misses become **one** origin request. It's the most direct stampede defense for read-through caches and CDNs, and it's why a sudden traffic spike on a cold-but-cacheable URL doesn't translate into a proportional spike at the origin. (It can't serve from an empty cache, and it collapses the *first* wave, not just retries.)",
+      "references": "[Go `golang.org/x/sync/singleflight`: request coalescing primitive](https://pkg.go.dev/golang.org/x/sync/singleflight)"
+    },
+    {
+      "id": "react-query-staletime-gctime",
+      "title": "What's the difference between `staleTime` and `gcTime` in React Query?",
+      "description": "In TanStack Query (React Query) v5, `gcTime` is the option formerly called `cacheTime`.",
+      "type": "single-choice",
+      "options": [
+        { "text": "`staleTime` is how long data is considered fresh (no background refetch); `gcTime` is how long an *inactive* query's data lingers before garbage collection", "isCorrect": true },
+        { "text": "`staleTime` controls garbage collection; `gcTime` controls how long data is fresh", "isCorrect": false },
+        { "text": "They are aliases — `gcTime` was simply renamed from `staleTime`", "isCorrect": false },
+        { "text": "`staleTime` applies to mutations; `gcTime` applies to queries", "isCorrect": false }
+      ],
+      "explanation": "They govern two different clocks. **`staleTime`** is a *freshness* window: while data is fresh, React Query serves it from cache and skips background refetches; once stale, it refetches on triggers like remount or window refocus. **`gcTime`** is a *retention* window: once a query has no active observers (nothing on screen uses it), its cached data is kept for `gcTime` and then garbage-collected. A query can be stale yet still cached (eligible for instant display + revalidate), which is the whole stale-while-revalidate feel of the library. `gcTime` is the v5 rename of `cacheTime`; `staleTime` kept its name.",
+      "references": "[TanStack Query: Caching](https://tanstack.com/query/latest/docs/framework/react/guides/caching)"
+    },
+    {
+      "id": "react-query-default-staletime",
+      "title": "Why does React Query refetch data it just rendered?",
+      "description": "A developer notices React Query shows cached data instantly on mount but immediately fires a network refetch. They set no options.",
+      "type": "single-choice",
+      "options": [
+        { "text": "The default `staleTime` is `0`, so cached data is considered stale at once — it's shown immediately, then revalidated", "isCorrect": true },
+        { "text": "The default `gcTime` is `0`, so the cache is wiped on every mount", "isCorrect": false },
+        { "text": "React Query never caches `GET` requests without explicit configuration", "isCorrect": false },
+        { "text": "It's a bug; data should never refetch when it's already in the cache", "isCorrect": false }
+      ],
+      "explanation": "React Query's default `staleTime` is **0 ms** — every query is stale the instant it resolves. So on remount it does the SWR two-step: serve the cached value immediately (no spinner), then refetch in the background to confirm freshness. That's intended behaviour, not a bug, and not a missing cache: `gcTime` defaults to **5 minutes**, so the data is very much cached. To stop the immediate refetch for data that changes slowly, raise `staleTime` (e.g. `staleTime: 60_000`). Conflating the two timers is the classic React Query gotcha.",
+      "references": "[TanStack Query: Important Defaults](https://tanstack.com/query/latest/docs/framework/react/guides/important-defaults)"
+    },
+    {
+      "id": "swr-library-dedup",
+      "title": "What happens when two components call `useSWR('/api/user')` within ~2 seconds?",
+      "description": "Vercel's `swr` React hook is named after the HTTP `stale-while-revalidate` pattern. Both components use the default configuration.",
+      "type": "single-choice",
+      "options": [
+        { "text": "The requests are deduplicated into a single fetch (the `dedupingInterval`, default 2000 ms), and both components share the result", "isCorrect": true },
+        { "text": "Each component fires its own independent request; SWR never dedupes", "isCorrect": false },
+        { "text": "The second call throws, because a key may only be used by one component", "isCorrect": false },
+        { "text": "Both calls block until a manual `mutate()` is invoked", "isCorrect": false }
+      ],
+      "explanation": "SWR keys requests by the cache key (`'/api/user'`) and, within its `dedupingInterval` (default **2000 ms**), collapses identical concurrent calls into **one** network request whose result is shared — the client-side echo of request coalescing. Combined with its core behaviour (return cached data first, then revalidate), this is exactly the HTTP `stale-while-revalidate` idea moved into the browser. Keys are explicitly meant to be *shared* across components, not exclusive, and nothing blocks waiting for `mutate()` (which is for manual cache updates/revalidation).",
+      "references": "[SWR Docs: Dedupe requests](https://swr.vercel.app/docs/api#options)"
+    },
+    {
+      "id": "fingerprint-immutable-invalidation",
+      "title": "Why does fingerprinting make cache *invalidation* almost a non-problem?",
+      "description": "Assets ship as content-hashed filenames (`app.7e3a91.js`) with `Cache-Control: max-age=31536000, immutable`.",
+      "type": "single-choice",
+      "options": [
+        { "text": "A new build produces a new URL, so you never invalidate the old entry — you just stop referencing it; the URL *is* the version", "isCorrect": true },
+        { "text": "`immutable` makes the CDN purge old files automatically on each deploy", "isCorrect": false },
+        { "text": "The one-year `max-age` forces clients to revalidate every request anyway", "isCorrect": false },
+        { "text": "Content hashes let the browser diff old and new bytes and patch in place", "isCorrect": false }
+      ],
+      "explanation": "Fingerprinting sidesteps the hard problem. Because the content hash is part of the filename, *any* change yields a *different URL*. The old URL's bytes never change, so caching it forever (`max-age=31536000, immutable`) is safe, and you \"invalidate\" simply by having the HTML reference the new hash — the stale entry is harmless and ages out on its own. There's no purge to coordinate, no revalidation round trip. This is why the classic advice is to cache the *HTML* shell briefly but cache its fingerprinted assets immutably: you turn invalidation into versioned naming, which a build tool gets right automatically.",
+      "references": "[web.dev: Love your cache — fingerprinted URLs](https://web.dev/articles/love-your-cache)"
+    }
+  ]
+}

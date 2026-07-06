@@ -1,0 +1,275 @@
+{
+  "schemaVersion": 1,
+  "id": "css-stacking-contexts-z-index",
+  "title": "CSS Stacking Contexts & z-index: Real Problems, Real Fixes",
+  "description": "Why `z-index: 9999` sometimes does nothing, what silently creates a stacking context, how the paint order actually works, and when `isolation: isolate` is the surgical fix. Every answer is proven from the CSS painting rules, not recalled.",
+  "language": "en",
+  "tags": ["css", "frontend"],
+  "questions": [
+    {
+      "id": "dropdown-z-index-9999-trap",
+      "title": "Why does `z-index: 9999` leave the dropdown *behind* the hero?",
+      "description": "A real layout:\n\n```css\n.site-header { position: sticky; top: 0; z-index: 10; }\n.dropdown    { position: absolute; z-index: 9999; }\n.hero        { position: relative; z-index: 20; }\n```\n\n```html\n<header class=\"site-header\">\n  <nav><ul class=\"dropdown\">...</ul></nav>\n</header>\n<main>\n  <section class=\"hero\">...</section>\n</main>\n```\n\nThe `.dropdown` still renders **behind** `.hero`.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`position: sticky` makes `.site-header` a stacking context, so `9999` only ranks the dropdown *inside* the header. Against `.hero`, only the header's own `z-index: 10` competes — and `10 < 20`.",
+          "isCorrect": true
+        },
+        {
+          "text": "`9999` exceeds the maximum z-index, so the browser clamps it down to a small value.",
+          "isCorrect": false
+        },
+        {
+          "text": "`z-index` only works with `position: relative`; the absolutely positioned dropdown ignores it.",
+          "isCorrect": false
+        },
+        {
+          "text": "`.hero` passes its `z-index: 20` down to its children, which then cover the dropdown.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`z-index` never compares numbers *across* stacking contexts — it only orders siblings *within* one. `position: sticky` (like `fixed`) always forms a stacking context, so `.site-header` becomes a self-contained world: the dropdown's `9999` makes it the topmost thing **inside the header**, but the header as a whole sits at `z-index: 10` among its siblings at the root. `.hero` forms its own stacking context at `z-index: 20`. Because `20 > 10`, the entire header subtree — dropdown included — paints below the hero, and `9999` never meets `20`.\n\nThe fix is to raise the **header's** level, not the dropdown's:\n\n```css\n.site-header { z-index: 30; } /* now the whole header subtree, dropdown and all, beats the hero */\n```\n\nThe distractors are myths: the maximum z-index is `2147483647`, `z-index` works on any positioned element (absolute included), and `z-index` is **not** inherited.",
+      "references": "[MDN: The stacking context](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_positioned_layout/Stacking_context) · [Philip Walton: What No One Told You About Z-Index](https://philipwalton.com/articles/what-no-one-told-you-about-z-index/)"
+    },
+    {
+      "id": "what-creates-stacking-context",
+      "title": "Which of these create a new stacking context *on their own*?",
+      "description": "Each option is a single declaration, with no other property helping. Select **all** that apply.",
+      "type": "multiple-choice",
+      "options": [
+        { "text": "`opacity: 0.99`", "isCorrect": true },
+        { "text": "`position: relative` with no `z-index` set", "isCorrect": false },
+        { "text": "`transform: scale(1)`", "isCorrect": true },
+        { "text": "`isolation: isolate`", "isCorrect": true },
+        { "text": "`z-index: 0` on a `position: static` block (not a flex or grid item)", "isCorrect": false },
+        { "text": "`will-change: transform`", "isCorrect": true }
+      ],
+      "explanation": "A stacking context is created by far more than `z-index`. The confirmed creators here:\n\n- **`opacity` below `1`** — even `0.99`.\n- **Any `transform` other than the keyword `none`** — and `scale(1)` is a transform *function*, not `none`, so it counts even though it changes nothing visually.\n- **`isolation: isolate`** — its entire job is to make a stacking context.\n- **`will-change`** naming a property (like `transform`) that *would* create one — it forms the context preemptively.\n\nThe two non-creators:\n\n- **`position: relative` alone** does nothing for stacking until you add a `z-index` other than `auto`.\n- **`z-index` is ignored entirely** on a `position: static` element unless it is a flex or grid item.\n\nThis is why a performance tweak (`will-change`, `transform: translateZ(0)`) or a fade-in (`opacity`) can silently rearrange your layers.",
+      "references": "[MDN: The stacking context](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_positioned_layout/Stacking_context)"
+    },
+    {
+      "id": "opacity-traps-tooltip",
+      "title": "Adding a fade-in broke the tooltip — why?",
+      "description": "A tooltip inside card A overlapped neighboring card B perfectly:\n\n```css\n.card .tooltip { position: absolute; z-index: 1000; }\n```\n\nThen a designer added a fade-in to every card:\n\n```css\n.card { opacity: 0.95; transition: opacity 0.2s; }\n```\n\nNow the tooltip is hidden behind card B.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`opacity: 0.95` turned each `.card` into a stacking context, trapping the tooltip's `z-index: 1000` inside card A — so it can no longer rise above card B.",
+          "isCorrect": true
+        },
+        {
+          "text": "`opacity` scaled the tooltip's effective z-index to `1000 × 0.95 = 950`, dropping it below card B.",
+          "isCorrect": false
+        },
+        {
+          "text": "The `transition` repaints the tooltip one frame late, so card B briefly covers it.",
+          "isCorrect": false
+        },
+        {
+          "text": "`opacity` makes the element semi-transparent, so card B simply shows through the tooltip.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Before the change, `.card` was a plain block and created **no** stacking context, so the tooltip's `z-index: 1000` competed at the *root* level and floated above everything, card B included. `opacity` below `1` forms a stacking context, so now the tooltip's `1000` is confined **within** card A. Card B is painted after card A and covers the trapped tooltip.\n\nOpacity does not scale `z-index`, and this is not a paint-timing or transparency effect — it is purely the new stacking context. Real fixes:\n\n- Render the tooltip **outside** the faded subtree (e.g., portal it to `<body>`).\n- Animate opacity on an **inner wrapper** instead of the card root.\n- Raise card A's **own** stacking level above card B, so its whole subtree — tooltip included — sits on top.",
+      "references": "[MDN: opacity and stacking context](https://developer.mozilla.org/en-US/docs/Web/CSS/opacity) · [Josh W. Comeau: Stacking Contexts](https://www.joshwcomeau.com/css/stacking-contexts/)"
+    },
+    {
+      "id": "isolation-isolate-clean-fix",
+      "title": "Which single declaration best contains a component's z-index?",
+      "description": "A reusable `.card` has internal layers (a badge at `z-index: 5`, a menu at `z-index: 10`). Dropped into various pages, those layers sometimes poke through unrelated chrome. You want the card's z-index values to stay **self-contained**, with zero other side effects.",
+      "type": "single-choice",
+      "options": [
+        { "text": "`isolation: isolate`", "isCorrect": true },
+        { "text": "`position: relative; z-index: 0`", "isCorrect": false },
+        { "text": "`overflow: hidden`", "isCorrect": false },
+        { "text": "`transform: translateZ(0)`", "isCorrect": false }
+      ],
+      "explanation": "All four except `overflow: hidden` create a stacking context, which is what contains the children — but the goal is **no other side effects**, and that is where `isolation: isolate` wins: forming a stacking context is its *only* effect.\n\n- `position: relative; z-index: 0` also makes the card a **containing block** for absolutely positioned descendants, quietly changing what their `top`/`left` measure against, and pins the card to level `0` among its siblings.\n- `transform: translateZ(0)` makes a stacking context too, but it *also* establishes a containing block for `position: fixed` descendants, can spin up a GPU layer, and may blur text.\n- `overflow: hidden` does **not** create a stacking context at all (it creates a block formatting context) and would *clip* the very layers you want to show.\n\n`isolation: isolate` is the surgical tool: a stacking context, and nothing else.",
+      "references": "[MDN: isolation](https://developer.mozilla.org/en-US/docs/Web/CSS/isolation)"
+    },
+    {
+      "id": "positioned-beats-in-flow",
+      "title": "Which box wins the overlap — with no `z-index` anywhere?",
+      "description": "Two boxes overlap, and neither has a `z-index`:\n\n```html\n<div class=\"a\">A</div>\n<div class=\"b\">B</div>\n```\n\n```css\n.a { position: relative; }   /* z-index: auto */\n.b { margin-top: -40px; }    /* static, pulled up to overlap A */\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`.a`, because positioned elements paint above non-positioned in-flow boxes regardless of source order.",
+          "isCorrect": true
+        },
+        {
+          "text": "`.b`, because it comes later in the DOM and later siblings always paint on top.",
+          "isCorrect": false
+        },
+        {
+          "text": "`.b`, because static elements have a higher default stacking level than positioned ones.",
+          "isCorrect": false
+        },
+        {
+          "text": "Undefined — without `z-index`, the overlap order is not specified.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Within a stacking context the paint order is fixed. Non-positioned in-flow block boxes are painted **first** (step 3 of the CSS 2.1 order), then **positioned** elements with `z-index: auto` or `0` are painted **later** (step 6) — so they land on top.\n\n`.a` is positioned (`position: relative`), `.b` is a static in-flow block, so `.a` paints above `.b` even though `.b` comes later in the DOM. 'Later DOM wins' only holds *between peers at the same level*; here positioning outranks document order. Note that `z-index: auto` does **not** create a stacking context — `.a` simply paints in the positioned phase.\n\nThis is why a `position: relative` with no offsets, added just to 'enable z-index later,' can immediately change what is visible.",
+      "references": "[CSS 2.1 Appendix E: Elaborate description of stacking contexts](https://www.w3.org/TR/CSS21/zindex.html)"
+    },
+    {
+      "id": "negative-z-index-behind-parent",
+      "title": "`z-index: -1` made the child vanish behind its parent — why?",
+      "description": "```html\n<div class=\"parent\">\n  <div class=\"child\">hi</div>\n</div>\n```\n\n```css\n.parent { background: navy; }                 /* static, in normal flow */\n.child  { position: relative; z-index: -1; background: gold; }\n```\n\nThe gold child disappears behind the navy parent.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`.parent` creates no stacking context, so the child's `z-index: -1` is resolved against the *root* — placing it behind `.parent`, an in-flow block painted later.",
+          "isCorrect": true
+        },
+        {
+          "text": "Negative `z-index` values are invalid and snap the element to the very back of the page.",
+          "isCorrect": false
+        },
+        {
+          "text": "`z-index: -1` always paints an element behind its parent, by definition.",
+          "isCorrect": false
+        },
+        {
+          "text": "The child needs `position: absolute`; with `relative`, a negative `z-index` is ignored.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`.parent` is a plain in-flow block — no `position` + `z-index`, no `opacity`, no `transform` — so it forms **no** stacking context. The child's stacking is therefore resolved in the nearest *ancestor* stacking context: the root. In the root's paint order, negative-z children (step 2) come **before** in-flow blocks like `.parent` (step 3), so the gold child paints first and the navy parent covers it.\n\nThis is exactly the classic 'send a decorative layer behind its container' trick — and the fix shows the rule in reverse. Give `.parent` its own stacking context:\n\n```css\n.parent { isolation: isolate; } /* or: position: relative; z-index: 0 */\n```\n\nNow `-1` is resolved **inside** `.parent`, where negative-z children paint in front of the parent's own background (step 2), so the child reappears. Negative `z-index` is perfectly valid and works fine with `position: relative`.",
+      "references": "[MDN: The stacking context](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_positioned_layout/Stacking_context) · [CSS 2.1 Appendix E painting order](https://www.w3.org/TR/CSS21/zindex.html)"
+    },
+    {
+      "id": "flex-item-z-index-no-position",
+      "title": "Why does `z-index: 1` apply to this static `.item`?",
+      "description": "Usually `z-index` is ignored unless an element is positioned. Yet here it takes effect:\n\n```css\n.row  { display: flex; }\n.item { z-index: 1; }   /* position: static */\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`.item` is a flex item; flex (and grid) items honor `z-index` even when `position: static`, and a value other than `auto` creates a stacking context.",
+          "isCorrect": true
+        },
+        {
+          "text": "`display: flex` implicitly sets `position: relative` on its children.",
+          "isCorrect": false
+        },
+        {
+          "text": "`z-index` always works; the 'needs position' rule is a myth.",
+          "isCorrect": false
+        },
+        {
+          "text": "Only the flex *container* can use `z-index`; it cascades down to the items.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Flex and grid items are a documented exception to the 'z-index needs positioning' rule. The spec says flex items paint like inline blocks **except** that a `z-index` other than `auto` takes effect and creates a stacking context even when `position` is `static`. So `.item { z-index: 1 }` both orders the item and makes it a stacking context — no `position` required.\n\n`display: flex` does **not** set `position: relative` on its children, and the rule absolutely *does* apply to ordinary static blocks (where `z-index` is silently ignored) — the exception is specifically flex/grid **items**. This lets you layer flex and grid children directly, without reaching for positioning.",
+      "references": "[W3C CSS Flexbox: Painting Order](https://www.w3.org/TR/css-flexbox-1/#painting) · [MDN: z-index](https://developer.mozilla.org/en-US/docs/Web/CSS/z-index)"
+    },
+    {
+      "id": "z-index-default-value",
+      "title": "What is the default `z-index` keyword?",
+      "description": "For a positioned element, `z-index: 0` creates a stacking context, but the **default** value does not — even though both leave the element at the same paint level. Answer with one word.",
+      "type": "input",
+      "validation": {
+        "mode": "text",
+        "acceptedAnswers": ["auto"]
+      },
+      "explanation": "The initial value of `z-index` is **`auto`**. Here is the subtle trap: on a positioned element, `z-index: auto` does **not** create a stacking context, but `z-index: 0` **does** — yet both paint in the same phase (step 6), so they look identical until a *descendant* uses a negative or high `z-index`.\n\n```css\n.box { position: relative; z-index: auto; } /* no stacking context */\n.box { position: relative; z-index: 0; }    /* stacking context! */\n```\n\nSwitching `auto` to `0` silently boxes that descendant's stacking inside the element. This is the key to deliberately creating (or avoiding) contexts: `z-index: 0` is one of the lightest ways to **make** one, while `auto` keeps the element transparent to its children's stacking.",
+      "references": "[MDN: z-index](https://developer.mozilla.org/en-US/docs/Web/CSS/z-index)"
+    },
+    {
+      "id": "stacking-paint-order-truths",
+      "title": "Which statements about painting and stacking are true?",
+      "description": "Select every statement that is correct.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "`position: fixed` forms a stacking context even with `z-index: auto`.",
+          "isCorrect": true
+        },
+        {
+          "text": "Within a stacking context, a child at `z-index: -1` is painted behind that context's own background and border.",
+          "isCorrect": false
+        },
+        {
+          "text": "When two sibling stacking contexts share the same `z-index`, the one later in the DOM paints on top.",
+          "isCorrect": true
+        },
+        {
+          "text": "`transform: translateZ(0)` creates a stacking context.",
+          "isCorrect": true
+        }
+      ],
+      "explanation": "Three are true:\n\n- **`position: fixed`** (like `sticky`) always forms a stacking context — no `z-index` needed.\n- **Equal-`z-index` sibling contexts** are painted in tree order, so the later one wins — the same 'later DOM wins' tiebreak used throughout the paint order.\n- **`transform: translateZ(0)`** (any non-`none` transform) creates a stacking context — historically the 'null transform' GPU hack.\n\nThe false statement is a common misreading of the paint order: a stacking context first paints **its own** background and border (step 1), and only **then** its negative-z children (step 2). So a `z-index: -1` child sits *in front of* the context's own background — behind the in-flow content, but never behind the box's own backdrop. (It only ends up behind a **parent** when that parent forms no stacking context, pushing the child's negative z up to an ancestor — see the earlier question.)",
+      "references": "[CSS 2.1 Appendix E: painting order](https://www.w3.org/TR/CSS21/zindex.html) · [MDN: The stacking context](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_positioned_layout/Stacking_context)"
+    },
+    {
+      "id": "fixed-inside-transformed-ancestor",
+      "title": "Why doesn't this `position: fixed` modal cover the viewport?",
+      "description": "A full-screen modal that worked everywhere suddenly only covers one card:\n\n```css\n.card  { transform: translateY(0); }   /* added for a slide-in animation */\n.modal { position: fixed; inset: 0; }   /* meant to cover the whole viewport */\n```\n\n```html\n<div class=\"card\">\n  <div class=\"modal\">...</div>\n</div>\n```\n\nThe `.modal` is now sized and positioned inside `.card`, not the viewport.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "A `transform` other than `none` makes `.card` the **containing block** for `position: fixed` descendants, so `inset: 0` now resolves against the card's padding box, not the viewport.",
+          "isCorrect": true
+        },
+        {
+          "text": "The `transform` creates a stacking context, which re-parents the modal so its `inset` resolves against the card.",
+          "isCorrect": false
+        },
+        {
+          "text": "`position: fixed` only anchors to the viewport for direct children of `<body>`; nesting it deeper disables viewport anchoring.",
+          "isCorrect": false
+        },
+        {
+          "text": "Raising the modal's `z-index` above the card restores full-viewport coverage.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Normally `position: fixed` is positioned relative to the viewport. But any ancestor with a `transform` other than `none` — also `perspective`, `filter`, `backdrop-filter`, `will-change: transform`, or `contain: paint`/`layout`/`strict`/`content` — becomes the **containing block** for fixed *and* absolutely positioned descendants. So once `.card` has `transform: translateY(0)`, the modal's `inset: 0` is measured from the card's padding box: it covers the card, not the screen, and scrolls with it.\n\nThe stacking-context answer is the trap. `transform` *does* create a stacking context, but that governs paint **order**; the re-anchoring is a separate consequence — the new containing block. Fixes: render the modal **outside** the transformed subtree (portal it to `<body>`), or animate the card with a property that does **not** form a containing block — `opacity`, for instance, creates a stacking context but no containing block for fixed elements.",
+      "references": "[MDN: transform (creates a containing block)](https://developer.mozilla.org/en-US/docs/Web/CSS/transform) · [MDN: position](https://developer.mozilla.org/en-US/docs/Web/CSS/position)"
+    },
+    {
+      "id": "containing-block-for-fixed",
+      "title": "Which ancestor styles re-anchor a `position: fixed` child to the ancestor?",
+      "description": "A `position: fixed` element is normally fixed to the viewport; re-anchoring means the **ancestor** becomes its containing block. Select **all** that apply.",
+      "type": "multiple-choice",
+      "options": [
+        { "text": "`transform: translateY(10px)`", "isCorrect": true },
+        { "text": "`opacity: 0.5`", "isCorrect": false },
+        { "text": "`will-change: transform`", "isCorrect": true },
+        { "text": "`overflow: hidden`", "isCorrect": false },
+        { "text": "`backdrop-filter: blur(8px)`", "isCorrect": true }
+      ],
+      "explanation": "This is the distinction people miss: **creating a stacking context** and **creating a containing block for fixed/absolute descendants** are different effects, and only some properties do the latter.\n\n**Re-anchor** (form a containing block for fixed): `transform` other than `none`, `will-change: transform` (it forms the containing block preemptively), and `backdrop-filter` other than `none` — each *also* creates a stacking context.\n\n**Do not re-anchor**: `opacity: 0.5` creates a stacking context but is **not** in the containing-block list, so a fixed child stays viewport-fixed. `overflow: hidden` creates a block formatting context (and can clip in-flow overflow) but does not form a containing block for fixed descendants.\n\nThat is precisely why animating a card with `transform` can break a `position: fixed` modal inside it, while a fade with `opacity` will not.",
+      "references": "[MDN: backdrop-filter](https://developer.mozilla.org/en-US/docs/Web/CSS/backdrop-filter) · [MDN: position](https://developer.mozilla.org/en-US/docs/Web/CSS/position)"
+    },
+    {
+      "id": "mix-blend-mode-isolation",
+      "title": "What's the right fix so the caption blends **only** with the photo?",
+      "description": "A caption blends onto a photo with `mix-blend-mode: multiply`. Over the photo it looks right, but where the caption overhangs the white page it multiplies against the page too and turns muddy:\n\n```css\n.caption { mix-blend-mode: multiply; }\n```\n\n```html\n<figure>\n  <img src=\"photo.jpg\" alt=\"...\">\n  <figcaption class=\"caption\">Sunset</figcaption>\n</figure>\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Give `<figure>` `isolation: isolate`; the new stacking context becomes an isolated group, so the caption blends only with content inside it (the photo), not the page behind.",
+          "isCorrect": true
+        },
+        {
+          "text": "Give the photo a higher `z-index` than the page so the caption blends only with the photo.",
+          "isCorrect": false
+        },
+        {
+          "text": "Set `mix-blend-mode: isolate` on the caption to stop it blending downward.",
+          "isCorrect": false
+        },
+        {
+          "text": "Switch the caption to `background-blend-mode: multiply` instead.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A blend mode mixes the element with its **backdrop** — everything painted behind it within the same stacking context, which by default reaches all the way back to the page. `isolation: isolate` exists for exactly this: applied to the `<figure>`, it creates a stacking context that forms an *isolated group*, resetting the backdrop so the caption blends only with its siblings inside the figure (the photo). Confining blend modes is the original purpose of the `isolation` property.\n\nThe distractors are real confusions: `z-index` changes paint **order**, not what a blend mode mixes with; `isolate` is a value of the **`isolation`** property, not of `mix-blend-mode` (which has no `isolate` value); and `background-blend-mode` blends an element's *own* background layers together — a different feature that would not confine the caption's cross-page blending.",
+      "references": "[MDN: isolation](https://developer.mozilla.org/en-US/docs/Web/CSS/isolation) · [MDN: mix-blend-mode](https://developer.mozilla.org/en-US/docs/Web/CSS/mix-blend-mode)"
+    }
+  ]
+}

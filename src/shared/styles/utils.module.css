@@ -1,0 +1,180 @@
+@layer utils {
+  /* Hide visually while keeping the text in the accessibility tree. */
+  .visually-hidden {
+    position: absolute;
+
+    overflow: hidden;
+
+    inline-size: 1px;
+    block-size: 1px;
+    margin: -1px;
+    padding: 0;
+    border: 0;
+
+    white-space: nowrap;
+
+    clip-path: inset(50%);
+  }
+
+  .single-line-truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .multi-line-truncate-2 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+
+    /* Number of lines to show */
+
+    text-overflow: ellipsis;
+  }
+
+  /* borders with shape */
+  .rounded-xs {
+    border-radius: var(--rounded-xs);
+  }
+
+  @supports (corner-shape: superellipse(3)) {
+    .rounded-xs {
+      border-radius: 1rem;
+
+      corner-shape: superellipse(3);
+    }
+  }
+
+  .rounded-s {
+    border-radius: var(--rounded-s);
+  }
+
+  @supports (corner-shape: superellipse(2)) {
+    .rounded-s {
+      border-radius: 1rem;
+
+      corner-shape: superellipse(2);
+    }
+  }
+
+  .rounded-m {
+    border-radius: var(--rounded-m);
+  }
+
+  @supports (corner-shape: superellipse(2)) {
+    .rounded-m {
+      border-radius: 2rem;
+
+      corner-shape: superellipse(2);
+    }
+  }
+
+  .rounded-l {
+    border-radius: var(--rounded-l);
+  }
+
+  @supports (corner-shape: superellipse(1.2)) {
+    .rounded-l {
+      border-radius: 3rem;
+
+      corner-shape: superellipse(1.2);
+    }
+  }
+
+  .rounded-s-squircle {
+    border-radius: var(--rounded-s);
+
+    @supports (corner-shape: squircle) {
+      border-radius: 2rem;
+
+      corner-shape: squircle;
+    }
+  }
+
+  .rounded-m-squircle {
+    border-radius: var(--rounded-m);
+
+    @supports (corner-shape: squircle) {
+      border-radius: 2.5rem;
+
+      corner-shape: squircle;
+    }
+  }
+
+  .rounded-l-squircle {
+    border-radius: var(--rounded-l);
+
+    @supports (corner-shape: squircle) {
+      border-radius: 4rem;
+
+      corner-shape: squircle;
+    }
+  }
+
+  /* background */
+  .cell-background::before {
+    --_cell-size: 1.1rem;
+    --_line-color: color-mix(var(--color-blue-50) 10%, transparent);
+    --_orange-line-color: color-mix(in oklch, var(--color-primary-orange-accent) 10%, transparent);
+    --_bg-color: var(--color-main-bg-dark);
+
+    content: "";
+
+    position: fixed;
+    z-index: -1;
+    inset: -100%;
+    transform: rotate(-2.9deg);
+
+    background-color: var(--_bg-color);
+    background-image:
+      linear-gradient(to right, var(--_line-color) 1px, transparent 1px),
+      linear-gradient(
+        to bottom,
+        transparent 0,
+        transparent 1px,
+        var(--_orange-line-color) 2px,
+        transparent 4px
+      ),
+      linear-gradient(to bottom, var(--_line-color) 1px, transparent 1px);
+    background-position:
+      0 0,
+      0 0,
+      0 0;
+    background-size: var(--_cell-size) var(--_cell-size);
+  }
+}
+
+.cell-background-contained {
+  --_cell-size: 1.1rem;
+  --_line-color: color-mix(in oklch, var(--color-bg-cell-border) 10%, transparent);
+  --_orange-line-color: color-mix(in oklch, var(--color-bg-cell-orange) 10%, transparent);
+  --_bg-color: var(--color-bg-cell);
+
+  isolation: isolate;
+  position: relative;
+  clip-path: inset(0);
+}
+
+.cell-background-contained::before {
+  content: "";
+
+  position: fixed;
+  z-index: -1;
+  inset: -50%;
+  transform: rotate(-2.9deg);
+
+  background-color: var(--_bg-color);
+  background-image:
+    linear-gradient(to right, var(--_line-color) 1px, transparent 1px),
+    linear-gradient(
+      to bottom,
+      transparent 0,
+      transparent 1px,
+      var(--_orange-line-color) 2px,
+      transparent 4px
+    ),
+    linear-gradient(to bottom, var(--_line-color) 1px, transparent 1px);
+  background-size: var(--_cell-size) var(--_cell-size);
+}

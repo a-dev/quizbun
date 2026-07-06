@@ -1,0 +1,78 @@
+@layer ui {
+  .root {
+    inline-size: 100%;
+    border: 1px solid var(--color-border-subtle);
+
+    font: inherit;
+    color: var(--color-text-primary);
+
+    background-color: var(--color-panel-bg);
+
+    transition:
+      border-color 0.2s,
+      box-shadow 0.2s,
+      background-color 0.2s;
+
+    &::placeholder {
+      color: var(--color-text-secondary);
+    }
+
+    &:focus-visible {
+      border-color: var(--color-focus-ring);
+      outline: 0;
+    }
+
+    &:disabled {
+      cursor: not-allowed;
+      color: var(--color-text-secondary);
+      opacity: 0.7;
+      background-color: var(--color-panel-disabled-bg);
+    }
+
+    &[aria-invalid="true"] {
+      border-color: var(--color-primary-orange);
+    }
+
+    &[aria-invalid="true"]:focus-visible {
+      outline: 1px solid var(--color-primary-orange-accent);
+    }
+  }
+
+  .label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    color: var(--color-text-primary);
+  }
+
+  .label-text {
+    font-size: var(--fs-s);
+    font-weight: var(--fw-medium);
+  }
+
+  .error {
+    font-size: var(--fs-xs);
+    color: var(--color-state-error);
+  }
+
+  .size-s {
+    composes: rounded-s from "#styles/utils.module.css";
+    padding-block: 0.2rem;
+    padding-inline: 0.4rem;
+    font-size: var(--fs-s);
+  }
+
+  .size-m {
+    composes: rounded-s from "#styles/utils.module.css";
+    padding-block: 0.35rem;
+    padding-inline: 0.6rem;
+    font-size: var(--fs-m);
+  }
+
+  .size-l {
+    composes: rounded-m from "#styles/utils.module.css";
+    padding-block: 0.5rem;
+    padding-inline: 0.75rem;
+    font-size: var(--fs-l);
+  }
+}

@@ -1,0 +1,1251 @@
+{
+  "schemaVersion": 1,
+  "id": "algorithms-you-already-ship-frontend",
+  "title": "Algorithms You Already Ship: A Frontend Engineer's Guide to Sorting, Windows, DP, Edit Distance & CSS Internals",
+  "description": "A 50-question deep dive built to help frontend engineers better understand algorithms by grounding every concept in code you already write. Five techniques you *already ship* without naming them: stable sorting and locale-aware collation behind data tables, sliding windows and two pointers behind debounce/throttle and infinite scroll, memoization that grows into dynamic programming (from `useMemo` to overlapping subproblems), edit distance and fuzzy matching behind “did you mean…” and fuzzy finders, and the greedy, backtracking, and line-breaking algorithms hiding inside CSS. Every answer is double-checked, with MDN, Wikipedia, and primary-source links collected in References for verification.",
+  "language": "en",
+  "tags": ["algorithms", "data-structures", "frontend", "javascript"],
+  "author": "Quizbun",
+  "questions": [
+    {
+      "id": "sort-what-is-stability",
+      "title": "In sorting, what does it mean for an algorithm to be **stable**?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Equal elements keep their original relative order after sorting.",
+          "isCorrect": true
+        },
+        {
+          "text": "The algorithm always runs in the same time, regardless of how the input is arranged.",
+          "isCorrect": false
+        },
+        {
+          "text": "The sort never throws, even when the comparator is malformed.",
+          "isCorrect": false
+        },
+        {
+          "text": "Repeated runs on the same array return the exact same array reference.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A *stable* sort preserves the input order of elements that compare equal. If two rows tie on the sort key, the one that came first stays first. This is not about speed or determinism of the algorithm — it is specifically about how ties are resolved. It matters constantly in UI tables, where ties should fall back to whatever order the user already had. Since ES2019, `Array.prototype.sort` is guaranteed stable.",
+      "references": "[MDN: sort](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/sort) · [Wikipedia: Sorting algorithm#Stability](https://en.wikipedia.org/wiki/Sorting_algorithm#Stability)"
+    },
+    {
+      "id": "sort-multicolumn-relies-on-stability",
+      "title": "A user sorts a table by **Name**, then clicks the **Date** header to sort by date. Why does getting *ties broken by name* for free depend on a **stable** sort?",
+      "description": "Sorting by one column, then re-sorting by another, is how most data grids implement layered sorting.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "A stable sort preserves the existing Name order among rows that share the same Date, so the second sort layers cleanly on top of the first.",
+          "isCorrect": true
+        },
+        {
+          "text": "A stable sort is faster, so the second sort finishes before the row repaints.",
+          "isCorrect": false
+        },
+        {
+          "text": "Only a stable sort can read two different fields (Name and Date) in a single pass.",
+          "isCorrect": false
+        },
+        {
+          "text": "Stability guarantees the Date column is parsed before the Name column.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Multi-key sorting is built by sorting on the *least* significant key first, then stably sorting on more significant keys. After sorting by Name, a stable sort by Date keeps same-date rows in their established Name order — so you get \"by Date, then by Name\" without writing a compound comparator. With an unstable sort, the Name order among equal dates would be scrambled. This is the everyday reason frontend tables need stability.",
+      "references": "[Wikipedia: Sorting algorithm#Stability](https://en.wikipedia.org/wiki/Sorting_algorithm#Stability)"
+    },
+    {
+      "id": "sort-comparator-boolean-bug",
+      "title": "What is the bug in `array.sort((a, b) => a < b)`?",
+      "description": "```js\narray.sort((a, b) => a < b); // comparator returns true/false, not a number\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "A comparator must return a *number*; `a < b` returns a boolean, so the function never returns a negative value and the array is left effectively unsorted.",
+          "isCorrect": true
+        },
+        {
+          "text": "It sorts in descending order instead of ascending.",
+          "isCorrect": false
+        },
+        {
+          "text": "It mutates `a` and `b`, corrupting the original objects.",
+          "isCorrect": false
+        },
+        {
+          "text": "It works for numbers but throws a `TypeError` for strings.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`sort` expects the comparator to return a *negative* number (a before b), `0` (equal), or a *positive* number (a after b). A boolean is coerced to a number — `true` → `1`, `false` → `0` — so this comparator only ever returns `1` or `0` and **never** the negative value that means \"swap.\" The engine concludes everything is already ordered: `[3, 1, 2, 10, 5].sort((a, b) => a < b)` returns `[3, 1, 2, 10, 5]` unchanged, while `(a, b) => a - b` correctly gives `[1, 2, 3, 5, 10]`. Always return a number.",
+      "references": "[MDN: sort](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/sort)"
+    },
+    {
+      "id": "sort-default-lexicographic",
+      "title": "Why does `[1, 2, 10, 20, 3].sort()` produce `[1, 10, 2, 20, 3]` instead of numeric order?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "With no comparator, `sort` converts each element to a string and compares by UTF-16 code unit, so `\"10\"` sorts before `\"2\"`.",
+          "isCorrect": true
+        },
+        {
+          "text": "`sort` rounds each number to one significant digit before comparing.",
+          "isCorrect": false
+        },
+        {
+          "text": "`sort` is unstable for numbers, so the resulting order is random.",
+          "isCorrect": false
+        },
+        {
+          "text": "`sort` orders by digit count first, then by value.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The default `sort` with no comparator coerces every element to a string and compares those strings by code unit. Character-by-character, `\"10\"` and `\"2\"` are compared at the first character: `\"1\"` (code unit 49) is less than `\"2\"` (50), so `\"10\"` wins — numeric magnitude never enters into it. This is the single most common `sort` surprise in JavaScript. Pass a numeric comparator: `[1, 2, 10, 20, 3].sort((a, b) => a - b)`.",
+      "references": "[MDN: sort](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/sort)"
+    },
+    {
+      "id": "sort-collation-accents",
+      "title": "French users report that `\"éclair\"` sorts *after* `\"zebra\"` in your list. What is the correct fix?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Use a locale-aware comparator such as `a.localeCompare(b, 'fr')` (or a reused `Intl.Collator`), instead of the default code-unit order.",
+          "isCorrect": true
+        },
+        {
+          "text": "Uppercase every string before calling the default `sort`.",
+          "isCorrect": false
+        },
+        {
+          "text": "Strip accents so `\"é\"` becomes `\"e\"`, then use the default `sort`.",
+          "isCorrect": false
+        },
+        {
+          "text": "Set the page's `lang` attribute to `fr` so `sort` picks up the locale automatically.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The default sort compares UTF-16 code units. `\"é\"` is U+00E9 (decimal 233), which is *greater* than every unaccented ASCII letter including `\"z\"` (122) — so accented words get exiled to the end. *Collation* is the language-aware ordering rules that place `\"é\"` next to `\"e\"` where readers expect it. Use `localeCompare` or, for sorting many items, a single reused `Intl.Collator`. Stripping accents is lossy and still wrong for languages where accented letters collate distinctly.",
+      "references": "[MDN: localeCompare](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/localeCompare) · [MDN: Collator](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl/Collator) · [Wikipedia: Collation](https://en.wikipedia.org/wiki/Collation)"
+    },
+    {
+      "id": "sort-stability-spec-vs-algorithm",
+      "title": "Since ES2019, `Array.prototype.sort` is guaranteed stable. What exactly does the specification require?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Only the observable *result* must be stable; an engine may use any algorithm it likes (V8 uses TimSort).",
+          "isCorrect": true
+        },
+        {
+          "text": "Every engine must implement merge sort specifically.",
+          "isCorrect": false
+        },
+        {
+          "text": "Sorting must complete in O(*n*) time.",
+          "isCorrect": false
+        },
+        {
+          "text": "The array must be sorted in place with no auxiliary memory.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The spec mandates a *property* — equal elements retain their order — not an *implementation*. Engines remain free to pick any sorting algorithm; V8 switched to TimSort (a stable, adaptive merge sort) in Chrome 70, replacing an unstable quicksort for larger arrays. So \"stable\" tells you the contract you can rely on, while the algorithm, its complexity, and its memory use are engine details.",
+      "references": "[Wikipedia: Timsort](https://en.wikipedia.org/wiki/Timsort) · [V8: Stable Array.prototype.sort](https://v8.dev/features/stable-sort)"
+    },
+    {
+      "id": "sort-stability-true-statements",
+      "title": "Which statements about stable sorting and comparators are true? Select all that apply.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "To sort by a primary then a secondary key with a stable sort, sort by the *secondary* key first, then by the primary.",
+          "isCorrect": true
+        },
+        {
+          "text": "A comparator that returns `0` declares the two elements equal, and a stable sort keeps their input order.",
+          "isCorrect": true
+        },
+        {
+          "text": "`arr.sort()` sorts in place and returns the *same* array reference, whereas `[...arr].sort()` leaves the original untouched.",
+          "isCorrect": true
+        },
+        {
+          "text": "A sort being stable guarantees an O(*n* log *n*) worst case.",
+          "isCorrect": false
+        },
+        {
+          "text": "Returning `a - b` from a comparator only works when `a` and `b` are strings.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Layered sorting works because the final, stable pass on the primary key preserves the order established by earlier passes — so you sort by the *least* significant key first. A `0` from the comparator means \"equal,\" and stability decides ties by input order. `sort` mutates and returns the same array, so copy first (`[...arr]` or `arr.slice()`) when you need the original. The two false claims: stability says nothing about time complexity, and `a - b` is the comparator for *numbers* (subtracting strings yields `NaN`).",
+      "references": "[MDN: sort](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/sort)"
+    },
+    {
+      "id": "sort-correct-comparators",
+      "title": "Which of these comparators correctly sort an array of numbers in **ascending** order? Select all that apply.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "`(a, b) => a - b`",
+          "isCorrect": true
+        },
+        {
+          "text": "`(a, b) => a < b ? -1 : a > b ? 1 : 0`",
+          "isCorrect": true
+        },
+        {
+          "text": "`(a, b) => Math.sign(a - b)`",
+          "isCorrect": true
+        },
+        {
+          "text": "`(a, b) => b - a`",
+          "isCorrect": false
+        },
+        {
+          "text": "`(a, b) => a < b`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Ascending order needs a comparator that returns a *negative* number when `a` should come first. `a - b` does exactly that; the explicit ternary returns `-1 | 0 | 1`; and `Math.sign(a - b)` normalizes the difference to the same three values — all correct. `b - a` sorts *descending*. `a < b` is the classic bug: it returns a boolean that coerces to `0`/`1`, never negative, so the array is left effectively unsorted.",
+      "references": "[MDN: sort](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/sort)"
+    },
+    {
+      "id": "sort-collator-options",
+      "title": "Which `Intl.Collator` / `localeCompare` behaviors are real and useful when ordering UI lists? Select all that apply.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "`{ numeric: true }` makes `\"file2\"` sort before `\"file10\"` instead of after it.",
+          "isCorrect": true
+        },
+        {
+          "text": "`{ sensitivity: 'base' }` treats `\"a\"`, `\"á\"`, and `\"A\"` as equal for comparison.",
+          "isCorrect": true
+        },
+        {
+          "text": "Reusing one `Intl.Collator` instance is faster than calling `localeCompare` in a tight loop.",
+          "isCorrect": true
+        },
+        {
+          "text": "`{ numeric: true }` converts non-numeric strings to `NaN` and drops them from the result.",
+          "isCorrect": false
+        },
+        {
+          "text": "`localeCompare` returns `true` / `false`, just like the `<` operator.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Numeric collation compares embedded numbers by value, so `\"1\" < \"2\" < \"10\"` — the fix for \"natural\" filename and version ordering. With `sensitivity: 'base'`, only base letters distinguish strings, so `\"a\"`, `\"á\"`, and `\"A\"` compare equal (useful for accent- and case-insensitive matching). Constructing a `Intl.Collator` once and reusing its `.compare` avoids re-parsing locale data on every call — a real win in large sorts. The false options: `numeric` does not discard non-numeric strings, and `localeCompare` returns a *negative / zero / positive number*, not a boolean.",
+      "references": "[MDN: Collator](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl/Collator) · [MDN: localeCompare](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/localeCompare)"
+    },
+    {
+      "id": "sort-default-sort-output",
+      "title": "Type the value at index `1` (the second element) of the array returned by `[1, 2, 10, 20, 3].sort()`.",
+      "description": "Assume no comparator is passed, so the default string-comparison behavior applies.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [10]
+      },
+      "explanation": "Calling `sort()` with no comparator compares the *string* forms by code unit, producing `[1, 10, 2, 20, 3]`. The element at index `1` is therefore **10**, not `2` — `\"10\"` sorts right after `\"1\"` because it shares the leading `\"1\"` character. This is the gotcha that bites anyone who forgets to pass `(a, b) => a - b`.",
+      "references": "[MDN: sort](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/sort)"
+    },
+    {
+      "id": "window-debounce-vs-throttle",
+      "title": "What is the core difference between **debounce** and **throttle**?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Debounce waits until events stop for a quiet period and then fires once; throttle fires at most once per fixed interval during continuous events.",
+          "isCorrect": true
+        },
+        {
+          "text": "Debounce fires on every event; throttle fires only on the very first event.",
+          "isCorrect": false
+        },
+        {
+          "text": "Debounce is for scroll and throttle is for keyboard — they are otherwise identical.",
+          "isCorrect": false
+        },
+        {
+          "text": "Throttle waits for activity to stop; debounce caps the rate. ",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Both limit how often a handler runs, but on different clocks. **Debounce** resets a timer on every call and only fires after the calls *pause* for the chosen delay — think of an elevator door that closes only once people stop stepping in. **Throttle** lets the handler run immediately but then ignores further calls until a fixed interval has elapsed, guaranteeing a steady maximum rate during continuous activity. The last option swaps the two definitions — a very common interview slip.",
+      "references": "[CSS-Tricks: Debouncing and Throttling Explained Through Examples](https://css-tricks.com/debouncing-throttling-explained-examples/)"
+    },
+    {
+      "id": "window-two-pointer-complexity",
+      "title": "A two-pointer / sliding-window scan replaces a brute-force nested loop. What does it typically do to the time complexity?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "It collapses an O(*n*²) double loop into a single O(*n*) pass, because two indices each move forward and never backtrack.",
+          "isCorrect": true
+        },
+        {
+          "text": "It turns O(*n*) into O(log *n*) by halving the window on each step.",
+          "isCorrect": false
+        },
+        {
+          "text": "It leaves complexity unchanged and only reduces memory use.",
+          "isCorrect": false
+        },
+        {
+          "text": "It turns O(*n*) into O(*n*²) because two indices must be tracked.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The power of two pointers is *monotonic movement*: a `left` and `right` index sweep across the data, and crucially neither ever moves backward. Each index advances at most *n* times, so the total work is O(*n*) even though the window expands and contracts — versus the O(*n*²) you would pay re-scanning every subarray from scratch. It does not binary-search (that needs sorted data and gives O(log *n*) lookups, a different tool). The technique applies when the answer for one window can be updated incrementally into the answer for the next."
+    },
+    {
+      "id": "window-fixed-vs-sliding-rate-limit",
+      "title": "A **fixed-window** rate limiter (say, 100 requests per clock minute) has a well-known flaw that a **sliding-window** limiter fixes. What is it?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "A client can send 100 requests at 0:59 and 100 more at 1:00, bursting ~200 within two seconds across the window boundary.",
+          "isCorrect": true
+        },
+        {
+          "text": "Fixed windows leak memory because their counters are never reset.",
+          "isCorrect": false
+        },
+        {
+          "text": "Fixed windows must sort every request by timestamp, making them O(*n* log *n*).",
+          "isCorrect": false
+        },
+        {
+          "text": "Fixed windows physically cannot count more than one request per second.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A fixed window resets its counter at hard boundaries (each clock minute), so a caller can park requests at the very end of one window and the very start of the next, briefly doubling the intended rate right around the seam. A *sliding window* counts requests over the trailing N seconds relative to *now*, with no shared boundary to game, smoothing out that edge burst. This is the same \"window that moves with time\" idea as the algorithmic sliding window, applied to traffic.",
+      "references": "[Wikipedia: Rate limiting](https://en.wikipedia.org/wiki/Rate_limiting)"
+    },
+    {
+      "id": "window-token-bucket",
+      "title": "What behavior does a **token-bucket** limiter allow that a strict, perfectly even rate does not?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Short bursts: unused capacity accrues as tokens, so a client that was quiet can briefly exceed the steady rate.",
+          "isCorrect": true
+        },
+        {
+          "text": "It guarantees exactly even spacing between every single request.",
+          "isCorrect": false
+        },
+        {
+          "text": "It blocks all requests until the bucket is completely full.",
+          "isCorrect": false
+        },
+        {
+          "text": "It removes the need for any limit by queuing requests forever.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A token bucket refills tokens at a steady rate up to a maximum capacity; each request spends a token. Because unused tokens accumulate (up to the cap), a client that has been idle can spend that saved-up balance in a quick burst, then is throttled back to the refill rate once the bucket empties. That tolerance for bursts — while still bounding the long-run average — is exactly why it is popular for APIs and UI actions that come in clumps.",
+      "references": "[Wikipedia: Token bucket](https://en.wikipedia.org/wiki/Token_bucket)"
+    },
+    {
+      "id": "window-overscan-virtualization",
+      "title": "In a virtualized (windowed) list, what is the point of **overscan** — rendering a few extra rows just outside the viewport?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "It pre-renders rows just beyond the visible window so fast scrolling does not flash blank gaps before new rows mount.",
+          "isCorrect": true
+        },
+        {
+          "text": "It doubles each row's height to reduce the total number of rows.",
+          "isCorrect": false
+        },
+        {
+          "text": "It caches every row that has ever been visible, growing without bound.",
+          "isCorrect": false
+        },
+        {
+          "text": "It switches virtualization off after the user scrolls past the first screen.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "List virtualization renders only the rows inside a *window* around the viewport instead of all *n* rows, keeping the DOM small (O(visible) instead of O(*n*)). *Overscan* widens that window by a few rows on each side so that when the user scrolls quickly, the next rows are already mounted and there is no flash of empty space while React commits new nodes. It is a classic buffer-versus-work trade: a little extra rendering buys smoother scrolling. It is not unbounded caching, and it does not change row heights."
+    },
+    {
+      "id": "window-debounce-use-case",
+      "title": "Which scenario is the textbook fit for **debounce** rather than throttle?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Firing a search request only after the user stops typing in the search box.",
+          "isCorrect": true
+        },
+        {
+          "text": "Keeping a scroll-position progress bar updating smoothly as the user scrolls.",
+          "isCorrect": false
+        },
+        {
+          "text": "Sampling pointer coordinates at a steady rate during a drag.",
+          "isCorrect": false
+        },
+        {
+          "text": "Sending an analytics heartbeat every 5 seconds while a video plays.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Search-as-you-type is the canonical debounce case: you only care about the *final* query once the user pauses, so you reset the timer on each keystroke and fire one request when typing stops — saving a request per character. The other three want a *steady* cadence during continuous activity, which is throttle's job (often paired with `requestAnimationFrame` for scroll), or a plain fixed interval (the heartbeat).",
+      "references": "[MDN: requestAnimationFrame](https://developer.mozilla.org/en-US/docs/Web/API/Window/requestAnimationFrame) · [CSS-Tricks: Debouncing and Throttling Explained Through Examples](https://css-tricks.com/debouncing-throttling-explained-examples/)"
+    },
+    {
+      "id": "window-true-statements",
+      "title": "Which statements about windowing techniques in the browser are true? Select all that apply.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "Throttling a `scroll` handler with `requestAnimationFrame` caps the work at roughly one run per frame.",
+          "isCorrect": true
+        },
+        {
+          "text": "Debounce suits resize-driven layout recalculation that only needs the *final* size.",
+          "isCorrect": true
+        },
+        {
+          "text": "A sliding window over a stream keeps a running aggregate (count, sum, max) as it advances.",
+          "isCorrect": true
+        },
+        {
+          "text": "Throttle and debounce both guarantee the callback eventually runs for *every* event.",
+          "isCorrect": false
+        },
+        {
+          "text": "Virtualization renders all rows but hides the off-screen ones with `display: none`.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Pegging a scroll handler to `requestAnimationFrame` naturally throttles it to the paint cadence (~60 runs/second). Debounce fits resize recalculation because intermediate sizes are throwaway — you want the size after the user stops dragging. A sliding window maintains an incremental aggregate so each step is O(1). The false claims: both debounce and throttle *drop* events by design (they do not run for every one), and virtualization does not render off-screen rows at all — it never mounts them, which is the whole point.",
+      "references": "[MDN: requestAnimationFrame](https://developer.mozilla.org/en-US/docs/Web/API/Window/requestAnimationFrame)"
+    },
+    {
+      "id": "window-which-suit-throttle",
+      "title": "Which tasks are better served by **throttle** than by debounce? Select all that apply.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "Updating a reading-progress bar continuously as the user scrolls.",
+          "isCorrect": true
+        },
+        {
+          "text": "Repositioning a tooltip that follows the cursor during `mousemove`.",
+          "isCorrect": true
+        },
+        {
+          "text": "Firing infinite-scroll loads at most once per 300 ms while the user keeps scrolling.",
+          "isCorrect": true
+        },
+        {
+          "text": "Sending a search request only after the user finishes typing.",
+          "isCorrect": false
+        },
+        {
+          "text": "Auto-saving a draft only once the user pauses editing for 2 seconds.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Throttle wins whenever you want *regular updates during* continuous activity: a progress bar, a cursor-following tooltip, and rate-capped infinite-scroll loads all need to keep responding while the gesture is ongoing, just not on every single event. The remaining two care only about the *end* of activity — type-then-search and pause-then-save — which is exactly debounce. The mental test: \"do I want updates *while* it happens (throttle) or one update *after* it settles (debounce)?\"",
+      "references": "[CSS-Tricks: Debouncing and Throttling Explained Through Examples](https://css-tricks.com/debouncing-throttling-explained-examples/)"
+    },
+    {
+      "id": "window-sliding-window-applicable",
+      "title": "For which problems does a **sliding-window / two-pointer** approach yield a single-pass O(*n*) solution? Select all that apply.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "Length of the longest substring without repeating characters.",
+          "isCorrect": true
+        },
+        {
+          "text": "Maximum sum of any `k` consecutive elements.",
+          "isCorrect": true
+        },
+        {
+          "text": "Smallest contiguous subarray whose sum is at least a target (all numbers positive).",
+          "isCorrect": true
+        },
+        {
+          "text": "Whether *any* two elements anywhere in an *unsorted* array sum to a target.",
+          "isCorrect": false
+        },
+        {
+          "text": "Sorting the array into ascending order.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Sliding windows shine on *contiguous-range* questions where moving the window updates the answer incrementally: longest no-repeat substring (grow right, shrink left on a duplicate), max sum of `k` in a row (slide a fixed window), and smallest subarray ≥ target (valid only because positive values let you safely shrink from the left). The two distractors break the pattern: an arbitrary-pair sum over an *unsorted* array needs a hash set, not a window (two-pointer pair-sum requires sorted input); and sorting is an O(*n* log *n*) comparison problem, not a window scan at all."
+    },
+    {
+      "id": "window-longest-unique-substring",
+      "title": "Using a sliding window, what is the length of the longest substring of `\"abcabcbb\"` that contains no repeating characters?",
+      "description": "The window expands to include new characters and contracts from the left when a repeat appears.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [3]
+      },
+      "explanation": "Grow a window to the right, and whenever the incoming character is already inside the window, slide `left` past its previous position. For `\"abcabcbb\"` the best window is `\"abc\"` (and likewise `\"bca\"`, `\"cab\"`), so the answer is **3**. Each index enters and leaves the window at most once, making the whole scan O(*n*) instead of the O(*n*²)/O(*n*³) of checking every substring. This is the archetypal sliding-window interview problem."
+    },
+    {
+      "id": "memo-usememo-is-memoization",
+      "title": "How are `useMemo`, `React.memo`, and reselect selectors all instances of the same classic technique?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "They are all **memoization**: cache a result keyed by its inputs and reuse it while those inputs are unchanged.",
+          "isCorrect": true
+        },
+        {
+          "text": "They are all **lazy evaluation**: the value is never computed until it is first painted.",
+          "isCorrect": false
+        },
+        {
+          "text": "They are all **currying**: they split a function into one-argument steps.",
+          "isCorrect": false
+        },
+        {
+          "text": "They are all **debouncing**: they delay the computation until inputs settle.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Each one stores a previously computed value and returns it again as long as the relevant inputs have not changed: `useMemo` caches a computed value across renders, `React.memo` caches a component's rendered output for unchanged props, and reselect caches a derived-state selection. That is textbook *memoization* — trading memory for time by remembering input→output pairs. Recognizing the shared idea is the bridge from \"React hooks I use\" to \"the algorithmic technique underneath.\"",
+      "references": "[React: useMemo](https://react.dev/reference/react/useMemo) · [React: memo](https://react.dev/reference/react/memo) · [Wikipedia: Memoization](https://en.wikipedia.org/wiki/Memoization)"
+    },
+    {
+      "id": "memo-two-dp-conditions",
+      "title": "Which two properties must a problem have for **dynamic programming** to be the right tool?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Overlapping subproblems and optimal substructure.",
+          "isCorrect": true
+        },
+        {
+          "text": "Constant time and constant space.",
+          "isCorrect": false
+        },
+        {
+          "text": "A sorted input and a balanced tree.",
+          "isCorrect": false
+        },
+        {
+          "text": "Tail recursion and immutable data.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Dynamic programming pays off when a problem has *overlapping subproblems* — the same smaller problems recur, so caching their answers avoids exponential recomputation — *and* *optimal substructure*, meaning an optimal overall solution is built from optimal solutions to those subproblems. Memoization exploits the first; the recurrence relies on the second. Without overlap, caching buys nothing; without optimal substructure, combining sub-answers is not valid.",
+      "references": "[Wikipedia: Overlapping subproblems](https://en.wikipedia.org/wiki/Overlapping_subproblems) · [Wikipedia: Optimal substructure](https://en.wikipedia.org/wiki/Optimal_substructure) · [Wikipedia: Dynamic programming](https://en.wikipedia.org/wiki/Dynamic_programming)"
+    },
+    {
+      "id": "memo-topdown-vs-bottomup",
+      "title": "What distinguishes **top-down memoization** from **bottom-up tabulation**?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Top-down recurses from the goal and caches results on the way down; bottom-up iterates from the base cases and fills a table upward.",
+          "isCorrect": true
+        },
+        {
+          "text": "Top-down is always asymptotically faster than bottom-up.",
+          "isCorrect": false
+        },
+        {
+          "text": "Bottom-up can only handle problems with a single base case.",
+          "isCorrect": false
+        },
+        {
+          "text": "Top-down never uses extra memory, while bottom-up always does.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "They are two routes to the same recurrence. *Top-down* (memoization) writes the natural recursion from the target value and stores each subproblem's answer the first time it is computed, so repeats are O(1) lookups. *Bottom-up* (tabulation) starts at the base cases and iteratively fills a table until it reaches the target, with no recursion. For the same recurrence they share the same time complexity; they differ in call-stack use, which subproblems get touched, and how easily you can shrink the table.",
+      "references": "[Wikipedia: Dynamic programming](https://en.wikipedia.org/wiki/Dynamic_programming)"
+    },
+    {
+      "id": "memo-when-memo-hurts",
+      "title": "When can wrapping a value in `useMemo` make a component **slower** rather than faster?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "When the computation is cheap and the dependencies change on most renders, so you pay caching overhead for a cache that almost never hits.",
+          "isCorrect": true
+        },
+        {
+          "text": "When the component never re-renders at all.",
+          "isCorrect": false
+        },
+        {
+          "text": "Whenever the dependency array has more than three entries.",
+          "isCorrect": false
+        },
+        {
+          "text": "Only when the app is running in development mode.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Memoization is a *trade*: you spend memory plus the cost of storing the value and comparing the dependency array, to save recomputation. If the computation is trivial (a cheap map or arithmetic) and the dependencies churn every render, the cache rarely hits, so you keep paying the bookkeeping cost and the comparison without ever cashing in the savings — a net loss, plus added code noise. This frontend-specific lesson — that memoizing cheap, frequently-invalidated work can hurt — is one textbooks skip.",
+      "references": "[React: useMemo](https://react.dev/reference/react/useMemo)"
+    },
+    {
+      "id": "memo-referential-deps",
+      "title": "Why does this `useMemo` recompute on **every** render?",
+      "description": "```jsx\nconst sorted = useMemo(\n  () => sortRows(rows, opts),\n  [rows, { dir: 'asc' }] // new object literal created on every render\n);\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "A fresh object/array literal placed in the dependency array is a new reference each render, so the dependencies never compare as equal.",
+          "isCorrect": true
+        },
+        {
+          "text": "`useMemo` ignores object dependencies entirely.",
+          "isCorrect": false
+        },
+        {
+          "text": "Objects in a dependency array are compared by deep value, which always differs.",
+          "isCorrect": false
+        },
+        {
+          "text": "`useMemo` accepts only one dependency, so the extras are dropped.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "React compares dependencies with `Object.is` (a reference check for objects). The literal `{ dir: 'asc' }` allocates a brand-new object on every render, so it is never `Object.is`-equal to the previous one, and the memo is invalidated every time — you pay the compute *and* the caching overhead. Fixes: hoist the constant outside the component, store it in state/ref, or list only the primitive fields (`[rows, dir]`). This referential-equality trap is the most common reason a memo \"does nothing.\"",
+      "references": "[React: useMemo](https://react.dev/reference/react/useMemo)"
+    },
+    {
+      "id": "memo-fib-complexity",
+      "title": "Naive recursive `fib(n)` (two recursive calls, no cache) takes exponential time. What does adding memoization make it?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "O(*n*) time, because each of the *n* distinct subproblems is computed once and then reused.",
+          "isCorrect": true
+        },
+        {
+          "text": "O(log *n*), because the recursion tree becomes balanced.",
+          "isCorrect": false
+        },
+        {
+          "text": "O(*n*²), because each cache lookup is linear.",
+          "isCorrect": false
+        },
+        {
+          "text": "Still exponential — memoization only saves memory, not time.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Naive `fib` recomputes the same values astronomically often: `fib(5)` calls `fib(3)` twice, `fib(2)` three times, and so on, giving roughly O(2^*n*). Those repeats are *overlapping subproblems*. Memoizing means each of the *n* distinct values `fib(0)..fib(n)` is computed once and then returned from the cache in O(1), so the whole thing is O(*n*) time and O(*n*) space — the exponential tree collapses into a line. It is the canonical demonstration of why caching subproblems matters.",
+      "references": "[Wikipedia: Overlapping subproblems](https://en.wikipedia.org/wiki/Overlapping_subproblems)"
+    },
+    {
+      "id": "memo-true-statements",
+      "title": "Which statements about memoization and dynamic programming are true? Select all that apply.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "Memoization trades memory for time by storing previously computed results.",
+          "isCorrect": true
+        },
+        {
+          "text": "Memoization is only correct for **pure** functions whose output depends solely on their arguments.",
+          "isCorrect": true
+        },
+        {
+          "text": "Bottom-up tabulation can sometimes cut memory to O(1) by keeping only the last few rows.",
+          "isCorrect": true
+        },
+        {
+          "text": "Any recursive function can be safely memoized for a speedup, even one with random output.",
+          "isCorrect": false
+        },
+        {
+          "text": "Optimal substructure means the input must already be sorted.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Memoization spends memory to avoid recomputation, and it is only valid for *pure* functions: if the same arguments can produce different results (randomness, current time, external mutation), a cache hit returns a stale or wrong value. Tabulation often needs only the last one or two rows of the table — Fibonacci's rolling-pair trick drops it to O(1) space. The false claims: memoizing an impure/random function is unsafe, and *optimal substructure* is about composing optimal sub-answers, not about sorted input.",
+      "references": "[Wikipedia: Memoization](https://en.wikipedia.org/wiki/Memoization) · [Wikipedia: Optimal substructure](https://en.wikipedia.org/wiki/Optimal_substructure)"
+    },
+    {
+      "id": "memo-valid-cache-keys",
+      "title": "What makes a **correct** memoization cache key? Select all that apply.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "It captures every input the result actually depends on.",
+          "isCorrect": true
+        },
+        {
+          "text": "Equal inputs always produce equal keys (for example, a stable serialization of the arguments).",
+          "isCorrect": true
+        },
+        {
+          "text": "An impure input like the current time must be part of the key, or the cached value will be wrong.",
+          "isCorrect": true
+        },
+        {
+          "text": "It may ignore some arguments to save space, as long as the function is fast.",
+          "isCorrect": false
+        },
+        {
+          "text": "Using a mutable object by reference is always a safe key across renders.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A cache key has to *identify the computation*: it must include everything the output depends on, and equal inputs must map to equal keys (so order-independent or normalized serialization matters). If a value such as `Date.now()` influences the result, leaving it out of the key yields stale hits. The false options are real bugs: dropping a relevant argument means different inputs collide on one key (wrong results), and a mutable object keyed by reference can be mutated in place — same reference, changed contents — silently returning a stale value."
+    },
+    {
+      "id": "memo-tabulation-tradeoffs",
+      "title": "Which trade-offs between top-down memoization and bottom-up tabulation are real? Select all that apply.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "Top-down computes only the subproblems it actually reaches; tabulation may fill cells that are never used.",
+          "isCorrect": true
+        },
+        {
+          "text": "Top-down risks a deep call stack (stack overflow); tabulation iterates and avoids it.",
+          "isCorrect": true
+        },
+        {
+          "text": "Tabulation makes it easy to shrink memory by discarding old rows of the table.",
+          "isCorrect": true
+        },
+        {
+          "text": "Top-down is always more memory-efficient than tabulation.",
+          "isCorrect": false
+        },
+        {
+          "text": "Tabulation changes the time-complexity class compared with memoization for the same recurrence.",
+          "isCorrect": true
+        }
+      ],
+      "explanation": "Top-down only visits the subproblems the recursion actually demands (handy on sparse state spaces), but deep recursion can overflow the call stack. Tabulation runs as a loop — no stack risk — and its regular fill order makes \"keep only the last few rows\" space optimizations natural. The false statement is the last one: for the *same recurrence*, tabulation and memoization have the *same* asymptotic time complexity; they differ in constants, stack usage, and which cells get touched. (Top-down is not categorically more memory-efficient — it carries the call stack plus the cache.)",
+      "references": "[Wikipedia: Dynamic programming](https://en.wikipedia.org/wiki/Dynamic_programming)"
+    },
+    {
+      "id": "memo-climb-stairs",
+      "title": "Climbing a staircase by taking either 1 or 2 steps at a time, how many distinct ways are there to climb **5** stairs?",
+      "description": "Notice the overlapping subproblems: `ways(n)` reuses `ways(n-1)` and `ways(n-2)`.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [8]
+      },
+      "explanation": "Let `ways(n)` be the number of ways to reach step `n`. The last move is either a 1-step (from `n-1`) or a 2-step (from `n-2`), so `ways(n) = ways(n-1) + ways(n-2)` — the Fibonacci recurrence. Counting up: `ways(1)=1, ways(2)=2, ways(3)=3, ways(4)=5, ways(5)=` **8**. Naive recursion recomputes `ways(3)`, `ways(2)`, … many times (overlapping subproblems); memoization or a bottom-up table makes it O(*n*).",
+      "references": "[Wikipedia: Dynamic programming](https://en.wikipedia.org/wiki/Dynamic_programming)"
+    },
+    {
+      "id": "edit-levenshtein-definition",
+      "title": "What does the **Levenshtein (edit) distance** between two strings count?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The minimum number of single-character insertions, deletions, and substitutions needed to turn one string into the other.",
+          "isCorrect": true
+        },
+        {
+          "text": "The number of characters the two strings have in common.",
+          "isCorrect": false
+        },
+        {
+          "text": "The number of positions at which the two strings differ, for equal-length strings only.",
+          "isCorrect": false
+        },
+        {
+          "text": "The length of their longest common substring.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Levenshtein distance is the *minimum* number of single-character edits — insert, delete, or substitute — to transform one string into the other. It powers \"did you mean…?\" spelling suggestions by finding dictionary words a small number of edits away. The third option describes Hamming distance, which only counts substitutions and requires equal-length strings — it cannot handle the insertions/deletions that real typos produce.",
+      "references": "[Wikipedia: Edit distance](https://en.wikipedia.org/wiki/Edit_distance) · [Wikipedia: Levenshtein distance](https://en.wikipedia.org/wiki/Levenshtein_distance)"
+    },
+    {
+      "id": "edit-dp-grid-complexity",
+      "title": "Computing Levenshtein distance with the classic DP grid for strings of length *n* and *m* costs how much?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "O(*n*·*m*) time to fill an (*n*+1)×(*m*+1) grid; space can be reduced to O(min(*n*, *m*)).",
+          "isCorrect": true
+        },
+        {
+          "text": "O(*n* + *m*) time and O(1) space.",
+          "isCorrect": false
+        },
+        {
+          "text": "O(*n* log *m*) time using binary search.",
+          "isCorrect": false
+        },
+        {
+          "text": "O(2^*n*) time, because edit distance is inherently exponential.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The dynamic-programming solution fills a grid where cell `(i, j)` is the edit distance between the first `i` and first `j` characters, each cell derived from its top, left, and diagonal neighbors. That is O(*n*·*m*) cells, each O(1) work. Because every row depends only on the previous row, you can keep just two rows (or one with care), dropping space to O(min(*n*, *m*)). It is decidedly *not* exponential — the DP table is exactly what tames the naive recursive blow-up.",
+      "references": "[Wikipedia: Edit distance](https://en.wikipedia.org/wiki/Edit_distance)"
+    },
+    {
+      "id": "edit-fuzzy-vs-prefix",
+      "title": "In an fzf-style fuzzy finder, why does typing `\"fb\"` match `\"FooBar\"`?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Fuzzy matching accepts the query as a **subsequence**: `f`, then `b`, appear in order though not necessarily adjacent.",
+          "isCorrect": true
+        },
+        {
+          "text": "It computes a Levenshtein distance of 0 between `\"fb\"` and `\"FooBar\"`.",
+          "isCorrect": false
+        },
+        {
+          "text": "It treats `\"fb\"` as a prefix, and `\"FooBar\"` starts with `\"fb\"`.",
+          "isCorrect": false
+        },
+        {
+          "text": "It matches only because both strings contain the letter `b`.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A fuzzy finder treats the query as a *subsequence*: the typed characters must appear in the candidate in the same order, but with any gaps between them. In `\"FooBar\"` (lowercased `\"foobar\"`), `f` is at index 0 and `b` at index 3, so `\"fb\"` matches. That is strictly more permissive than *prefix* matching, which a trie accelerates and which would require the candidate to literally start with `\"fb\"`.",
+      "references": "[Wikipedia: Trie](https://en.wikipedia.org/wiki/Trie) · [Wikipedia: Approximate string matching](https://en.wikipedia.org/wiki/Approximate_string_matching)"
+    },
+    {
+      "id": "edit-naive-fuzzy-complexity",
+      "title": "Why can naive fuzzy search over a large list be slow — on the order of O(*n*·*m*) work per keystroke?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "It scans each of *n* candidates and, for each, walks up to *m* characters to test and score the subsequence match.",
+          "isCorrect": true
+        },
+        {
+          "text": "It re-sorts the whole list on every keystroke in O(*n*²).",
+          "isCorrect": false
+        },
+        {
+          "text": "It computes a cryptographic hash of every candidate string.",
+          "isCorrect": false
+        },
+        {
+          "text": "It re-downloads the candidate list from the server for each character typed.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "For each query character you advance through a candidate looking for the next match, so a single candidate of length *m* costs up to O(*m*), and doing that across *n* candidates is O(*n*·*m*) — on *every keystroke*. With thousands of candidates this is enough to drop frames, which is why real finders debounce input, cap candidate counts, precompute lowercased forms, and short-circuit non-matches early. Libraries such as fuzzysort lean hard on these optimizations.",
+      "references": "[npm: fuzzysort](https://www.npmjs.com/package/fuzzysort)"
+    },
+    {
+      "id": "edit-ranking-matches",
+      "title": "Good autocomplete ranks matches, not just filters them. For the query `\"cap\"`, which match should usually rank **highest**?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "A contiguous prefix like `\"cap\"` in `\"caption\"`, ahead of a scattered subsequence `c…a…p` in `\"crispApple\"`.",
+          "isCorrect": true
+        },
+        {
+          "text": "The longest candidate string, regardless of where the matched letters fall.",
+          "isCorrect": false
+        },
+        {
+          "text": "Whichever candidate happens to appear last in the source array.",
+          "isCorrect": false
+        },
+        {
+          "text": "Any match with the most letters in common, ignoring their order and position.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Filtering only asks *whether* a candidate matches; ranking asks *how well*. Practical scorers reward matches that are **contiguous** (the letters run together), that start at a **word boundary or camelCase hump**, and especially that form a **prefix** of the candidate. So `\"cap\"` as the literal start of `\"caption\"` outranks the same letters scattered across `\"crispApple\"`. Length alone, source position, and order-free overlap are poor proxies for relevance.",
+      "references": "[npm: fuzzysort](https://www.npmjs.com/package/fuzzysort)"
+    },
+    {
+      "id": "edit-true-statements",
+      "title": "Which statements about edit distance and fuzzy matching are true? Select all that apply.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "With unit costs, edit distance is symmetric: `distance(a, b) === distance(b, a)`.",
+          "isCorrect": true
+        },
+        {
+          "text": "A \"did you mean…?\" spell-suggester ranks dictionary words by small edit distance to the typed word.",
+          "isCorrect": true
+        },
+        {
+          "text": "Subsequence (fuzzy) matching is more permissive than prefix matching.",
+          "isCorrect": true
+        },
+        {
+          "text": "The edit distance between two strings can exceed the length of the longer string.",
+          "isCorrect": false
+        },
+        {
+          "text": "Fuzzy finders require the query to be a contiguous substring of the candidate.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "With insert/delete/substitute all costing 1, swapping the two arguments just swaps inserts and deletes, so the distance is symmetric. Spell-suggesters surface dictionary words within a small edit distance of the typed token. And fuzzy/subsequence matching is strictly looser than prefix matching. The two false claims: edit distance is *bounded* by the longer length (you can always rewrite by editing every character, then padding), so it can never exceed it; and fuzzy finders allow *gaps* between matched characters — contiguity boosts the score but is not required.",
+      "references": "[Wikipedia: Levenshtein distance](https://en.wikipedia.org/wiki/Levenshtein_distance) · [Wikipedia: Approximate string matching](https://en.wikipedia.org/wiki/Approximate_string_matching)"
+    },
+    {
+      "id": "edit-which-subsequence-match",
+      "title": "Treating fuzzy matching as a case-insensitive **subsequence** test, which queries match `\"FooBar\"`? Select all that apply.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "`\"fb\"`",
+          "isCorrect": true
+        },
+        {
+          "text": "`\"oba\"`",
+          "isCorrect": true
+        },
+        {
+          "text": "`\"far\"`",
+          "isCorrect": true
+        },
+        {
+          "text": "`\"bar\"`",
+          "isCorrect": true
+        },
+        {
+          "text": "`\"rb\"`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Lowercase the candidate to `\"foobar\"` (indices f0 o1 o2 b3 a4 r5) and check whether each query's characters appear left-to-right: `\"fb\"` → f0, b3 ✓; `\"oba\"` → o1, b3, a4 ✓; `\"far\"` → f0, a4, r5 ✓; `\"bar\"` → b3, a4, r5 ✓. `\"rb\"` fails: `r` is the last character (index 5), leaving no `b` after it, so the order cannot be satisfied. Order matters — that single rule is what separates fuzzy matching from \"contains all these letters.\""
+    },
+    {
+      "id": "edit-fuzzy-finder-properties",
+      "title": "Which are genuine properties of practical fuzzy finders (fzf, VS Code's Quick Open)? Select all that apply.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "Matched characters must appear in the same order as they were typed.",
+          "isCorrect": true
+        },
+        {
+          "text": "Matches at word boundaries or camelCase humps are scored higher.",
+          "isCorrect": true
+        },
+        {
+          "text": "Contiguous runs of matched characters score higher than scattered ones.",
+          "isCorrect": true
+        },
+        {
+          "text": "The query must equal the candidate's full length exactly.",
+          "isCorrect": false
+        },
+        {
+          "text": "Letters may be matched out of order as long as all of them are present.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Real finders enforce *order* (subsequence matching) and then *rank* by quality signals: hits at word starts or camelCase boundaries, and contiguous runs, score higher because they usually reflect intent. The two false statements describe things finders deliberately do *not* do: they never require the query to span the candidate's full length, and they never allow out-of-order matches (that would make almost everything match almost everything).",
+      "references": "[npm: fuzzysort](https://www.npmjs.com/package/fuzzysort)"
+    },
+    {
+      "id": "edit-levenshtein-kitten",
+      "title": "What is the Levenshtein distance between `\"kitten\"` and `\"sitting\"`?",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [3]
+      },
+      "explanation": "This is the textbook example. Three edits transform one into the other: `kitten` → `sitten` (substitute k→s) → `sittin` (substitute e→i) → `sitting` (insert g). No shorter sequence exists, so the distance is **3**. Notice it mixes two substitutions and one insertion — exactly the operations Hamming distance cannot express, which is why edit distance is the right model for typos.",
+      "references": "[Wikipedia: Levenshtein distance](https://en.wikipedia.org/wiki/Levenshtein_distance)"
+    },
+    {
+      "id": "edit-levenshtein-flaw-lawn",
+      "title": "What is the Levenshtein distance between `\"flaw\"` and `\"lawn\"`?",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [2]
+      },
+      "explanation": "Two edits suffice: `flaw` → `law` (delete the leading `f`) → `lawn` (insert `n` at the end), so the distance is **2**. It is tempting to eyeball the shared `\"law\"` and guess 1, but you need *both* a deletion and an insertion to line the strings up — a good reminder to trust the DP grid over intuition.",
+      "references": "[Wikipedia: Levenshtein distance](https://en.wikipedia.org/wiki/Levenshtein_distance)"
+    },
+    {
+      "id": "cssalgo-flex-greedy",
+      "title": "When flex items grow to fill a row, how does the browser distribute the leftover free space?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Greedily and proportionally: free space is handed out in a single pass according to each item's `flex-grow` ratio.",
+          "isCorrect": true
+        },
+        {
+          "text": "By backtracking through every possible split and keeping the best one.",
+          "isCorrect": false
+        },
+        {
+          "text": "By sorting the items and giving all the free space to the largest.",
+          "isCorrect": false
+        },
+        {
+          "text": "Randomly, which is why the layout differs between reloads.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Flexbox is a *greedy* allocator: it measures the free space on the main axis and divides it among items in one pass, in proportion to their `flex-grow` values (an item with `flex-grow: 2` gets twice the share of one with `flex-grow: 1`). Shrinking works the same way through `flex-shrink`, weighted by base size. There is no search or backtracking and nothing random — it is a direct, deterministic computation.",
+      "references": "[MDN: flex-grow](https://developer.mozilla.org/en-US/docs/Web/CSS/flex-grow) · [MDN: Controlling ratios of flex items along the main axis](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_flexible_box_layout/Controlling_ratios_of_flex_items_along_the_main_axis)"
+    },
+    {
+      "id": "cssalgo-greedy-default-linebreak",
+      "title": "How does a browser's **default** line-breaking algorithm decide where to wrap a paragraph?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Greedily: it places as many words as fit on the current line, breaks, and moves on — deciding line by line with no lookahead.",
+          "isCorrect": true
+        },
+        {
+          "text": "Optimally: it minimizes the raggedness of the whole paragraph before drawing any line.",
+          "isCorrect": false
+        },
+        {
+          "text": "By backtracking across all paragraphs to balance the page.",
+          "isCorrect": false
+        },
+        {
+          "text": "By sorting the words on each line from shortest to longest.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The default breaker is *greedy first-fit*: fill the line until the next word would overflow, break, repeat. It is fast and runs in a single pass, but because it never reconsiders an earlier break, it can leave a ragged right edge or a lonely short last line. The optimal alternative — looking at the whole paragraph at once — is the Knuth–Plass algorithm, which browsers do *not* use by default for body text. This is the everyday \"good enough, computed cheaply\" trade-off.",
+      "references": "[Wikipedia: Knuth–Plass line-breaking algorithm](https://en.wikipedia.org/wiki/Knuth%E2%80%93Plass_line-breaking_algorithm)"
+    },
+    {
+      "id": "cssalgo-knuth-plass-dp",
+      "title": "TeX's **Knuth–Plass** line-breaking algorithm produces tighter, more even paragraphs than greedy wrapping. Which technique does it use?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Dynamic programming: it minimizes the *total* \"badness\" across the whole paragraph, not one line at a time.",
+          "isCorrect": true
+        },
+        {
+          "text": "A greedy single pass, identical to the browser default.",
+          "isCorrect": false
+        },
+        {
+          "text": "Binary search over candidate font sizes.",
+          "isCorrect": false
+        },
+        {
+          "text": "A precomputed hash map of every possible line width.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Knuth–Plass treats line breaking as a global optimization: it assigns a \"badness\" to each possible line (how stretched or cramped the spaces are) plus penalties for things like hyphenation, then uses *dynamic programming* over the candidate breakpoints to choose the set of breaks that minimizes the paragraph's total badness. By trading a locally tight line for a better whole, it avoids the rivers and ragged edges greedy wrapping can produce — at higher computational cost.",
+      "references": "[Wikipedia: Knuth–Plass line-breaking algorithm](https://en.wikipedia.org/wiki/Knuth%E2%80%93Plass_line-breaking_algorithm)"
+    },
+    {
+      "id": "cssalgo-text-wrap-pretty",
+      "title": "What does `text-wrap: pretty` actually do in Chrome today?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "It re-evaluates the last few lines to avoid orphans and short final lines — better than pure greedy, but not full whole-paragraph optimization.",
+          "isCorrect": true
+        },
+        {
+          "text": "It runs complete Knuth–Plass optimization across the entire paragraph in every browser.",
+          "isCorrect": false
+        },
+        {
+          "text": "It justifies text by stretching the spaces, like `text-align: justify`.",
+          "isCorrect": false
+        },
+        {
+          "text": "It disables wrapping entirely and lets the text overflow its container.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The CSS spec leaves the exact algorithm up to the browser, and Chrome's current implementation is deliberately limited: it focuses on the *last* lines of a paragraph to prevent orphans and very short final lines, adjusting hyphenation as needed — an improvement over greedy, but not a full re-optimization of the whole paragraph in the Knuth–Plass sense, and behavior differs across engines. (Its sibling `text-wrap: balance` instead evens out line lengths in short blocks such as headings.)",
+      "references": "[Chrome for Developers](https://developer.chrome.com/blog/css-text-wrap-pretty) · [MDN: text-wrap-style](https://developer.mozilla.org/en-US/docs/Web/CSS/text-wrap-style)"
+    },
+    {
+      "id": "cssalgo-selector-right-to-left",
+      "title": "When matching a selector like `.menu li a` against an element, a CSS engine evaluates the compound selector in which direction — and why?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Right to left: it starts from the candidate element (the `a`), then checks ancestors, so most non-matches are rejected after a single cheap step.",
+          "isCorrect": true
+        },
+        {
+          "text": "Left to right, mirroring how the selector reads to a human.",
+          "isCorrect": false
+        },
+        {
+          "text": "In both directions at once, then it intersects the two result sets.",
+          "isCorrect": false
+        },
+        {
+          "text": "In order of specificity, trying the highest-specificity part first.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Browsers match the *rightmost* compound selector (the \"key selector\") against the element first, then walk **right to left** up the DOM verifying the ancestor conditions. The reason is pruning: the engine is testing one concrete element, and the vast majority fail the cheap rightmost check (`is this an <a>?`) immediately, so it never has to explore ancestors. Matching left to right would force it to chase descendants of every `.menu` for an element it could reject in one comparison.",
+      "references": "[MDN: CSS selectors](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_selectors)"
+    },
+    {
+      "id": "cssalgo-catastrophic-backtracking",
+      "title": "Why can a regex like `/^(a+)+$/` hang the main thread on an input such as `\"aaaaaaaaaaaaaaaaaaaa!\"`?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "**Catastrophic backtracking**: nested quantifiers create exponentially many ways to split the input, and the engine tries them all before it can declare failure.",
+          "isCorrect": true
+        },
+        {
+          "text": "The regex allocates one DOM node per `\"a\"`, exhausting memory.",
+          "isCorrect": false
+        },
+        {
+          "text": "JavaScript regexes compile to threads, and each `\"a\"` spawns a new one.",
+          "isCorrect": false
+        },
+        {
+          "text": "The `$` anchor forces a network round-trip to validate the string.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Backtracking regex engines (the default in JavaScript and most languages) explore alternative ways to match. With nested quantifiers like `(a+)+`, the run of `a`s can be partitioned among the inner and outer `+` in exponentially many combinations. As long as the string matches, the engine stops early — but the trailing `\"!\"` makes the overall match *fail*, forcing it to try every partition before giving up, which blows up to roughly O(2^*n*) and freezes the thread. This is a ReDoS hazard; the fix is to rewrite the pattern to remove the ambiguous nesting.",
+      "references": "[Wikipedia: ReDoS](https://en.wikipedia.org/wiki/ReDoS)"
+    },
+    {
+      "id": "cssalgo-backtracking-definition",
+      "title": "What characterizes a **backtracking** algorithm?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "It builds a candidate incrementally and abandons a partial solution as soon as it cannot be completed, then returns to try a different choice.",
+          "isCorrect": true
+        },
+        {
+          "text": "It always reaches the global optimum in a single greedy pass.",
+          "isCorrect": false
+        },
+        {
+          "text": "It caches subproblem results to avoid recomputation.",
+          "isCorrect": false
+        },
+        {
+          "text": "It divides the input in half at every step.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Backtracking is systematic trial-and-error: extend a partial solution one choice at a time, and the moment a constraint is violated, *undo* that choice (backtrack) and try the next option — pruning whole branches that cannot lead to a valid result. It is the engine behind solving Sudoku, placing N queens, regex alternation, and CSS selector ancestor checks. The distractors describe other paradigms: greedy (one-pass commitment), memoization/DP (caching), and divide-and-conquer/binary search (halving).",
+      "references": "[Wikipedia: Backtracking](https://en.wikipedia.org/wiki/Backtracking)"
+    },
+    {
+      "id": "cssalgo-greedy-true-statements",
+      "title": "Which statements about **greedy** behavior in CSS layout are true? Select all that apply.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "Flexbox distributes free space in a single proportional pass using `flex-grow`.",
+          "isCorrect": true
+        },
+        {
+          "text": "The default text line-breaker is greedy: it commits each line without reconsidering earlier breaks.",
+          "isCorrect": true
+        },
+        {
+          "text": "CSS Grid auto-placement fills cells in order, greedily dropping items into the next available slots.",
+          "isCorrect": true
+        },
+        {
+          "text": "Greedy algorithms always produce the globally optimal layout.",
+          "isCorrect": false
+        },
+        {
+          "text": "`flex-shrink` is resolved by backtracking over every possible item size.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Greedy, single-pass decisions are everywhere in layout: flex grow/shrink distribution, the default greedy line breaker, and the grid auto-placement algorithm that walks the grid and drops each auto item into the next free cell. The false claims state the defining *limitation* and a wrong mechanism: greedy methods are fast but **not** guaranteed globally optimal (that is exactly why Knuth–Plass exists for line breaking), and `flex-shrink` is a direct proportional computation, not a backtracking search.",
+      "references": "[Wikipedia: Greedy algorithm](https://en.wikipedia.org/wiki/Greedy_algorithm) · [MDN: Controlling ratios of flex items along the main axis](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_flexible_box_layout/Controlling_ratios_of_flex_items_along_the_main_axis)"
+    },
+    {
+      "id": "cssalgo-backtracking-examples",
+      "title": "Which of these involve **backtracking**? Select all that apply.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "A regex engine retrying alternative matches when a branch fails.",
+          "isCorrect": true
+        },
+        {
+          "text": "A CSS selector engine walking up ancestors and abandoning a candidate that does not match.",
+          "isCorrect": true
+        },
+        {
+          "text": "Solving Sudoku or placing N queens by trying a value and undoing it on a conflict.",
+          "isCorrect": true
+        },
+        {
+          "text": "Looking up a value in a hash map by its key.",
+          "isCorrect": false
+        },
+        {
+          "text": "Distributing flex free space proportionally in a single pass.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Backtracking means exploring choices and *retreating* when one fails: regex alternation/quantifiers retry other matches, selector matching abandons an element once an ancestor condition fails, and constraint puzzles like Sudoku and N-queens place-then-undo. The two distractors are not backtracking: a hash-map lookup is a direct O(1) addressing operation with nothing to retreat from, and flex distribution is a one-pass greedy computation.",
+      "references": "[Wikipedia: Backtracking](https://en.wikipedia.org/wiki/Backtracking)"
+    },
+    {
+      "id": "cssalgo-linebreak-true",
+      "title": "Which statements about line breaking and text wrapping on the web are true? Select all that apply.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "Greedy wrapping is fast and on by default; whole-paragraph optimization (Knuth–Plass) is slower but tighter.",
+          "isCorrect": true
+        },
+        {
+          "text": "`text-wrap: balance` aims to even out line lengths in short blocks such as headings.",
+          "isCorrect": true
+        },
+        {
+          "text": "`text-wrap: pretty` in Chrome focuses on the final lines to reduce orphans rather than re-optimizing the whole paragraph.",
+          "isCorrect": true
+        },
+        {
+          "text": "Browsers have always used Knuth–Plass by default for body text.",
+          "isCorrect": false
+        },
+        {
+          "text": "Optimal line breaking is impossible to compute, so no system does it.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The accurate picture: the default breaker is greedy (fast, line-at-a-time); Knuth–Plass optimizes the whole paragraph via dynamic programming (tighter, slower); `text-wrap: balance` targets short multi-line blocks like headings; and Chrome's `text-wrap: pretty` currently polishes the last lines to avoid orphans rather than re-flowing everything. The two false claims are easy to disprove: browsers historically used greedy wrapping, not Knuth–Plass — and optimal line breaking is very much computable, since TeX has done it since the early 1980s.",
+      "references": "[Wikipedia: Knuth–Plass line-breaking algorithm](https://en.wikipedia.org/wiki/Knuth%E2%80%93Plass_line-breaking_algorithm) · [Chrome for Developers](https://developer.chrome.com/blog/css-text-wrap-pretty)"
+    }
+  ]
+}

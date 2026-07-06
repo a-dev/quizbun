@@ -1,0 +1,347 @@
+@layer ui {
+  /*
+   * Prose — the shared stylesheet for rendered-Markdown HTML, covering every tag
+   * the Markdown pipelines can emit:
+   *   quiz tier (src/shared/lib/render/markdown.ts):
+   *     inline  a, br, code, em, strong
+   *     block   blockquote, h2–h4, ol, ul, li, p, pre, table/thead/tbody/tr/th/td
+   *     syntax  span.token.* inside fenced code blocks
+   *   docs tier (src/shared/lib/docs/render-doc.ts) additionally keeps a real
+   *     page-title h1 plus h5, h6 and hr.
+   *
+   * Two consumers share these rules:
+   *   - MarkdownRender (markdown.tsx) — quiz content, sizes `s`/`m`.
+   *   - the docs <article> (src/app/docs-layout.astro) — size `article`.
+   * Both inject pre-rendered HTML, so we can't put a class on each tag; the
+   * :global(<tag>) selectors are how we reach them. shared/ui/** is exempt from
+   * selector-max-type (dev-docs/css.md), which is what makes that legal here.
+   *
+   * Two-axis design so a new size never touches a tag rule:
+   *
+   *   1. Rigid tag rules — written ONCE as `.prose :global(<tag>)` selectors. They
+   *      read every size-dependent value from private custom properties (--_*) and
+   *      never name a size.
+   *   2. Size contract — each .size-* class does nothing but assign the --_* vars.
+   *      Add a size = add one .size-X block; the tag rules pick it up for free.
+   *
+   *   The contract (every size MUST define all of these):
+   *     --_fs               body font size
+   *     --_fs-h1/h2/h3/h4   heading sizes (h5/h6 reuse --_fs-h4)
+   *     --_gap-block        vertical space below a block
+   *     --_gap-heading      vertical space above a heading
+   *     --_gap-item         vertical space between list items
+   */
+
+  .prose {
+    font-size: var(--_fs);
+
+    /*
+     * Normal flow — intentionally NOT grid: inline-tier content (QuizCard
+     * previews, Player answers) renders bare inline nodes with no block
+     * wrapper, which a grid container would stack vertically and break
+     * mid-sentence. Block flow renders both tiers correctly, and margin
+     * collapsing gives headings extra breathing room for free (see below).
+     */
+    color: var(--color-text-primary);
+    overflow-wrap: break-word;
+  }
+
+  /* ---- Size contract: the only place a size is configured --------------- */
+
+  .size-xs {
+    --_fs: var(--fs-xs);
+    --_fs-h1: var(--fs-s);
+    --_fs-h2: var(--fs-s);
+    --_fs-h3: var(--fs-xs);
+    --_fs-h4: var(--fs-xs);
+    --_gap-block: 0.25rem;
+    --_gap-heading: 0.5rem;
+    --_gap-item: 0.25rem;
+  }
+
+  .size-s {
+    --_fs: var(--fs-s);
+    --_fs-h1: var(--fs-m);
+    --_fs-h2: var(--fs-m);
+    --_fs-h3: var(--fs-s);
+    --_fs-h4: var(--fs-s);
+    --_gap-block: 0.5rem;
+    --_gap-heading: 0.75rem;
+    --_gap-item: 0.25rem;
+  }
+
+  .size-m {
+    --_fs: var(--fs-m);
+    --_fs-h1: var(--fs-xl);
+    --_fs-h2: var(--fs-xl);
+    --_fs-h3: var(--fs-l);
+    --_fs-h4: var(--fs-m);
+    --_gap-block: 1rem;
+    --_gap-heading: 1.5rem;
+    --_gap-item: 0.5rem;
+  }
+
+  .prose.size-xs {
+    line-height: var(--lh-s);
+  }
+
+  .prose.size-m {
+    line-height: var(--lh-m);
+  }
+
+  .prose.size-l {
+    line-height: var(--lh-l);
+  }
+
+  /* Docs scale: same rhythm as size-m, but a real page-title h1 one step up.
+     Quiz tiers demote h1 -> h2, so only the docs <article> ever uses --_fs-h1. */
+  .size-article {
+    --_fs: var(--fs-m);
+    --_fs-h1: var(--fs-xxl);
+    --_fs-h2: var(--fs-xl);
+    --_fs-h3: var(--fs-l);
+    --_fs-h4: var(--fs-m);
+    --_max-width: 75ch;
+    --_gap-block: 1rem;
+    --_gap-heading: 1.5rem;
+    --_gap-item: 0.5rem;
+    --_code-font-size: 0.75em;
+  }
+
+  .prose.size-article {
+    line-height: 1.56;
+  }
+
+  /* ---- Rigid rules: read --_* only, never a size ------------------------ */
+
+  /* Keep vertical rhythm strictly between siblings — trim the outer edges so
+     the block never adds leading/trailing margin to its host. */
+  .prose > :global(:first-child) {
+    margin-block-start: 0;
+  }
+
+  .prose > :global(:last-child) {
+    margin-block-end: 0;
+  }
+
+  .prose :global(p) {
+    max-width: var(--_max-width, auto);
+    margin-block: 0 var(--_gap-block);
+    text-wrap-style: pretty;
+  }
+
+  /*
+   * Headings carry the larger top gap; where a block's bottom margin meets a
+   * heading's top margin, normal-flow margin collapsing keeps the larger of
+   * the two — so headings get breathing room without a special sibling rule.
+   */
+  .prose :global(h1) {
+    margin-block: var(--_gap-heading) var(--_gap-block);
+    font-size: var(--_fs-h1);
+    font-weight: var(--fw-semibold);
+    line-height: var(--lh-s);
+  }
+
+  .prose :global(h2) {
+    margin-block: var(--_gap-heading) var(--_gap-block);
+    font-size: var(--_fs-h2);
+    font-weight: var(--fw-semibold);
+    line-height: var(--lh-s);
+  }
+
+  .prose :global(h3) {
+    margin-block: var(--_gap-heading) var(--_gap-block);
+    font-size: var(--_fs-h3);
+    font-weight: var(--fw-semibold);
+    line-height: var(--lh-s);
+  }
+
+  .prose :global(h4),
+  .prose :global(h5),
+  .prose :global(h6) {
+    margin-block: var(--_gap-heading) var(--_gap-block);
+    font-size: var(--_fs-h4);
+    font-weight: var(--fw-semibold);
+    line-height: var(--lh-s);
+  }
+
+  .prose :global(hr) {
+    margin-block: var(--_gap-heading);
+    border: 0;
+    border-block-start: 1px solid var(--color-border-subtle);
+  }
+
+  .prose :global(a) {
+    color: var(--color-primary-blue);
+    text-underline-offset: 0.15em;
+  }
+
+  .prose :global(strong) {
+    font-weight: var(--fw-semibold);
+  }
+
+  .prose :global(em) {
+    font-style: italic;
+  }
+
+  /* Inline code — em-based padding/size so it tracks the surrounding text at
+     any size (and inside headings) without needing its own size knob. */
+  .prose :global(code) {
+    padding-inline: 0.3em;
+    border-radius: var(--rounded-xs);
+
+    font-family: var(--font-mono);
+    font-size: 0.9em;
+
+    background-color: var(--color-syntax-code-bg);
+  }
+
+  .prose :global(ul),
+  .prose :global(ol) {
+    max-width: var(--_max-width, auto);
+    margin-block: 0 var(--_gap-block);
+    padding-inline-start: 1.5em;
+    text-wrap-style: pretty;
+  }
+
+  .prose :global(li) {
+    margin-block-end: var(--_gap-item);
+    list-style: circle;
+  }
+
+  /* Nested lists hug their parent item instead of taking a full block gap. */
+  .prose :global(li > ul),
+  .prose :global(li > ol) {
+    margin-block: var(--_gap-item) 0;
+  }
+
+  .prose :global(blockquote) {
+    margin-block: 0 var(--_gap-block);
+    margin-inline: 0;
+    padding-inline-start: 1em;
+    border-inline-start: 1px solid var(--color-border-subtle);
+
+    color: var(--color-text-secondary);
+  }
+
+  /* Fenced code block — a block-level box that scrolls internally on overflow
+     so a long line can't stretch the page; the inner <code> sheds its inline
+     chrome and inherits the block's mono font/size. */
+  .prose :global(pre) {
+    overflow-x: auto;
+
+    margin-block: 0 var(--_gap-block);
+    padding-block: 0.8em;
+    padding-inline: 1em;
+    border: 1px solid var(--color-syntax-code-border);
+    border-radius: var(--rounded-m);
+
+    font-family: var(--font-mono);
+    font-size: var(--_code-font-size, 0.9em);
+    line-height: var(--lh-l);
+    color: var(--color-syntax-code-text);
+    overflow-wrap: break-word;
+    white-space: pre-wrap;
+
+    background-color: var(--color-syntax-code-bg);
+  }
+
+  .prose :global(pre code) {
+    padding: 0;
+    border-radius: 0;
+    font-size: inherit;
+    background-color: transparent;
+  }
+
+  .prose :global(.token.comment),
+  .prose :global(.token.prolog),
+  .prose :global(.token.doctype),
+  .prose :global(.token.cdata) {
+    font-style: italic;
+    color: var(--color-syntax-comment);
+  }
+
+  .prose :global(.token.punctuation) {
+    color: var(--color-syntax-punctuation);
+  }
+
+  .prose :global(.token.property),
+  .prose :global(.token.tag),
+  .prose :global(.token.boolean),
+  .prose :global(.token.number),
+  .prose :global(.token.constant),
+  .prose :global(.token.symbol),
+  .prose :global(.token.deleted) {
+    color: var(--color-syntax-literal);
+  }
+
+  .prose :global(.token.selector),
+  .prose :global(.token.attr-name),
+  .prose :global(.token.string),
+  .prose :global(.token.char),
+  .prose :global(.token.builtin),
+  .prose :global(.token.inserted) {
+    color: var(--color-syntax-string);
+  }
+
+  .prose :global(.token.operator),
+  .prose :global(.token.entity),
+  .prose :global(.token.url) {
+    color: var(--color-syntax-operator);
+  }
+
+  .prose :global(.token.atrule),
+  .prose :global(.token.attr-value),
+  .prose :global(.token.keyword) {
+    font-weight: var(--fw-semibold);
+    color: var(--color-syntax-keyword);
+  }
+
+  .prose :global(.token.function),
+  .prose :global(.token.class-name) {
+    color: var(--color-syntax-function);
+  }
+
+  .prose :global(.token.regex),
+  .prose :global(.token.important),
+  .prose :global(.token.variable) {
+    color: var(--color-syntax-variable);
+  }
+
+  .prose :global(.token.namespace) {
+    opacity: 0.72;
+  }
+
+  .prose :global(.token.bold),
+  .prose :global(.token.important) {
+    font-weight: var(--fw-semibold);
+  }
+
+  .prose :global(.token.italic) {
+    font-style: italic;
+  }
+
+  .prose :global(table) {
+    border-collapse: collapse;
+    width: 100%;
+    margin-block: 0 var(--_gap-block);
+    background-color: var(--color-panel-bg);
+  }
+
+  .prose :global(th),
+  .prose :global(td) {
+    padding-block: 0.4em;
+    padding-inline: 0.6em;
+    border: 1px solid var(--color-border-subtle);
+    text-align: start;
+  }
+
+  .prose :global(th) {
+    font-weight: var(--fw-semibold);
+    background-color: color-mix(in oklch, var(--color-panel-hover-bg) 60%, transparent);
+  }
+
+  .prose :global(tr):hover {
+    background-color: color-mix(in oklch, var(--color-panel-hover-bg) 20%, transparent);
+  }
+}

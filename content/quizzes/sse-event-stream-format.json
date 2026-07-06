@@ -1,0 +1,277 @@
+{
+  "schemaVersion": 1,
+  "id": "sse-event-stream-format",
+  "title": "Server-Sent Events Deep Dive: The Event Stream Format",
+  "description": "The precise SSE wire format from the WHATWG HTML spec: comment/keep-alive lines, multi-line data, the dispatch rule, named vs default events, the `id` and `retry` fields, stopping reconnection, and the reverse-proxy buffering gotcha. The parsing behavior here is verified with a spec-faithful parser in Node.",
+  "language": "en",
+  "tags": ["real-time", "http", "networking", "javascript"],
+  "questions": [
+    {
+      "id": "sse-comment-line",
+      "title": "In an SSE stream, what does a line beginning with a colon (`:`) do?",
+      "description": "For example, a server periodically writing `: keep-alive` followed by a blank line.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "It's a comment — ignored by the client; servers use it as a keep-alive heartbeat to hold a quiet connection open.",
+          "isCorrect": true
+        },
+        {
+          "text": "It sets the event's id.",
+          "isCorrect": false
+        },
+        {
+          "text": "It immediately terminates the stream.",
+          "isCorrect": false
+        },
+        {
+          "text": "It defines a custom event type.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A line that starts with `:` is a **comment** and is discarded by the parser. Its main practical use is as a heartbeat:\n\n```text\n: keep-alive\n\ndata: actual payload\n\n```\n\nSending a comment every 15–30s keeps idle-timeout intermediaries (proxies, load balancers) from reaping a connection that has no data flowing, and helps surface a dead connection. It carries no payload and never reaches your `onmessage` handler.",
+      "references": "[WHATWG HTML: Parsing an event stream](https://html.spec.whatwg.org/multipage/server-sent-events.html#parsing-an-event-stream)"
+    },
+    {
+      "id": "sse-multiline-data",
+      "title": "A single SSE event contains two `data:` lines. How is the payload delivered to the client?",
+      "description": "The event has `data: line1` then `data: line2`, then a blank line.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The two values are concatenated with a newline (`\\n`) between them into one `event.data` string.",
+          "isCorrect": true
+        },
+        {
+          "text": "Two separate `message` events fire, one per line.",
+          "isCorrect": false
+        },
+        {
+          "text": "Only the last `data:` line is kept; earlier ones are discarded.",
+          "isCorrect": false
+        },
+        {
+          "text": "The values are concatenated with no separator at all.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Each `data:` line appends its value **plus a line feed** to the event's data buffer; when the event dispatches, the single trailing line feed is removed. The net effect is that multiple `data:` lines are joined by `\\n`. Verified with a spec-faithful parser:\n\n```text\ndata: line1\ndata: line2\n\n```\n\nproduces `event.data === \"line1\\nline2\"`. This is how a server sends a multi-line string (e.g. a pretty-printed JSON block) inside one logical event — you split it across `data:` lines and the client rejoins them.",
+      "references": "[WHATWG HTML: Parsing an event stream](https://html.spec.whatwg.org/multipage/server-sent-events.html#parsing-an-event-stream)"
+    },
+    {
+      "id": "sse-dispatch-blank-line",
+      "title": "What part of the SSE wire format signals \"this event is complete — dispatch it now\"?",
+      "description": "Two words. It's what separates one event's fields from the next event's.",
+      "type": "input",
+      "validation": {
+        "mode": "text",
+        "acceptedAnswers": [
+          "blank line",
+          "a blank line",
+          "empty line",
+          "an empty line",
+          "double newline",
+          "two newlines"
+        ]
+      },
+      "explanation": "An event is dispatched when the parser reads a **blank line** (an empty line, i.e. two consecutive newlines — the previous line's terminator plus an empty line). Until that blank line, `event:`, `data:`, `id:`, and `retry:` lines accumulate into the current event; the blank line flushes them.\n\nOne consequence: forgetting the trailing blank line is the most common SSE bug — the browser holds the event, waiting for a terminator that never comes, so nothing fires. Every event must end with `\\n\\n`.",
+      "references": "[MDN: Using server-sent events](https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events)"
+    },
+    {
+      "id": "sse-default-event-type",
+      "title": "Your server sends events tagged `event: price`, but the client's `onmessage` handler never fires. Why?",
+      "description": "The connection is open and bytes are arriving — yet `onmessage` stays silent.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`onmessage` only receives events of the default type `message`; a named event needs `addEventListener(\"price\", …)`.",
+          "isCorrect": true
+        },
+        {
+          "text": "Named events aren't supported by `EventSource` at all.",
+          "isCorrect": false
+        },
+        {
+          "text": "Named events require `Content-Type: text/named-event-stream`.",
+          "isCorrect": false
+        },
+        {
+          "text": "Named events only start firing after the first `id:` is received.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "When an event has no `event:` field, its type defaults to `message`, which is what `onmessage` (and `addEventListener(\"message\", …)`) listens for. The moment you add `event: price`, the type becomes `price`, and only a matching listener receives it:\n\n```js\nconst es = new EventSource(\"/stream\");\nes.onmessage = (e) => {};                       // ← never sees `event: price`\nes.addEventListener(\"price\", (e) => {           // ← this does\n  console.log(JSON.parse(e.data));\n});\n```\n\nThis trips people up constantly: naming your events is great for routing, but you must register listeners by name.",
+      "references": "[MDN: Using server-sent events](https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events)"
+    },
+    {
+      "id": "sse-field-parsing",
+      "title": "Which statements about SSE field parsing are correct?",
+      "description": "Select every true statement about how each line is interpreted.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "A single leading space after the field's colon is stripped, so `data: hi` and `data:hi` both yield `hi`.",
+          "isCorrect": true
+        },
+        {
+          "text": "Field names other than `event`, `data`, `id`, and `retry` are ignored.",
+          "isCorrect": true
+        },
+        {
+          "text": "A line with no colon is treated as a field name whose value is the empty string.",
+          "isCorrect": true
+        },
+        {
+          "text": "A field value can span multiple lines by ending a line with a backslash for continuation.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The parser splits each line at the first colon: the part before is the field, the part after is the value, and **exactly one** leading space of the value is removed (so `data: hi` → `hi`, and a value that genuinely needs a leading space must be written `data:  hi`). Only four field names are meaningful — anything else is silently ignored. A line with no colon (e.g. a bare `data`) is a field with an empty value.\n\nThere is **no** backslash line-continuation; to send multiple lines you repeat the `data:` field, and the client joins them with `\\n` (see the multi-line question).",
+      "references": "[WHATWG HTML: Parsing an event stream](https://html.spec.whatwg.org/multipage/server-sent-events.html#parsing-an-event-stream)"
+    },
+    {
+      "id": "sse-retry-field",
+      "title": "What does a `retry: 10000` line do, and what's the constraint on its value?",
+      "description": "A line that isn't `event`, `data`, or `id`.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "It sets the client's reconnection delay to 10000 milliseconds; the value must be ASCII digits only, or the line is ignored.",
+          "isCorrect": true
+        },
+        {
+          "text": "It limits the stream to 10000 events before the server closes it.",
+          "isCorrect": false
+        },
+        {
+          "text": "It sets a 10000-second server-side idle timeout.",
+          "isCorrect": false
+        },
+        {
+          "text": "It re-sends the last failed event up to 10000 times.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`retry:` lets the **server** tune the client's auto-reconnect delay. `retry: 10000` means \"if we get disconnected, wait 10000 ms before reconnecting.\" The value must be ASCII digits; a non-numeric value like `retry: soon` is ignored, leaving the previous (implementation-default, typically a few seconds) delay in place. It applies to future reconnections, not to the current event — which is why a `retry:` line is often sent on its own followed by a blank line.",
+      "references": "[MDN: Using server-sent events](https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events)"
+    },
+    {
+      "id": "sse-stop-reconnect-status",
+      "title": "An `EventSource` reconnects on its own after a drop. Which 2xx HTTP status should the server return on (re)connect to make it give up and stop reconnecting?",
+      "description": "The idiomatic \"we're done, don't come back\" response. Give the numeric status code.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [
+          204
+        ]
+      },
+      "explanation": "EventSource only auto-reconnects after a *transient* failure (a dropped connection). When it (re)connects and the response isn't `200 OK` with `Content-Type: text/event-stream`, the client treats it as a **permanent failure**: it sets `readyState` to `CLOSED`, fires `error`, and does **not** try again. Returning **204 No Content** is the conventional, idiomatic 2xx way to tell a client \"stop reconnecting\" — the server cleanly signals there's nothing more to stream.\n\nSo the lifecycle is: network blip → auto-retry (with `Last-Event-ID`); deliberate `204` → permanent stop.",
+      "references": "[WHATWG HTML: Server-sent events](https://html.spec.whatwg.org/multipage/server-sent-events.html)"
+    },
+    {
+      "id": "sse-proxy-buffering",
+      "title": "SSE works locally, but in production behind nginx the events arrive in big delayed bursts instead of one-by-one. Most likely cause and fix?",
+      "description": "The stream is correct on the server; something between server and browser is holding it.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The reverse proxy is buffering the response; disable it (nginx `proxy_buffering off;` or send the `X-Accel-Buffering: no` header) and flush after each event.",
+          "isCorrect": true
+        },
+        {
+          "text": "SSE isn't allowed over HTTPS; switch the endpoint to `ws://`.",
+          "isCorrect": false
+        },
+        {
+          "text": "The browser is caching events; append a random query parameter to bust it.",
+          "isCorrect": false
+        },
+        {
+          "text": "`text/event-stream` must be gzip-compressed; enable compression to fix delivery.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "By default many reverse proxies (and some app servers) **buffer** an upstream response, releasing it only once a chunk fills or the response ends — which batches your individual events into delayed bursts and defeats the whole point of SSE. The fix is to turn buffering off for the stream: nginx `proxy_buffering off;` or have the app send the `X-Accel-Buffering: no` response header, and make sure your handler flushes after writing each event. Response **compression** makes it worse (another buffer), so disable it for the stream too. HTTPS and browser caching are red herrings here.",
+      "references": "[nginx: proxy_buffering directive](https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_buffering)"
+    },
+    {
+      "id": "sse-id-persistence",
+      "title": "An event sets `id: 42`. The next event has no `id:` line. If the client reconnects after that second event, what `Last-Event-ID` does it send?",
+      "description": "Think about whether the last event ID is per-event or sticky.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`42` — the last event ID persists across events until a new `id:` field changes it.",
+          "isCorrect": true
+        },
+        {
+          "text": "Empty — an event without `id:` resets the last event ID.",
+          "isCorrect": false
+        },
+        {
+          "text": "`43` — the client auto-increments the id for you.",
+          "isCorrect": false
+        },
+        {
+          "text": "It depends on the most recent `retry:` value.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The \"last event ID\" is **sticky**: an `id:` field updates it, and it then carries forward to every subsequent event until another `id:` changes it (an `id:` with an empty value resets it to the empty string). Verified with a parser — the third event below, which has no `id:`, still reports `lastEventId` `42`:\n\n```text\nid: 42\ndata: a\n\ndata: b\n\n```\n\nOn reconnect the client sends `Last-Event-ID: 42`. This is what lets a server tag only some events (say, checkpoints) yet still resume correctly.",
+      "references": "[WHATWG HTML: Parsing an event stream](https://html.spec.whatwg.org/multipage/server-sent-events.html#parsing-an-event-stream)"
+    },
+    {
+      "id": "sse-reconnection-behavior",
+      "title": "Which statements about `EventSource` reconnection are correct?",
+      "description": "Select every true statement.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "On a dropped connection (network error), it fires `error`, enters CONNECTING, and retries automatically.",
+          "isCorrect": true
+        },
+        {
+          "text": "On reconnect it sends a `Last-Event-ID` header with the last id it received.",
+          "isCorrect": true
+        },
+        {
+          "text": "A non-200 response (such as 204) on connect is a permanent failure — it goes to CLOSED and does not retry.",
+          "isCorrect": true
+        },
+        {
+          "text": "Calling `close()` merely pauses the stream; it auto-resumes after the retry interval.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "EventSource distinguishes *transient* from *permanent* failures. A network drop is transient: it fires `error`, sets `readyState` to `CONNECTING` (0), waits the retry delay, and reconnects — sending `Last-Event-ID` so the server can resume. A bad response (non-200 / wrong content type, e.g. `204`) is permanent: `readyState` becomes `CLOSED` (2) and it never retries. And `close()` is explicit, permanent teardown — there is no auto-resume; you must construct a new `EventSource` to start again.",
+      "references": "[MDN: Using server-sent events](https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events)"
+    },
+    {
+      "id": "sse-keepalive-comments",
+      "title": "Why do SSE servers periodically send a comment line (e.g. `: ping`) even when there's no real data to deliver?",
+      "description": "Think about a connection that stays quiet for minutes at a time.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "To stop idle-timeout intermediaries (proxies, load balancers) from closing a quiet connection — and to help detect a dead one.",
+          "isCorrect": true
+        },
+        {
+          "text": "Because `EventSource` errors out if it receives no bytes within one second.",
+          "isCorrect": false
+        },
+        {
+          "text": "Because each comment increments the Last-Event-ID counter.",
+          "isCorrect": false
+        },
+        {
+          "text": "Because the spec requires a comment between every pair of events.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A long-lived SSE connection that goes quiet is at the mercy of every box between server and browser: proxies, load balancers, and NAT devices often close connections idle for some seconds/minutes. Periodically writing a comment line (which the client ignores) keeps bytes flowing so the connection isn't reaped, and a failed write surfaces a broken pipe so the server can clean up. It is purely operational — not required by the protocol between events, and unrelated to ids or any 1-second rule.",
+      "references": "[WHATWG HTML: Parsing an event stream](https://html.spec.whatwg.org/multipage/server-sent-events.html#parsing-an-event-stream)"
+    }
+  ]
+}

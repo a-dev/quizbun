@@ -1,0 +1,302 @@
+{
+  "schemaVersion": 1,
+  "id": "css-cascade-specificity-inheritance",
+  "title": "CSS Cascade, Specificity & Inheritance",
+  "description": "Read CSS conflicts the way the engine does: specificity by column, why `@layer` order outranks specificity (and how `!important` reverses it), unlayered-beats-layered, inherited vs. `initial`/`revert`/`unset`, and `:where()`'s zero specificity. Answers follow the CSS Cascade and Selectors specifications.",
+  "language": "en",
+  "tags": ["css", "frontend"],
+  "questions": [
+    {
+      "id": "id-beats-classes",
+      "title": "An `<a>` matches both rules below — which color wins?",
+      "description": "Specificity is the tie-breaker. Pick the resulting color.\n\n```css\n#header .nav a           { color: blue; }\nheader nav a.link.active { color: red;  }\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`blue` — one ID outranks any number of classes and types.",
+          "isCorrect": true
+        },
+        {
+          "text": "`red` — it matches more selectors, so it is more specific overall.",
+          "isCorrect": false
+        },
+        {
+          "text": "`red` — it appears later in the source, which breaks the tie.",
+          "isCorrect": false
+        },
+        {
+          "text": "Neither — the conflict cancels both and the color falls back to the default.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Specificity is compared **column by column, left to right**: IDs (A), then classes/attributes/pseudo-classes (B), then types/pseudo-elements (C). The first column that differs decides the winner — totals never matter.\n\n- `#header .nav a` → **(1, 1, 1)** — one ID, one class, one type.\n- `header nav a.link.active` → **(0, 2, 3)** — zero IDs, two classes, three types.\n\nComparing the A column first: `1 > 0`, so `#header .nav a` wins immediately and the link is **blue**. The second selector has more classes *and* more type selectors, yet a single ID outranks every lower column combined. Source order is only consulted when specificity ties — it never does here.\n\n```css\n#header .nav a           { color: blue; } /* (1,1,1) → wins on the ID column */\nheader nav a.link.active { color: red;  } /* (0,2,3) */\n```\n\nThis is exactly why sprinkling IDs into selectors makes a stylesheet painful to override later.",
+      "references": "[MDN: Specificity](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_cascade/Specificity)"
+    },
+    {
+      "id": "specificity-triple",
+      "title": "What is the specificity of `#sidebar ul li a.active`?",
+      "description": "Give the `(A, B, C)` triple — IDs, then classes/pseudo-classes, then types.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "(1, 1, 3)",
+          "isCorrect": true
+        },
+        {
+          "text": "(1, 2, 3)",
+          "isCorrect": false
+        },
+        {
+          "text": "(0, 2, 3)",
+          "isCorrect": false
+        },
+        {
+          "text": "(1, 4, 0)",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Sort each simple selector into its column:\n\n- `#sidebar` → 1 ID → **A = 1**\n- `.active` → 1 class → **B = 1**\n- `ul`, `li`, `a` → 3 type selectors → **C = 3**\n\nThe descendant combinators (the spaces) contribute nothing. So the specificity is **(1, 1, 3)**.\n\nThe tempting mistake is the `a.active` compound: `a` is a *type* selector (column C) and `.active` is a *class* (column B), so they split into different columns rather than both landing in B. Counting `#sidebar` as a class instead of an ID would wrongly give (0, 2, 3).",
+      "references": "[MDN: Specificity](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_cascade/Specificity)"
+    },
+    {
+      "id": "b-column-count",
+      "title": "In the specificity of `nav.primary > ul li.active a:hover`, what is the B column?",
+      "description": "Enter the count for the B column: classes, attribute selectors, and pseudo-classes combined.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [
+          3
+        ]
+      },
+      "explanation": "The **B** column counts classes, attribute selectors, **and pseudo-classes** together. A pseudo-class such as `:hover` lives here — not in the type column.\n\nFor `nav.primary > ul li.active a:hover`:\n\n- A (IDs): none → 0\n- B (`.primary`, `.active`, `:hover`): **3**\n- C (`nav`, `ul`, `li`, `a`): 4\n\nThe child combinator `>` and the descendant spaces add nothing. The full triple is **(0, 3, 4)**, so **B = 3**. Forgetting that `:hover` counts in B (or miscounting it as a type) is a classic off-by-one.",
+      "references": "[W3C Selectors Level 4: Calculating a selector's specificity](https://www.w3.org/TR/selectors-4/#specificity-rules)"
+    },
+    {
+      "id": "functional-pseudo-specificity",
+      "title": "Which statements about the specificity of functional pseudo-classes are correct?",
+      "description": "Select every true statement about `:where()`, `:is()`, `:not()`, and `:nth-child()`.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "`:where()` always contributes zero specificity, no matter what selectors are inside it.",
+          "isCorrect": true
+        },
+        {
+          "text": "`:is()` takes the specificity of its most specific argument.",
+          "isCorrect": true
+        },
+        {
+          "text": "`:not()` adds the specificity of its most specific argument; the `:not()` wrapper itself adds nothing extra.",
+          "isCorrect": true
+        },
+        {
+          "text": "`:nth-child()` contributes zero specificity, just like `:where()`.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The functional pseudo-classes were given deliberate, distinct specificity rules:\n\n- **`:where()`** — its specificity is **replaced by zero**, however many IDs sit inside. That is what makes it ideal for low-priority, easily-overridable defaults.\n- **`:is()`** — replaced by the specificity of its **most specific argument**.\n- **`:not()`** — the wrapper adds nothing, but its **most specific argument** is counted.\n- **`:nth-child()`** is an ordinary pseudo-class, so it contributes **(0, 1, 0)** — *not* zero. (With the `:nth-child(... of <selector>)` form it also adds that selector's specificity.)\n\n```css\n:is(#a, .b) p    { } /* (1,0,1) — most specific arg is #a */\n:where(#a, .b) p { } /* (0,0,1) — :where zeroes the whole group out */\np:not(#a)        { } /* (1,0,1) — :not adds #a's (1,0,0) */\nli:nth-child(2n) { } /* (0,1,1) — :nth-child is a normal pseudo-class */\n```",
+      "references": "[MDN: :where()](https://developer.mozilla.org/en-US/docs/Web/CSS/:where) · [MDN: :is()](https://developer.mozilla.org/en-US/docs/Web/CSS/:is)"
+    },
+    {
+      "id": "layer-order-beats-specificity",
+      "title": "What color is the heading, given these cascade layers?",
+      "description": "`<h1 id=\"title\">` matches both rules. Pick the winning color.\n\n```css\n@layer base, components;\n\n@layer components { h1     { color: green; } }\n@layer base      { #title { color: red;   } }\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`green` — `components` is the later layer, and layer order is compared before specificity.",
+          "isCorrect": true
+        },
+        {
+          "text": "`red` — `#title` has higher specificity, which always wins.",
+          "isCorrect": false
+        },
+        {
+          "text": "`red` — the `#title` rule appears later in the source file.",
+          "isCorrect": false
+        },
+        {
+          "text": "`green` — `:where()`-style zero specificity is applied inside layers.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "This is the headline surprise of cascade layers: **layer order is compared before specificity**. The cascade sorts candidates by origin & importance, then by *cascade layer*, and only then by specificity and source order. A declaration in a winning layer beats a more specific selector in a losing layer.\n\nThe statement `@layer base, components;` fixes the order — `base` first, `components` second — so `components` is the **higher-priority** layer. (Re-opening `@layer base {…}` later in the file does *not* change the order; only the first mention of a layer name sets its position.) The `h1` rule in `components` therefore wins over the `#title` rule in `base`, even though `#title` is far more specific **and** appears later in the source. The heading is **green**.\n\n```css\n@layer base, components;            /* precedence: base < components */\n@layer components { h1     { color: green; } } /* (0,0,1), later layer → wins */\n@layer base      { #title { color: red;   } } /* (1,0,0), earlier layer → loses */\n```\n\nThis is the whole point of layers: drop high-specificity third-party CSS into an early layer, then override it with simple selectors in a later one.",
+      "references": "[MDN: @layer](https://developer.mozilla.org/en-US/docs/Web/CSS/@layer)"
+    },
+    {
+      "id": "important-reverses-layers",
+      "title": "With `!important` on both rules, which layer wins?",
+      "description": "Both declarations are `!important`. Pick the resulting color.\n\n```css\n@layer base, theme;\n\n@layer base  { button { color: red   !important; } }\n@layer theme { button { color: green !important; } }\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`red` — for `!important` declarations the layer order is reversed, so the earlier layer wins.",
+          "isCorrect": true
+        },
+        {
+          "text": "`green` — `theme` is the later layer, and later layers always win.",
+          "isCorrect": false
+        },
+        {
+          "text": "`green` — two `!important` rules tie, so source order decides.",
+          "isCorrect": false
+        },
+        {
+          "text": "Neither — `!important` on both sides cancels out to the default color.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "For **normal** declarations, later layers win. For **`!important`** declarations, the layer order is **reversed** — earlier layers win. This is the mechanism that lets a base/reset layer assert non-negotiable rules that later layers cannot override, even with their own `!important`.\n\nWith `@layer base, theme;`, `theme` normally beats `base`. But both declarations here are `!important`, so the order flips and **`base` wins** → the button is **red**.\n\n```css\n@layer base, theme;\n@layer base  { button { color: red   !important; } } /* important + earliest layer → wins */\n@layer theme { button { color: green !important; } }\n```\n\nMnemonic: `!important` turns the layer stack upside down.",
+      "references": "[MDN: Cascade layers](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_cascade/Cascade_layers)"
+    },
+    {
+      "id": "unlayered-beats-layered",
+      "title": "An unlayered rule and a layered rule conflict — which wins?",
+      "description": "Both are plain `a { color }` with equal specificity. Pick the winning color.\n\n```css\na { color: red; }\n\n@layer base { a { color: green; } }\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`red` — unlayered normal declarations rank above any layer, regardless of source order.",
+          "isCorrect": true
+        },
+        {
+          "text": "`green` — it is inside an explicit layer, and layers always beat unlayered rules.",
+          "isCorrect": false
+        },
+        {
+          "text": "`green` — the layered rule appears later in the source, so it wins the tie.",
+          "isCorrect": false
+        },
+        {
+          "text": "`red` — only because it is written first; swapping the order would flip it.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Declarations that aren't inside any `@layer` are gathered into an **implicit layer that sits *after* all named layers** — so for **normal** declarations, *unlayered beats layered*. This is a matter of layer precedence, **not source order**: the unlayered rule here wins even though it appears *first* in the file.\n\nBoth selectors are `a` at specificity (0,0,1), but layer precedence is checked before specificity and before order, so the **unlayered** rule wins → the link is **red**. Swapping the two blocks would not change the outcome.\n\n```css\na { color: red; }                   /* unlayered → highest-priority normal band */\n@layer base { a { color: green; } } /* layered → loses despite coming later */\n```\n\n(For `!important` this reverses too: unlayered important declarations have the *lowest* priority among author important declarations.)",
+      "references": "[MDN: Cascade layers](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_cascade/Cascade_layers)"
+    },
+    {
+      "id": "important-beats-inline",
+      "title": "Does the stylesheet override this inline style?",
+      "description": "Pick the color the paragraph ends up with.\n\n```html\n<p id=\"msg\" style=\"color: blue;\">Hello</p>\n```\n```css\n#msg { color: green !important; }\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`green` — an `!important` author rule outranks an inline style, which is only a normal declaration.",
+          "isCorrect": true
+        },
+        {
+          "text": "`blue` — an inline `style` attribute always wins over any stylesheet rule.",
+          "isCorrect": false
+        },
+        {
+          "text": "`blue` — the inline style and `#msg` tie on specificity, so the inline one wins.",
+          "isCorrect": false
+        },
+        {
+          "text": "`green` — because `#msg` is more specific than an inline style.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Importance outranks the inline `style` attribute. The cascade splits author declarations into *normal* and *important* bands, with important sitting **above** normal. An inline style is just a high-priority **normal** declaration, so an `!important` author rule lives in a higher band and wins. The text is **green**.\n\n```html\n<p id=\"msg\" style=\"color: blue;\">Hello</p>\n```\n```css\n#msg { color: green !important; } /* important author rule beats inline normal */\n```\n\nWithout `!important`, the inline `blue` would win — inline styles outrank ordinary selector specificity for normal declarations. Adding `!important` in the stylesheet is the one author tool that overrides an inline style (short of putting `!important` *on* the inline declaration itself).",
+      "references": "[MDN: !important](https://developer.mozilla.org/en-US/docs/Web/CSS/important)"
+    },
+    {
+      "id": "inherited-by-default",
+      "title": "Which of these properties inherit by default?",
+      "description": "Select every property whose value flows to descendant elements without an explicit `inherit`.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "`color`",
+          "isCorrect": true
+        },
+        {
+          "text": "`font-family`",
+          "isCorrect": true
+        },
+        {
+          "text": "`cursor`",
+          "isCorrect": true
+        },
+        {
+          "text": "`padding`",
+          "isCorrect": false
+        },
+        {
+          "text": "`border-width`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Inheritance is decided per property by its specification. The rule of thumb: **text- and font-related properties inherit** so typography flows down the tree, while **box-model and layout properties do not** — otherwise every child would duplicate its parent's padding and borders.\n\n- `color` — inherited ✔\n- `font-family` — inherited ✔\n- `cursor` — inherited ✔ (a non-text property that still inherits, so a `cursor` set on a container applies to its descendants)\n- `padding` — **not** inherited ✘\n- `border-width` — **not** inherited ✘\n\nOther commonly inherited properties: `line-height`, `letter-spacing`, `text-align`, `white-space`, `visibility`, `list-style`. Not inherited: `margin`, `background`, `width`, `height`, `display`, `position`. You can always force the issue with the `inherit` keyword on a non-inherited property.",
+      "references": "[MDN: Inheritance](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_cascade/Inheritance)"
+    },
+    {
+      "id": "display-initial-is-inline",
+      "title": "What is the computed `display` of a `<div>` with `display: initial`?",
+      "description": "Pick the computed value.\n\n```css\ndiv { display: initial; }\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`inline` — `initial` resets to the property's spec initial value, which for `display` is `inline`.",
+          "isCorrect": true
+        },
+        {
+          "text": "`block` — `initial` restores the browser's default for a `div`.",
+          "isCorrect": false
+        },
+        {
+          "text": "`inline-block` — the compromise between the spec default and the UA default.",
+          "isCorrect": false
+        },
+        {
+          "text": "`unset` — the declaration is invalid and is ignored.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`initial` resets a property to the **initial value defined in its specification** — *not* the browser's default for that element. The spec initial value of `display` is **`inline`**. What normally makes a `div` block-level is the user-agent stylesheet rule `div { display: block; }`, and `initial` deliberately ignores the UA stylesheet. So `display: initial` makes the `div` compute to **`inline`**.\n\n```css\ndiv { display: initial; } /* computed display: inline, not block */\n```\n\nThis trips people up because they read `initial` as \"the default I'm used to seeing.\" It actually means \"this property's own spec default,\" and for `display` that default is `inline` for every element.",
+      "references": "[MDN: initial](https://developer.mozilla.org/en-US/docs/Web/CSS/initial)"
+    },
+    {
+      "id": "initial-vs-revert",
+      "title": "And with `display: revert` on the same `<div>`?",
+      "description": "Pick the statement that correctly describes `revert` versus `initial`.\n\n```css\ndiv { display: revert; }\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`block` — `revert` rolls back to the user-agent stylesheet (`div { display: block }`), whereas `initial` would give `inline`.",
+          "isCorrect": true
+        },
+        {
+          "text": "`inline` — `revert` and `initial` are synonyms for the spec initial value.",
+          "isCorrect": false
+        },
+        {
+          "text": "`inline-block` — `revert` averages the UA default with the spec default.",
+          "isCorrect": false
+        },
+        {
+          "text": "It is invalid — `revert` is not a real CSS-wide keyword.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`revert` is **not** a synonym for `initial`. It rolls the property back to the value it would have had from the **previous cascade origin**. For an author declaration, the previous origin is the user (or, lacking that, the user-agent) stylesheet — where `div { display: block; }` lives. So `display: revert` makes the `div` compute to **`block`**.\n\nContrast the two keywords directly:\n\n```css\ndiv { display: revert;  } /* block  — rolls back to the UA stylesheet */\ndiv { display: initial; } /* inline — the property's spec initial value */\n```\n\nReach for `revert` when you mean \"undo my styles and let the browser defaults stand\"; reach for `initial` when you want the property's spec default regardless of element.",
+      "references": "[MDN: revert](https://developer.mozilla.org/en-US/docs/Web/CSS/revert)"
+    },
+    {
+      "id": "unset-keyword",
+      "title": "Which CSS-wide keyword acts as `inherit` for inherited properties and `initial` otherwise?",
+      "description": "Enter the single keyword (the chameleon of the four CSS-wide keywords).",
+      "type": "input",
+      "validation": {
+        "mode": "text",
+        "acceptedAnswers": [
+          "unset"
+        ]
+      },
+      "explanation": "`unset` is the chameleon keyword: it behaves as **`inherit` for properties that inherit by default**, and as **`initial` for properties that do not**.\n\n```css\n.card {\n  color: unset;  /* color inherits → behaves like inherit */\n  border: unset; /* border does not inherit → behaves like initial (no border) */\n}\n```\n\nThe four CSS-wide keywords compared:\n\n- `inherit` — always take the parent's computed value.\n- `initial` — always the property's spec initial value.\n- `unset` — inherit-or-initial, depending on whether the property inherits.\n- `revert` — roll back to the previous cascade origin (e.g. the UA stylesheet).\n\n`all: unset` applies this to *every* property at once — a quick way to neutralize both inherited and default styling on an element.",
+      "references": "[MDN: unset](https://developer.mozilla.org/en-US/docs/Web/CSS/unset)"
+    }
+  ]
+}

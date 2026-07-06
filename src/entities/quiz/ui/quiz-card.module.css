@@ -1,0 +1,115 @@
+.root {
+  display: grid;
+
+  /* Opt into a parent grid's rows so counter/title/description/tags line up
+     across sibling cards. Both properties are no-ops when the card is not a
+     grid item (standalone use in the Library and Catalog lists). */
+  grid-row: span 4;
+  grid-template-rows: subgrid;
+
+  /* Spacing inside the card stays margin-driven; cancel the parent grid's
+     row-gap that subgrid would otherwise inherit between the four rows. */
+  row-gap: 0;
+
+  border: 1px solid var(--color-border-subtle);
+
+  background-color: var(--color-panel-bg);
+}
+
+.size-s {
+  composes: rounded-s from "#styles/utils.module.css";
+
+  grid-row: span 2;
+  gap: 0;
+
+  padding-block: 0.5rem;
+  padding-inline: 0.8rem;
+}
+
+.size-m {
+  composes: rounded-m from "#styles/utils.module.css";
+
+  grid-row: span 4;
+  gap: 0.25rem;
+
+  padding-block: 1.05rem;
+  padding-inline: 1.2rem;
+}
+
+.header {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.meta {
+  font-size: var(--fs-xs);
+  color: var(--color-text-secondary);
+}
+
+.answered-count {
+  margin-inline-start: 0.1rem;
+  padding-inline: 0.4rem;
+  border-radius: 0.2rem;
+
+  font-weight: var(--fw-medium);
+  line-height: 1;
+  color: var(--color-text-on-user-surface);
+
+  background-color: var(--color-user-surface-bg-accent);
+}
+
+.counter {
+  font-weight: var(--fw-semibold);
+}
+
+.title-link {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: space-between;
+}
+
+.arrow-link {
+  align-self: start;
+
+  margin-block-start: 0.34rem;
+
+  color: var(--color-primary-blue);
+  text-decoration: none;
+
+  transition: transform 0.3s;
+}
+
+.size-s .arrow-link {
+  margin-block-end: 0.1rem;
+}
+
+@media (hover: hover) {
+  .title-link:hover .arrow-link {
+    transform: translateX(30%);
+  }
+}
+
+.description {
+  max-width: 62ch;
+  margin-block: 1.1rem 0.7rem;
+  font-weight: var(--fw-medium);
+  text-wrap-style: pretty;
+}
+
+.tags {
+  overflow: clip;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-content: flex-start;
+
+  max-block-size: var(--size-badge-s-block);
+  margin-top: auto;
+}
+
+.added-at {
+  font-size: var(--fs-xs);
+  color: var(--color-text-secondary);
+}

@@ -1,0 +1,275 @@
+{
+  "schemaVersion": 1,
+  "id": "scaling-websockets-fleet",
+  "title": "Scaling WebSockets: Sticky Sessions, Fan-Out & Backpressure",
+  "description": "Running real-time WebSockets across a fleet: why connections need sticky sessions, how a pub/sub backplane fans messages across nodes, tracking presence, per-connection backpressure with `bufferedAmount`, reconnect storms, and the file-descriptor ceiling. The fan-out math is verified in Node.",
+  "language": "en",
+  "tags": ["websockets", "real-time", "system-design", "networking"],
+  "questions": [
+    {
+      "id": "ws-sticky-sessions",
+      "title": "You put 3 WebSocket servers behind a per-request round-robin load balancer, and connections keep breaking. Why — and what's the fix?",
+      "description": "Contrast a long-lived WebSocket with an ordinary stateless HTTP request.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "A WebSocket is a long-lived, stateful connection pinned to one server, so the load balancer needs sticky sessions (connection affinity) to keep a client's traffic on the server holding its socket.",
+          "isCorrect": true
+        },
+        {
+          "text": "WebSockets require the balancer to re-distribute every message; enable per-message round-robin.",
+          "isCorrect": false
+        },
+        {
+          "text": "The servers are CPU-starved; adding cores will stop the disconnects.",
+          "isCorrect": false
+        },
+        {
+          "text": "Round-robin is fine; the real fix is turning off TLS.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The WebSocket upgrade establishes a single TCP connection that lives in **one** backend process. A balancer that routes per *request* can send the `Upgrade` to server A but later steer traffic toward B — which has no such connection — and the session breaks. The fix is affinity: balance at Layer 4 (per TCP connection, which naturally stays put) or pin with Layer-7 session stickiness.\n\nStateless HTTP avoids this entirely because any server can answer any request — which is exactly why a stateful, sticky connection is harder to operate at scale.",
+      "references": "[Socket.IO: Using multiple nodes](https://socket.io/docs/v4/using-multiple-nodes/)"
+    },
+    {
+      "id": "ws-pubsub-fanout",
+      "title": "Clients are spread across 3 WebSocket servers. A message from a user on server A must reach a recipient connected to server B. What architecture solves this?",
+      "description": "Server A's process holds only its own sockets — not B's.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "A shared pub/sub backplane (e.g. Redis Pub/Sub, NATS): every server subscribes, and each forwards published messages to its own locally-connected clients.",
+          "isCorrect": true
+        },
+        {
+          "text": "Have server A open a fresh WebSocket to server B for every message it needs to relay.",
+          "isCorrect": false
+        },
+        {
+          "text": "Store the message in the recipient's localStorage until they happen to reconnect to server A.",
+          "isCorrect": false
+        },
+        {
+          "text": "Broadcast a UDP packet to the whole subnet and let the right server pick it up.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Each server's map of `userId → socket` is **per process**; server A simply has no handle to a socket living on B. A pub/sub bus decouples *publishing* a message from *which* server holds the recipient: every app server subscribes to the relevant channels, and when a message is published, each server delivers it to whichever matching clients it happens to hold.\n\nThis backplane is exactly what Socket.IO's Redis adapter, Phoenix PubSub, and similar tools provide — it's the standard way to scale WebSockets past a single box. Mesh-connecting every server pair (the first distractor) is O(n²) and brittle.",
+      "references": "[Socket.IO: Redis adapter](https://socket.io/docs/v4/redis-adapter/)"
+    },
+    {
+      "id": "ws-buffered-amount",
+      "title": "Which read-only `WebSocket` property reports how many bytes you've queued with `send()` that haven't yet gone out to the network?",
+      "description": "It's your signal that the consumer is falling behind. Give the property name.",
+      "type": "input",
+      "validation": {
+        "mode": "text",
+        "acceptedAnswers": [
+          "bufferedAmount",
+          "WebSocket.bufferedAmount",
+          "socket.bufferedAmount",
+          "ws.bufferedAmount"
+        ]
+      },
+      "explanation": "`WebSocket.bufferedAmount` is the count of bytes passed to `send()` that are still queued, not yet transmitted. If you call `send()` faster than the socket drains, it climbs — your cue to slow down (this is the WebSocket equivalent of stream backpressure).\n\n```js\nconst HWM = 1_000_000; // 1 MB queued = too far behind\nfunction maybeSend(ws, data) {\n  if (ws.bufferedAmount < HWM) ws.send(data); // room to send\n  // else: skip, coalesce, or disconnect this laggard\n}\n```\n\nBoth the browser API and Node's `ws` library expose `bufferedAmount`, so the same guard works on client and server.",
+      "references": "[MDN: WebSocket.bufferedAmount](https://developer.mozilla.org/en-US/docs/Web/API/WebSocket/bufferedAmount)"
+    },
+    {
+      "id": "ws-presence-facts",
+      "title": "Which statements about tracking presence (who's online) across a WebSocket fleet are correct?",
+      "description": "Select every true statement.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "Presence is distributed state: a user may be on any server, so you need shared storage or pub/sub to assemble the full picture.",
+          "isCorrect": true
+        },
+        {
+          "text": "If a server crashes, its clients' presence entries can go stale, so TTL/heartbeat expiry is needed to reap them.",
+          "isCorrect": true
+        },
+        {
+          "text": "One user can hold several simultaneous connections (tabs/devices), so presence is often ref-counted per user.",
+          "isCorrect": true
+        },
+        {
+          "text": "Because the connection is persistent, the server always receives a clean disconnect event, so presence is always exact.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Presence is deceptively hard. It's **distributed** (a user's connection can be on any node, so no single process knows the global online set without shared state). Disconnects are frequently *not* clean — abnormal closures (code `1006`), network drops, and especially a crashed server fire **no** close event, leaving ghost entries. The cure is heartbeats plus TTL keys (e.g. a Redis key refreshed by each ping and auto-expired when pings stop). And since one human often has multiple tabs/devices, you typically **ref-count**: a user goes offline only when their last connection drops.",
+      "references": "[Phoenix: Presence](https://hexdocs.pm/phoenix/Phoenix.Presence.html)"
+    },
+    {
+      "id": "ws-slow-consumer-memory",
+      "title": "You broadcast a fast stream, and one client is on a slow network. If you ignore its outbound buffer, what happens on the server?",
+      "description": "Where do the bytes a slow client hasn't received yet actually live?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "That client's outbound buffer grows in the server's memory — a slow consumer can exhaust server RAM unless you bound the buffer (drop, coalesce, or disconnect it).",
+          "isCorrect": true
+        },
+        {
+          "text": "The slow client automatically throttles the broadcast for everyone else too.",
+          "isCorrect": false
+        },
+        {
+          "text": "TCP quietly drops the surplus messages, so server memory stays flat.",
+          "isCorrect": false
+        },
+        {
+          "text": "The event loop blocks until the slow client has caught up.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Bytes you've sent but the client hasn't acknowledged have to wait *somewhere* — the server's per-connection send buffer (`ws.bufferedAmount` on the server side). One slow client just delays itself, but thousands of slow clients can pile up enough buffered data to OOM the server.\n\nThe writes are non-blocking (the loop never stalls) and TCP won't drop your application data, so nothing saves you automatically. You must bound it: watch `bufferedAmount`, then drop/coalesce frames for laggards or disconnect them. This is the per-connection, fleet-scale version of Node stream backpressure.",
+      "references": "[MDN: WebSocket.bufferedAmount](https://developer.mozilla.org/en-US/docs/Web/API/WebSocket/bufferedAmount)"
+    },
+    {
+      "id": "ws-reconnect-storm",
+      "title": "A WebSocket server holding 50,000 connections crashes, and every client tries to reconnect at once. What's the risk and the mitigation?",
+      "description": "Think about the load the surviving servers suddenly absorb.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "A thundering-herd reconnect storm can overwhelm the surviving servers; clients should reconnect with randomized exponential backoff (jitter) to spread the load over time.",
+          "isCorrect": true
+        },
+        {
+          "text": "Nothing to worry about — the load balancer queues all 50,000 reconnects with no impact.",
+          "isCorrect": false
+        },
+        {
+          "text": "Clients should reconnect instantly and in lockstep to restore service as fast as possible.",
+          "isCorrect": false
+        },
+        {
+          "text": "No client may reconnect until the crashed server itself comes back online.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "50,000 simultaneous reconnect attempts land as an instantaneous load spike on whatever capacity remains — which can tip the survivors over too, cascading the outage. The client-side cure is the same jittered exponential backoff used for ordinary reconnection (see the transports quiz), now mattering at fleet scale: spreading reconnects across a window keeps the surge bounded. Server-side, keep capacity headroom and rate-limit new connections. Reconnecting in lockstep (no jitter) is precisely what *causes* the herd.",
+      "references": "[Amazon Builders' Library: Timeouts, retries, and backoff with jitter](https://aws.amazon.com/builders-library/timeouts-retries-and-backoff-with-jitter/)"
+    },
+    {
+      "id": "http-vs-ws-scaling",
+      "title": "Why is a stateless HTTP API generally easier to scale horizontally than a WebSocket service?",
+      "description": "Consider what each request/connection needs from the server that handles it.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Any HTTP request can be served by any instance (no per-connection state), whereas WebSockets pin long-lived stateful connections to specific servers, needing affinity plus a pub/sub backplane.",
+          "isCorrect": true
+        },
+        {
+          "text": "HTTP transfers fewer bytes per message than WebSockets do.",
+          "isCorrect": false
+        },
+        {
+          "text": "WebSockets cannot be load-balanced at all.",
+          "isCorrect": false
+        },
+        {
+          "text": "HTTP responses are always cached by the client, so the server does no work.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Statelessness is the whole trick: because an HTTP request carries everything needed to serve it, you can add nodes and let any of them handle any request — horizontal scaling is almost free. A WebSocket inverts that: the connection is long-lived and bound to one process, so you must keep its traffic sticky **and** add shared state (a pub/sub bus) for any cross-node delivery. That statefulness — not bandwidth — is the core scaling tax. (WebSockets *do* have lower per-message overhead than repeated HTTP requests, but that helps throughput, not horizontal scaling.)",
+      "references": "[Socket.IO: Using multiple nodes](https://socket.io/docs/v4/using-multiple-nodes/)"
+    },
+    {
+      "id": "ws-fanout-math",
+      "title": "You broadcast 5 messages per second to 100,000 connected clients. How many individual sends per second is that across the fleet?",
+      "description": "Each broadcast message must be delivered to every connected client. Give a single number.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [
+          500000
+        ]
+      },
+      "explanation": "Fan-out amplifies: one logical message becomes N physical sends, one per subscriber. So 5 messages/sec × 100,000 clients = **500,000** sends/sec.\n\n```js\nconsole.log(100_000 * 5); // 500000\n```\n\nThe cost scales **linearly with connection count**, which is the hidden price of \"just broadcast it.\" It's why broadcast-heavy systems lean on an efficient backplane, edge fan-out, or — when traffic is one-way — a simpler push transport like SSE. Doubling your users doubles your send rate at the same message frequency.",
+      "references": "[Socket.IO: Broadcasting events](https://socket.io/docs/v4/broadcasting-events/)"
+    },
+    {
+      "id": "ws-sticky-mechanisms",
+      "title": "Which are valid ways to keep a client's WebSocket traffic pinned to a single backend?",
+      "description": "Select every approach that actually works.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "Layer-4 (TCP connection-level) load balancing, which naturally keeps a single connection on one backend.",
+          "isCorrect": true
+        },
+        {
+          "text": "Cookie-based or IP-hash session affinity at a Layer-7 load balancer.",
+          "isCorrect": true
+        },
+        {
+          "text": "Re-running the WebSocket upgrade handshake on every frame to re-pick a server.",
+          "isCorrect": false
+        },
+        {
+          "text": "Serializing the live socket into a shared database so any server can resume it.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Two real mechanisms: **L4 balancing** routes per TCP connection, so a WebSocket — being one long connection — stays on whichever backend accepted it; and **L7 affinity** (a sticky cookie or hashing the client IP) pins HTTP-level routing to one server.\n\nThe false options misunderstand what a socket is. The upgrade handshake happens **once**, not per frame. And a live socket is OS-level state — a file descriptor plus kernel TCP buffers bound to one machine — so it can't be serialized into a database and \"resumed\" elsewhere. Moving a connection means dropping it and reconnecting.",
+      "references": "[Socket.IO: Using multiple nodes](https://socket.io/docs/v4/using-multiple-nodes/)"
+    },
+    {
+      "id": "ws-fd-per-connection",
+      "title": "What OS-level resource does each open WebSocket consume on the server, and why does it cap one machine's connection count?",
+      "description": "Think about what the kernel hands you for every accepted connection.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Each connection is a TCP socket = one file descriptor; the process/OS file-descriptor limit (plus per-connection memory) bounds how many a single server can hold.",
+          "isCorrect": true
+        },
+        {
+          "text": "Each connection spawns a dedicated OS thread, so the thread limit is the ceiling.",
+          "isCorrect": false
+        },
+        {
+          "text": "Each connection reserves a CPU core for its entire lifetime.",
+          "isCorrect": false
+        },
+        {
+          "text": "Connections are essentially free; a single server can hold an unlimited number.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Every accepted socket is a **file descriptor**, and processes have an fd limit (`ulimit -n`) on top of kernel and application memory per connection. That's the ceiling for a single box — the classic **C10k problem** (and today C10M) is about pushing one server toward hundreds of thousands of concurrent connections using event-driven I/O (`epoll`/`kqueue`) instead of a thread-per-connection model. Modern servers handle many connections per *thread*, so threads/cores aren't the per-connection unit. Once you hit a box's practical limit, you shard connections across servers and glue them with a pub/sub backplane.",
+      "references": "[Wikipedia: C10k problem](https://en.wikipedia.org/wiki/C10k_problem)"
+    },
+    {
+      "id": "ws-drop-coalesce-strategy",
+      "title": "For a live data feed (say, cursor positions in a collaborative app), how should you handle a client whose send buffer is backing up?",
+      "description": "Does every queued frame still matter once a newer one exists?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Drop or coalesce stale frames and send only the latest — for ephemeral real-time data, the newest value supersedes queued ones, so shedding old frames preserves freshness.",
+          "isCorrect": true
+        },
+        {
+          "text": "Always buffer every frame in order and never drop one, no matter how far behind the client gets.",
+          "isCorrect": false
+        },
+        {
+          "text": "Migrate that client to a server with a faster CPU.",
+          "isCorrect": false
+        },
+        {
+          "text": "Replay the entire message history to the client once its buffer finally clears.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Not all data needs lossless, ordered delivery. For ephemeral state — a cursor position, a live gauge, a presence ping — only the **latest** value matters; queuing stale intermediate frames just adds latency and grows memory. So when `bufferedAmount` climbs, coalesce to the newest value (keep one `pending` frame, overwrite it) or drop the backlog:\n\n```js\nlet pending = null;                // newest wins\nfor (const v of [10, 11, 12, 13]) pending = v;\nconsole.log(pending);              // 13 — send just this\n```\n\nContrast this with chat or financial events, which need at-least-once delivery and ordering (see the delivery-guarantees quiz). The right move always depends on the cost of dropping a message — match the strategy to the data.",
+      "references": "[MDN: WebSocket.bufferedAmount](https://developer.mozilla.org/en-US/docs/Web/API/WebSocket/bufferedAmount)"
+    }
+  ]
+}

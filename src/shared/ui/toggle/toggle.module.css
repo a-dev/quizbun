@@ -1,0 +1,132 @@
+@layer ui {
+  /* ─── Base ────────────────────────────────────────── */
+
+  .toggle {
+    cursor: pointer;
+    user-select: none;
+
+    display: inline-flex;
+    gap: 0.25rem;
+    align-items: center;
+    justify-content: center;
+
+    box-sizing: border-box;
+    margin: 0;
+    border: 1px solid transparent;
+    border-radius: var(--rounded-s);
+
+    font-family: inherit;
+    font-weight: 500;
+    line-height: 1;
+
+    outline: 0;
+
+    transition:
+      background-color 0.15s ease,
+      color 0.15s ease,
+      border-color 0.15s ease;
+
+    &:focus-visible {
+      outline: 2px solid var(--color-panel-focus-ring);
+      outline-offset: 2px;
+    }
+
+    &[data-disabled] {
+      pointer-events: none;
+      color: var(--color-text-on-panel-secondary);
+    }
+  }
+
+  /* ─── Sizes ───────────────────────────────────────── */
+
+  .size-xs {
+    height: 1.75rem;
+    padding: 0 0.5rem;
+    font-size: 0.75rem;
+  }
+
+  .size-s {
+    height: 2rem;
+    padding: 0 0.75rem;
+    font-size: 0.8125rem;
+  }
+
+  .size-m {
+    height: 2.5rem;
+    padding: 0 1rem;
+    font-size: 0.875rem;
+  }
+
+  .size-icon-s {
+    width: 2rem;
+    height: 2rem;
+    padding: 0;
+    font-size: 1rem;
+  }
+
+  .size-icon-m {
+    width: 2.5rem;
+    height: 2.5rem;
+    padding: 0;
+    font-size: 1.25rem;
+  }
+
+  /* ─── Variants ────────────────────────────────────── */
+
+  /* Ghost — invisible until interacted */
+  .variant-ghost {
+    color: var(--color-text-on-panel);
+    background-color: transparent;
+
+    &[data-pressed] {
+      color: var(--color-text-on-panel);
+      background-color: var(--color-panel-highlight);
+    }
+
+    &:active:not([data-disabled]) {
+      background-color: var(--color-panel-disabled-bg);
+    }
+
+    @media (hover: hover) {
+      &:hover:not([data-disabled]) {
+        color: var(--color-text-primary);
+        background-color: var(--color-panel-hover-bg);
+      }
+    }
+  }
+
+  /* Outline — bordered toggle */
+  .variant-outline {
+    border-color: var(--color-panel-outline);
+    color: var(--color-text-primary);
+    background-color: transparent;
+
+    &[data-pressed] {
+      border-color: var(--color-panel-border);
+      background-color: var(--color-panel-bg);
+    }
+
+    @media (hover: hover) {
+      &:hover:not([data-disabled]) {
+        border-color: var(--color-panel-highlight);
+        background-color: var(--color-panel-hover-bg);
+      }
+    }
+  }
+
+  /* Soft — tinted background */
+  .variant-soft {
+    color: var(--color-text-on-panel);
+    background-color: var(--color-panel-bg);
+
+    &[data-pressed] {
+      background-color: var(--color-panel-outline);
+    }
+
+    @media (hover: hover) {
+      &:hover:not([data-disabled]) {
+        background-color: color-mix(in srgb, var(--color-panel-outline) 60%, transparent);
+      }
+    }
+  }
+}

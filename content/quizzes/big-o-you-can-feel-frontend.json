@@ -1,0 +1,719 @@
+{
+  "schemaVersion": 1,
+  "id": "big-o-you-can-feel-frontend",
+  "title": "Big-O You Can Feel: Complexity Through Re-renders and DOM Work",
+  "description": "Algorithms for frontend engineers — taught entirely through the costs you actually pay in the browser, so you *feel* asymptotic complexity instead of memorizing it. Three connected arcs build the intuition: reading Big-O straight off real render code (a `.find()` inside a `.map()`, `querySelectorAll` in a loop, layout thrashing from interleaved reads and writes, and the best, worst, and amortized cases plus the constant factors that bite the main thread); why `array.includes()` inside a filter quietly turns a list quadratic and how a `Set` or `Map` collapses the same lookup to `O(1)`; and the binary search hiding in plain sight behind virtualized lists, sorted inserts, and lower-/upper-bound queries. Aimed at frontend developers who want to connect classic algorithms and data structures to the React, DOM, and rendering work they already do every day — and finally read complexity off code instead of textbook pseudocode.",
+  "language": "en",
+  "tags": ["algorithms", "performance", "frontend", "javascript"],
+  "author": "Quizbun",
+  "questions": [
+    {
+      "id": "scaling-10-to-10000",
+      "title": "This list render runs one `.find()` for every row it `.map()`s. It feels instant with 10 rows but freezes at 10,000. Why?",
+      "description": "```jsx\nrows.map((row) => {\n  const user = users.find((u) => u.id === row.userId);\n  return <Cell key={row.id} name={user.name} />;\n});\n```\n\nAssume `rows` and `users` both grow with the data size *n*.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The work grows with *n*², so 1,000× more rows is about 1,000,000× more work.",
+          "isCorrect": true
+        },
+        {
+          "text": "JavaScript engines cap arrays near 10,000 elements and start dropping work.",
+          "isCorrect": false
+        },
+        {
+          "text": "React turns off batching past a few thousand nodes, so each row re-renders alone.",
+          "isCorrect": false
+        },
+        {
+          "text": "Garbage collection runs once per row, and 10,000 collections is the real cost.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`find` is a linear scan, and you run it once per row, so the render does up to *n* × *n* = *n*² comparisons — a nested loop hiding behind two innocent-looking method calls. At *n* = 10 that is ~100 operations (invisible); at *n* = 10,000 it is ~100,000,000, which is hundreds of milliseconds of main-thread work that blocks paint and input. The intuition to internalize: when *n* grows 1,000×, *n*² grows 1,000× squared = 1,000,000×. The fix is to index once — build a `Map` of users by id (O(*n*)) and look each up in O(1) — turning the whole render back into O(*n*). The other options are myths: arrays are not capped at 10k, React keeps batching, and GC is not per-row."
+    },
+    {
+      "id": "layout-thrashing-reads-writes",
+      "title": "Why is this loop slow even though it touches each element only once?",
+      "description": "```js\nfor (const el of items) {\n  const width = el.offsetWidth;        // read (needs layout)\n  el.style.width = `${width + 10}px`;  // write (invalidates layout)\n}\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Each read after a write forces a synchronous re-layout, so the browser recomputes layout *n* times instead of once.",
+          "isCorrect": true
+        },
+        {
+          "text": "Reading `offsetWidth` allocates a fresh layout object every iteration, leaking memory.",
+          "isCorrect": false
+        },
+        {
+          "text": "Building the `${...}` string is O(*n*) per iteration, making the loop O(*n*²).",
+          "isCorrect": false
+        },
+        {
+          "text": "`for...of` is much slower than an indexed `for` loop, and that overhead dominates.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "This is *layout thrashing* (forced synchronous reflow). Writing `style.width` invalidates the current layout; the very next iteration reads `offsetWidth`, which the browser can only answer with up-to-date geometry, so it must flush layout immediately. The read → write → read → write interleaving defeats the browser's natural batching and forces *n* separate layouts instead of one. Note the trap: the syntactic suspects (string building, `for...of`) are red herrings — the cost is structural. Fix it by batching: read every `offsetWidth` into an array first, then perform all the writes, so layout flushes a single time."
+    },
+    {
+      "id": "queryselectorall-in-loop",
+      "title": "What is the running time of calling `document.querySelectorAll('.cell')` once per row?",
+      "description": "```js\nrows.forEach((row, i) => {\n  const cells = document.querySelectorAll('.cell');\n  cells[i].textContent = row.label;\n});\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "About O(*n*²): each call re-scans the whole document, and you make one call per row.",
+          "isCorrect": true
+        },
+        {
+          "text": "O(*n*): `querySelectorAll` is native, so the call itself counts as one cheap operation.",
+          "isCorrect": false
+        },
+        {
+          "text": "O(1): the browser caches selector results and returns the same `NodeList` instantly.",
+          "isCorrect": false
+        },
+        {
+          "text": "O(log *n*): the engine indexes the DOM by class name like a database.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`querySelectorAll` walks the DOM to collect matches, so one call is O(size of the document), not O(1) — *native does not mean free*, it just means the loop is written in C++. Calling it inside a per-row loop makes it O(*n*) calls × O(*n*) scan each ≈ O(*n*²), and it allocates a brand-new `NodeList` every time (there is no caching). Hoist the query out of the loop so it runs once (O(*n*) total), or better, address the specific node you need. This is the archetypal 'looks simple, is expensive' line: one short statement that secretly re-reads the entire DOM on every pass."
+    },
+    {
+      "id": "best-worst-case-linear-search",
+      "title": "For `array.find(predicate)` on an unsorted array of *n* items, which best/worst-case description is correct?",
+      "description": "Think about where in the array the matching element is allowed to sit.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Best case O(1) when the match is first; worst case O(*n*) when it is last or absent.",
+          "isCorrect": true
+        },
+        {
+          "text": "Best and worst case are both O(*n*), because `find` always scans the entire array.",
+          "isCorrect": false
+        },
+        {
+          "text": "Best case O(log *n*) because the engine binary-searches; worst case O(*n*).",
+          "isCorrect": false
+        },
+        {
+          "text": "Best case O(*n*); worst case O(*n*²) when several elements match the predicate.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`find` returns at the first match, so if the target is at index 0 it stops after one comparison — best case O(1). If the match is last or missing it scans all *n* — worst case O(*n*). It cannot binary-search (the array is not known to be sorted), and stopping at the first match means extra matches never make it quadratic. Why this matters for what you *feel*: a demo where the hit is always near the front hides an O(*n*) worst case that surfaces in production with cold or absent data. Best, worst, and average are three different questions — and the average is the one your users usually experience."
+    },
+    {
+      "id": "amortized-array-push",
+      "title": "You `push` *n* items onto a JavaScript array one at a time. What is the amortized cost per `push`?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Amortized O(1) per push: occasional resizes cost O(*n*), but they are rare enough to average out.",
+          "isCorrect": true
+        },
+        {
+          "text": "O(*n*) per push, because the array may copy all existing elements on every call.",
+          "isCorrect": false
+        },
+        {
+          "text": "O(log *n*) per push, because the backing capacity grows by doubling.",
+          "isCorrect": false
+        },
+        {
+          "text": "O(*n*²) total, because each push shifts every earlier element over by one.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Growable arrays keep spare capacity and double it when full. Most pushes drop into spare space in O(1); occasionally one triggers an O(*n*) copy into a larger buffer. Because capacity doubles, those copies happen at sizes 1, 2, 4, 8, … and the total copy work across *n* pushes sums to roughly 2*n* — so the *amortized* cost is O(1) per push and O(*n*) for the whole batch. 'Amortized' means averaged over a sequence, not 'always': a single push can still spike, which is a genuine source of the occasional dropped frame. Contrast `unshift`/front-splice, which is O(*n*) *every* time because it shifts everything. Amortized-vs-worst-case is what tells you whether that one slow frame is expected or a bug."
+    },
+    {
+      "id": "constant-factors-main-thread",
+      "title": "Two functions are both O(*n*) over the same list. Why might one still cause visible jank while the other does not?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Big-O hides constant factors; the janky one does heavy per-item work (layout, JSON parsing, node creation) on the main thread, so its large constant blows the frame budget.",
+          "isCorrect": true
+        },
+        {
+          "text": "One of them must secretly be O(*n*²); equal Big-O is impossible if their speeds differ.",
+          "isCorrect": false
+        },
+        {
+          "text": "The faster one is moved to the GPU automatically because it is also O(*n*).",
+          "isCorrect": false
+        },
+        {
+          "text": "O(*n*) always finishes within one 16 ms frame, so any jank means the code has a bug.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Big-O describes how cost *grows* with *n*, not the size of each step. Two O(*n*) loops can differ by 100× in wall-clock time if one does a cheap arithmetic op per item and the other forces a reflow, parses JSON, or creates DOM nodes. The main thread has a hard budget — roughly 16 ms to hold 60 fps — shared with layout, paint, and input handling, so a big constant factor can miss that budget even at a modest *n*. 'Same Big-O' is necessary but not sufficient for 'feels the same', which is exactly why measured profiling complements asymptotic reasoning. Neither automatic GPU offload nor a 16 ms guarantee is real."
+    },
+    {
+      "id": "which-patterns-are-quadratic",
+      "title": "Select every snippet whose running time is O(*n*²). Assume each array has length *n*.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "`a.filter((x) => b.includes(x))`",
+          "isCorrect": true
+        },
+        {
+          "text": "`a.map((x) => x * 2).filter((x) => x > 0)`",
+          "isCorrect": false
+        },
+        {
+          "text": "`for (const x of a) for (const y of a) compare(x, y);`",
+          "isCorrect": true
+        },
+        {
+          "text": "`new Set(a).has(target)`",
+          "isCorrect": false
+        },
+        {
+          "text": "`a.reduce((sum, x) => sum + x, 0)`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Quadratic appears when an O(*n*) operation runs *inside* another O(*n*) loop. `a.filter((x) => b.includes(x))` does an O(*n*) `includes` scan for each of *n* items → O(*n*²); the nested `for...of` is the textbook form of the same shape. The traps: chaining `.map().filter()` *looks* like more work but it is two separate linear passes — O(*n*) + O(*n*) = O(*n*); `new Set(a)` then one `.has` is O(*n*) to build plus O(1) to look up; and `reduce` is a single pass. The rule of thumb — sequential passes **add**, nested passes **multiply** — and method calls like `.includes`/`.indexOf`/`.find` hide a loop you must count."
+    },
+    {
+      "id": "reading-complexity-true-statements",
+      "title": "Which statements about estimating complexity from real frontend code are true? Select all that apply.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "A call like `array.includes(x)` hides a loop, so nested inside another loop it contributes a factor of *n*, not O(1).",
+          "isCorrect": true
+        },
+        {
+          "text": "Updating state with `setItems([...items, next])` copies the whole array, so doing it in a loop of *n* updates is O(*n*²) total.",
+          "isCorrect": true
+        },
+        {
+          "text": "Chaining `.map().filter().map()` multiplies the passes, making it O(*n*³).",
+          "isCorrect": false
+        },
+        {
+          "text": "A `Map` or object lookup by key is roughly O(1), while scanning an array for the same key is O(*n*).",
+          "isCorrect": true
+        },
+        {
+          "text": "Constant factors can be ignored entirely, because Big-O drops them anyway.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Reading complexity off real code is mostly about spotting hidden loops. `.includes`/`.find`/`.indexOf` are O(*n*) scans, so nesting them multiplies. Immutable updates like `[...items, next]` copy O(*n*) each time; repeating that for *n* updates is O(*n*²) total — a very common React performance bug (prefer one batched update, or a keyed `Map`). Key lookup in a `Map`/object is ~O(1) versus O(*n*) for an array scan, usually the biggest easy win. The two false statements are the headline misconceptions: chaining passes **adds** (O(*n*) + O(*n*) = O(*n*)), it does not multiply to O(*n*³); and although Big-O *mathematically* drops constant factors, on a 16 ms main-thread budget those constants are precisely what you feel."
+    },
+    {
+      "id": "complexity-of-sort-then-slice",
+      "title": "Read the snippet and type its overall time-complexity class, for example `O(n)`.",
+      "description": "```js\nfunction topThree(scores) {\n  return scores\n    .slice()              // copy the array\n    .sort((a, b) => b - a)\n    .slice(0, 3);         // keep the top 3\n}\n```\n\n`scores` has length *n*. Give the dominant Big-O class.",
+      "type": "input",
+      "validation": {
+        "mode": "text",
+        "acceptedAnswers": [
+          "O(n log n)",
+          "O(nlogn)",
+          "O(n*log n)",
+          "O(n * log n)",
+          "O(n*logn)",
+          "O(n log(n))"
+        ]
+      },
+      "explanation": "The dominant cost is `.sort`, a comparison sort at O(*n* log *n*). The leading `.slice()` copies the array in O(*n*) and the final `.slice(0, 3)` is O(1), so both are dominated and the function is **O(*n* log *n*)**. The trap is `.slice(0, 3)`: 'I only want the top 3' *feels* cheap, but you still sorted all *n* items to get them. If you genuinely needed only the top three, a single O(*n*) pass tracking three running maxima would beat sorting. Dropping lower-order terms — O(*n*) + O(*n* log *n*) + O(1) → O(*n* log *n*) — is exactly how you read a class off real code."
+    },
+    {
+      "id": "complexity-of-filter-includes",
+      "title": "Read the snippet and type its worst-case time-complexity class, for example `O(n)`.",
+      "description": "```js\n// a and b each have length n\nfunction shared(a, b) {\n  return a.filter((x) => b.includes(x));\n}\n```\n\nGive the dominant Big-O class in terms of *n*.",
+      "type": "input",
+      "validation": {
+        "mode": "text",
+        "acceptedAnswers": [
+          "O(n^2)",
+          "O(n²)",
+          "O(n*n)",
+          "O(n * n)",
+          "O(n*m)",
+          "O(n * m)",
+          "O(nm)",
+          "O(n2)"
+        ]
+      },
+      "explanation": "`filter` walks all *n* items of `a`, and for each one `includes` scans up to *n* items of `b`: *n* items × an O(*n*) scan = **O(*n*²)** (strictly O(*n*·*m*); they are equal when both arrays grow together). The single-line, declarative style hides the nested loop — the classic 'looks simple, is quadratic' trap. The fix is to put `b` in a `Set` once (O(*n*)) and test membership in O(1): `const set = new Set(b); return a.filter((x) => set.has(x));`, which makes the whole thing O(*n*). Whenever you see `.includes`/`.indexOf`/`.find` inside `.filter`/`.map`/a loop, suspect quadratic."
+    },
+    {
+      "id": "includes-is-linear",
+      "title": "What is the average time complexity of `arr.includes(x)` for an array of *n* elements?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`O(n)` — it scans element by element until it finds a match or reaches the end",
+          "isCorrect": true
+        },
+        {
+          "text": "`O(1)` — arrays hash their values for instant lookup",
+          "isCorrect": false
+        },
+        {
+          "text": "`O(log n)` — it binary-searches the array",
+          "isCorrect": false
+        },
+        {
+          "text": "`O(n log n)` — it sorts the array, then searches",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`Array.prototype.includes` walks the array from the front and compares each element, so an array of *n* items costs up to *n* comparisons — linear, `O(n)`. Arrays are neither hashed nor assumed to be sorted, so there is no `O(1)` or `O(log n)` shortcut. This one fact seeds every *the list got slow* bug in this quiz: a single linear scan is cheap, but repeating it inside a loop is not.",
+      "references": "[MDN: includes](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/includes) · [Wikipedia: Time complexity](https://en.wikipedia.org/wiki/Time_complexity)"
+    },
+    {
+      "id": "filter-includes-is-quadratic",
+      "title": "A table renders *n* rows and stores the selected ids in an array `selectedIds` of length *m*. What is the cost of `rows.filter(r => selectedIds.includes(r.id))`?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`O(n · m)` — for each of *n* rows, `includes` scans up to *m* ids",
+          "isCorrect": true
+        },
+        {
+          "text": "`O(n + m)` — the two lengths add, they do not multiply",
+          "isCorrect": false
+        },
+        {
+          "text": "`O(n)` — `filter` visits each row only once",
+          "isCorrect": false
+        },
+        {
+          "text": "`O(m)` — only the number of selected ids matters",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`filter` visits each of the *n* rows once, but **inside** the callback `includes` runs its own `O(m)` scan of `selectedIds`. Nesting a linear scan inside a linear pass multiplies the costs into `O(n · m)`. With a few hundred rows and a few hundred selections that is tens of thousands of comparisons on **every** render — the classic quadratic blow-up behind a sluggish table. The cure, in the questions that follow, is to make the inner lookup `O(1)`.",
+      "references": "[Wikipedia: Big O notation](https://en.wikipedia.org/wiki/Big_O_notation) · [MDN: includes](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/includes)"
+    },
+    {
+      "id": "set-has-is-constant",
+      "title": "What is the average time complexity of `set.has(x)` for a `Set`?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`O(1)` — a `Set` is hash-based, so membership is constant time on average",
+          "isCorrect": true
+        },
+        {
+          "text": "`O(n)` — it scans its values just like an array",
+          "isCorrect": false
+        },
+        {
+          "text": "`O(log n)` — it keeps its values in a balanced tree",
+          "isCorrect": false
+        },
+        {
+          "text": "It depends on the order the values were inserted",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`Set` (like `Map`) is backed by a hash table: `has` hashes the value and jumps close to its slot instead of scanning. The ECMAScript specification even **requires** access times to be *sublinear on average* — effectively `O(1)`. Replacing `selectedIds.includes(id)` with `selectedSet.has(id)` is exactly what collapses the previous question's `O(n · m)` down to `O(n)`.",
+      "references": "[MDN: has](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Set/has) · [Wikipedia: Hash table](https://en.wikipedia.org/wiki/Hash_table)"
+    },
+    {
+      "id": "when-to-reach-for-a-set",
+      "title": "Which UI tasks get faster or simpler when backed by a `Set` instead of an array?",
+      "description": "Select every task where a `Set` is the better fit.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "Checking `isSelected(id)` for every row while rendering a large list",
+          "isCorrect": true
+        },
+        {
+          "text": "Removing duplicate values from a list of tags before display",
+          "isCorrect": true
+        },
+        {
+          "text": "Repeated membership tests such as *have we already seen this id?*",
+          "isCorrect": true
+        },
+        {
+          "text": "Reading an item by position, like *the 3rd row*, through an index",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A `Set` shines whenever the question is **is this value present?** or **are these values unique?** — both run in `O(1)` average time (`has`, plus automatic de-duplication on `add`). Membership checks inside a render loop and de-duping tags are textbook cases. What a `Set` is **not** for is positional access: it has no indices, so *give me the 3rd item* still needs an array (`[...set][2]` rebuilds one). Match the structure to the access pattern.",
+      "references": "[MDN: Set](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Set) · [Wikipedia: Set (abstract data type)](https://en.wikipedia.org/wiki/Set_%28abstract_data_type%29)"
+    },
+    {
+      "id": "set-uses-samevaluezero",
+      "title": "By what rule does a `Set` decide that two values are the same, and therefore duplicates?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "SameValueZero — like `===`, except that `NaN` equals `NaN`",
+          "isCorrect": true
+        },
+        {
+          "text": "Strict `===` exactly, so `NaN` is never equal to `NaN`",
+          "isCorrect": false
+        },
+        {
+          "text": "Loose `==`, applying type coercion",
+          "isCorrect": false
+        },
+        {
+          "text": "Reference identity, so equal primitives could be stored twice",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`Set` and `Map` compare values with **SameValueZero**: identical to `===` for almost everything, with one twist — `NaN` counts as equal to `NaN` (so a `Set` holds at most one `NaN`), and `+0` and `-0` are treated as the same value. It performs no `==` coercion, so `1` and `'1'` stay distinct. That is why `new Set([NaN, NaN]).size` is `1`, even though `NaN === NaN` evaluates to `false`.",
+      "references": "[MDN: Equality comparisons and sameness](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Equality_comparisons_and_sameness)"
+    },
+    {
+      "id": "dedupe-in-linear-time",
+      "title": "Which expression removes duplicate primitives from `arr` in `O(n)` average time?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`[...new Set(arr)]`",
+          "isCorrect": true
+        },
+        {
+          "text": "`arr.filter((x, i) => arr.indexOf(x) === i)`",
+          "isCorrect": false
+        },
+        {
+          "text": "`arr.sort().filter(Boolean)`",
+          "isCorrect": false
+        },
+        {
+          "text": "`Object.keys(arr)`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Spreading an array through a `Set` and back — `[...new Set(arr)]` — de-duplicates in a single `O(n)` pass, because each insertion and membership check is `O(1)` on average. The `indexOf` one-liner also removes duplicates, but it runs an `O(n)` scan for **every** element, so it is `O(n²)` — the same quadratic trap as the table filter. `arr.sort().filter(Boolean)` mutates the original, merely groups equal values next to each other instead of removing them, and drops every falsy value; `Object.keys(arr)` returns the index strings `'0', '1', …`, not the values.",
+      "references": "[MDN: Set](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Set) · [Wikipedia: Set (abstract data type)](https://en.wikipedia.org/wiki/Set_%28abstract_data_type%29)"
+    },
+    {
+      "id": "map-over-object-advantages",
+      "title": "Which are genuine advantages of a `Map` over a plain `{}` object for an `id → entity` lookup table?",
+      "description": "Select every true statement.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "`Map` keys may be any value — numbers, objects, even functions — with no coercion to strings",
+          "isCorrect": true
+        },
+        {
+          "text": "`Map` preserves true insertion order for every key; a plain object emits integer-like keys in numeric order first",
+          "isCorrect": true
+        },
+        {
+          "text": "`Map` exposes `.size` directly, whereas an object needs `Object.keys(obj).length`",
+          "isCorrect": true
+        },
+        {
+          "text": "`Map` lookups are `O(log n)` while object property reads are `O(n)`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The first three are real, testable differences. (1) Object keys are coerced to strings or symbols, so `obj[1]` and `obj['1']` collide, while a `Map` keeps `1` and `'1'` as two distinct keys. (2) A plain object emits integer-like keys in **ascending numeric order** ahead of string keys, so `{ 2: 'a', 1: 'b' }` iterates as `1, 2`; a `Map` iterates in the exact order you inserted. (3) `map.size` is `O(1)`, while counting object keys allocates a throwaway array. The false statement is the complexity claim: **both** structures read in `O(1)` on average, so reaching for a `Map` is about key flexibility and ordering, not asymptotic speed.",
+      "references": "[MDN: Map](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Map)"
+    },
+    {
+      "id": "plain-object-dictionary-pitfalls",
+      "title": "Using a plain `{}` as a string-keyed dictionary has footguns that a `Map` avoids. Which statements are true?",
+      "description": "Select every true statement.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "Assigning the key `'__proto__'` can change the object's prototype instead of storing an ordinary entry",
+          "isCorrect": true
+        },
+        {
+          "text": "`if (dict[key])` can be truthy for keys like `'toString'` that were never added, because they are inherited from `Object.prototype`",
+          "isCorrect": true
+        },
+        {
+          "text": "`Object.create(null)` makes a prototype-less object that sidesteps the inherited-key problem",
+          "isCorrect": true
+        },
+        {
+          "text": "A plain object keeps numeric keys as numbers, so `dict[1]` and `dict['1']` are different entries",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The first three are real reasons to prefer a `Map` (or `Object.create(null)`) for untrusted keys. Writing `dict['__proto__'] = {...}` can trigger the inherited `__proto__` setter and **reassign the prototype** — the root of prototype-pollution bugs — whereas `map.set('__proto__', v)` just stores a normal entry. And because every `{}` inherits from `Object.prototype`, keys like `toString` and `hasOwnProperty` *appear* to already exist, while a fresh `new Map().has('toString')` is `false`. The false statement is backwards: object keys are **coerced to strings**, so `dict[1]` and `dict['1']` are the *same* entry.",
+      "references": "[MDN: proto](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/proto) · [Wikipedia: Prototype pollution](https://en.wikipedia.org/wiki/Prototype_pollution)"
+    },
+    {
+      "id": "id-to-entity-lookup-index",
+      "title": "You hold an array of *n* entities and must look many of them up by `id`. Which statements are correct?",
+      "description": "Select every true statement.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "Building a `Map` of `id → entity` once costs `O(n)`, after which each `map.get(id)` is `O(1)` on average",
+          "isCorrect": true
+        },
+        {
+          "text": "Calling `entities.find(e => e.id === target)` again and again costs `O(n)` per lookup",
+          "isCorrect": true
+        },
+        {
+          "text": "If the ids are numbers, a `Map` keyed by them preserves the number type, whereas a plain object would stringify each key",
+          "isCorrect": true
+        },
+        {
+          "text": "Once the lookup `Map` is built, each lookup degrades to `O(log n)`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Pre-indexing is the antidote to repeated `find`. `entities.find(...)` re-scans from the top on every call — `O(n)` each — so *k* lookups cost `O(n · k)`. Build the index once with `new Map(entities.map(e => [e.id, e]))` (`O(n)`), and every later `map.get(id)` is `O(1)` on average, turning *k* lookups into `O(n + k)`. A `Map` also keeps the id's type intact (a number stays a number), unlike an object that stringifies its keys. The false option is, once more, the complexity claim: hash lookups are `O(1)` on average, not `O(log n)`.",
+      "references": "[MDN: get](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Map/get) · [MDN: find](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/find)"
+    },
+    {
+      "id": "quadratic-comparison-count",
+      "title": "In the worst case, how many element comparisons does `includes` make in total? Enter the number.",
+      "description": "A list of **1,000** rows is filtered with `rows.filter(r => selectedIds.includes(r.id))`. The array `selectedIds` also holds **1,000** ids, and none of the rows match.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [1000000]
+      },
+      "explanation": "Because no row matches, every `includes` call scans all the way to the end of `selectedIds` — 1,000 comparisons per row. Across 1,000 rows that is 1,000 × 1,000 = **1,000,000** comparisons for a *single* render. Build a `Set` once (`const sel = new Set(selectedIds)`) and each check becomes `O(1)`, cutting the work to about 1,000 operations — a thousandfold reduction. That gap is the whole *why did the table get slow* story: a missing hash structure quietly turned linear work quadratic.",
+      "references": "[Wikipedia: Big O notation](https://en.wikipedia.org/wiki/Big_O_notation)"
+    },
+    {
+      "id": "requires-sorted-input",
+      "title": "A teammate runs a binary-search helper on an array that isn't actually sorted. The value *is* present. What's the most likely result?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "It can report 'not found' (or the wrong index): each step discards half the array based on an ordering that doesn't hold, and it fails silently with no error.",
+          "isCorrect": true
+        },
+        {
+          "text": "It throws a `RangeError`, because the sorted-input invariant is checked before the search starts.",
+          "isCorrect": false
+        },
+        {
+          "text": "It still finds the value, just in `O(n)` instead of `O(log n)`.",
+          "isCorrect": false
+        },
+        {
+          "text": "It finds the value but returns the index of a neighbouring duplicate instead.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Binary search's *correctness* — not merely its speed — rests on the sorted precondition. Every step makes a deduction like \"`arr[mid] < target`, so the target can only be to the right.\" On unsorted data that deduction is false, so the search can throw away the very half that holds the value and return a wrong index or 'not found'. Nothing checks the precondition for you: verifying sortedness is `O(n)`, which would defeat the whole point of an `O(log n)` search, so the failure is *silent* — the nastiest kind. The headline gotcha: binary search trades a precondition (sorted by the key you compare on) for speed, and honouring that precondition is the caller's job."
+    },
+    {
+      "id": "loop-condition-inclusive-bounds",
+      "title": "With inclusive bounds (`hi = arr.length - 1`), which loop condition correctly searches for an exact match?",
+      "description": "```js\nlet lo = 0;\nlet hi = arr.length - 1; // inclusive: arr[hi] is a real element\nwhile (/* ??? */) {\n  const mid = Math.floor((lo + hi) / 2);\n  // ...compare arr[mid] with target\n}\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`lo <= hi` — when `lo === hi` the range still holds one unchecked element.",
+          "isCorrect": true
+        },
+        {
+          "text": "`lo < hi` — once `lo === hi` the element has already been found.",
+          "isCorrect": false
+        },
+        {
+          "text": "`lo !== hi` — stop the moment the two pointers meet.",
+          "isCorrect": false
+        },
+        {
+          "text": "`arr[mid] !== target` — loop until the midpoint equals the target.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "With an *inclusive* upper bound, the live range `[lo, hi]` contains both ends, so when `lo === hi` exactly one candidate remains and you must still check it — the condition has to be `lo <= hi`. Writing `lo < hi` exits one iteration early and misses any match that sits alone in a width-1 range: the textbook off-by-one. `arr[mid] !== target` feels intuitive but loops forever when the value is absent, because `mid` never lands on it. The clean rule is to pair conventions: *inclusive* `hi = length - 1` goes with `<=`; *exclusive* `hi = length` goes with `<`. Mixing the two halves is exactly where boundary bugs breed."
+    },
+    {
+      "id": "off-by-one-update-infinite-loop",
+      "title": "Filling the blank, why is `lo = mid + 1` correct while `lo = mid` is a bug?",
+      "description": "```js\nlet lo = 0, hi = arr.length - 1;\nwhile (lo <= hi) {\n  const mid = Math.floor((lo + hi) / 2);\n  if (arr[mid] < target) {\n    lo = /* ??? */;   // search the right half\n  } else if (arr[mid] > target) {\n    hi = mid - 1;     // search the left half\n  } else return mid;\n}\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`mid` was just checked and ruled out, so the next range starts at `mid + 1`. `lo = mid` can loop forever: when `hi - lo === 1`, `mid` floors to `lo` and the range never shrinks.",
+          "isCorrect": true
+        },
+        {
+          "text": "`lo = mid` is the safe choice; the `+ 1` can step past the target and miss it.",
+          "isCorrect": false
+        },
+        {
+          "text": "Either works; `Math.floor` already guarantees the range shrinks every iteration.",
+          "isCorrect": false
+        },
+        {
+          "text": "You should write `hi = mid - 1` in the blank instead, to move the bound furthest from `mid`.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Because `arr[mid]` was already compared and isn't the target, it must be excluded from the next range — the right half therefore starts at `mid + 1` (and, symmetrically, the left half ends at `mid - 1`). Drop the `+ 1` and the loop can stall: with `lo = 0, hi = 1`, `mid = Math.floor(0.5) = 0`; if `arr[0] < target` you set `lo = 0` again — same range, forever. Excluding `mid` is precisely what makes the range *strictly* shrink each pass (the loop's progress guarantee), which complements the invariant \"the target, if present, always lies in `[lo, hi]`.\" Floor biases `mid` toward `lo`, so it's the `lo` side that needs the `+ 1` to escape."
+    },
+    {
+      "id": "lower-bound-semantics",
+      "title": "What does a *lower-bound* binary search return for a target `x` in a sorted array?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The index of the first element `>= x` — equivalently, the count of elements strictly less than `x`, and the slot where `x` would be inserted before any equal values.",
+          "isCorrect": true
+        },
+        {
+          "text": "The index of the first element strictly `> x`.",
+          "isCorrect": false
+        },
+        {
+          "text": "The index where `arr[mid] === x`, or `-1` when `x` is absent.",
+          "isCorrect": false
+        },
+        {
+          "text": "The index of the last element `<= x`.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Lower-bound answers \"where does `x` *begin*?\" — the first slot whose value is not less than `x`. If `x` is present it lands on the first copy; if absent it lands on the gap where `x` belongs, which is why it doubles as an insertion point. Its sibling, upper-bound, returns the first element strictly *greater* than `x` (one past the last copy). The two coincide when `x` is absent and straddle the run of duplicates when it's present. The exact-match search taught first in school (return the index or `-1`) is actually the *less* common need in real code: most 'binary search in disguise' tasks — insertion index, first event at/after a time, first visible row — are lower-/upper-bound queries."
+    },
+    {
+      "id": "virtualized-list-first-visible-row",
+      "title": "`react-window` and `@tanstack/virtual` render only the visible rows. With *variable* row heights, how do they find the first visible row for a given `scrollTop`?",
+      "description": "```js\n// Variable-height rows: offsets[i] = pixel position of row i's top.\n// offsets is sorted ascending, e.g. [0, 48, 110, 158, 232, ...]\nfunction firstVisibleRow(offsets, scrollTop) {\n  // find it in O(log n), not O(n)\n}\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Binary-search the cumulative `offsets` array for `scrollTop`: the last row whose top is `<= scrollTop` is the first visible one — `O(log n)` per scroll.",
+          "isCorrect": true
+        },
+        {
+          "text": "Walk from row 0, adding each height until the running total passes `scrollTop` — `O(n)` per scroll event.",
+          "isCorrect": false
+        },
+        {
+          "text": "Divide `scrollTop` by a fixed row height to get the index directly in `O(1)`.",
+          "isCorrect": false
+        },
+        {
+          "text": "Keep a hash map from every `scrollTop` value to a row index for `O(1)` lookups.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Fixed-height rows let you divide `scrollTop` by the row height for an `O(1)` index — but variable heights break that, so the libraries keep a sorted array of cumulative offsets (a prefix sum of measured heights) and binary-search it. The first visible row is the last one whose top offset is `<= scrollTop` — i.e. the upper-bound of `scrollTop`, minus one. This is the literal \"binary search in disguise\": nobody calls it binary search, but running an `O(n)` scan on every scroll or `requestAnimationFrame` frame would jank a long list, whereas `O(log n)` stays smooth at 100k rows. `react-window`'s `VariableSizeList` and `@tanstack/virtual` both ship exactly this search over their measurement cache."
+    },
+    {
+      "id": "sorted-insert-shift-dominates",
+      "title": "You keep an array sorted by inserting each new item at the position a binary search finds, via `splice`. What's the cost of one insertion, and what dominates?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`O(n)`: binary search finds the slot in `O(log n)`, but `splice` must shift up to `n` later elements to make room, and that shift dominates.",
+          "isCorrect": true
+        },
+        {
+          "text": "`O(log n)`: the binary search makes the whole insertion logarithmic.",
+          "isCorrect": false
+        },
+        {
+          "text": "`O(1)`: knowing the array is already sorted lets you drop the element straight in.",
+          "isCorrect": false
+        },
+        {
+          "text": "`O(n log n)`: the array is re-sorted after every insertion.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "This is the most common over-claim about binary search: it accelerates the *find*, not the *insert*. Locating the index is `O(log n)`, but inserting into the middle of a contiguous array shifts every later element over by one — `O(n)` — so a single insert is `O(n)`, and building a sorted array by repeated insertion is `O(n²)`. Binary search still earns its keep: comparisons are often costlier than the raw memory move, and many tasks only need the *index* (\"where would this timestamp go?\") without mutating anything. But if you need genuinely cheap ordered inserts, reach for a different structure — a balanced tree or skip list. Knowing *where* is fast; *making room* is not."
+    },
+    {
+      "id": "which-tasks-are-binary-search-in-disguise",
+      "title": "Select every task that is really a binary search over sorted data, even if it's never called that.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "Finding the first visible row in a variable-height virtualized list from `scrollTop`.",
+          "isCorrect": true
+        },
+        {
+          "text": "Choosing where a new timestamp belongs in a sorted event log.",
+          "isCorrect": true
+        },
+        {
+          "text": "Inserting a value into an already-sorted array without re-sorting it.",
+          "isCorrect": true
+        },
+        {
+          "text": "Looking up a user object by `id` in a `Map`.",
+          "isCorrect": false
+        },
+        {
+          "text": "Finding the largest number in an unsorted array.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The three correct items share the tell-tale signature: a *sorted* sequence plus a question of the form \"which position does this fall at?\" — the first row past a pixel offset, the insertion slot for a timestamp, the insertion slot for a value. All are lower-/upper-bound searches running in `O(log n)`. The two distractors fail the precondition test: a `Map` lookup is a hash probe (`O(1)`, order-independent — there's no order to bisect), and finding a max in unsorted data is an unavoidable `O(n)` scan, since with no sorted order there's no half you can safely discard. The reusable instinct: *sorted data + \"which position?\" ⇒ reach for binary search.*"
+    },
+    {
+      "id": "true-statements-about-binary-search",
+      "title": "Which statements about binary search are true? Select all that apply.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "It needs the data sorted by the key you compare on; on unsorted input it can miss an element that's actually present.",
+          "isCorrect": true
+        },
+        {
+          "text": "Lower-bound and upper-bound return the same index when the target is absent and differ by exactly the number of equal elements when it's present.",
+          "isCorrect": true
+        },
+        {
+          "text": "Doubling the array length adds only one comparison to the worst case, because the work grows like `log2(n)`.",
+          "isCorrect": true
+        },
+        {
+          "text": "Because it's `O(log n)`, binary search is faster than a `Map`'s `O(1)` lookup for finding a single key.",
+          "isCorrect": false
+        },
+        {
+          "text": "In JavaScript, `Math.floor((lo + hi) / 2)` can overflow to a negative `mid` for arrays of a few million items, so you must write `lo + Math.floor((hi - lo) / 2)`.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "True: the sorted precondition is about *correctness*, not just speed; lower- and upper-bound coincide when the value is absent and bracket its run of duplicates when present (their gap *is* the multiplicity); and logarithmic growth means each doubling of `n` adds a single step (1M → 20, 2M → 21). False: `O(log n)` does not beat `O(1)` — a hash `Map` wins for single-key lookup, and binary search earns its place only when you need the *ordering* a hash can't give (ranges, neighbours, insertion points). The overflow warning is genuine in fixed-width-integer languages (Java/C `int`), but JavaScript numbers are 64-bit floats, exact up to 2^53, so `(lo + hi)` for a few million is nowhere near overflowing; `lo + (hi - lo) / 2` is fine defensive style but is *not required* in JS."
+    },
+    {
+      "id": "comparisons-for-one-million",
+      "title": "Worst case, how many comparisons (halving steps) does binary search make on a sorted array of `n = 1,000,000` items? Enter a whole number.",
+      "description": "Each step compares the target with the middle element and discards half of what's left.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [20]
+      },
+      "explanation": "Each comparison halves the remaining range, so the worst case is how many times you can halve 1,000,000 before nothing is left: `ceil(log2(1,000,000)) = 20`, because `2^19 = 524,288 < 1,000,000 <= 1,048,576 = 2^20`. Put another way, 20 yes/no questions are enough to single out one item among ~1,000,000. Contrast a linear scan's worst case of 1,000,000 comparisons on the same data — roughly 50,000× more work. That gap, 20 versus a million, is exactly why the 'in disguise' use cases (virtual lists, sorted logs, sorted inserts) go to the trouble of keeping their data sorted."
+    },
+    {
+      "id": "extra-comparisons-when-doubling",
+      "title": "The list grows from 1,000,000 to 2,000,000 items. How many *additional* worst-case comparisons does binary search now need? Enter a whole number.",
+      "description": "Binary search's worst case grows like `log2(n)` — so think about what a single doubling of `n` does to it.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [1]
+      },
+      "explanation": "Just one. The worst case is `ceil(log2(n))`: at 1,000,000 it's 20, and at 2,000,000 it's 21, because `2^20 = 1,048,576 < 2,000,000 <= 2,097,152 = 2^21`. Since `log2` of a doubled number rises by exactly 1, every time the data doubles you pay a single extra step — 4M → 22, 8M → 23, and so on. This is the whole intuition behind 'logarithmic': a linear scan would need a *million* more comparisons for that same doubling, while binary search needs one. Doubling the data barely moves the cost."
+    }
+  ]
+}

@@ -1,0 +1,362 @@
+{
+  "schemaVersion": 1,
+  "id": "css-rendering-pipeline-reflow-repaint",
+  "title": "The CSS Rendering Pipeline: Reflow vs Repaint & Why `transform` Is Cheap",
+  "description": "Follow a pixel from CSS to screen: **Style → Layout → Paint → Composite**. See exactly what makes the browser re-run *Layout* (reflow) versus just *Paint* (repaint), why `transform` and `opacity` ride the compositor and skip both, and how reading `offsetHeight` at the wrong moment forces a synchronous layout. The rendering-side companion to the event-loop quiz — same main thread, the other half of its story. Every claim is grounded in the browser's documented rendering steps.",
+  "language": "en",
+  "tags": ["css", "frontend", "performance"],
+  "questions": [
+    {
+      "id": "pipeline-order",
+      "title": "What is the correct order of the browser's rendering pipeline?",
+      "description": "After JavaScript has run and the DOM and styles are ready, the browser turns them into pixels in four main steps.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "**Style** → **Layout** → **Paint** → **Composite**",
+          "isCorrect": true
+        },
+        {
+          "text": "**Layout** → **Style** → **Paint** → **Composite**",
+          "isCorrect": false
+        },
+        {
+          "text": "**Style** → **Paint** → **Layout** → **Composite**",
+          "isCorrect": false
+        },
+        {
+          "text": "**Style** → **Layout** → **Composite** → **Paint**",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The browser always works in this fixed order:\n\n1. **Style (Recalculate Style)** — match CSS selectors to elements and compute the final value of every property for every node.\n2. **Layout (Reflow)** — calculate the *geometry*: how big each box is and where it sits.\n3. **Paint** — fill in pixels: text, colors, borders, shadows, images — drawn onto layers.\n4. **Composite** — assemble those layers and draw them to the screen in the correct order.\n\nThe sequence is not arbitrary. You cannot know an element's size (*Layout*) until you know its styles (*Style*), and you cannot fill its pixels (*Paint*) until you know its size. *Composite* is last because it merely arranges what *Paint* already produced. In DevTools you will also see a *JavaScript* slice drawn before *Style*, since script is the usual trigger that kicks the whole pipeline off.",
+      "references": "[web.dev: Rendering performance](https://web.dev/articles/rendering-performance) · [MDN: Critical rendering path](https://developer.mozilla.org/en-US/docs/Web/Performance/Critical_rendering_path)"
+    },
+    {
+      "id": "style-step-role",
+      "title": "What does the **Style** (Recalculate Style) step actually compute?",
+      "description": "DevTools shows a *Recalculate Style* event before any layout work.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "It matches CSS rules to elements and resolves the final **computed value** of every property — but positions nothing yet.",
+          "isCorrect": true
+        },
+        {
+          "text": "It measures each element's width, height, and position on the page.",
+          "isCorrect": false
+        },
+        {
+          "text": "It fills in the pixels for text and backgrounds.",
+          "isCorrect": false
+        },
+        {
+          "text": "It downloads and parses the stylesheet into the CSSOM.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Style turns *rules* into *resolved styles*. The browser walks the cascade — selector matching, specificity, inheritance — and produces one fully **computed style** per element (for example `font-size: 16px`, not `1em`). It figures out *what* an element should look like, never *where* it goes.\n\n- Measuring size and position is the next step, **Layout**.\n- Filling pixels is **Paint**.\n- Parsing CSS text into the **CSSOM** happens earlier, while the page loads; *Recalculate Style* consumes that CSSOM, it does not build it.\n\nThis split is why a selector-heavy stylesheet can make *Style* expensive even on a page whose layout never moves — matching is real work, independent of geometry.",
+      "references": "[MDN: Critical rendering path](https://developer.mozilla.org/en-US/docs/Web/Performance/Critical_rendering_path) · [web.dev: Rendering performance](https://web.dev/articles/rendering-performance)"
+    },
+    {
+      "id": "width-animation-full-pipeline",
+      "title": "Which pipeline steps must run on each frame of the `width` transition?",
+      "description": "```css\n.panel {\n  width: 200px;\n  transition: width 300ms;\n}\n.panel:hover {\n  width: 400px;\n}\n```\n\nOn hover, `width` changes on every frame of the transition.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "**Layout, then Paint, then Composite** — changing geometry forces all three.",
+          "isCorrect": true
+        },
+        {
+          "text": "**Layout only** — the pixels are unchanged, so Paint and Composite are skipped.",
+          "isCorrect": false
+        },
+        {
+          "text": "**Composite only** — like `transform`, `width` is handled directly by the GPU.",
+          "isCorrect": false
+        },
+        {
+          "text": "**Paint, then Composite** — `width` is a paint property, so Layout is skipped.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`width` is a **layout** property, and Layout is never free: once geometry changes, the browser *must* re-Paint the affected area (the box is a different size, so its old pixels are wrong) and then *must* re-Composite. So a `width` animation pays the full pipeline — **Layout → Paint → Composite** — on every single frame.\n\nThis is the key *downstream* rule:\n\n- Change a **layout** property → Layout **+** Paint **+** Composite.\n- Change a **paint-only** property → Paint **+** Composite (Layout skipped).\n- Change a **composite-only** property → Composite only (Layout *and* Paint skipped).\n\nYou can skip steps from the *front* of the pipeline, never from the *back*. That single fact is why animating `width`, `top`, or `margin` is among the most expensive things you can do per frame — and why the next questions reach for `transform` instead.",
+      "references": "[web.dev: Rendering performance](https://web.dev/articles/rendering-performance)"
+    },
+    {
+      "id": "reflow-term-input",
+      "title": "What has Firefox (Gecko) historically called the step Chrome's DevTools labels *Layout*?",
+      "description": "It's the step that recomputes geometry. Answer with one word.",
+      "type": "input",
+      "validation": {
+        "mode": "text",
+        "acceptedAnswers": ["reflow", "reflows"]
+      },
+      "explanation": "**Reflow** is Gecko's name for what Chrome's pipeline calls **Layout**: recomputing where every box sits and how large it is. The two words are interchangeable, and you will meet both in articles and profilers.\n\nThe companion term is **repaint** — redrawing pixels *without* recomputing geometry (the *Paint* step). So 'reflow vs repaint' is simply 'Layout vs Paint' in older vocabulary. Keeping the pairing straight is the whole mental model: a **reflow always causes a repaint**, but a **repaint does not require a reflow**.",
+      "references": "[MDN: Reflow](https://developer.mozilla.org/en-US/docs/Glossary/Reflow) · [MDN: Repaint](https://developer.mozilla.org/en-US/docs/Glossary/Repaint)"
+    },
+    {
+      "id": "repaint-without-reflow",
+      "title": "Which change triggers a **repaint** but *no* reflow?",
+      "description": "Each change below is applied to a button that keeps exactly the same size and position.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`background-color: red` → `background-color: blue`",
+          "isCorrect": true
+        },
+        {
+          "text": "`display: inline` → `display: block`",
+          "isCorrect": false
+        },
+        {
+          "text": "`font-size: 14px` → `font-size: 18px`",
+          "isCorrect": false
+        },
+        {
+          "text": "`padding: 8px` → `padding: 16px`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`background-color` is a **paint-only** property: it changes which pixels are drawn but not the box's size or position, so the browser skips **Layout** entirely and runs only **Paint → Composite**. That is a textbook *repaint without reflow*.\n\nThe other three all alter geometry, forcing a reflow:\n\n- `display: inline → block` changes the box type and how it flows among siblings.\n- `font-size` changes text metrics, so line boxes and the element's size change.\n- `padding` changes the box's dimensions directly.\n\nOther common paint-only properties include `color`, `visibility`, `box-shadow`, `border-color`, `border-radius`, `outline`, and `background-image`. They are cheaper than layout changes, but — unlike `transform`/`opacity` — they still cost a genuine Paint.",
+      "references": "[CSS Triggers](https://csstriggers.com/) · [web.dev: Rendering performance](https://web.dev/articles/rendering-performance)"
+    },
+    {
+      "id": "which-trigger-layout",
+      "title": "Which of these property changes force a **Layout (reflow)**?",
+      "description": "A reflow means the browser must recompute size or position — not merely repaint. Select **all** that apply.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "`height: auto` → `height: 300px`",
+          "isCorrect": true
+        },
+        {
+          "text": "`color: black` → `color: gray`",
+          "isCorrect": false
+        },
+        {
+          "text": "`top: 0` → `top: 40px` on a `position: absolute` element",
+          "isCorrect": true
+        },
+        {
+          "text": "`transform: none` → `transform: translateY(40px)`",
+          "isCorrect": false
+        },
+        {
+          "text": "`font-weight: 400` → `font-weight: 700`",
+          "isCorrect": true
+        },
+        {
+          "text": "`visibility: visible` → `visibility: hidden`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Layout is about **geometry** — size, position, and anything that moves other boxes. The three that reflow:\n\n- **`height`** changes the box's size directly.\n- **`top` on a positioned element** moves it through the layout system, recomputing its position.\n- **`font-weight`** changes glyph advance widths, so text re-wraps and line boxes resize — a real reflow that is easy to overlook.\n\nThe three that do **not** reflow:\n\n- **`color`** is paint-only.\n- **`visibility: hidden`** leaves the element's box exactly where it was (it still occupies space) — only its pixels change, so it is a repaint. By contrast `display: none` *would* reflow, because it removes the box from flow.\n- **`transform: translateY()`** is the star of this quiz: composite-only, skipping *both* Layout and Paint.\n\nNotice the trap pairs — `visibility: hidden` vs `display: none`, and `translateY()` vs `top` — each looks similar but lands in a different pipeline bucket.",
+      "references": "[CSS Triggers](https://csstriggers.com/) · [MDN: visibility](https://developer.mozilla.org/en-US/docs/Web/CSS/visibility)"
+    },
+    {
+      "id": "why-transform-opacity-cheap",
+      "title": "Why are `transform` and `opacity` the two 'cheap' properties to animate?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Once the element is on its own compositor layer, the GPU can move/fade the *already-painted* layer — so the browser skips both **Layout** and **Paint**.",
+          "isCorrect": true
+        },
+        {
+          "text": "They are simpler CSS values, so the **Style** step parses them faster.",
+          "isCorrect": false
+        },
+        {
+          "text": "The browser caps their updates to 30fps, halving the work per second.",
+          "isCorrect": false
+        },
+        {
+          "text": "They are applied by the operating system's window manager, bypassing the browser entirely.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`transform` (translate, scale, rotate, skew) and `opacity` are the canonical **composite-only** properties. If the element has been promoted to its own **compositor layer**, that layer is painted into a GPU texture *once*; animating transform or opacity then just hands the compositor a new matrix or alpha value, and the GPU re-blends the existing texture. No box is re-measured (**no Layout**) and no pixels are re-filled (**no Paint**) — only **Composite** runs.\n\nThat is why a `transform: translateX()` animation can hold 60fps where an equivalent `left` animation janks: `left` pays Layout + Paint + Composite every frame, while `transform` pays Composite alone.\n\nOne caveat worth knowing: the cheapness depends on the element being on its **own layer**. If it is not, the browser may still repaint to apply the change — which is exactly what `will-change` (a later question) is for.",
+      "references": "[web.dev: Stick to compositor-only properties](https://web.dev/articles/stick-to-compositor-only-properties-and-manage-layer-count) · [web.dev: Rendering performance](https://web.dev/articles/rendering-performance)"
+    },
+    {
+      "id": "top-vs-translate",
+      "title": "Which way of sliding the card 100px down is cheaper per frame, and why?",
+      "description": "```css\n/* A: animate the box's position */\n.card-a { position: relative; top: 0; transition: top 200ms; }\n.card-a:hover { top: 100px; }\n\n/* B: animate a transform */\n.card-b { transform: translateY(0); transition: transform 200ms; }\n.card-b:hover { transform: translateY(100px); }\n```\n\nBoth move the card the same distance on screen.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "**B is cheaper.** `top` reruns Layout + Paint + Composite each frame; `translateY` runs Composite only.",
+          "isCorrect": true
+        },
+        {
+          "text": "**A is cheaper.** `top` is a native layout property, so the browser optimizes it more aggressively than transforms.",
+          "isCorrect": false
+        },
+        {
+          "text": "They are identical — both ultimately move the element, so the browser does the same work.",
+          "isCorrect": false
+        },
+        {
+          "text": "**B is cheaper**, but only because `translateY` rounds to whole pixels and skips sub-pixel rendering.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Visually identical, structurally worlds apart.\n\n- **A (`top`)** is a layout property. Every animation frame recomputes the card's position (**Layout**), re-fills its pixels (**Paint**), then **Composites** — the full pipeline, on the main thread, roughly 60 times a second.\n- **B (`translateY`)** is composite-only. The card is painted once; each frame just hands the compositor a new translation matrix. **No Layout, no Paint** — only **Composite**, largely on the GPU.\n\nThe rule of thumb for movement animations: **prefer `transform: translate()` over `top`/`left`/`margin`.** The same holds for fades: prefer `opacity` over toggling `visibility` or background alpha. You get the same motion for a fraction of the per-frame cost — and, as the next question shows, on a thread that JavaScript cannot easily block.",
+      "references": "[web.dev: Rendering performance](https://web.dev/articles/rendering-performance) · [web.dev: Stick to compositor-only properties](https://web.dev/articles/stick-to-compositor-only-properties-and-manage-layer-count)"
+    },
+    {
+      "id": "compositor-thread-survives-block",
+      "title": "A 500ms synchronous task blocks the main thread. Which animation keeps moving?",
+      "description": "The page has two animations running, then a click handler hogs the main thread:\n\n```js\n// Animation 1: a CSS transition of `transform` on a spinner (composited)\n// Animation 2: a requestAnimationFrame loop that sets `el.style.left`\n\nbutton.addEventListener('click', () => {\n  const end = Date.now() + 500;\n  while (Date.now() < end) {} // block the main thread for 500ms\n});\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The **`transform`** transition keeps animating (compositor thread); the **`left`** animation freezes (it needs the blocked main thread).",
+          "isCorrect": true
+        },
+        {
+          "text": "Both freeze — a blocked main thread stops all rendering on the page.",
+          "isCorrect": false
+        },
+        {
+          "text": "Both keep moving — animations always run on a separate thread from JavaScript.",
+          "isCorrect": false
+        },
+        {
+          "text": "The **`left`** animation keeps moving; the **`transform`** one freezes.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "This is where the rendering pipeline meets the event loop. A composited `transform`/`opacity` animation is handed to the **compositor thread**, which runs independently of the main thread. So even while the `while` loop monopolizes the main thread, the compositor keeps re-blending the spinner's layer — it stays smooth.\n\nThe `requestAnimationFrame` + `el.style.left` animation lives entirely on the **main thread**: each frame needs JavaScript to run *and* a Layout/Paint pass. While the long task holds the thread, none of that can happen, so it freezes — then jumps to its new position once the task ends.\n\nThis is the rendering-side payoff of 'don't block the event loop': a long synchronous task stalls JavaScript, Layout, and Paint together, but a compositor-only animation sails right through. It is also the strongest practical argument for animating `transform` instead of `top`/`left`.",
+      "references": "[web.dev: Rendering performance](https://web.dev/articles/rendering-performance) · [MDN: Critical rendering path](https://developer.mozilla.org/en-US/docs/Web/Performance/Critical_rendering_path)"
+    },
+    {
+      "id": "will-change-promotion",
+      "title": "What does `will-change: transform` actually do — and what is the catch?",
+      "description": "```css\n.modal {\n  will-change: transform;\n}\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "It hints the browser to promote the element to its **own compositor layer ahead of time**, so the animation starts without a setup hitch — but overusing it wastes memory.",
+          "isCorrect": true
+        },
+        {
+          "text": "It makes every property on the element animate faster by default.",
+          "isCorrect": false
+        },
+        {
+          "text": "It forces an immediate Layout so future transforms are pre-measured.",
+          "isCorrect": false
+        },
+        {
+          "text": "It is purely documentation for other developers; the browser ignores it.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`will-change` is a *hint*: 'I am about to animate `transform`, please get ready.' The browser responds by promoting the element to its **own layer** in advance, so the moment the animation begins there is no first-frame hitch from creating a layer and doing a fresh paint.\n\nThe catch is cost. Each promoted layer consumes GPU memory and bookkeeping, so MDN's guidance is explicit: use it **sparingly** — ideally add it shortly before the animation and remove it afterward, never slap it on `*` or leave it on permanently. Over-promotion can make a page *slower* and balloon memory use.\n\nThe old-school equivalent is the 'null transform hack', `transform: translateZ(0)` (or `translate3d(0, 0, 0)`), which forces a layer as a side effect. `will-change` is the modern, explicit way to ask for the same thing. Neither triggers a Layout — they prepare the **compositor**, not the geometry.",
+      "references": "[MDN: will-change](https://developer.mozilla.org/en-US/docs/Web/CSS/will-change)"
+    },
+    {
+      "id": "forced-synchronous-layout-reads",
+      "title": "Which lines force a **synchronous layout** right after a style write?",
+      "description": "A style write in JS just dirtied the layout. \"Force\" means the browser must stop and recompute layout *immediately* to return a correct value. Select **all** that apply.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "`const h = box.offsetHeight;`",
+          "isCorrect": true
+        },
+        {
+          "text": "`const r = box.getBoundingClientRect();`",
+          "isCorrect": true
+        },
+        {
+          "text": "`box.style.height = '200px';`",
+          "isCorrect": false
+        },
+        {
+          "text": "`const w = getComputedStyle(box).width;`",
+          "isCorrect": true
+        },
+        {
+          "text": "`const t = box.scrollTop;`",
+          "isCorrect": true
+        },
+        {
+          "text": "`box.classList.add('open');`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "After a write dirties the layout, the browser would *prefer* to batch and recompute once before the next frame. But the instant you **read a value that depends on up-to-date geometry**, it is forced to recompute *right now* to give you an accurate answer. That is a **forced synchronous layout** (a.k.a. forced reflow).\n\nThe four readers all demand live geometry:\n\n- `offsetHeight`, `offsetWidth`, `offsetTop`, …\n- `getBoundingClientRect()`\n- `getComputedStyle(...)` of a layout-dependent property\n- `scrollTop`, `scrollHeight`, `scrollLeft`, …\n\nThe two **writes** do *not* force layout — they only *invalidate* it (mark it dirty), and the work is deferred:\n\n- `box.style.height = '200px'`\n- `box.classList.add('open')`\n\nThe real danger is **interleaving** a write and then a read, the subject of the next question. Paul Irish maintains a well-known list of exactly which properties trip this.",
+      "references": "[Paul Irish: What forces layout / reflow](https://gist.github.com/paulirish/5d52fb081b3570c81e3a) · [web.dev: Avoid large, complex layouts and layout thrashing](https://web.dev/articles/avoid-large-complex-layouts-and-layout-thrashing)"
+    },
+    {
+      "id": "layout-thrashing-fix",
+      "title": "Why is this loop slow, and what is the one-line fix?",
+      "description": "This resizes 200 paragraphs to match a container's width:\n\n```js\n// `box` and `paragraphs` are fixed; box's width never changes inside this loop\nfor (let i = 0; i < paragraphs.length; i++) {\n  paragraphs[i].style.width = box.offsetWidth + 'px';\n}\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Each iteration **writes** a width (dirtying layout) then **reads** `box.offsetWidth` (forcing a re-layout) — so it pays roughly N forced layouts. Fix: read `box.offsetWidth` **once before** the loop.",
+          "isCorrect": true
+        },
+        {
+          "text": "`offsetWidth` is a slow DOM property; cache it in a variable *inside* the loop to speed it up.",
+          "isCorrect": false
+        },
+        {
+          "text": "Setting `style.width` in a loop leaks memory; use a `DocumentFragment` instead.",
+          "isCorrect": false
+        },
+        {
+          "text": "The loop is fine; 200 iterations is too few to matter, so no change is needed.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "This is the classic **layout thrashing** pattern: a **read-after-write** loop. The write `paragraphs[i].style.width = ...` dirties the document's layout; the very next iteration reads `box.offsetWidth`, forcing the browser to flush a **synchronous layout** to return a correct number. Repeat 200 times and you get roughly 200 forced layouts in a single frame.\n\nThe fix is to **separate reads from writes** — hoist the read out of the loop so layout is computed at most once:\n\n```js\nconst width = box.offsetWidth; // one read, one (possible) layout\nfor (let i = 0; i < paragraphs.length; i++) {\n  paragraphs[i].style.width = width + 'px'; // writes only; layout deferred to one pass\n}\n```\n\nNow the writes just queue up and the browser does a single layout before the next paint. The general principle, popularized by helpers like FastDOM: **batch all your reads, then all your writes** — never alternate them. Caching `offsetWidth` *inside* the loop would not help, because each write re-dirties it; the read must move *out*.",
+      "references": "[web.dev: Avoid large, complex layouts and layout thrashing](https://web.dev/articles/avoid-large-complex-layouts-and-layout-thrashing) · [Paul Irish: What forces layout / reflow](https://gist.github.com/paulirish/5d52fb081b3570c81e3a)"
+    },
+    {
+      "id": "frame-budget-60fps",
+      "title": "Rounded to two decimals, how many milliseconds is the 60fps frame budget?",
+      "description": "To render smoothly at 60fps, the browser aims to produce a new frame every `1000 / 60` ms. Enter the number only.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [16.67],
+        "tolerance": 0.01
+      },
+      "explanation": "`1000 ms / 60 frames ≈ 16.67 ms` per frame. Every step in this quiz — Style, Layout, Paint, Composite, plus any JavaScript — has to fit inside that window, or the frame is late and the user sees jank.\n\nIn practice the usable budget is even tighter: the browser needs a few milliseconds of its own housekeeping per frame, so the common working guidance is to keep your JS + rendering work under roughly **10 ms**. This is precisely why composite-only animations matter — skipping Layout and Paint can be the difference between fitting in 16.67 ms and missing it.\n\nAnd the bar keeps rising: on a 120Hz display the budget halves to `1000 / 120 ≈ 8.33 ms`, making those savings matter even more.",
+      "references": "[web.dev: Rendering performance](https://web.dev/articles/rendering-performance)"
+    },
+    {
+      "id": "pipeline-truths-capstone",
+      "title": "Which statements about the rendering pipeline are true?",
+      "description": "Select every correct statement.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "Changing only `transform` or `opacity` can skip both Layout and Paint.",
+          "isCorrect": true
+        },
+        {
+          "text": "A reflow always causes a repaint, but a repaint does not require a reflow.",
+          "isCorrect": true
+        },
+        {
+          "text": "Reading `offsetHeight` can force a synchronous layout.",
+          "isCorrect": true
+        },
+        {
+          "text": "`background-color` changes trigger a reflow.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Three hold up:\n\n- **`transform`/`opacity`** are composite-only: on their own layer they skip **Layout** and **Paint**, running only **Composite**.\n- **Reflow implies repaint, but not the reverse.** A geometry change forces the browser to re-Paint the moved or resized area, so Layout always drags Paint along; a paint-only change (like `color`) skips Layout. You can drop steps from the *front* of the pipeline, never the *back*.\n- **`offsetHeight`** (and friends like `getBoundingClientRect()`) read live geometry, forcing a synchronous layout when the layout is dirty.\n\nThe false statement: **`background-color` is paint-only** — it changes pixels, not geometry, so it triggers a repaint, never a reflow. Confusing 'changes how it looks' with 'changes where things are' is the single most common pipeline misconception.",
+      "references": "[web.dev: Rendering performance](https://web.dev/articles/rendering-performance) · [MDN: Critical rendering path](https://developer.mozilla.org/en-US/docs/Web/Performance/Critical_rendering_path)"
+    }
+  ]
+}

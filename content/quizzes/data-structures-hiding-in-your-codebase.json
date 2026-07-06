@@ -1,0 +1,1542 @@
+{
+  "schemaVersion": 1,
+  "id": "data-structures-hiding-in-your-codebase",
+  "title": "Data Structures Hiding in Your Codebase: A Field Guide for Frontend Engineers",
+  "description": "Algorithms feel abstract until you spot them in the code you already ship. This quiz is for **frontend engineers** who want to understand algorithms by recognising the data structures already running their UI: the DOM as a *tree*, a bundler's imports as a *directed graph* solved by topological sort, the command palette as a *trie*, undo/redo as *stacks* and the task queue as a *queue*, React's scheduler as a *min-heap*, and SWR/React Query as *LRU caches*. Six topics, sixty questions, every answer anchored in real browser and framework behaviour.",
+  "language": "en",
+  "tags": ["data-structures", "algorithms", "frontend", "javascript"],
+  "author": "Quizbun",
+  "questions": [
+    {
+      "id": "dom-leaf-node",
+      "title": "Using tree terminology on the DOM, what is a *leaf* node?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "A node with no child nodes — for example a `<br>` element or a text node at the end of a branch.",
+          "isCorrect": true
+        },
+        {
+          "text": "The single topmost node that every other node descends from.",
+          "isCorrect": false
+        },
+        {
+          "text": "Any element placed directly inside `<body>`.",
+          "isCorrect": false
+        },
+        {
+          "text": "A node that has exactly one child.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A *leaf* is a node with no children — the tips of the tree. In a DOM, that's a `<br>`, an `<img>`, or a text node with nothing nested inside it. The topmost node is the *root* (`document.documentElement`, i.e. `<html>`), and 'directly inside `<body>`' just describes a child of `<body>`, not a leaf. The same four words — root, leaf, parent, child — describe every tree you'll meet in this quiz.",
+      "references": "[Wikipedia: Tree (abstract data type)](https://en.wikipedia.org/wiki/Tree_%28abstract_data_type%29)"
+    },
+    {
+      "id": "closest-walks-ancestors",
+      "title": "`element.closest('section')` searches which set of nodes?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The element itself and then its *ancestors* — parent, grandparent, and so on up toward the root — returning the first that matches.",
+          "isCorrect": true
+        },
+        {
+          "text": "Only the element's direct parent (`parentNode`), nothing higher.",
+          "isCorrect": false
+        },
+        {
+          "text": "The element's *descendants*, the way `querySelector` searches downward.",
+          "isCorrect": false
+        },
+        {
+          "text": "The element's *siblings* that share the same parent.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`closest` walks *up* the tree: it tests the element, then each ancestor on the path to the root, and stops at the first match. That path — parent, grandparent, great-grandparent — is precisely the set of *ancestors*. Contrast it with `querySelector`, which walks *down* into descendants, and `parentNode`, which is a single edge up. Recognising 'walk toward the root' versus 'walk into the subtree' is the whole of DOM traversal.",
+      "references": "[MDN: closest](https://developer.mozilla.org/en-US/docs/Web/API/Element/closest)"
+    },
+    {
+      "id": "root-depth-zero",
+      "title": "What is the *depth* of the root node in a tree?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "0 — depth counts the edges from the root down to the node, and the root has none above it.",
+          "isCorrect": true
+        },
+        {
+          "text": "1 — the root is the first level, so its depth starts at one.",
+          "isCorrect": false
+        },
+        {
+          "text": "Undefined — only leaves have a measurable depth.",
+          "isCorrect": false
+        },
+        {
+          "text": "Equal to the height of the whole tree.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "*Depth* is the number of edges from the root *down* to a node, so the root sits at depth 0, its children at depth 1, and so on. *Height* is the mirror image — edges from a node *down* to its deepest leaf — so the root's height equals the height of the whole tree, but its depth is 0. Mixing up depth and height is the classic tree-terminology slip, and it matters the moment you reason about 'how deeply nested is this component?'",
+      "references": "[Wikipedia: Tree (abstract data type)](https://en.wikipedia.org/wiki/Tree_%28abstract_data_type%29)"
+    },
+    {
+      "id": "document-order-is-dfs",
+      "title": "`document.querySelectorAll('div')` returns matches in *document order*. Which traversal produces that exact order?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "A *pre-order depth-first* traversal: visit a node, then fully explore its subtree, before moving to its next sibling.",
+          "isCorrect": true
+        },
+        {
+          "text": "A *breadth-first* traversal: all nodes at depth 1, then all at depth 2, level by level.",
+          "isCorrect": false
+        },
+        {
+          "text": "A *post-order depth-first* traversal: children first, then the node.",
+          "isCorrect": false
+        },
+        {
+          "text": "Reverse document order, from the last element back to the first.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "'Document order' means the order the elements' start tags appear in the source — which is exactly a *pre-order depth-first* walk: you emit a node, then dive into its whole subtree, then continue to its next sibling. Breadth-first (level by level) is what you'd get from a queue-driven walk and does *not* match the source order. So every `querySelectorAll`, `NodeList`, and `for...of` over `children` you've ever iterated was handing you a DFS pre-order.",
+      "references": "[Wikipedia: Depth-first search](https://en.wikipedia.org/wiki/Depth-first_search)\n[MDN: querySelectorAll](https://developer.mozilla.org/en-US/docs/Web/API/Document/querySelectorAll)"
+    },
+    {
+      "id": "recursive-file-explorer",
+      "title": "A file-explorer component renders a folder by rendering each child, and renders each child folder *the same way*. This self-similar rendering is most naturally expressed with…",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Recursion — a component (or function) that calls itself for each child, mirroring the tree's self-similar shape.",
+          "isCorrect": true
+        },
+        {
+          "text": "A single flat `for` loop over a pre-flattened array, with no nested calls.",
+          "isCorrect": false
+        },
+        {
+          "text": "A `switch` statement that enumerates each possible folder depth.",
+          "isCorrect": false
+        },
+        {
+          "text": "`Array.prototype.reduce` with no function ever calling itself.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A tree is *self-similar* — a folder is a node whose children are folders shaped just like it — so the clean expression is a function that renders a node and recurses on each child. This is the same shape as rendering a nested comment thread or a JSON viewer. You *can* flatten the tree into a list first and loop, but you've then just moved the recursion into the flattening step. A `switch` on depth fails the moment nesting is unbounded.",
+      "references": "[Wikipedia: Recursion (computer science)](https://en.wikipedia.org/wiki/Recursion_%28computer_science%29)"
+    },
+    {
+      "id": "deep-recursion-stack-overflow",
+      "title": "Walking a *deeply* nested structure (say, attacker-supplied JSON 50,000 levels deep) with naive recursion risks which runtime failure, and why?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`RangeError: Maximum call stack size exceeded` — each recursive call pushes a frame onto the call stack, and very deep nesting exhausts it.",
+          "isCorrect": true
+        },
+        {
+          "text": "A memory leak that grows forever but never throws.",
+          "isCorrect": false
+        },
+        {
+          "text": "An infinite loop that spins without ever raising an error.",
+          "isCorrect": false
+        },
+        {
+          "text": "A `TypeError`, because a deep node's `parent` pointer is `null`.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Recursion depth maps directly onto *call-stack frames*: every unfinished recursive call sits on the stack waiting for its children to return. The stack is bounded (tens of thousands of frames in most JS engines), so a structure nested deep enough overflows it and throws `RangeError: Maximum call stack size exceeded`. The fix is to trade the implicit call stack for an *explicit* stack (an array you `push`/`pop`) and loop — turning recursion into iteration. This is why robust JSON walkers and tree-diff algorithms often go iterative.",
+      "references": "[MDN: Call stack](https://developer.mozilla.org/en-US/docs/Glossary/Call_stack)"
+    },
+    {
+      "id": "delegation-needs-bubbling",
+      "title": "Event *delegation* attaches one listener to a parent instead of many on its children. Which DOM mechanism makes that work?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Event *bubbling*: an event fired on a child propagates up through its ancestors, so a single listener on a common ancestor still sees it.",
+          "isCorrect": true
+        },
+        {
+          "text": "The browser silently clones the parent's listener onto every child element.",
+          "isCorrect": false
+        },
+        {
+          "text": "CSS inheritance, which passes the handler down the cascade to children.",
+          "isCorrect": false
+        },
+        {
+          "text": "A periodic poll that checks every child for new clicks.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Delegation is just 'handle it at a common ancestor', and it relies on *bubbling*: a click on `<li>` fires there, then bubbles up to `<ul>`, `<body>`, and beyond, so a lone listener on `<ul>` receives it with `event.target` pointing at the original `<li>`. That's why one listener can manage a list of 10,000 rows — and why dynamically added children 'just work' without rebinding. (You can also delegate in the capture phase, but bubbling is the default and the usual choice.)",
+      "references": "[MDN: bubbles](https://developer.mozilla.org/en-US/docs/Web/API/Event/bubbles)"
+    },
+    {
+      "id": "event-propagation-phases",
+      "title": "Select every true statement about DOM event propagation (capture, target, bubble).",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "The capture phase travels from the root *down* toward the target; the bubble phase travels from the target back *up* toward the root.",
+          "isCorrect": true
+        },
+        {
+          "text": "By default, `addEventListener` registers a handler for the *bubble* phase unless you pass `{ capture: true }`.",
+          "isCorrect": true
+        },
+        {
+          "text": "`event.stopPropagation()` prevents the event from continuing to the remaining nodes on its path.",
+          "isCorrect": true
+        },
+        {
+          "text": "Every DOM event bubbles.",
+          "isCorrect": false
+        },
+        {
+          "text": "`event.target` is always the ancestor element the listener is attached to.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "An event makes a round trip: *capture* (root → target), then *target*, then *bubble* (target → root), and `addEventListener` listens in the bubble phase unless `{ capture: true }` is set. `stopPropagation()` cuts that journey short. The two false claims trip people constantly: not every event bubbles — `focus`, `blur`, and `mouseenter` don't (their bubbling cousins are `focusin`/`focusout` and `mouseover`) — and the element the listener sits on is `event.currentTarget`, while `event.target` is where the event *originated*. That `target` vs `currentTarget` distinction is the heart of delegation.",
+      "references": "[MDN: addEventListener](https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener)"
+    },
+    {
+      "id": "dom-tasks-that-are-traversals",
+      "title": "Which of these everyday DOM operations are really *tree traversals*? Select all that apply.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "`querySelectorAll` collecting matches in document order (a pre-order DFS over the element tree).",
+          "isCorrect": true
+        },
+        {
+          "text": "Recursively rendering a nested comment thread, each reply rendering its own replies.",
+          "isCorrect": true
+        },
+        {
+          "text": "`element.closest(selector)` walking up the chain of ancestors.",
+          "isCorrect": true
+        },
+        {
+          "text": "`document.getElementById('app')` resolving an element by its id.",
+          "isCorrect": false
+        },
+        {
+          "text": "Reading `element.className` to get a string of class names.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The three correct items each *move along edges* of the tree: `querySelectorAll` walks down in pre-order DFS, recursive comment rendering descends each subtree, and `closest` climbs the ancestor chain. The two distractors don't traverse anything: `getElementById` is an indexed lookup the browser answers in roughly O(1) from an id map (no walking), and reading `className` is a plain property access. The tell-tale of a traversal is that cost scales with how many *nodes* you visit, not with a single hop.",
+      "references": "[Wikipedia: Depth-first search](https://en.wikipedia.org/wiki/Depth-first_search)"
+    },
+    {
+      "id": "tree-terms-on-the-dom",
+      "title": "Which statements correctly map tree terminology onto the DOM? Select all that apply.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "`parentNode` and `children` are the *edges* that connect nodes into the tree.",
+          "isCorrect": true
+        },
+        {
+          "text": "Two elements with the same parent are *siblings* (e.g. reachable via `nextElementSibling`).",
+          "isCorrect": true
+        },
+        {
+          "text": "The *height* of the tree is the length of the longest path from the root down to a leaf.",
+          "isCorrect": true
+        },
+        {
+          "text": "A node's *depth* is the number of children it has.",
+          "isCorrect": false
+        },
+        {
+          "text": "In a valid DOM, every node has exactly one child.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Edges are the parent/child links (`parentNode`, `children`, `nextElementSibling`), siblings share a parent, and height is the longest root-to-leaf path — all standard tree vocabulary that the DOM API exposes verbatim. The false pair confuses *depth* (distance *from* the root, an upward count) with a node's child count, and forgets that DOM nodes can have zero, one, or many children. Nail these terms once and they transfer to every other tree: the React fiber tree, an AST, a file system.",
+      "references": "[Wikipedia: Tree (abstract data type)](https://en.wikipedia.org/wiki/Tree_%28abstract_data_type%29)"
+    },
+    {
+      "id": "imports-are-a-directed-graph",
+      "title": "From a bundler's point of view, your `import` statements across files form which structure?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "A *directed* graph: each module is a node, and each `import` is a directed edge from the importer to the imported module.",
+          "isCorrect": true
+        },
+        {
+          "text": "An *undirected* graph, since imports create a mutual, two-way relationship.",
+          "isCorrect": false
+        },
+        {
+          "text": "A balanced binary tree keyed by filename.",
+          "isCorrect": false
+        },
+        {
+          "text": "A flat list in the order the files appear on disk.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`import` is inherently *directional* — `a.js` importing `b.js` does not imply `b.js` imports `a.js` — so the dependency relationships form a *directed graph* of modules. It's a graph, not a tree, because two modules can import the same shared module (a node with multiple parents), which a tree forbids. Almost everything a bundler does next — ordering output, dropping dead code, catching cycles — is a graph algorithm over this structure.",
+      "references": "[Wikipedia: Directed graph](https://en.wikipedia.org/wiki/Directed_graph)"
+    },
+    {
+      "id": "emit-order-is-topo-sort",
+      "title": "To emit modules so that each one is defined *before* the modules that import it, the bundler computes a…",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Topological sort of the dependency graph — an ordering where every edge points from an earlier module to a later one.",
+          "isCorrect": true
+        },
+        {
+          "text": "Alphabetical sort of the modules by filename.",
+          "isCorrect": false
+        },
+        {
+          "text": "Breadth-first level order starting from the entry file.",
+          "isCorrect": false
+        },
+        {
+          "text": "A random order that's patched up later at runtime.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A *topological sort* lays the directed graph out in a line so that every dependency comes before whatever depends on it — exactly what 'define `b` before the `a` that uses it' requires. Alphabetical or BFS order ignores the dependency edges and would happily place a consumer before its dependency. This is the unglamorous algorithm running every time esbuild, Rollup, or webpack decides the order of modules in your bundle.",
+      "references": "[Wikipedia: Topological sorting](https://en.wikipedia.org/wiki/Topological_sorting)"
+    },
+    {
+      "id": "cycle-has-no-topo-order",
+      "title": "Why can a *circular* import (A imports B, B imports A) have no valid topological order?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "A topological order needs every edge to point forward, but a cycle has no module that can legitimately come first — each waits on the other.",
+          "isCorrect": true
+        },
+        {
+          "text": "Because circular imports are always an immediate syntax error in JavaScript.",
+          "isCorrect": false
+        },
+        {
+          "text": "Because a cycle turns the directed graph into an undirected one.",
+          "isCorrect": false
+        },
+        {
+          "text": "Because the bundler runs out of memory trying to clone the modules.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A topological order exists only for a *DAG* — a directed graph with no cycles. In a cycle A→B→A, putting A first violates the B→A edge and putting B first violates A→B, so no ordering satisfies every edge: there's no valid 'first' module. ES modules can actually *tolerate* some cycles at runtime via hoisting and live bindings, but you can still hit a temporal-dead-zone error if a binding is read before it's initialised — the graph-theory obstruction is real, the runtime just papers over the easy cases.",
+      "references": "[Wikipedia: Topological sorting](https://en.wikipedia.org/wiki/Topological_sorting)\n[Wikipedia: Directed acyclic graph](https://en.wikipedia.org/wiki/Directed_acyclic_graph)"
+    },
+    {
+      "id": "tree-shaking-is-reachability",
+      "title": "Tree-shaking removes code that's never used. In graph terms, which exports survive?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Exactly those *reachable* from an entry point by following import/usage edges; anything unreachable is dead code and dropped.",
+          "isCorrect": true
+        },
+        {
+          "text": "The exports that come alphabetically first in each module.",
+          "isCorrect": false
+        },
+        {
+          "text": "Whichever modules have the largest file size.",
+          "isCorrect": false
+        },
+        {
+          "text": "Only the exports explicitly listed in `package.json`.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "'Tree-shaking' is a graph *reachability* analysis: start from the entry module, follow the edges of what's actually imported and used, and mark everything you can reach. Whatever you *can't* reach is dead code and gets pruned — which is why importing one helper from a library shouldn't drag in the whole thing (given ES modules and `sideEffects: false`). It's the same kind of traversal as a garbage collector marking live objects from its roots.",
+      "references": "[MDN: Tree shaking](https://developer.mozilla.org/en-US/docs/Glossary/Tree_shaking)"
+    },
+    {
+      "id": "task-runner-order-is-topo",
+      "title": "A task runner must run `build` before `deploy`, and `test` before `deploy`. Computing a legal run order from these 'must-run-before' constraints is exactly…",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "A topological sort of the task-dependency DAG.",
+          "isCorrect": true
+        },
+        {
+          "text": "A binary search over the list of tasks.",
+          "isCorrect": false
+        },
+        {
+          "text": "A hash join between tasks and their outputs.",
+          "isCorrect": false
+        },
+        {
+          "text": "Quicksort, comparing task names pairwise.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "'X must run before Y' is a directed edge X→Y, so the set of constraints is a dependency graph and a valid run order is any *topological* ordering of it. The same algorithm orders npm `prepublish` hooks, Gulp/Turborepo task graphs, spreadsheet cell recalculation, and even the order React resolves certain effects. If the constraints ever form a cycle, the runner reports it as a dependency cycle — the same 'no valid order' failure as a circular import.",
+      "references": "[Wikipedia: Topological sorting](https://en.wikipedia.org/wiki/Topological_sorting)"
+    },
+    {
+      "id": "which-imports-make-a-cycle",
+      "title": "Select every import setup that introduces a *cycle* in the module graph.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "`a.js` imports `b.js`, and `b.js` imports `a.js`.",
+          "isCorrect": true
+        },
+        {
+          "text": "`a.js` → `b.js` → `c.js` → `a.js`.",
+          "isCorrect": true
+        },
+        {
+          "text": "A module that imports itself.",
+          "isCorrect": true
+        },
+        {
+          "text": "`a.js` and `b.js` both import `shared.js`, and `shared.js` imports neither.",
+          "isCorrect": false
+        },
+        {
+          "text": "`a.js` imports `b.js`, and nothing imports `a.js`.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A cycle is any path of import edges that returns to where it started: the mutual A↔B, the longer A→B→C→A loop, and the degenerate self-import all qualify, and all three make the graph non-topologically-sortable. The two safe cases are a *diamond* (two modules sharing a dependency that points nowhere back — common and perfectly acyclic) and a simple one-way edge. The reusable test: follow the arrows; if you can ever arrive back at your starting module, you have a cycle.",
+      "references": "[Wikipedia: Cycle (graph theory)](https://en.wikipedia.org/wiki/Cycle_%28graph_theory%29)"
+    },
+    {
+      "id": "dag-properties",
+      "title": "Which statements about a DAG (directed acyclic graph) are true? Select all that apply.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "Every non-empty finite DAG has at least one node with no incoming edges — a valid place to start.",
+          "isCorrect": true
+        },
+        {
+          "text": "Every finite DAG has at least one valid topological ordering.",
+          "isCorrect": true
+        },
+        {
+          "text": "Removing all of a DAG's edges still leaves a DAG.",
+          "isCorrect": true
+        },
+        {
+          "text": "Every DAG is a tree.",
+          "isCorrect": false
+        },
+        {
+          "text": "A DAG may contain a cycle as long as the cycle is small.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Because a DAG has no cycles, you can't loop forever following edges backward, so a non-empty finite DAG must have a *source* (in-degree 0) — which is exactly the node Kahn's algorithm picks first, guaranteeing at least one topological order. Dropping all edges trivially keeps it acyclic. The false statements miss the definitions: a DAG isn't a tree (a tree forbids a node having two parents, but a DAG allows the diamond shape), and 'acyclic' is absolute — *any* cycle, however short, disqualifies it.",
+      "references": "[Wikipedia: Directed acyclic graph](https://en.wikipedia.org/wiki/Directed_acyclic_graph)"
+    },
+    {
+      "id": "bundler-graph-truths",
+      "title": "Select every true statement about dependency resolution in bundlers and package managers.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "Tree-shaking is essentially a *reachability* analysis over the module graph.",
+          "isCorrect": true
+        },
+        {
+          "text": "A circular import means the dependency graph is not a DAG.",
+          "isCorrect": true
+        },
+        {
+          "text": "A package's `dependencies`, plus each of those packages' own dependencies, form a graph the resolver must walk.",
+          "isCorrect": true
+        },
+        {
+          "text": "Topological sort first requires the modules to be sorted alphabetically.",
+          "isCorrect": false
+        },
+        {
+          "text": "Kahn's algorithm only works when the graph is a tree.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Tree-shaking marks reachable code, a cycle breaks the DAG property, and `npm`/`pnpm` resolution is a walk over the transitive dependency graph (the reason a lockfile and dedupe exist at all). The false claims invent prerequisites that don't exist: topological sort cares only about edge direction, never alphabetical order, and Kahn's algorithm runs on *any* DAG — diamonds and shared dependencies included — not just trees. Seeing 'graph' instead of 'list' is what makes circular-dependency and bundle-bloat bugs click.",
+      "references": "[Wikipedia: Topological sorting](https://en.wikipedia.org/wiki/Topological_sorting)"
+    },
+    {
+      "id": "ways-to-topo-sort",
+      "title": "Which of these are genuine ways to produce a topological ordering of a DAG? Select all that apply.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "Repeatedly remove a node with in-degree 0 and append it to the output (Kahn's algorithm).",
+          "isCorrect": true
+        },
+        {
+          "text": "Run a depth-first search and prepend each node as it *finishes* (reverse post-order).",
+          "isCorrect": true
+        },
+        {
+          "text": "If no in-degree-0 node remains but nodes are still left, report a cycle.",
+          "isCorrect": true
+        },
+        {
+          "text": "Sort the nodes by their number of outgoing edges, descending.",
+          "isCorrect": false
+        },
+        {
+          "text": "Sort the nodes alphabetically by name.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The two canonical algorithms are *Kahn's* (peel off sources one at a time) and *DFS reverse post-order* (a node is safe to place once all its descendants are placed, so emit it on finish and reverse), and both naturally detect cycles — Kahn's when it stalls with nodes remaining, DFS when it meets a node still 'in progress' (a back edge). Sorting by out-degree or by name ignores the actual dependency edges and produces orderings that routinely violate them.",
+      "references": "[Wikipedia: Topological sorting](https://en.wikipedia.org/wiki/Topological_sorting)"
+    },
+    {
+      "id": "name-the-ordering-algorithm",
+      "title": "Name the classic graph algorithm that emits modules so every dependency precedes its dependents, and orders build tasks from 'must-run-before' constraints. (Two words.)",
+      "description": "Type the name of the algorithm. Casing doesn't matter; both the noun and the '-ing' form are accepted.",
+      "type": "input",
+      "validation": {
+        "mode": "text",
+        "acceptedAnswers": [
+          "topological sort",
+          "topological sorting",
+          "topological order",
+          "topological ordering",
+          "toposort",
+          "topo sort",
+          "topological-sort"
+        ]
+      },
+      "explanation": "It's the *topological sort*. Given a DAG of 'X must come before Y' edges, it produces a linear order respecting every edge — the engine behind module emit order, task runners, spreadsheet recalculation, and course-prerequisite planning. Its two standard implementations are Kahn's algorithm and DFS reverse post-order, and both double as cycle detectors: no valid topological order exists exactly when the graph has a cycle.",
+      "references": "[Wikipedia: Topological sorting](https://en.wikipedia.org/wiki/Topological_sorting)"
+    },
+    {
+      "id": "trie-shares-prefixes",
+      "title": "How does a *trie* (prefix tree) organise a set of strings?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Strings that share a prefix share a path from the root: each edge is a character, and each node represents the prefix spelled out to reach it.",
+          "isCorrect": true
+        },
+        {
+          "text": "Every string is stored in a flat array kept in sorted order.",
+          "isCorrect": false
+        },
+        {
+          "text": "Each whole string is hashed into its own bucket, like a `Set`.",
+          "isCorrect": false
+        },
+        {
+          "text": "Strings are stored in a balanced binary search tree keyed by the full string.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A trie turns characters into a tree: `\"car\"` and `\"cart\"` share the path c → a → r, and `\"cart\"` just adds one more edge. Each node *is* a prefix, so all words beginning with `\"ca\"` live in the subtree under that node. This shared-path structure is what makes prefix queries cheap — you'll see why in the next questions — and it's a fundamentally different shape from a sorted array, a hash `Set`, or a BST keyed on entire strings.",
+      "references": "[Wikipedia: Trie](https://en.wikipedia.org/wiki/Trie)"
+    },
+    {
+      "id": "trie-lookup-is-o-length",
+      "title": "Looking up a prefix of length *L* in a trie costs about…",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "O(L) — you walk one node per character, independent of how many words the trie stores.",
+          "isCorrect": true
+        },
+        {
+          "text": "O(n), where n is the number of words stored.",
+          "isCorrect": false
+        },
+        {
+          "text": "O(log n), like a balanced binary search tree.",
+          "isCorrect": false
+        },
+        {
+          "text": "O(n · L), scanning every word and comparing characters.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "To find the prefix `\"car\"` you follow three edges — c, a, r — and you're at the node whose subtree holds every completion. That's O(L), driven only by the *prefix length*, with the dictionary size n nowhere in the cost. This is the trie's headline property: lookup time doesn't grow as you add more words, which is precisely what a typeahead over a huge command set needs. (Enumerating the *matches* underneath then costs extra, proportional to how many you return.)",
+      "references": "[Wikipedia: Trie](https://en.wikipedia.org/wiki/Trie)"
+    },
+    {
+      "id": "trie-beats-filter-startswith",
+      "title": "A Cmd-K palette filters 50,000 commands with `list.filter(c => c.startsWith(q))` on *every keystroke*. Why does a trie scale better?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`filter` + `startsWith` is O(n · L) per keystroke because it scans all n commands; a trie jumps to the prefix node in O(L), independent of n.",
+          "isCorrect": true
+        },
+        {
+          "text": "A trie sorts the list once, so `filter` afterwards becomes O(log n).",
+          "isCorrect": false
+        },
+        {
+          "text": "`startsWith` is O(1), so the two approaches are equally fast.",
+          "isCorrect": false
+        },
+        {
+          "text": "They're identical in speed; the trie just uses less memory.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`filter` visits all 50,000 commands on *every* keystroke, and each `startsWith` compares up to L characters — O(n · L) work per keypress, repeated as the user types. A trie instead walks straight to the node for the current prefix in O(L) and reads off the completions in its subtree, so the 50,000 figure never enters the per-keystroke cost. That's the difference between a palette that feels instant and one that stutters on a big command set. (`startsWith` itself is O(L), not O(1) — it must compare characters.)",
+      "references": "[Wikipedia: Trie](https://en.wikipedia.org/wiki/Trie)"
+    },
+    {
+      "id": "radix-tree-compression",
+      "title": "Some HTTP routers match URL paths with a *radix* (compressed) trie. What does the compression actually do?",
+      "description": "A radix tree is the structure behind path matching in routers such as the ones used by many Node.js and Go web frameworks.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "It merges each chain of single-child nodes into one edge labelled with the whole substring, saving nodes and memory while keeping prefix lookup.",
+          "isCorrect": true
+        },
+        {
+          "text": "It stores every full path string in a hash set and drops the tree entirely.",
+          "isCorrect": false
+        },
+        {
+          "text": "It removes the root node to shorten every lookup by one step.",
+          "isCorrect": false
+        },
+        {
+          "text": "It converts the trie into a binary heap ordered by path length.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A plain trie wastes nodes on long, unbranching stretches — `/users/profile` would be a chain of single-child nodes. A *radix* (or Patricia) tree collapses each such chain into one edge labelled with the entire substring, so the tree only branches where routes actually diverge. You keep the O(L) prefix-matching behaviour but with far fewer node objects, which is why route-matching libraries reach for it to dispatch `/users/:id` quickly.",
+      "references": "[Wikipedia: Radix tree](https://en.wikipedia.org/wiki/Radix_tree)"
+    },
+    {
+      "id": "prefix-is-not-fuzzy",
+      "title": "A trie answers which kind of query in O(L)?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "'Every word that starts with this exact prefix' — a prefix match.",
+          "isCorrect": true
+        },
+        {
+          "text": "'Every word within edit-distance 2 of this typo' — a fuzzy match.",
+          "isCorrect": false
+        },
+        {
+          "text": "'The word most semantically similar to this one.'",
+          "isCorrect": false
+        },
+        {
+          "text": "'Every word that contains this substring anywhere inside it.'",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A trie is a *prefix* engine: it answers 'starts with' in O(L), nothing more. Fuzzy matching (typo tolerance via edit distance), semantic similarity (embeddings), and substring search ('contains anywhere') are different problems needing different tools — fuzzy libraries, vector search, suffix structures. Reaching for a trie when you actually need fuzzy matching is a classic mismatch, which is why good autocompletes are explicit about whether they do prefix or fuzzy.",
+      "references": "[Wikipedia: Trie](https://en.wikipedia.org/wiki/Trie)"
+    },
+    {
+      "id": "trie-space-tradeoff",
+      "title": "What's the main price a trie pays for its fast prefix lookups, compared with a plain array of strings?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Memory: it allocates many node objects and pointers — roughly one per character along the distinct prefixes — plus the cost of building it.",
+          "isCorrect": true
+        },
+        {
+          "text": "Lookups get slower as the dictionary grows, eventually worse than a linear scan.",
+          "isCorrect": false
+        },
+        {
+          "text": "It can hold at most 256 words before it must be rebuilt.",
+          "isCorrect": false
+        },
+        {
+          "text": "It must be fully re-sorted after every insertion.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The trie's speed comes from structure, and structure costs *space*: every distinct prefix becomes nodes and pointers, so a trie's memory footprint and build time are its real trade-off versus a compact array. Crucially it does *not* slow down with more words (lookup stays O(L)), has no 256-word ceiling, and never needs re-sorting on insert — those are the wrong intuitions. When memory is tight, a radix tree (previous question) buys much of the speed back by collapsing the unbranching chains.",
+      "references": "[Wikipedia: Trie](https://en.wikipedia.org/wiki/Trie)"
+    },
+    {
+      "id": "trie-truths",
+      "title": "Which statements about tries are true? Select all that apply.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "Prefix-lookup time depends on the prefix length, not on the number of stored words.",
+          "isCorrect": true
+        },
+        {
+          "text": "Words that share a prefix share the nodes near the root.",
+          "isCorrect": true
+        },
+        {
+          "text": "A node typically carries a flag marking whether it ends a complete word.",
+          "isCorrect": true
+        },
+        {
+          "text": "A trie gives you fuzzy, typo-tolerant matching for free.",
+          "isCorrect": false
+        },
+        {
+          "text": "A trie stores all of its words in a single contiguous array.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The true trio captures the essence: O(L) prefix lookup, shared paths for shared prefixes, and an 'is-end-of-word' flag so `\"car\"` can be a stored word even though `\"cart\"` continues past it. The false claims are the two most common misconceptions — a trie is strictly a *prefix* structure (fuzzy matching needs a different algorithm), and it's a linked tree of nodes, not a flat array. Keeping 'prefix, not fuzzy' and 'tree of nodes, not array' straight is most of what you need to use a trie well.",
+      "references": "[Wikipedia: Trie](https://en.wikipedia.org/wiki/Trie)"
+    },
+    {
+      "id": "where-tries-hide",
+      "title": "Where do tries (or their compressed radix-tree cousins) realistically show up in frontend work? Select all that apply.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "Prefix-filtering suggestions in a typeahead or autocomplete input.",
+          "isCorrect": true
+        },
+        {
+          "text": "A Cmd-K command palette narrowing commands as you type a prefix.",
+          "isCorrect": true
+        },
+        {
+          "text": "Matching a request path like `/users/42` against registered routes in a router.",
+          "isCorrect": true
+        },
+        {
+          "text": "Computing the numeric sum of an array of integers.",
+          "isCorrect": false
+        },
+        {
+          "text": "Deep-cloning a plain JavaScript object.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Anywhere the question is 'which entries start with what the user has typed so far?', a trie fits: typeaheads, command palettes, emoji `:smi…` pickers, and — in radix-tree form — URL path routing. Summing an array is a single O(n) pass with no prefix structure to exploit, and deep-cloning walks an object graph (a tree/graph traversal, but nothing to do with string prefixes). Spotting the 'prefix of a string' shape is the trigger to reach for a trie.",
+      "references": "[Wikipedia: Trie](https://en.wikipedia.org/wiki/Trie)"
+    },
+    {
+      "id": "prefix-query-structures",
+      "title": "You need fast *prefix* queries over 50,000 strings. Which statements are true? Select all that apply.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "A `Set` answers *exact* membership in O(1) but can't list 'everything with prefix p' without scanning all entries.",
+          "isCorrect": true
+        },
+        {
+          "text": "A sorted array plus binary search can find the prefix's range in about O(L + log n).",
+          "isCorrect": true
+        },
+        {
+          "text": "A trie reaches the prefix node in O(L), then enumerates the matches in its subtree.",
+          "isCorrect": true
+        },
+        {
+          "text": "A `Set` answers prefix queries directly in O(1).",
+          "isCorrect": false
+        },
+        {
+          "text": "An *unsorted* array answers prefix queries in O(log n).",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Three structures, three honest stories: a hash `Set` is unbeatable for exact membership but blind to prefixes (hashing scatters `\"car\"` and `\"cart\"` to unrelated buckets); a *sorted* array lets binary search bracket the prefix's range; and a trie walks to the prefix node in O(L). The false options sell impossible shortcuts — hashing destroys the ordering prefixes rely on, and binary search needs *sorted* input, so an unsorted array gives you no better than an O(n) scan. This is the same 'sorted data unlocks O(log n)' lesson as binary search, viewed from the string side.",
+      "references": "[Wikipedia: Trie](https://en.wikipedia.org/wiki/Trie)"
+    },
+    {
+      "id": "name-the-prefix-structure",
+      "title": "Name the single-character-per-edge tree that backs fast autocomplete and gives O(L) prefix lookup. (One word.)",
+      "description": "Type the name of the data structure. Its common synonym 'prefix tree' is also accepted.",
+      "type": "input",
+      "validation": {
+        "mode": "text",
+        "acceptedAnswers": [
+          "trie",
+          "tries",
+          "prefix tree",
+          "prefix-tree",
+          "digital tree",
+          "radix trie"
+        ]
+      },
+      "explanation": "It's a *trie*, also called a *prefix tree* (the name comes from re*trie*val). Each edge is a character and each node is the prefix spelled to reach it, giving O(L) prefix lookup that's independent of how many words you store — perfect for typeaheads and command palettes. Compress its unbranching chains and you get a *radix tree*, the variant routers use for path matching.",
+      "references": "[Wikipedia: Trie](https://en.wikipedia.org/wiki/Trie)"
+    },
+    {
+      "id": "stack-is-lifo",
+      "title": "A *stack* serves its elements in which order?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "LIFO — last in, first out; `push` and `pop` both act on the same end (the top).",
+          "isCorrect": true
+        },
+        {
+          "text": "FIFO — first in, first out; you remove the oldest element.",
+          "isCorrect": false
+        },
+        {
+          "text": "Sorted by a priority value, smallest first.",
+          "isCorrect": false
+        },
+        {
+          "text": "In a random order each time you remove.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A stack is *LIFO*: the most recently pushed item is the first popped, because both operations work on the same end — the top. Think of a stack of plates, or the JavaScript call stack where the function called last returns first. FIFO is the *queue* (next question); priority order is the *heap* you'll meet later. Keeping LIFO vs FIFO straight is the whole game in this section.",
+      "references": "[Wikipedia: Stack (abstract data type)](https://en.wikipedia.org/wiki/Stack_%28abstract_data_type%29)"
+    },
+    {
+      "id": "task-queue-is-fifo",
+      "title": "The browser's task/callback queue (and a render queue) serves queued work in which order?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "FIFO — first in, first out; the task that's waited longest runs next.",
+          "isCorrect": true
+        },
+        {
+          "text": "LIFO — the most recently queued task runs next.",
+          "isCorrect": false
+        },
+        {
+          "text": "By priority, with the lowest number first.",
+          "isCorrect": false
+        },
+        {
+          "text": "Newest first, oldest last.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A plain queue is *FIFO*: callbacks are dequeued in the order they were enqueued, which is why the event loop processes tasks fairly rather than starving older ones. `enqueue` happens at one end (the tail), `dequeue` at the other (the head) — the opposite discipline from a stack's single-ended push/pop. (A *priority* queue changes this by ordering on urgency — that's the heap topic ahead.)",
+      "references": "[Wikipedia: Queue (abstract data type)](https://en.wikipedia.org/wiki/Queue_%28abstract_data_type%29)"
+    },
+    {
+      "id": "undo-pops-to-redo",
+      "title": "Undo/redo is classically *two stacks*. A new action pushes onto the undo stack. Pressing Undo pops from the undo stack and pushes onto…",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The redo stack — so a later Redo can pop it back and re-apply it.",
+          "isCorrect": true
+        },
+        {
+          "text": "A FIFO queue of future actions.",
+          "isCorrect": false
+        },
+        {
+          "text": "Back onto the same undo stack, in place.",
+          "isCorrect": false
+        },
+        {
+          "text": "The browser's history stack.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The two-stack design is elegant: *undo* holds the past, *redo* holds the undone future. Pressing Undo pops the most recent action off the undo stack, reverses it, and pushes it onto the redo stack; Redo does the reverse. Because both are stacks (LIFO), you always undo/redo in the correct nearest-first order. The one subtlety — what a brand-new action does to the redo stack — is the very next question.",
+      "references": "[Wikipedia: Stack (abstract data type)](https://en.wikipedia.org/wiki/Stack_%28abstract_data_type%29)"
+    },
+    {
+      "id": "new-edit-clears-redo",
+      "title": "After several Undos, the user makes a brand-new edit. What must happen to the *redo* stack?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "It must be cleared — once history diverges onto a new branch, the old 'redo' future is unreachable.",
+          "isCorrect": true
+        },
+        {
+          "text": "It must be reversed in place so the oldest redo is on top.",
+          "isCorrect": false
+        },
+        {
+          "text": "It must be merged into the undo stack so nothing is lost.",
+          "isCorrect": false
+        },
+        {
+          "text": "Nothing — keep it, so the user can still redo the old actions.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "When the user undoes a few steps and then types something new, they've created a new branch of history; the actions sitting in the redo stack belonged to the *old* branch and no longer make sense to re-apply. Forgetting to clear redo on a fresh edit is the classic bug where Redo resurrects stale, now-inconsistent state. The rule is simple and absolute: *any* new action empties the redo stack. (Editors that truly preserve both branches need an undo *tree*, not two stacks.)",
+      "references": "[Wikipedia: Undo](https://en.wikipedia.org/wiki/Undo)"
+    },
+    {
+      "id": "back-button-is-a-stack",
+      "title": "You click through several links, then press the browser's Back button. Back pops from which structure?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "A stack — the session history — so Back removes the most recently visited entry (LIFO).",
+          "isCorrect": true
+        },
+        {
+          "text": "A FIFO queue, returning to the very first page you visited.",
+          "isCorrect": false
+        },
+        {
+          "text": "A priority queue keyed by how long you spent on each page.",
+          "isCorrect": false
+        },
+        {
+          "text": "A trie keyed by the URL path.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Navigating forward *pushes* entries; Back *pops* the most recent one — last-in, first-out — so Back-only behaviour is a textbook stack. The full history is a bit richer than a single stack (Forward re-pushes, and visiting a new page after going Back truncates the forward entries — strikingly similar to undo clearing the redo stack), but the core Back action is pure LIFO. The `History` API (`pushState`, `back()`) exposes exactly this model.",
+      "references": "[MDN: History](https://developer.mozilla.org/en-US/docs/Web/API/History)"
+    },
+    {
+      "id": "bounded-history-drops-oldest",
+      "title": "Undo history is capped at 100 steps. When the 101st action arrives, a well-behaved *bounded* history should…",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Drop the oldest entry from the bottom while pushing the newest on top, keeping memory bounded.",
+          "isCorrect": true
+        },
+        {
+          "text": "Throw a stack-overflow error to signal the limit.",
+          "isCorrect": false
+        },
+        {
+          "text": "Refuse the new action until the user clears some history.",
+          "isCorrect": false
+        },
+        {
+          "text": "Clear the entire history and start from empty.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A bounded undo history evicts the *oldest* recorded step (the bottom of the stack) to make room for the newest — you'd rather forget the distant past than refuse new edits or crash. With a plain array used as a stack, that bottom removal is an O(n) `shift`; if eviction happens constantly, a *deque* or ring buffer gives O(1) at both ends, which is exactly the structure behind a bounded 'recent items' list. Note this is a deliberate capacity policy, not the runtime's `Maximum call stack size exceeded`.",
+      "references": "[Wikipedia: Double-ended queue](https://en.wikipedia.org/wiki/Double-ended_queue)"
+    },
+    {
+      "id": "stack-queue-ops",
+      "title": "Which statements about stack and queue operations are true? Select all that apply.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "A stack's `push` and `pop` both act on the same end (the top).",
+          "isCorrect": true
+        },
+        {
+          "text": "A queue enqueues at one end and dequeues at the other.",
+          "isCorrect": true
+        },
+        {
+          "text": "Both a stack and a queue offer O(1) insertion and removal at their defined ends.",
+          "isCorrect": true
+        },
+        {
+          "text": "A stack removes the oldest element first.",
+          "isCorrect": false
+        },
+        {
+          "text": "A queue is LIFO.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Stacks are single-ended (push/pop at the top) and queues are double-ended in use (enqueue at the tail, dequeue at the head), and both give O(1) work at those defined ends — that constant-time access is the whole reason to choose them. The two false statements simply swap the disciplines: a stack removes the *newest* first (LIFO), and a queue is *FIFO*, not LIFO. Get the ends and the order right and you've understood both structures.",
+      "references": "[Wikipedia: Stack (abstract data type)](https://en.wikipedia.org/wiki/Stack_%28abstract_data_type%29)\n[Wikipedia: Queue (abstract data type)](https://en.wikipedia.org/wiki/Queue_%28abstract_data_type%29)"
+    },
+    {
+      "id": "which-ui-is-lifo",
+      "title": "Which of these UI/runtime mechanisms behave like a *stack* (LIFO)? Select all that apply.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "Undo history, where the most recent action is undone first.",
+          "isCorrect": true
+        },
+        {
+          "text": "Dismissing stacked modals/dialogs, where the last one opened closes first.",
+          "isCorrect": true
+        },
+        {
+          "text": "The JavaScript call stack, where the function called most recently returns first.",
+          "isCorrect": true
+        },
+        {
+          "text": "A print spooler that prints documents in the order they were submitted.",
+          "isCorrect": false
+        },
+        {
+          "text": "The microtask queue draining promise callbacks.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Undo, nested-modal dismissal, and the call stack are all LIFO: the newest thing is handled first (undo the last edit, close the top dialog, return from the deepest call). The two distractors are FIFO *queues* — a print spooler and the microtask queue both serve oldest-first, so the document or callback that waited longest goes next. Asking 'newest-first or oldest-first?' is the quickest way to tell which structure a piece of UI really is.",
+      "references": "[Wikipedia: Stack (abstract data type)](https://en.wikipedia.org/wiki/Stack_%28abstract_data_type%29)"
+    },
+    {
+      "id": "undo-redo-truths",
+      "title": "Select every true statement about a two-stack undo/redo system.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "A brand-new action performed after some Undos should clear the redo stack.",
+          "isCorrect": true
+        },
+        {
+          "text": "Undo moves an action from the undo stack to the redo stack.",
+          "isCorrect": true
+        },
+        {
+          "text": "Bounding the undo stack drops the *oldest* recorded action first.",
+          "isCorrect": true
+        },
+        {
+          "text": "Redo pulls from a FIFO queue of future actions.",
+          "isCorrect": false
+        },
+        {
+          "text": "Undo and redo can safely share a single stack with no loss of information.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The truths describe the canonical design: a new edit invalidates and clears redo, Undo transfers from one stack to the other, and a capped history forgets its oldest entry first. The falsehoods break the model — redo is a *stack* (LIFO), not a FIFO queue, so the most recently undone action is the first re-applied; and collapsing both into one stack loses the directionality that lets you move backward and forward through history. Two stacks, one rule about clearing redo: that's the pattern.",
+      "references": "[Wikipedia: Undo](https://en.wikipedia.org/wiki/Undo)"
+    },
+    {
+      "id": "name-the-lifo-structure",
+      "title": "Undo, the browser's Back button, and the JavaScript call stack are all the same LIFO structure. Name it. (One word.)",
+      "type": "input",
+      "validation": {
+        "mode": "text",
+        "acceptedAnswers": ["stack", "stacks", "a stack", "the stack", "call stack", "lifo"]
+      },
+      "explanation": "They're all *stacks* — LIFO structures where the most recent item is the first removed. Undo pops the latest edit, Back pops the latest page, and the call stack returns from the deepest call first; all three offer O(1) push/pop at the single 'top' end. Its mirror image is the *queue* (FIFO), which powers the event loop's task and microtask processing.",
+      "references": "[Wikipedia: Stack (abstract data type)](https://en.wikipedia.org/wiki/Stack_%28abstract_data_type%29)"
+    },
+    {
+      "id": "min-heap-invariant",
+      "title": "A *binary min-heap* maintains which invariant?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Every node's key is less than or equal to its children's keys, so the minimum is always at the root.",
+          "isCorrect": true
+        },
+        {
+          "text": "Nodes are sorted left-to-right like a binary search tree, so an in-order walk is sorted.",
+          "isCorrect": false
+        },
+        {
+          "text": "Every level is independently fully sorted from left to right.",
+          "isCorrect": false
+        },
+        {
+          "text": "The root always holds the maximum key.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The *heap property* of a min-heap is local: each parent is ≤ its children, applied at every node. That single rule forces the global minimum to bubble to the root — but it says *nothing* about the order between siblings or across a level, so a heap is only *partially* ordered. That's the key contrast with a binary search tree (which gives a fully sorted in-order traversal): a heap pays less to maintain order because it only ever needs the extreme element, not a full sort.",
+      "references": "[Wikipedia: Heap (data structure)](https://en.wikipedia.org/wiki/Heap_%28data_structure%29)"
+    },
+    {
+      "id": "peek-min-is-o1",
+      "title": "Why is reading the most urgent task (`peek`) an O(1) operation in a min-heap?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The heap invariant guarantees the minimum is always at the root, so peeking reads one fixed position — no search.",
+          "isCorrect": true
+        },
+        {
+          "text": "The heap keeps the whole array fully sorted, so the smallest is at index 0 after a sort.",
+          "isCorrect": false
+        },
+        {
+          "text": "It caches the minimum in a separate hash map for instant lookup.",
+          "isCorrect": false
+        },
+        {
+          "text": "It binary-searches the heap in O(log n) and returns the first hit.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Because every parent is ≤ its children, the smallest key can only live at the root — index 0 in the array layout — so `peek` is a single constant-time read, no scan or search required. The heap achieves this *without* paying to keep everything sorted; it maintains just enough order to know the extreme. That's exactly what a scheduler wants: 'what's the most urgent pending task?' answered instantly, over and over.",
+      "references": "[Wikipedia: Binary heap](https://en.wikipedia.org/wiki/Binary_heap)"
+    },
+    {
+      "id": "heap-insert-is-logn",
+      "title": "Inserting a task into a binary heap is O(log n) because…",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "You append at the end, then 'sift up', swapping with the parent along a single root-to-leaf path whose length is about log₂ n.",
+          "isCorrect": true
+        },
+        {
+          "text": "You scan all n elements to find the correct slot before inserting.",
+          "isCorrect": false
+        },
+        {
+          "text": "You re-sort the entire underlying array after each insertion.",
+          "isCorrect": false
+        },
+        {
+          "text": "Insertion is actually O(1); no elements ever move.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Insertion adds the new element at the next open slot (the array's end) and then *sifts up*: while it's smaller than its parent, swap them. Each swap climbs one level, and a complete binary tree of n nodes is only about log₂ n levels tall, so at most ~log₂ n swaps happen — O(log n). Removing the min is symmetric: move the last element to the root and *sift down*. No full scan, no full re-sort — just one path's worth of work.",
+      "references": "[Wikipedia: Binary heap](https://en.wikipedia.org/wiki/Binary_heap)"
+    },
+    {
+      "id": "react-scheduler-min-heap",
+      "title": "React's scheduler keeps its pending units of work in a min-heap keyed by…",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Each task's expiration/priority time, so the most urgent (soonest) task is always at the root and processed first.",
+          "isCorrect": true
+        },
+        {
+          "text": "Insertion order, making it an ordinary FIFO queue.",
+          "isCorrect": false
+        },
+        {
+          "text": "The alphabetical name of the component that scheduled it.",
+          "isCorrect": false
+        },
+        {
+          "text": "The component's depth in the React element tree.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "React's cooperative scheduler stores work in a *min-heap* (see `SchedulerMinHeap`) ordered by a `sortIndex` derived from each task's expiration time, so 'render this high-priority update before that low-priority one' becomes 'pop the smallest expiration off the heap'. Peeking the next task is O(1) and pushing a new one is O(log n) — ideal when work is enqueued and re-prioritised constantly. Animation libraries and timer 'wheels' use the same most-urgent-first idea.",
+      "references": "[GitHub: React SchedulerMinHeap.js](https://github.com/facebook/react/blob/main/packages/scheduler/src/SchedulerMinHeap.js)"
+    },
+    {
+      "id": "heap-vs-sorted-array",
+      "title": "Compared with keeping the task list in a *fully sorted array*, what does a heap trade?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Cheaper inserts — O(log n) versus the O(n) it takes to keep an array sorted — in exchange for being only partially ordered (fine, since you only ever need the minimum).",
+          "isCorrect": true
+        },
+        {
+          "text": "Slower peeks in exchange for faster full iteration.",
+          "isCorrect": false
+        },
+        {
+          "text": "O(1) inserts in exchange for O(n) peeks.",
+          "isCorrect": false
+        },
+        {
+          "text": "Nothing — a heap and a sorted array have identical costs everywhere.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A fully sorted array also gives O(1) access to the minimum, but *maintaining* the sort costs O(n) per insert (you must shift elements to keep order). A heap gives up total order — it only guarantees the root is the min — and in return inserts in O(log n). When your access pattern is 'repeatedly take the most urgent and add new ones', that trade is a clear win, which is why schedulers and priority queues use heaps rather than sorted arrays.",
+      "references": "[Wikipedia: Binary heap](https://en.wikipedia.org/wiki/Binary_heap)"
+    },
+    {
+      "id": "heap-array-children-index",
+      "title": "A binary heap is a *complete* binary tree, so it can be stored as a plain array with no pointers. For a node at 0-based index `i`, where are its children?",
+      "description": "```js\n// A binary heap as a flat array — no left/right pointers needed.\nconst leftChild  = (i) => 2 * i + 1;\nconst rightChild = (i) => 2 * i + 2;\nconst parent     = (i) => Math.floor((i - 1) / 2);\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "At indices `2i + 1` and `2i + 2`, with the parent at `Math.floor((i - 1) / 2)`.",
+          "isCorrect": true
+        },
+        {
+          "text": "At indices `i - 1` and `i + 1` (its immediate neighbours).",
+          "isCorrect": false
+        },
+        {
+          "text": "At indices `i / 2` and `i / 3`.",
+          "isCorrect": false
+        },
+        {
+          "text": "Wherever explicit `left` and `right` pointers say — arrays can't encode tree shape.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Because a heap is a *complete* tree (every level full except possibly the last, filled left to right), level-order numbering maps cleanly onto array indices: node `i`'s children sit at `2i + 1` and `2i + 2`, and its parent at `Math.floor((i - 1) / 2)`. No node objects, no pointers — just arithmetic on a contiguous array, which is cache-friendly and compact. This index trick is why heaps are a favourite for performance-sensitive schedulers.",
+      "references": "[Wikipedia: Binary heap](https://en.wikipedia.org/wiki/Binary_heap)"
+    },
+    {
+      "id": "priority-queue-truths",
+      "title": "Which statements about heaps and priority queues are true? Select all that apply.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "A binary heap offers O(log n) insert, O(log n) remove-min, and O(1) peek-min.",
+          "isCorrect": true
+        },
+        {
+          "text": "A priority queue serves the highest-priority element next, not the one that's waited longest.",
+          "isCorrect": true
+        },
+        {
+          "text": "A heap is only *partially* ordered — sibling nodes have no required order.",
+          "isCorrect": true
+        },
+        {
+          "text": "A heap keeps all of its elements fully sorted at all times.",
+          "isCorrect": false
+        },
+        {
+          "text": "Finding an arbitrary element by value in a heap is O(log n).",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A heap's cost profile — O(log n) push/pop, O(1) peek — is what makes it the standard implementation of a *priority queue*, which by definition serves by urgency rather than arrival order (that's a plain FIFO queue's job). And it's only partially ordered, which is precisely why it's cheap. The false claims overstate it: a heap is *not* fully sorted (an in-order read is not sorted), and searching it for an arbitrary value is O(n), because the heap property guides you only toward the minimum, not toward some random key.",
+      "references": "[Wikipedia: Priority queue](https://en.wikipedia.org/wiki/Priority_queue)"
+    },
+    {
+      "id": "where-heaps-hide",
+      "title": "Where do min-heaps / priority queues realistically show up? Select all that apply.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "React's scheduler choosing the next unit of work by expiration time.",
+          "isCorrect": true
+        },
+        {
+          "text": "A timer/animation scheduler firing the soonest-deadline callback first.",
+          "isCorrect": true
+        },
+        {
+          "text": "Dijkstra's shortest-path search picking the closest unvisited node next.",
+          "isCorrect": true
+        },
+        {
+          "text": "An undo history that simply reverses the last action.",
+          "isCorrect": false
+        },
+        {
+          "text": "Looking up a cached value by its exact key.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "All three correct cases share the signature 'repeatedly take the most extreme item and keep inserting more': React's scheduler (soonest expiration), timer wheels and animation loops (nearest deadline), and Dijkstra/A* (closest frontier node) all lean on a heap-backed priority queue. The distractors are other structures — undo is a *stack* (just reverse the last action, no priority), and exact-key lookup is a hash `Map` in O(1). 'Most-urgent-next' is the phrase that should make you reach for a heap.",
+      "references": "[Wikipedia: Priority queue](https://en.wikipedia.org/wiki/Priority_queue)"
+    },
+    {
+      "id": "heap-array-layout",
+      "title": "A min-heap is stored in a 0-based array. Which statements are true? Select all that apply.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "The minimum element is always at index 0.",
+          "isCorrect": true
+        },
+        {
+          "text": "Node `i`'s children sit at indices `2i + 1` and `2i + 2`.",
+          "isCorrect": true
+        },
+        {
+          "text": "Inserting appends then sifts up; removing the min moves the last element to the root and sifts down.",
+          "isCorrect": true
+        },
+        {
+          "text": "The array is kept in fully sorted order at all times.",
+          "isCorrect": false
+        },
+        {
+          "text": "The parent of node `i` is at index `2i`.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The min lives at index 0, children are at `2i + 1` / `2i + 2`, and the insert/remove dance (sift up after appending; move last-to-root then sift down) are the heap's defining mechanics. The false statements are the usual traps: a heap is only partially ordered, so the array is *not* sorted, and the parent index is `Math.floor((i - 1) / 2)`, not `2i` (that overshoots — `2i` is roughly a child's index, not a parent's). Internalise the index math and you can implement a heap from a bare array.",
+      "references": "[Wikipedia: Binary heap](https://en.wikipedia.org/wiki/Binary_heap)"
+    },
+    {
+      "id": "heap-height-for-n",
+      "title": "A scheduler's binary heap holds n = 1000 pending tasks. What is the heap's *height* — the number of edges on the longest path from the root down to a leaf? Enter a whole number.",
+      "description": "A binary heap is a complete binary tree, so its height is ⌊log₂ n⌋. Height counts *edges*, so a single-node heap has height 0.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [9]
+      },
+      "explanation": "A complete binary tree of n nodes has height ⌊log₂ n⌋. Here ⌊log₂ 1000⌋ = 9, because 2⁹ = 512 ≤ 1000 < 1024 = 2¹⁰ (so the tree has 10 levels but 9 edges from root to deepest leaf). That height *is* the length of the sift-up/sift-down path, which is why heap insert and remove-min are O(log n): even at 1,000,000 tasks the height is only ⌊log₂ 1000000⌋ = 19. Doubling the task count adds at most one level — the same logarithmic calm you saw with binary search.",
+      "references": "[Wikipedia: Binary heap](https://en.wikipedia.org/wiki/Binary_heap)"
+    },
+    {
+      "id": "lru-evicts-least-recently-used",
+      "title": "A bounded LRU cache is full and a new key arrives. Which entry does it evict?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The least recently used entry — the one whose most recent access is furthest in the past.",
+          "isCorrect": true
+        },
+        {
+          "text": "The entry occupying the most bytes.",
+          "isCorrect": false
+        },
+        {
+          "text": "The entry that was added most recently.",
+          "isCorrect": false
+        },
+        {
+          "text": "A randomly chosen entry.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "LRU — *Least Recently Used* — bets that what you haven't touched in a while you're least likely to need next, so when full it evicts the entry with the oldest *last-access* time. Note 'recently used' means last *read or written*, not last *inserted*: reading an entry makes it recently used again and protects it from eviction. This single policy is what bounds the memory of the caches you use every day.",
+      "references": "[Wikipedia: Cache replacement policies](https://en.wikipedia.org/wiki/Cache_replacement_policies)"
+    },
+    {
+      "id": "lru-map-plus-linked-list",
+      "title": "How does a textbook LRU cache get O(1) `get` *and* O(1) eviction at the same time?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "A hash map for O(1) key→node lookup, plus a doubly linked list ordering nodes by recency (move-to-front on access, drop the tail to evict).",
+          "isCorrect": true
+        },
+        {
+          "text": "A single array that is re-sorted by last-access time on every read.",
+          "isCorrect": false
+        },
+        {
+          "text": "A binary min-heap keyed by last-access timestamp.",
+          "isCorrect": false
+        },
+        {
+          "text": "Two stacks, one for hits and one for misses.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The classic LRU pairs two structures: a *hash map* finds any entry's node in O(1), and a *doubly linked list* keeps nodes in recency order so the least-recently-used entry sits at the tail. On a hit you unlink the node and splice it to the front (O(1), thanks to prev/next pointers); to evict you drop the tail (O(1)). A re-sorted array would be O(n log n) per access and a heap O(log n) — the linked list is what buys the constant time.",
+      "references": "[Wikipedia: Cache replacement policies](https://en.wikipedia.org/wiki/Cache_replacement_policies)"
+    },
+    {
+      "id": "react-query-eviction",
+      "title": "A SWR / React Query entry is gone and a 'fresh' network fetch fires. Besides staleness, which cache behaviour can explain this?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The entry was *evicted* — caches are bounded, and an unused query can be garbage-collected, so the next read is a miss that must refetch.",
+          "isCorrect": true
+        },
+        {
+          "text": "Caches are unbounded, so eviction can never be the cause.",
+          "isCorrect": false
+        },
+        {
+          "text": "The data was silently sorted into a different position.",
+          "isCorrect": false
+        },
+        {
+          "text": "The query key's hash changed on its own between renders.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Two separate things make a cached query refetch: it went *stale* (TTL/`staleTime` elapsed), or it was *evicted/garbage-collected* because nothing referenced it for a while and the cache is bounded. The second is easy to forget — 'I just fetched this!' — but a bounded cache must drop *something*, and an unobserved query is the natural victim, turning the next read into a miss. Understanding eviction is why `gcTime`/`cacheTime` knobs exist.",
+      "references": "[Wikipedia: Cache replacement policies](https://en.wikipedia.org/wiki/Cache_replacement_policies)"
+    },
+    {
+      "id": "unbounded-memo-is-a-leak",
+      "title": "You memoize results in a plain `Map` keyed by argument, and never cap it. Over a long session with varied inputs, what happens?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The Map grows without bound as keys vary — an unbounded memo cache is effectively a memory leak.",
+          "isCorrect": true
+        },
+        {
+          "text": "The garbage collector automatically evicts the old keys to keep it small.",
+          "isCorrect": false
+        },
+        {
+          "text": "`Map` stays small on its own because it de-duplicates similar keys.",
+          "isCorrect": false
+        },
+        {
+          "text": "It throws once it reaches 100 entries.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A `Map` holds a *strong* reference to every key and value, so as long as the Map is alive the garbage collector can't reclaim them — distinct inputs accumulate forever, and 'cache everything, evict nothing' becomes an unbounded memory leak. The GC won't rescue you (the Map is the thing keeping entries reachable), `Map` doesn't magically dedupe distinct keys, and nothing throws — it just grows. The remedy is a *bounded* cache with an eviction policy, which the next questions build.",
+      "references": "[Wikipedia: Cache replacement policies](https://en.wikipedia.org/wiki/Cache_replacement_policies)"
+    },
+    {
+      "id": "cap-a-map-at-100",
+      "title": "JavaScript `Map` preserves *insertion* order. What's the simplest way to cap it at 100 entries with rough-LRU eviction?",
+      "description": "```js\nconst cache = new Map();\nfunction memoSet(key, value) {\n  cache.set(key, value);\n  if (cache.size > 100) {\n    // evict the oldest entry...\n    cache.delete(/* ??? */);\n  }\n}\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "When `size > 100`, delete the first (oldest) key via `cache.keys().next().value`; to approximate true LRU, `delete` then re-`set` a key on each access so it moves to the end.",
+          "isCorrect": true
+        },
+        {
+          "text": "Call `cache.clear()` every time `size` reaches 100, wiping everything.",
+          "isCorrect": false
+        },
+        {
+          "text": "Do nothing — `Map` automatically evicts at 100 entries.",
+          "isCorrect": false
+        },
+        {
+          "text": "Sort the Map by value on each insert and drop the smallest value.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`Map` iterates in insertion order, so `cache.keys().next().value` is the oldest-inserted key — deleting it on overflow gives you a cheap FIFO eviction. Upgrade it toward real LRU by, on every *read*, deleting and re-setting the key so a used entry jumps to the newest position and the genuinely cold entries fall to the front. `clear()` throws away 99 good entries to evict one, `Map` never auto-evicts, and sorting by value confuses LRU with LFU/min-value eviction. When correctness matters, reach for a battle-tested bounded cache instead of rolling your own.",
+      "references": "[MDN: Map](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Map)"
+    },
+    {
+      "id": "eviction-policies",
+      "title": "Match each eviction policy to what it drops. Which statements are correct? Select all that apply.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "LRU drops the entry that has gone *unused* for the longest time.",
+          "isCorrect": true
+        },
+        {
+          "text": "LFU drops the entry with the fewest *accesses*.",
+          "isCorrect": true
+        },
+        {
+          "text": "TTL drops entries older than a fixed *age*, regardless of how often they're used.",
+          "isCorrect": true
+        },
+        {
+          "text": "FIFO eviction drops the *most recently* inserted entry.",
+          "isCorrect": false
+        },
+        {
+          "text": "LRU drops the *largest* entry measured in bytes.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Each policy answers 'who leaves?' differently: LRU by *recency of use*, LFU by *frequency of use*, and TTL by *age* (a time-to-live, independent of use). The false pair garbles two of them — FIFO evicts the *oldest-inserted*, not the newest, and LRU keys on recency, never on size in bytes (that would be a size-aware policy). Most real caching libraries are a blend (e.g. LRU plus a TTL), which is why understanding the pure policies helps you read their config.",
+      "references": "[Wikipedia: Cache replacement policies](https://en.wikipedia.org/wiki/Cache_replacement_policies)"
+    },
+    {
+      "id": "lru-truths",
+      "title": "Select every true statement about an LRU cache.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "`get` and `put` are both O(1) when backed by a hash map plus a doubly linked list.",
+          "isCorrect": true
+        },
+        {
+          "text": "A cache *hit* returns the stored value and marks that entry most-recently-used.",
+          "isCorrect": true
+        },
+        {
+          "text": "An unbounded cache is effectively a memory leak.",
+          "isCorrect": true
+        },
+        {
+          "text": "LRU must re-sort all entries by timestamp on every access.",
+          "isCorrect": false
+        },
+        {
+          "text": "On a cache *miss*, an LRU cache evicts an entry even when it isn't full yet.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The truths are the LRU essentials: O(1) operations via map + linked list, a hit that refreshes recency, and the warning that unbounded caching leaks memory. The falsehoods invent costs and behaviours — there's no per-access full sort (the linked list maintains order incrementally in O(1)), and eviction happens *only when the cache is over capacity*, never on a miss into a cache that still has room. Reading an LRU correctly is mostly about remembering 'hit ⇒ promote' and 'evict only when full'.",
+      "references": "[Wikipedia: Cache replacement policies](https://en.wikipedia.org/wiki/Cache_replacement_policies)"
+    },
+    {
+      "id": "hit-miss-reasoning",
+      "title": "Your render reads the same query twice and the second read is instant. Which statements are true? Select all that apply.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "The second read was a *cache hit*.",
+          "isCorrect": true
+        },
+        {
+          "text": "Whether the first result stays cached depends on the cache's *capacity* and eviction policy.",
+          "isCorrect": true
+        },
+        {
+          "text": "A later refetch after the entry is evicted is a *miss*, not a bug.",
+          "isCorrect": true
+        },
+        {
+          "text": "A cache hit always means the returned data is up to date.",
+          "isCorrect": false
+        },
+        {
+          "text": "Eviction and staleness (TTL) are the same mechanism.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The instant second read is a *hit*, its survival depends on capacity and policy, and a refetch after eviction is expected behaviour rather than a defect. The two false claims conflate distinct ideas: a hit means 'found in cache', not 'fresh' — the value can be a hit *and* stale at once — and *eviction* (dropping entries to respect capacity) is a different lever from *staleness/TTL* (marking entries old enough to revalidate). Tools like React Query expose both because they're genuinely separate.",
+      "references": "[Wikipedia: Cache replacement policies](https://en.wikipedia.org/wiki/Cache_replacement_policies)"
+    },
+    {
+      "id": "bounded-cache-designs",
+      "title": "You're capping a memoization `Map` at 100 entries. Which approaches are sound? Select all that apply.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "On `set`, if `size > 100`, delete the oldest key via `map.keys().next().value`.",
+          "isCorrect": true
+        },
+        {
+          "text": "On read, `delete` then re-`set` the key so it becomes most-recent, approximating true LRU.",
+          "isCorrect": true
+        },
+        {
+          "text": "Swap in a ready-made bounded cache (e.g. an `lru-cache` library) when correctness really matters.",
+          "isCorrect": true
+        },
+        {
+          "text": "Call `map.clear()` whenever the Map 'feels' too big.",
+          "isCorrect": false
+        },
+        {
+          "text": "Leave it uncapped; the JS engine will evict cold entries for you.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The sound options exploit `Map`'s insertion-order guarantee: delete-oldest on overflow (FIFO), delete-and-reinsert on read to bump recency (toward LRU), or just adopt a proven library when the policy must be exactly right. The unsound ones are the leak-makers: `clear()` nukes 99 useful entries to drop one, and leaving the Map uncapped relies on a phantom — the engine *cannot* collect entries a live `Map` still references, so it grows unbounded. Capacity + an eviction rule is the only thing standing between a memo cache and a memory leak.",
+      "references": "[MDN: Map](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Map)"
+    },
+    {
+      "id": "name-the-eviction-policy",
+      "title": "A cache that evicts the entry left unused the longest follows which policy? Give the three-letter acronym.",
+      "type": "input",
+      "validation": {
+        "mode": "text",
+        "acceptedAnswers": ["LRU", "lru", "least recently used", "least-recently-used"]
+      },
+      "explanation": "It's *LRU* — Least Recently Used — which evicts whichever entry has gone untouched the longest, on the bet that recently-used data is likeliest to be needed again. Implemented with a hash map plus a doubly linked list, it gives O(1) get/put while keeping memory bounded, which is why SWR, React Query, and countless server caches lean on it. Its relatives are LFU (evict least *frequently* used) and TTL (evict by *age*).",
+      "references": "[Wikipedia: Cache replacement policies](https://en.wikipedia.org/wiki/Cache_replacement_policies)"
+    }
+  ]
+}

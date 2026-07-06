@@ -1,0 +1,81 @@
+{
+  "schemaVersion": 1,
+  "id": "css-box-model",
+  "title": "CSS Box Model",
+  "description": "Content, padding, border, and margin — and how `box-sizing` changes what `width` actually means. Includes computing rendered sizes by hand, which is the fastest way to make the model stick.",
+  "language": "en",
+  "tags": ["css", "frontend"],
+  "author": "Quizbun",
+  "questions": [
+    {
+      "id": "box-layers-order",
+      "title": "From the inside out, what is the order of the box model layers?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Content → padding → border → margin",
+          "isCorrect": true
+        },
+        {
+          "text": "Content → border → padding → margin",
+          "isCorrect": false
+        },
+        {
+          "text": "Content → margin → padding → border",
+          "isCorrect": false
+        },
+        {
+          "text": "Padding → content → border → margin",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Padding is the space *inside* the border, between it and the content; margin is the space *outside* the border, between the element and its neighbors. A reliable memory hook: padding inherits the element's background color, margin is always transparent — so if the colored area grows, you changed padding."
+    },
+    {
+      "id": "content-box-width",
+      "title": "With the default `box-sizing: content-box`, an element has `width: 200px`, `padding: 20px`, and `border: 5px solid`. How wide is the rendered border box, in pixels?",
+      "description": "Enter a number only, without the `px` unit.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [250]
+      },
+      "explanation": "Under `content-box`, the `width` property sizes only the content area, so padding and border are added on top: 200 + 20 + 20 (left and right padding) + 5 + 5 (left and right border) = **250px**. This additive behavior is exactly why most codebases switch to `border-box`, where the math you write is the size you see."
+    },
+    {
+      "id": "border-box-meaning",
+      "title": "What does `box-sizing: border-box` change?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`width` and `height` now include padding and border, so the content area shrinks to fit",
+          "isCorrect": true
+        },
+        {
+          "text": "`width` and `height` now include the margin as well",
+          "isCorrect": false
+        },
+        {
+          "text": "It removes the border from layout calculations entirely",
+          "isCorrect": false
+        },
+        {
+          "text": "It makes padding overlap with neighboring elements",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "With `border-box`, declaring `width: 200px` means the border box — content plus padding plus border — is 200px, and the browser shrinks the content area to make that true. Margin is never included in either model; it is always space outside the element. The near-universal reset `*, *::before, *::after { box-sizing: border-box; }` makes sizing predictable across components."
+    },
+    {
+      "id": "margin-collapse",
+      "title": "Two stacked paragraphs have `margin-bottom: 30px` and `margin-top: 20px`. In normal flow, how much vertical space separates them, in pixels?",
+      "description": "Enter a number only, without the `px` unit.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [30]
+      },
+      "explanation": "Adjacent vertical margins in normal flow **collapse**: instead of adding up (50px), the larger one wins, so the gap is 30px. This only happens to vertical margins of block elements in normal flow — flex and grid items never collapse margins, which is one reason layouts behave differently after switching a container to `display: flex`."
+    }
+  ]
+}

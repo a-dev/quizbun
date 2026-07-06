@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "id": "http-safe-methods-multiple-choice-example",
+  "title": "HTTP Safe Methods Example",
+  "description": "A canonical multi-select example that relies on the all-or-nothing correctness model, so learners must choose every correct option and avoid the unsafe ones.",
+  "language": "en",
+  "tags": ["http", "protocol", "basics"],
+  "questions": [
+    {
+      "id": "safe-methods",
+      "title": "Which HTTP methods are defined as safe?",
+      "description": "Select every method whose semantics are read-only from the client's point of view.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "`GET`",
+          "isCorrect": true
+        },
+        {
+          "text": "`HEAD`",
+          "isCorrect": true
+        },
+        {
+          "text": "`POST`",
+          "isCorrect": false
+        },
+        {
+          "text": "`DELETE`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`GET` and `HEAD` are safe because their semantics are defined for retrieval rather than state change. A server may still log or cache the request, but the client is not asking it to mutate application data.",
+      "references": "[RFC 9110: Safe Methods](https://www.rfc-editor.org/rfc/rfc9110.html#section-9.2.1)"
+    }
+  ]
+}

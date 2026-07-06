@@ -1,0 +1,994 @@
+{
+  "schemaVersion": 1,
+  "id": "systems-cs-in-the-browser-frontend",
+  "title": "Systems-Level CS in the Browser: A Frontend Engineer's Guide to Reconciliation, the Event Loop, Race Conditions & Hashing",
+  "description": "A 40-question deep dive built to help **frontend engineers better understand algorithms** by grounding classic computer-science ideas in browser behavior you can actually observe. Four systems-level topics: the Virtual DOM as a *tree-diff* algorithm (reconciliation heuristics, list keys, Myers diff), the event loop as a *scheduling* problem (micro- vs. macro-tasks, `requestAnimationFrame`, task starvation, cooperative yielding), client-side *race conditions* and cancellation (out-of-order responses, stale closures, `AbortController`), and *identity, equality & hashing* (`===` vs. value equality, structural sharing, content hashes). Every \"predict the output\" answer was executed in Node to confirm it, and every answer links to MDN, the React docs, Wikipedia, or a primary source so you can verify it yourself.",
+  "language": "en",
+  "tags": ["algorithms", "frontend", "javascript", "async"],
+  "author": "Quizbun",
+  "questions": [
+    {
+      "id": "diff-what-problem",
+      "title": "The Virtual DOM is often sold as a performance trick. From a CS standpoint, what problem is React's reconciler actually solving?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Given two trees — the previous UI and the next one — compute a small set of edits that turns one into the other. It is a tree-diffing problem.",
+          "isCorrect": true
+        },
+        {
+          "text": "Caching the entire real DOM in memory so reads never touch the document.",
+          "isCorrect": false
+        },
+        {
+          "text": "Compressing the DOM so less markup travels over the network.",
+          "isCorrect": false
+        },
+        {
+          "text": "Moving layout and paint off the main thread onto a worker.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Reconciliation is a **diff over two trees**. React builds a lightweight description of the next UI (the Virtual DOM), compares it to the previous one, and emits the minimal-ish set of real DOM mutations needed to match. The \"performance\" framing is downstream of that: touching the real DOM is expensive, so React computes *what* to change before changing it. Seeing it as a diff algorithm — not a cache or a compressor — is what makes keys, remounting, and the O(n) heuristics below make sense.",
+      "references": "[Wikipedia: Virtual DOM](https://en.wikipedia.org/wiki/Virtual_DOM) · [React: reconciliation.html](https://legacy.reactjs.org/docs/reconciliation.html)"
+    },
+    {
+      "id": "diff-on3-to-on",
+      "title": "The best known algorithms for the general tree-diff problem run in about **O(n³)**. How does React get reconciliation down to **O(n)**?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "It gives up optimality and applies heuristics — comparing nodes position-by-position at each level instead of searching every possible matching between the two trees.",
+          "isCorrect": true
+        },
+        {
+          "text": "It uses a faster exact algorithm discovered specifically for the DOM.",
+          "isCorrect": false
+        },
+        {
+          "text": "It parallelizes the O(n³) search across Web Workers.",
+          "isCorrect": false
+        },
+        {
+          "text": "It memoizes every subtree, which mathematically collapses O(n³) to O(n).",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "React's own docs note that a fully general, optimal tree-diff is on the order of **O(n³)**, which is unusable for UI. So React trades optimality for speed using two assumptions: (1) elements of different *types* produce different trees, and (2) the developer hints at stable identity with `key`s. Those heuristics let it walk both trees level-by-level in **O(n)**. It is not a cleverer exact algorithm — it is a deliberately approximate one that is right in the common cases.",
+      "references": "[React: reconciliation.html](https://legacy.reactjs.org/docs/reconciliation.html) · [Wikipedia: Edit distance](https://en.wikipedia.org/wiki/Edit_distance)"
+    },
+    {
+      "id": "diff-type-change-teardown",
+      "title": "Between two renders, an element at the same position changes type — a `<div>` becomes a `<span>`. What does React do?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "It tears down the old subtree — unmounting those components and discarding their state — and builds the new subtree from scratch.",
+          "isCorrect": true
+        },
+        {
+          "text": "It keeps the existing DOM node and just rewrites its tag name in place.",
+          "isCorrect": false
+        },
+        {
+          "text": "It throws a reconciliation error in development mode.",
+          "isCorrect": false
+        },
+        {
+          "text": "It diffs the children first and only swaps the tag if the children also differ.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "This is React's first heuristic: **different element types ⇒ different trees**. When the type at a position changes, React does not try to reconcile the old and new subtrees against each other — it unmounts the old one (running cleanup, dropping component state) and mounts the new one fresh. The same rule is why rendering `condition ? <ComponentA/> : <ComponentB/>` at one spot resets state when the condition flips, while rendering the *same* component with different props preserves it.",
+      "references": "[React: reconciliation.html](https://legacy.reactjs.org/docs/reconciliation.html) · [React: preserving and resetting state](https://react.dev/learn/preserving-and-resetting-state)"
+    },
+    {
+      "id": "diff-prepend-index-key",
+      "title": "You render a list of `<input>`s with `key={index}`. The user types into the **first** input, then you **prepend** a new item to the array. What does the user observe?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Their typed text stays in the top input — now sitting next to the wrong item — because React reused the DOM node at position 0 for the new first element.",
+          "isCorrect": true
+        },
+        {
+          "text": "Every input remounts, so all typed text is cleared.",
+          "isCorrect": false
+        },
+        {
+          "text": "The new item appears at the bottom of the list instead of the top.",
+          "isCorrect": false
+        },
+        {
+          "text": "React throws because two items now share `key={0}`.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "With `key={index}`, identity is tied to **position**, not to the item. Prepending shifts the data down a slot, but the keys `0,1,2,…` stay put — so React matches new key `0` to the old key-`0` fiber, reuses that `<input>` DOM node, and only *mounts one new instance at the end*. Nothing remounts; instead the **uncontrolled DOM state (the typed text) stays welded to position 0** while the data underneath it slid down. That mismatch — state attached to slots, data flowing between them — is the canonical index-key bug. Stable item ids fix it.",
+      "references": "[React: rendering lists](https://react.dev/learn/rendering-lists) · [React: preserving and resetting state](https://react.dev/learn/preserving-and-resetting-state)"
+    },
+    {
+      "id": "diff-prepend-stable-key",
+      "title": "Same list, but now `key={item.id}` with stable ids. You **prepend** a new item. What actually mounts?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Only the new item mounts. The existing items keep their identity, DOM nodes, and state; React simply moves them down.",
+          "isCorrect": true
+        },
+        {
+          "text": "Every item remounts because the array length changed.",
+          "isCorrect": false
+        },
+        {
+          "text": "The last item remounts to make room at the top.",
+          "isCorrect": false
+        },
+        {
+          "text": "Nothing mounts; React only patches text content.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Stable keys give each item a **stable identity across renders**. React builds a map of old `key → fiber`, sees that every existing id is still present, and reuses those fibers (moving them down) while mounting exactly one new fiber for the new id. This is the contrast that makes the previous question's bug concrete: keys are not decoration, they are the *matching function* of the diff. Get them right and only the genuinely new node mounts; get them wrong (index keys on a reordered list) and state follows positions instead of items.",
+      "references": "[React: rendering lists](https://react.dev/learn/rendering-lists)"
+    },
+    {
+      "id": "diff-myers",
+      "title": "`git diff` and many list-diffing libraries are built on **Myers' diff algorithm**. What does it compute, and at what cost?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The shortest edit script between two sequences — equivalent to their longest common subsequence — in roughly O(ND) time, where N is the combined input length and D the number of differences.",
+          "isCorrect": true
+        },
+        {
+          "text": "A cryptographic hash of every line so identical lines compare in O(1).",
+          "isCorrect": false
+        },
+        {
+          "text": "The minimum characters to retype, via O(N·M) dynamic programming with no better bound.",
+          "isCorrect": false
+        },
+        {
+          "text": "A three-way merge of two branches against their common ancestor.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Eugene Myers' 1986 paper is literally titled *An O(ND) Difference Algorithm* — it finds the **shortest edit script** (the fewest insertions and deletions) to turn one sequence into another, which is the dual of finding the **longest common subsequence**. The clever part is the O(ND) bound: it is fast when the two inputs are *similar* (small D), which is the usual case for source files and UI lists. That is why `git diff` feels instant on a one-line change.",
+      "references": "[Wikipedia: Diff](https://en.wikipedia.org/wiki/Diff) · [Wikipedia: Longest common subsequence](https://en.wikipedia.org/wiki/Longest_common_subsequence) · [James Coglan: The Myers diff algorithm, part 1](https://blog.jcoglan.com/2017/02/12/the-myers-diff-algorithm-part-1/)"
+    },
+    {
+      "id": "diff-keys-true",
+      "title": "Which statements about React **keys** are true? Select all that apply.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "Keys give list children a stable identity so React can match them across renders instead of by position.",
+          "isCorrect": true
+        },
+        {
+          "text": "Using the array index as a key is only safe when the list is static — never reordered, inserted into, or filtered.",
+          "isCorrect": true
+        },
+        {
+          "text": "A key must be unique among its siblings, but not globally unique across the whole app.",
+          "isCorrect": true
+        },
+        {
+          "text": "A key is delivered to the component as a normal `props.key` you can read inside it.",
+          "isCorrect": false
+        },
+        {
+          "text": "Keys exist only to silence the console warning and have no effect on behavior.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Keys are the **identity function** React's child-diff uses: same key across renders means \"same item, reuse it.\" Index keys are fine for a frozen list but break the moment order changes, because the index no longer tracks the item. Keys need only be unique among siblings (React matches within one parent's children). The two false claims are common myths: `key` is a *reserved* hint consumed by React, **not** forwarded as `props.key` (read it as a normal prop and you get `undefined`), and it materially changes mounting/state behavior — it is not just a lint nag.",
+      "references": "[React: rendering lists](https://react.dev/learn/rendering-lists)"
+    },
+    {
+      "id": "diff-heuristics-true",
+      "title": "React's O(n) reconciliation rests on deliberately *unsound* heuristics. Which of these are assumptions React really makes? Select all that apply.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "Two elements of different types produce different trees, so it never tries to match a `<div>` against a `<p>`.",
+          "isCorrect": true
+        },
+        {
+          "text": "Children annotated with stable keys are the same logical items across renders.",
+          "isCorrect": true
+        },
+        {
+          "text": "It compares the trees one level at a time, rather than searching all cross-level matchings.",
+          "isCorrect": true
+        },
+        {
+          "text": "It computes the provably minimal edit script on every update.",
+          "isCorrect": false
+        },
+        {
+          "text": "It reuses a component instance even when the element type at that position changes.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The two load-bearing assumptions — *different types ⇒ different trees* and *keys mark stable identity* — plus a level-by-level walk are exactly what reduce the cost from O(n³) to O(n). They are \"unsound\" in that a smarter, slower algorithm could sometimes find a smaller edit script; React knowingly accepts a slightly larger one for huge speed. The false options invert the design: React does **not** find the optimal script, and a type change at a position triggers a teardown rather than instance reuse.",
+      "references": "[React: reconciliation.html](https://legacy.reactjs.org/docs/reconciliation.html)"
+    },
+    {
+      "id": "diff-index-key-symptoms",
+      "title": "An app uses `key={index}` for a **reorderable** list of rows, each holding local state (an open/closed toggle, a focused input). Which bugs are plausible? Select all that apply.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "After reordering, a row's open/closed toggle shows up on the wrong row.",
+          "isCorrect": true
+        },
+        {
+          "text": "Typing in one row's input, then inserting a row above it, leaves the text in place but now attached to a different item.",
+          "isCorrect": true
+        },
+        {
+          "text": "Deleting the first row makes state appear to 'shift up,' so the second row inherits the first row's state.",
+          "isCorrect": true
+        },
+        {
+          "text": "React unmounts and remounts every row on each keystroke, causing flicker.",
+          "isCorrect": false
+        },
+        {
+          "text": "Rows whose index exceeds 31 are silently dropped due to integer key overflow.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Every true symptom is the same root cause: index keys bind component identity to a **slot**, so when items move between slots their state stays behind. Reordering, inserting, and deleting all shuffle which item lives at which index, and React faithfully keeps each slot's instance/DOM — including its local state — producing \"state on the wrong row.\" The false options are invented mechanics: there is no per-keystroke remount storm, and keys are arbitrary strings with no numeric ceiling.",
+      "references": "[React: rendering lists](https://react.dev/learn/rendering-lists) · [React: preserving and resetting state](https://react.dev/learn/preserving-and-resetting-state)"
+    },
+    {
+      "id": "diff-on3-exponent",
+      "title": "The state-of-the-art algorithms for the general tree-diff problem run in roughly O(n^k) time, and React's reconciliation docs cite that exponent as the reason it uses heuristics instead. What integer is k?",
+      "description": "Answer with a single digit.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [3]
+      },
+      "explanation": "k = **3**: the general problem of transforming one tree into another optimally is about **O(n³)**, which React's docs call out as impractical for rendering. Rather than pay that, React assumes different types don't match and that keys mark identity, achieving O(n). Memorizing the exponent matters less than the lesson: the whole keys-and-remounting model exists to *dodge* an O(n³) computation.",
+      "references": "[React: reconciliation.html](https://legacy.reactjs.org/docs/reconciliation.html)"
+    },
+    {
+      "id": "loop-microtask-drain",
+      "title": "After the currently running task finishes, how does the event loop treat the **microtask** queue?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "It drains it completely — running every queued microtask, including ones queued *during* draining — before taking the next task or rendering.",
+          "isCorrect": true
+        },
+        {
+          "text": "It runs exactly one microtask per loop turn, interleaved with macrotasks.",
+          "isCorrect": false
+        },
+        {
+          "text": "It runs microtasks only after the call stack has been idle for at least 4ms.",
+          "isCorrect": false
+        },
+        {
+          "text": "It runs microtasks only after the next repaint, never before.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "When the JavaScript stack empties, the loop runs the **entire** microtask queue to completion — and any microtask scheduled *while* draining is appended and also runs in the same pass — before it will pick up the next task (macrotask) or paint. This \"drain to empty\" rule is why a promise chain resolves fully before a `setTimeout(0)` fires, and (see the starvation question) why an endlessly self-queueing microtask can wedge the page.",
+      "references": "[MDN: Microtask guide](https://developer.mozilla.org/en-US/docs/Web/API/HTML_DOM_API/Microtask_guide) · [MDN: Execution model](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Execution_model)"
+    },
+    {
+      "id": "loop-promise-before-timeout",
+      "title": "`Promise.resolve().then(f)` and `setTimeout(g, 0)` both mean \"do this later.\" Which runs first, and why?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`f` runs first: `.then` schedules a *microtask*, and the whole microtask queue drains before any `setTimeout` (a *macrotask*) gets a turn.",
+          "isCorrect": true
+        },
+        {
+          "text": "`g` runs first because `setTimeout(0)` is given higher priority than promise callbacks.",
+          "isCorrect": false
+        },
+        {
+          "text": "Whichever appears first in the source runs first; they share one queue.",
+          "isCorrect": false
+        },
+        {
+          "text": "They run simultaneously on separate threads.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Promise reactions are **microtasks**; timer callbacks are **macrotasks (tasks)**. Because the loop empties the microtask queue between tasks, `f` always wins over `g` here, regardless of source order. Confirmed by running `console.log('A'); setTimeout(()=>console.log('B'),0); Promise.resolve().then(()=>console.log('C')); console.log('D')` — it prints `A D C B`. This priority split is the single most-tested fact about the event loop.",
+      "references": "[Jake Archibald: Tasks, microtasks, queues and schedules](https://jakearchibald.com/2015/tasks-microtasks-queues-and-schedules/)"
+    },
+    {
+      "id": "loop-raf-position",
+      "title": "Where does a `requestAnimationFrame` callback sit relative to microtasks and `setTimeout`?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "It runs as part of the browser's \"update the rendering\" step — after the microtask queue has drained, just before the next paint, at most about once per frame.",
+          "isCorrect": true
+        },
+        {
+          "text": "It is a microtask, so it always runs before any `setTimeout`.",
+          "isCorrect": false
+        },
+        {
+          "text": "It is exactly equivalent to `setTimeout(fn, 16)`.",
+          "isCorrect": false
+        },
+        {
+          "text": "It runs immediately and synchronously the moment you call it.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`requestAnimationFrame` is neither a microtask nor an ordinary timer — its callbacks fire during the browser's **rendering step**, after microtasks drain and right before the paint, so they're throttled to the display's frame cadence (~60fps) and paused in background tabs. That timing is exactly why you read layout and start visual updates there: you run once per frame, just before pixels are drawn. `setTimeout(fn, 16)` only *approximates* a frame and drifts; rAF is synced to the actual frame.",
+      "references": "[MDN: requestAnimationFrame](https://developer.mozilla.org/en-US/docs/Web/API/Window/requestAnimationFrame)"
+    },
+    {
+      "id": "loop-ric-position",
+      "title": "What sets `requestIdleCallback` apart from `setTimeout` and `requestAnimationFrame`?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "It runs during the browser's idle time at the end of a frame, can be starved indefinitely under load, and hands the callback a deadline of how much idle time remains.",
+          "isCorrect": true
+        },
+        {
+          "text": "It guarantees the callback runs within 1ms, making it the highest-priority scheduler.",
+          "isCorrect": false
+        },
+        {
+          "text": "It runs the callback on a background thread with no access to the main thread.",
+          "isCorrect": false
+        },
+        {
+          "text": "It fires the callback synchronously between every pair of microtasks.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`requestIdleCallback` is the **lowest-priority** scheduler: the browser runs it only when there's spare time after rendering, and a busy main thread can postpone it indefinitely (so pass a `timeout` for work that must eventually run). The callback receives an `IdleDeadline` with `timeRemaining()`, encouraging you to do a little non-urgent work and yield. It is the opposite of rAF (which is tied to the frame) and of \"high priority.\"",
+      "references": "[MDN: requestIdleCallback](https://developer.mozilla.org/en-US/docs/Web/API/Window/requestIdleCallback)"
+    },
+    {
+      "id": "loop-microtask-starvation",
+      "title": "Why can an endlessly self-rescheduling **microtask** freeze the page, while an endlessly self-rescheduling `setTimeout` does not?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The loop must fully drain the microtask queue before it can render or run the next task — so a microtask that always queues another microtask starves rendering forever. A re-scheduled `setTimeout` yields back to the loop each time.",
+          "isCorrect": true
+        },
+        {
+          "text": "Microtasks execute on the GPU, which cannot be preempted.",
+          "isCorrect": false
+        },
+        {
+          "text": "`setTimeout` callbacks are auto-throttled to 60fps while microtasks are not.",
+          "isCorrect": false
+        },
+        {
+          "text": "Microtasks hold a lock on the DOM that `setTimeout` releases between calls.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "This is **task starvation** seen up close. Because the microtask queue must reach *empty* before the loop proceeds, a microtask that schedules another microtask creates a queue that never empties — rendering, input, and tasks never get a turn, and the tab hangs. A self-rescheduling `setTimeout` (or `MessageChannel` message) is a fresh *task* each time, so the loop gets to render and handle input between iterations. Same idea, opposite outcome — and the reason cooperative schedulers yield with tasks, not microtasks.",
+      "references": "[MDN: Microtask guide](https://developer.mozilla.org/en-US/docs/Web/API/HTML_DOM_API/Microtask_guide) · [Jake Archibald: Tasks, microtasks, queues and schedules](https://jakearchibald.com/2015/tasks-microtasks-queues-and-schedules/)"
+    },
+    {
+      "id": "loop-microtask-sources",
+      "title": "Which of these schedule a **microtask** (rather than a macrotask)? Select all that apply.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "A `Promise` `.then` / `.catch` / `.finally` callback.",
+          "isCorrect": true
+        },
+        {
+          "text": "`queueMicrotask(fn)`.",
+          "isCorrect": true
+        },
+        {
+          "text": "The continuation that resumes after an `await`.",
+          "isCorrect": true
+        },
+        {
+          "text": "`setTimeout(fn, 0)`.",
+          "isCorrect": false
+        },
+        {
+          "text": "A `MessageChannel` `port.onmessage` handler.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Promise reactions, `queueMicrotask`, and post-`await` continuations all enqueue **microtasks**, so they run before the next paint or timer. `setTimeout` and `MessageChannel` messages are **macrotasks (tasks)**. The `MessageChannel` case is the interesting one: React's scheduler uses it precisely *because* it's a task that — unlike microtasks — lets the browser render and handle input between chunks, and unlike `setTimeout` isn't clamped to a 4ms minimum. Confirmed by running `console.log(1); queueMicrotask(()=>console.log(2)); Promise.resolve().then(()=>console.log(3)); console.log(4)` → `1 4 2 3`.",
+      "references": "[MDN: queueMicrotask](https://developer.mozilla.org/en-US/docs/Web/API/Window/queueMicrotask) · [MDN: MessageChannel](https://developer.mozilla.org/en-US/docs/Web/API/MessageChannel)"
+    },
+    {
+      "id": "loop-cooperative-yielding",
+      "title": "React's concurrent renderer \"time-slices\" long work so the page stays responsive. Which statements about cooperative yielding on the main thread are true? Select all that apply.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "Yielding means doing a chunk of work, returning to the event loop so input and paint can happen, then resuming the rest later.",
+          "isCorrect": true
+        },
+        {
+          "text": "React's scheduler posts a message (via `MessageChannel`) to schedule the next chunk as a task, letting the browser interleave rendering and events.",
+          "isCorrect": true
+        },
+        {
+          "text": "Without yielding, a long synchronous loop blocks paint and input, because main-thread JavaScript runs to completion.",
+          "isCorrect": true
+        },
+        {
+          "text": "Yielding automatically moves the work onto a separate OS thread.",
+          "isCorrect": false
+        },
+        {
+          "text": "A microtask is the ideal way to yield, because the browser can paint between microtasks.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Cooperative scheduling is \"run a bit, hand the thread back, continue later.\" Because JavaScript on the main thread runs to completion, the *only* way to stay responsive during a big job is to break it up and yield between pieces — which React's scheduler does by posting a `MessageChannel` message to queue the next slice as a **task**, so the browser can paint and process input in between. The false options miss the mechanism: yielding keeps you on the same thread (that's the point — no workers, shared memory, or transfer cost), and microtasks are the *wrong* tool because the browser will **not** paint mid-drain.",
+      "references": "[React: useTransition](https://react.dev/reference/react/useTransition) · [MDN: MessageChannel](https://developer.mozilla.org/en-US/docs/Web/API/MessageChannel)"
+    },
+    {
+      "id": "loop-event-loop-true",
+      "title": "Which statements about the browser event loop are true? Select all that apply.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "Each turn runs at most one macrotask, then drains all microtasks, then may render.",
+          "isCorrect": true
+        },
+        {
+          "text": "`await x` suspends the async function and resumes it as a microtask once `x` settles.",
+          "isCorrect": true
+        },
+        {
+          "text": "`setTimeout(fn, 0)` does not run in 0ms; deeply nested timers are clamped to about 4ms in browsers.",
+          "isCorrect": true
+        },
+        {
+          "text": "JavaScript is multithreaded on the main thread, so two callbacks can run at once.",
+          "isCorrect": false
+        },
+        {
+          "text": "The browser repaints after every individual microtask.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The loop's rhythm is *one task → drain microtasks → optional render*, repeated. `await` is sugar over a promise, so the code after it resumes as a microtask — confirmed by `console.log('0'); (async()=>{console.log('1'); await null; console.log('2')})(); console.log('3'); Promise.resolve().then(()=>console.log('4'))` printing `0 1 3 2 4`. Timers have a clamped minimum (≈4ms once nested several deep), so `setTimeout(0)` is a floor, not a promise of immediacy. The false claims are the classic traps: the main thread is **single-threaded** (no two callbacks at once), and paint happens at most once per loop turn, not per microtask.",
+      "references": "[MDN: Execution model](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Execution_model) · [MDN: setTimeout](https://developer.mozilla.org/en-US/docs/Web/API/Window/setTimeout)"
+    },
+    {
+      "id": "loop-predict-count",
+      "title": "Predict the output. How many lines are logged **before** `\"setTimeout\"` appears?",
+      "description": "```js\nconsole.log(\"script start\");\nsetTimeout(() => console.log(\"setTimeout\"), 0);\nPromise.resolve()\n  .then(() => console.log(\"promise1\"))\n  .then(() => console.log(\"promise2\"));\nconsole.log(\"script end\");\n```",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [4]
+      },
+      "explanation": "The full order is `script start`, `script end`, `promise1`, `promise2`, `setTimeout` — so **4** lines precede `setTimeout`. The two synchronous logs run first; then the whole microtask chain (`promise1` resolves and queues `promise2`, which also drains in this pass) finishes; only then does the loop pick up the `setTimeout` *task*. This is Jake Archibald's classic example, and it's the most reliable way to feel the micro-before-macro rule. Verified by running the snippet.",
+      "references": "[Jake Archibald: Tasks, microtasks, queues and schedules](https://jakearchibald.com/2015/tasks-microtasks-queues-and-schedules/)"
+    },
+    {
+      "id": "loop-predict-order",
+      "title": "Predict the output. Type the four numbers in the exact order they are logged, with no spaces (e.g. `1234`).",
+      "description": "```js\nconsole.log(\"1\");\nqueueMicrotask(() => console.log(\"2\"));\nPromise.resolve().then(() => console.log(\"3\"));\nconsole.log(\"4\");\n```",
+      "type": "input",
+      "validation": {
+        "mode": "text",
+        "acceptedAnswers": ["1423", "1 4 2 3"]
+      },
+      "explanation": "Answer: **1423**. The two `console.log` calls run synchronously first (`1`, then `4`). Then the microtask queue drains in FIFO order: `queueMicrotask` registered its callback *before* `.then` did, so `2` runs before `3`. Both are microtasks, so the only thing deciding their order is enqueue order — a reminder that \"microtask\" is a *category*, and within it ordering is just first-in-first-out. Verified by running the snippet.",
+      "references": "[MDN: queueMicrotask](https://developer.mozilla.org/en-US/docs/Web/API/Window/queueMicrotask)"
+    },
+    {
+      "id": "race-out-of-order",
+      "title": "A search box fires a request on every keystroke. The user types `react`. Results for `rea` sometimes appear *after* results for `react`, overwriting them. What is the root cause?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Responses can arrive out of order: the request that starts last isn't guaranteed to finish last, so a slower earlier request can land after a faster later one.",
+          "isCorrect": true
+        },
+        {
+          "text": "React batches the requests and replays their responses in random order.",
+          "isCorrect": false
+        },
+        {
+          "text": "`fetch` cannot attach query parameters, so every request is identical.",
+          "isCorrect": false
+        },
+        {
+          "text": "The browser caches the first response and refuses to update it afterward.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Each request travels independently, and network latency plus server time vary per request — so **completion order ≠ start order**. The `rea` request can be slower and resolve *after* `react`, and whichever resolves last writes state last, clobbering the fresher data. Nothing here is about JavaScript threads; it's a genuine race between concurrent async operations whose finish times you don't control. The fixes (keying, cancellation) all boil down to: don't let a stale response win.",
+      "references": "[Wikipedia: Race condition](https://en.wikipedia.org/wiki/Race_condition)"
+    },
+    {
+      "id": "race-fix-keying",
+      "title": "Without cancelling anything, what's the simplest correct fix for out-of-order search responses?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Tag each request with a key (the query string, or an incrementing id) and, when a response arrives, apply it only if it still matches the latest request.",
+          "isCorrect": true
+        },
+        {
+          "text": "Serialize the requests with `await` in a loop so only one is ever in flight.",
+          "isCorrect": false
+        },
+        {
+          "text": "Increase the debounce delay until responses can no longer overlap.",
+          "isCorrect": false
+        },
+        {
+          "text": "Switch from `fetch` to `XMLHttpRequest`, which preserves response order.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "**Request keying** (a.k.a. \"ignore stale responses\") is the minimal correct fix: remember which request is newest, and when any response resolves, commit it only if its key is still the current one — otherwise drop it. Serializing with `await` technically avoids overlap but throws away concurrency and makes the UI feel sluggish (and still races against fast typing). Debounce reduces how *often* you race but never *guarantees* responses can't overlap, and the transport (`fetch` vs `XHR`) has nothing to do with completion order.",
+      "references": "[React: synchronizing with effects](https://react.dev/learn/synchronizing-with-effects)"
+    },
+    {
+      "id": "race-abortcontroller",
+      "title": "What does `AbortController` actually do when you call `controller.abort()` on a `fetch` started with `{ signal: controller.signal }`?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "It signals cancellation: the pending `fetch` promise rejects with an `AbortError`, and the browser may stop the in-flight network request.",
+          "isCorrect": true
+        },
+        {
+          "text": "It pauses the request so you can resume it later with `controller.resume()`.",
+          "isCorrect": false
+        },
+        {
+          "text": "It synchronously returns whatever partial response has arrived so far.",
+          "isCorrect": false
+        },
+        {
+          "text": "It retroactively undoes any server-side effect the request already caused.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`AbortController` is a **cancellation signal**, not a pause button or an undo. Calling `abort()` rejects the `fetch` promise with an `AbortError` (catch it and ignore it) and lets the browser tear down the connection, saving network and CPU. Crucially it does **not** roll back effects the server already applied — that's why cancellation and *idempotency* are separate concerns (see the Pay-button question). The signal is reusable across many async APIs that accept `{ signal }`.",
+      "references": "[MDN: AbortController](https://developer.mozilla.org/en-US/docs/Web/API/AbortController) · [MDN: AbortSignal](https://developer.mozilla.org/en-US/docs/Web/API/AbortSignal)"
+    },
+    {
+      "id": "race-stale-closure",
+      "title": "A `setInterval` callback created inside a component keeps logging `count` as `0`, even though `count` visibly increments on screen. Why?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The callback closed over `count` from the render where the interval was created; that binding is frozen, so it keeps reading the stale value — a stale closure.",
+          "isCorrect": true
+        },
+        {
+          "text": "`setInterval` runs on a worker thread that can't see React state.",
+          "isCorrect": false
+        },
+        {
+          "text": "`count` is reset to 0 at the start of every interval tick.",
+          "isCorrect": false
+        },
+        {
+          "text": "Numbers are passed by reference in JavaScript, so the callback sees a detached copy.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Every render is its own scope with its own `count`. The function you handed to `setInterval` **closed over the `count` from the render that created it**, and since the interval is set up once, that closure never sees later renders' values — it's a *stale closure*, a race between when the callback was *created* and when it *runs*. Fixes: a functional updater `setCount(c => c + 1)`, a ref holding the latest value, or listing `count` in the effect deps so the interval is recreated with a fresh closure.",
+      "references": "[MDN: Closures](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Closures)"
+    },
+    {
+      "id": "race-useeffect-cleanup",
+      "title": "The React docs' data-fetching effect declares `let ignore = false` and returns `() => { ignore = true; }`. How does that prevent a race?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "When deps change or the component unmounts, cleanup flips `ignore` for the *previous* effect; its still-pending response checks `ignore` and discards itself instead of overwriting fresh state.",
+          "isCorrect": true
+        },
+        {
+          "text": "It cancels the previous network request at the TCP level.",
+          "isCorrect": false
+        },
+        {
+          "text": "It memoizes the response so the second request is skipped entirely.",
+          "isCorrect": false
+        },
+        {
+          "text": "It forces the effects to run one after another in order.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Each effect run captures its own `ignore` variable. When the inputs change, React runs the *old* effect's cleanup first, setting that run's `ignore = true`; so when its `fetch` finally resolves, the `if (!ignore) setState(...)` guard is false and the stale response is dropped. It fixes the **UI** race by ignoring late results — but note it does **not** stop the network request (for that you'd add an `AbortController`), it doesn't dedupe, and it doesn't serialize. It just guarantees only the latest effect's response is allowed to write state.",
+      "references": "[React: synchronizing with effects](https://react.dev/learn/synchronizing-with-effects)"
+    },
+    {
+      "id": "race-idempotency",
+      "title": "A \"Pay\" button fires a POST; the user double-clicks and the network retries on flaky wifi. Why does making the endpoint **idempotent** (e.g. with an idempotency key) matter?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "An idempotent operation has the same effect whether applied once or many times, so duplicate or retried requests don't charge the user twice.",
+          "isCorrect": true
+        },
+        {
+          "text": "Idempotency makes the request faster by caching its response.",
+          "isCorrect": false
+        },
+        {
+          "text": "Idempotency guarantees responses arrive in the order they were sent.",
+          "isCorrect": false
+        },
+        {
+          "text": "Idempotency cancels all but the first request automatically in the browser.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "**Idempotence** means *f(f(x)) = f(x)* at the protocol level: applying the operation again lands you in the same state. With an idempotency key, the server recognizes the retry/double-submit as the *same* logical request and performs the charge once. This is the server-side complement to client cancellation — `AbortController` can stop a *pending* request, but once bytes have reached the server, only idempotency protects you from duplicates. GET/PUT/DELETE are idempotent by spec; POST usually isn't, which is exactly why payment APIs add keys.",
+      "references": "[MDN: Idempotent](https://developer.mozilla.org/en-US/docs/Glossary/Idempotent) · [Wikipedia: Idempotence](https://en.wikipedia.org/wiki/Idempotence)"
+    },
+    {
+      "id": "race-true-statements",
+      "title": "Which statements about client-side race conditions are true? Select all that apply.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "Response order isn't guaranteed to match request order, because latency varies per request.",
+          "isCorrect": true
+        },
+        {
+          "text": "Cancelling (AbortController) and ignoring a stale response (an `ignore` flag) both fix the *UI* race, but only cancellation also stops wasted network/CPU work.",
+          "isCorrect": true
+        },
+        {
+          "text": "A stale closure is a race between *when a callback was created* and *when it runs* — it captures state from creation time.",
+          "isCorrect": true
+        },
+        {
+          "text": "Wrapping the requests in `Promise.all` removes out-of-order races.",
+          "isCorrect": false
+        },
+        {
+          "text": "Race conditions can't occur in JavaScript because it is single-threaded.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The true statements capture the model: completion order is not start order; cancellation and \"ignore stale\" both prevent the wrong result from winning, but only cancellation reclaims work; and stale closures are a timing race over captured state. The false claims are the most common misconceptions — `Promise.all` just waits for a fixed batch (it doesn't help a stream of keystroke requests and still resolves whatever you gave it), and **single-threaded does not mean race-free**: the interleaving of *asynchronous continuations* is exactly where these races live.",
+      "references": "[Wikipedia: Race condition](https://en.wikipedia.org/wiki/Race_condition) · [MDN: AbortController](https://developer.mozilla.org/en-US/docs/Web/API/AbortController)"
+    },
+    {
+      "id": "race-cancellation-patterns",
+      "title": "You're fixing a \"type fast, see the wrong results\" bug in a search component. Which approaches correctly stop stale results from winning? Select all that apply.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "Abort the previous `fetch` with an `AbortController` in the effect cleanup before starting the next one.",
+          "isCorrect": true
+        },
+        {
+          "text": "Keep a per-request id or key and commit a response only if its key equals the latest request.",
+          "isCorrect": true
+        },
+        {
+          "text": "In `useEffect`, set an `ignore` flag in cleanup and bail out of `setState` when it's set.",
+          "isCorrect": true
+        },
+        {
+          "text": "Rely on debounce alone to guarantee responses never overlap.",
+          "isCorrect": false
+        },
+        {
+          "text": "Collect every response in an array and render whichever is longest.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The three correct patterns are the standard toolkit: **cancel** the old request, **key** responses to the latest request, or **ignore** late ones via a cleanup flag — each ensures only the current request can write state. Debounce only spaces requests out; it lowers the odds of a race but never eliminates it, because a debounced request can still be overtaken. \"Render the longest response\" confuses payload size with recency — longer isn't newer.",
+      "references": "[React: synchronizing with effects](https://react.dev/learn/synchronizing-with-effects) · [MDN: AbortController](https://developer.mozilla.org/en-US/docs/Web/API/AbortController)"
+    },
+    {
+      "id": "race-stale-closure-fixes",
+      "title": "Which fixes correctly stop a `setInterval` / event callback from reading a **stale** `count`? Select all that apply.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "Use the functional updater `setCount(c => c + 1)`, which never reads the captured `count`.",
+          "isCorrect": true
+        },
+        {
+          "text": "Keep the latest value in a ref and read `ref.current` inside the callback.",
+          "isCorrect": true
+        },
+        {
+          "text": "Add `count` to the effect's dependency array so the interval is recreated with a fresh closure each time it changes.",
+          "isCorrect": true
+        },
+        {
+          "text": "Mark the callback `async` so it re-reads the variable on each call.",
+          "isCorrect": false
+        },
+        {
+          "text": "Wrap the read in `setTimeout(…, 0)` to defer past the stale value.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "All three correct fixes share one idea: stop depending on the value captured at creation time. The functional updater receives the current state as an argument; a ref is a single mutable box that always holds the latest value; and re-listing `count` in deps tears down and recreates the closure so it captures the new render's value. The false options change *nothing* about what was captured — `async` and a deferred `setTimeout` still read the same frozen binding, just later.",
+      "references": "[MDN: Closures](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Closures)"
+    },
+    {
+      "id": "race-var-loop-output",
+      "title": "Predict the output. This logs the same number three times — type that number.",
+      "description": "```js\nfor (var i = 0; i < 3; i++) {\n  setTimeout(() => console.log(i), 0);\n}\n```",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [3]
+      },
+      "explanation": "It logs **3**, three times. With `var`, all three callbacks close over the *same* function-scoped `i`. The loop finishes synchronously (leaving `i === 3`) long before any `setTimeout(0)` task runs, so every callback reads the final value. Swap `var` for `let` and each iteration gets a *fresh* binding, printing `0 1 2`. This tiny snippet is the purest demonstration of the stale-closure trap behind many \"why is my handler seeing the old value?\" bugs. Verified by running it.",
+      "references": "[MDN: Closures](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Closures)"
+    },
+    {
+      "id": "eq-reference-vs-value",
+      "title": "Why is `{} === {}` `false` while `2 === 2` is `true`?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Objects compare by *reference* (identity) — two distinct literals are different references — while primitives compare by *value*.",
+          "isCorrect": true
+        },
+        {
+          "text": "`{}` is always falsy, so the comparison short-circuits to `false`.",
+          "isCorrect": false
+        },
+        {
+          "text": "`===` deep-compares the objects and finds a hidden difference.",
+          "isCorrect": false
+        },
+        {
+          "text": "`{}` is parsed as a code block, not an object, so the comparison is invalid.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "JavaScript has two equality regimes. **Primitives** (numbers, strings, booleans, …) compare by *value*: `2 === 2` is `true`. **Objects** (including arrays and functions) compare by *reference*: `===` is `true` only if both operands are literally the *same* object in memory. Two separate `{}` literals are two allocations, so `{} === {}` and `[1,2] === [1,2]` are both `false` — confirmed by running them. This single distinction is the seed of nearly every React re-render surprise below.",
+      "references": "[MDN: Equality comparisons and sameness](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Equality_comparisons_and_sameness)"
+    },
+    {
+      "id": "eq-new-object-rerender",
+      "title": "A memoized child re-renders every time its parent does, even though \"nothing changed.\" The parent passes `style={{ margin: 0 }}`. Why does this defeat `React.memo`?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Each render creates a *new* object literal, so the new `style` prop is `!==` the previous one; `React.memo`'s shallow `===` check sees a changed prop and re-renders.",
+          "isCorrect": true
+        },
+        {
+          "text": "`React.memo` ignores style props entirely.",
+          "isCorrect": false
+        },
+        {
+          "text": "Inline styles are slow to diff, so React skips memoization for them.",
+          "isCorrect": false
+        },
+        {
+          "text": "`margin: 0` is falsy, which invalidates the memo cache.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`React.memo` does a **shallow** prop comparison, i.e. `===` per prop. The object literal `{ margin: 0 }` is allocated fresh on every parent render, so even though its *contents* are identical, its *reference* differs — the shallow check fails and the child re-renders. The fix is to give the prop a stable identity: hoist the constant outside the component, or wrap it in `useMemo`. The same trap applies to inline arrays, inline objects, and inline functions passed as props or effect deps. References: `React.memo`, equality and sameness.",
+      "references": "[React: memo](https://react.dev/reference/react/memo) · [MDN: Equality comparisons and sameness](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Equality_comparisons_and_sameness)"
+    },
+    {
+      "id": "eq-object-is",
+      "title": "Where does `Object.is(a, b)` differ from `a === b`?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`Object.is(NaN, NaN)` is `true` and `Object.is(-0, 0)` is `false` — `===` gives the opposite result for both.",
+          "isCorrect": true
+        },
+        {
+          "text": "`Object.is` deep-compares objects, while `===` does not.",
+          "isCorrect": false
+        },
+        {
+          "text": "`Object.is` performs type coercion like `==`, while `===` does not.",
+          "isCorrect": false
+        },
+        {
+          "text": "They behave identically in every case.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`Object.is` implements *SameValue* and differs from `===` in exactly two spots: `Object.is(NaN, NaN) === true` (whereas `NaN === NaN` is `false`), and `Object.is(-0, 0) === false` (whereas `-0 === 0` is `true`). All four results confirmed by running them. This matters because React compares state and deps with `Object.is`, so a state update from `NaN` to `NaN` is treated as *no change* and bails out of re-rendering. It never coerces and never deep-compares — for objects it's still reference identity. Reference: `Object.is`.",
+      "references": "[MDN: is](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/is)"
+    },
+    {
+      "id": "eq-structural-sharing",
+      "title": "Immer (and persistent data structures generally) return a new state object on every update but reuse untouched subtrees. Why is that the perfect partner for `===`-based change detection?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Only the path that changed gets a new reference; everything else keeps its old reference, so a cheap `===` on any subtree reliably answers \"did this part change?\"",
+          "isCorrect": true
+        },
+        {
+          "text": "It freezes the whole tree, so `===` always returns `false` and everything re-renders.",
+          "isCorrect": false
+        },
+        {
+          "text": "It tags every node with an incrementing version number that `===` reads.",
+          "isCorrect": false
+        },
+        {
+          "text": "It deep-clones the entire tree, guaranteeing every reference changes.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "This is **structural sharing**: an update copies only the nodes along the path to the change and *reuses* every untouched branch by reference. So `newState.a.b === oldState.a.b` stays `true` for parts that didn't change, and a single `===` becomes a trustworthy, O(1) \"did this subtree change?\" test — exactly what `React.memo`, `useMemo`, and selector libraries rely on. Deep-cloning would be the *opposite*: it changes every reference, making `===` useless and forcing everything to re-render.",
+      "references": "[Wikipedia: Persistent data structure](https://en.wikipedia.org/wiki/Persistent_data_structure) · [Immer: Immer](https://immerjs.github.io/immer/)"
+    },
+    {
+      "id": "eq-content-hash",
+      "title": "Content hashing shows up as `app.8f3b2c.js` in build output, as `integrity=\"sha384-…\"` on a `<script>`, and as Quizbun's own per-Question **Content hash**. What single property makes hashing useful in all three?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "A fixed-size digest is derived purely from the content, so identical content yields the same hash and any change yields a (practically) different one — letting you detect change in O(1) by comparing digests.",
+          "isCorrect": true
+        },
+        {
+          "text": "Hashes are reversible, so you can reconstruct the original file from the digest.",
+          "isCorrect": false
+        },
+        {
+          "text": "Hashing compresses the file, so fewer bytes ship to the browser.",
+          "isCorrect": false
+        },
+        {
+          "text": "A hash is a random id assigned at build time, unrelated to the content.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "All three uses lean on **content-addressing**: the digest is a deterministic function of the bytes, so equal content ⇒ equal hash, and any edit ⇒ a different hash with overwhelming probability. That turns \"did this change?\" into an O(1) comparison of small fixed-size digests instead of a byte-by-byte scan — which is how `[contenthash]` filenames bust caches only when content changes, how Subresource Integrity detects tampering, and how Quizbun decides whether a saved answer still matches its Question. Hashing is **not** reversible (you can't rebuild the file) and **not** compression.",
+      "references": "[Wikipedia: Hash function](https://en.wikipedia.org/wiki/Hash_function) · [MDN: Subresource Integrity](https://developer.mozilla.org/en-US/docs/Web/Security/Subresource_Integrity) · [Wikipedia: Cache invalidation](https://en.wikipedia.org/wiki/Cache_invalidation)"
+    },
+    {
+      "id": "eq-collision",
+      "title": "Why can't a hash give a *guaranteed*-unique fingerprint for arbitrary content, and when does it matter?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "By the pigeonhole principle, infinitely many inputs map to finitely many fixed-size digests, so collisions must exist; it matters for security/integrity but is negligible for cache-busting filenames.",
+          "isCorrect": true
+        },
+        {
+          "text": "Hashes are unique as long as the input stays under 64 KB.",
+          "isCorrect": false
+        },
+        {
+          "text": "Collisions only happen with non-cryptographic hashes; SHA-256 has literally none.",
+          "isCorrect": false
+        },
+        {
+          "text": "Collisions are impossible — that is the definition of a hash.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A hash maps an unbounded input space onto a finite set of fixed-length outputs, so by the **pigeonhole principle** distinct inputs *must* sometimes share a digest — collisions are unavoidable in principle, not a bug. What differs is the *probability* and the *stakes*: a good cryptographic hash makes finding a collision computationally infeasible, which is why SHA-based Subresource Integrity is trustworthy, while for cache-busting filenames an astronomically unlikely collision would at worst serve a stale asset. \"No collisions ever\" and \"unique under 64 KB\" are both false.",
+      "references": "[Wikipedia: Pigeonhole principle](https://en.wikipedia.org/wiki/Pigeonhole_principle) · [Wikipedia: Hash collision](https://en.wikipedia.org/wiki/Hash_collision)"
+    },
+    {
+      "id": "eq-shallow-vs-deep",
+      "title": "Which statements about **shallow** vs **deep** equality are true? Select all that apply.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "Shallow equality compares one level: same keys, with each value equal by `===` (so nested objects compare by reference).",
+          "isCorrect": true
+        },
+        {
+          "text": "`React.memo`, `PureComponent`, and most `useSelector` defaults use shallow/reference comparison, not deep equality.",
+          "isCorrect": true
+        },
+        {
+          "text": "With immutable updates, shallow equality is both cheap and correct — an unchanged branch keeps its reference.",
+          "isCorrect": true
+        },
+        {
+          "text": "Deep equality is always preferable because it's more accurate and just as fast.",
+          "isCorrect": false
+        },
+        {
+          "text": "Shallow equality recurses into nested arrays and objects.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "**Shallow** equality checks one level — matching keys whose values are `===` — so nested structures are compared by reference, not contents. React's memoization primitives use this cheap check by design. The reason it *works* in practice is the immutability convention: if you never mutate in place, an unchanged subtree keeps its reference and shallow equality correctly reports \"unchanged.\" **Deep** equality recurses and is more thorough but O(size) and easy to get subtly wrong — not free, and not always preferable. The two false options describe deep equality, not shallow. References: `React.memo`, equality and sameness.",
+      "references": "[React: memo](https://react.dev/reference/react/memo) · [MDN: Equality comparisons and sameness](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Equality_comparisons_and_sameness)"
+    },
+    {
+      "id": "eq-identity-pitfalls",
+      "title": "Which of these create a **new reference on every render**, potentially busting memoization or `useEffect` deps? Select all that apply.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "An inline arrow function passed as a prop: `onClick={() => f()}`.",
+          "isCorrect": true
+        },
+        {
+          "text": "An object literal in a dependency array: `useEffect(fn, [{ id }])`.",
+          "isCorrect": true
+        },
+        {
+          "text": "An array built inline: `items={data.filter(Boolean)}`.",
+          "isCorrect": true
+        },
+        {
+          "text": "A string literal passed as a prop: `name=\"react\"`.",
+          "isCorrect": false
+        },
+        {
+          "text": "A number held in state and passed through unchanged.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Inline functions, object literals, and array expressions are **allocated fresh on every render**, so their reference changes each time even when their contents don't — which makes `React.memo` re-render and `useEffect`/`useMemo` re-run. Primitives are the opposite: a string or number compares by *value*, so `\"react\"` is `===` `\"react\"` and unchanged state passes the check. The cure for the reference cases is to stabilize identity (`useCallback`, `useMemo`, hoisting constants) — or to depend on primitive fields (`[id]`) instead of the wrapping object. References: `React.memo`, equality and sameness.",
+      "references": "[React: memo](https://react.dev/reference/react/memo) · [MDN: Equality comparisons and sameness](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Equality_comparisons_and_sameness)"
+    },
+    {
+      "id": "eq-hashing-true",
+      "title": "Which statements about hashing and content-addressing are true? Select all that apply.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "Changing one byte of input changes a good hash unpredictably (the avalanche effect), which is why `[contenthash]` filenames bust caches on any change.",
+          "isCorrect": true
+        },
+        {
+          "text": "Comparing two large blobs for equality can be reduced to comparing their fixed-length hashes — O(1) in content size — at the cost of a tiny collision probability.",
+          "isCorrect": true
+        },
+        {
+          "text": "Subresource Integrity uses a content hash so the browser refuses a script whose bytes don't match the expected digest.",
+          "isCorrect": true
+        },
+        {
+          "text": "A hash function maps every distinct input to a distinct output, with no possibility of collision.",
+          "isCorrect": false
+        },
+        {
+          "text": "Because hashes are O(1) to *compare*, they are also free to *compute*.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The true statements are the working model of content hashing: the avalanche effect means any edit flips the digest (so cache keys change exactly when content does); comparing digests reduces blob equality to an O(1)-in-size check; and SRI rejects mismatched bytes. The false ones are the usual confusions — collisions are unavoidable in principle (pigeonhole), and while *comparing* hashes is O(1), *computing* one is O(n) in the content length, so hashing every render of a huge structure isn't free.",
+      "references": "[Wikipedia: Hash function](https://en.wikipedia.org/wiki/Hash_function) · [MDN: Subresource Integrity](https://developer.mozilla.org/en-US/docs/Web/Security/Subresource_Integrity) · [Wikipedia: Hash collision](https://en.wikipedia.org/wiki/Hash_collision)"
+    },
+    {
+      "id": "eq-distinct-references",
+      "title": "How many **distinct object references** does this array contain — that is, how many of its elements are `!==` each other?",
+      "description": "```js\nconst a = { v: 1 };\nconst arr = [a, a, { v: 1 }, { v: 1 }];\n```",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [3]
+      },
+      "explanation": "The answer is **3**. `arr[0]` and `arr[1]` are the *same* reference `a` (`a === arr[1]` is `true`), while the two `{ v: 1 }` literals are each freshly allocated and distinct from `a` and from each other (`arr[2] === arr[3]` is `false`). So although all four elements are *value*-equal, there are only three distinct references — which is exactly what `new Set(arr).size` reports. Verified by running it. This is the heart of identity vs. value equality: equal-looking is not the same as same.",
+      "references": "[MDN: Equality comparisons and sameness](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Equality_comparisons_and_sameness)"
+    }
+  ]
+}

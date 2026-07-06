@@ -1,0 +1,651 @@
+{
+  "schemaVersion": 1,
+  "id": "game-theory-in-awkward-situations",
+  "title": "Game Theory in Awkward Situations",
+  "description": "Thirty-five questions on strategic behavior in everyday human situations — splitting the bill, replying late, group projects, salary talks, and office politics — using them to teach the real machinery of game theory.\n\nCovers the prisoner's dilemma, Nash equilibrium, coordination games and focal points, the games of chicken and stag hunt, signaling versus cheap talk, credible commitment, repeated games and the shadow of the future, and the free-rider problem.\n\nThe recurring lesson is that a 'rational' choice depends entirely on what you expect everyone else to do. Each question pairs a tempting wrong answer with an explanation that teaches the underlying mechanism, and every Question includes References to Wikipedia for verification and further reading.",
+  "language": "en",
+  "tags": ["psychology", "everyday-life"],
+  "author": "Quizbun",
+  "questions": [
+    {
+      "id": "nash-equilibrium-definition",
+      "title": "What is a *Nash equilibrium*, in plain terms?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "A combination of choices where no one can do better by changing their own choice alone, given what everyone else is doing",
+          "isCorrect": true
+        },
+        {
+          "text": "The outcome that gives the whole group the highest total payoff",
+          "isCorrect": false
+        },
+        {
+          "text": "The choice that is best no matter what anyone else does",
+          "isCorrect": false
+        },
+        {
+          "text": "An outcome everyone agrees is fair",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A Nash equilibrium is a *stand-off of best replies*: each player is already doing the best they can **given the others' choices**, so nobody has a one-sided reason to switch. Crucially, it need not be the best outcome for the group — mutual defection in the prisoner's dilemma is a Nash equilibrium even though both players would prefer mutual cooperation. It is also not the same as a dominant strategy (one that is best regardless of others); a Nash equilibrium only has to be best *given* what others actually do.",
+      "references": "[Wikipedia: Nash equilibrium](https://en.wikipedia.org/wiki/Nash_equilibrium)"
+    },
+    {
+      "id": "nash-equilibrium-term",
+      "title": "Fill in the term: a situation where no player can gain by *unilaterally* changing strategy is called a ___ equilibrium.",
+      "type": "input",
+      "validation": {
+        "mode": "text",
+        "acceptedAnswers": [
+          "nash",
+          "nash equilibrium",
+          "a nash equilibrium",
+          "the nash equilibrium"
+        ]
+      },
+      "explanation": "The answer is **Nash**, after mathematician John Nash, who proved in 1950 that every finite game has at least one such equilibrium (allowing mixed strategies). The word *unilaterally* is the key: an equilibrium is stable against any **single** player deviating on their own, even if a coordinated group move could help everyone.",
+      "references": "[Wikipedia: Nash equilibrium](https://en.wikipedia.org/wiki/Nash_equilibrium)"
+    },
+    {
+      "id": "prisoners-dilemma-name",
+      "title": "Two coworkers could each either pitch in on a shared task or quietly slack. Both slacking leaves them worse off than both helping — yet each is individually tempted to slack whatever the other does. What classic game is this?",
+      "type": "single-choice",
+      "options": [
+        { "text": "The prisoner's dilemma", "isCorrect": true },
+        { "text": "A coordination game", "isCorrect": false },
+        { "text": "The game of chicken", "isCorrect": false },
+        { "text": "A zero-sum game", "isCorrect": false }
+      ],
+      "explanation": "This is the **prisoner's dilemma**: each player has a private incentive to defect (slack) no matter what the other does, but when both follow that logic they reach an outcome *worse* for both than mutual cooperation. The tragedy is that individually rational choices produce a collectively bad result — the single most famous illustration that 'rational' and 'good for everyone' can diverge.",
+      "references": "[Wikipedia: Prisoner's dilemma](https://en.wikipedia.org/wiki/Prisoner%27s_dilemma)"
+    },
+    {
+      "id": "prisoners-dilemma-dominant-strategy",
+      "title": "In a one-shot prisoner's dilemma, why do *both* rational players end up defecting?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Defecting yields a higher payoff than cooperating no matter what the other player does, so it dominates",
+          "isCorrect": true
+        },
+        {
+          "text": "Because cooperating is illegal under the rules of the game",
+          "isCorrect": false
+        },
+        {
+          "text": "Because the players cannot see each other's payoffs",
+          "isCorrect": false
+        },
+        {
+          "text": "Because defecting gives the pair the highest combined payoff",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "In the prisoner's dilemma, defection is a *dominant strategy*: whether the other person cooperates or defects, you personally score higher by defecting. Since this holds for both players, the only Nash equilibrium of the one-shot game is **mutual defection** — even though it leaves both worse off than mutual cooperation, which is why the result is Pareto-inferior.",
+      "references": "[Wikipedia: Prisoner's dilemma](https://en.wikipedia.org/wiki/Prisoner%27s_dilemma)\n[Wikipedia: Strategic dominance](https://en.wikipedia.org/wiki/Strategic_dominance)"
+    },
+    {
+      "id": "dominant-strategy-term",
+      "title": "Fill in the term: a strategy that gives you a better payoff than any alternative *regardless of what your opponents do* is called a ___ strategy.",
+      "type": "input",
+      "validation": {
+        "mode": "text",
+        "acceptedAnswers": [
+          "dominant",
+          "dominant strategy",
+          "a dominant strategy",
+          "strictly dominant",
+          "strictly dominant strategy"
+        ]
+      },
+      "explanation": "A **dominant** strategy is one you should play no matter what anyone else does — it weakly or strictly beats your other options in every scenario. When every player has one, the game has a clear *dominant-strategy equilibrium* (as defection does in the prisoner's dilemma). Most games are not this tidy, which is why the broader Nash equilibrium concept exists.",
+      "references": "[Wikipedia: Strategic dominance](https://en.wikipedia.org/wiki/Strategic_dominance)"
+    },
+    {
+      "id": "prisoners-dilemma-features",
+      "title": "Which statements correctly describe a standard one-shot prisoner's dilemma?",
+      "type": "multiple-choice",
+      "options": [
+        { "text": "Each player has a dominant strategy to defect", "isCorrect": true },
+        {
+          "text": "Both players are better off under mutual cooperation than under mutual defection",
+          "isCorrect": true
+        },
+        {
+          "text": "The only Nash equilibrium of the one-shot game is mutual defection",
+          "isCorrect": true
+        },
+        {
+          "text": "Mutual cooperation is a Nash equilibrium of the one-shot game",
+          "isCorrect": false
+        },
+        { "text": "It is a zero-sum game", "isCorrect": false }
+      ],
+      "explanation": "The defining tension: defection dominates for each player, so the unique one-shot Nash equilibrium is mutual defection — yet mutual cooperation would leave *both* better off. Mutual cooperation is **not** a Nash equilibrium of the one-shot game, because either player could grab a bigger payoff by deviating to defect. And it is **not** zero-sum: the players' interests partly align (both prefer C,C to D,D), which is exactly why the dilemma stings.",
+      "references": "[Wikipedia: Prisoner's dilemma](https://en.wikipedia.org/wiki/Prisoner%27s_dilemma)"
+    },
+    {
+      "id": "cafe-pure-coordination",
+      "title": "Two friends want to meet and like both cafés in town equally — they just need to end up at the *same* one — but their phones are dead, so they can't agree in advance. What kind of game is this?",
+      "type": "single-choice",
+      "options": [
+        { "text": "A coordination game", "isCorrect": true },
+        { "text": "A prisoner's dilemma", "isCorrect": false },
+        { "text": "A battle of the sexes", "isCorrect": false },
+        { "text": "A zero-sum game", "isCorrect": false }
+      ],
+      "explanation": "This is a *pure* **coordination game**: the friends' interests are perfectly aligned — any outcome where they match is great, and any mismatch is bad — so the only problem is agreeing on *which* equilibrium without talking. It is **not** a battle of the sexes, because that variant adds a conflict (each would prefer a different café even while wanting to be together). With no conflict here, all they need is a shared focal point.",
+      "references": "[Wikipedia: Coordination game](https://en.wikipedia.org/wiki/Coordination_game)"
+    },
+    {
+      "id": "coordination-term",
+      "title": "Fill in the term: when players gain only by *matching* each other's choice (like driving on the same side of the road), the situation is a problem of ___.",
+      "type": "input",
+      "validation": {
+        "mode": "text",
+        "acceptedAnswers": [
+          "coordination",
+          "coordination problem",
+          "coordination game",
+          "coordinating",
+          "a coordination problem",
+          "a coordination game"
+        ]
+      },
+      "explanation": "The answer is **coordination**. In a coordination problem the players want the same thing — to align — but there are several equally good ways to align (everyone drives on the left, *or* everyone on the right), and the only danger is failing to pick the same one. Unlike the prisoner's dilemma, nobody is tempted to deviate once a convention is set.",
+      "references": "[Wikipedia: Coordination game](https://en.wikipedia.org/wiki/Coordination_game)"
+    },
+    {
+      "id": "focal-point-grand-central",
+      "title": "Asked to meet a stranger in New York City on a given day with no way to communicate, most people independently answer 'noon at Grand Central'. What is such a naturally obvious choice called?",
+      "type": "single-choice",
+      "options": [
+        { "text": "A focal point (Schelling point)", "isCorrect": true },
+        { "text": "A dominant strategy", "isCorrect": false },
+        { "text": "A credible signal", "isCorrect": false },
+        { "text": "A Pareto improvement", "isCorrect": false }
+      ],
+      "explanation": "Thomas Schelling called these **focal points** (now often *Schelling points*): solutions that stand out as obvious for cultural or psychological reasons, letting people coordinate *without communicating*. Grand Central at noon has no higher payoff than any other spot — it simply has salience, a shared sense of 'that's the natural answer'. Focal points are how real coordination games get solved in practice.",
+      "references": "[Wikipedia: Focal point](https://en.wikipedia.org/wiki/Focal_point_%28game_theory%29)"
+    },
+    {
+      "id": "focal-point-term",
+      "title": "Fill in the term: Schelling's name for the option that players gravitate to by default when they can't communicate is a ___ point.",
+      "type": "input",
+      "validation": {
+        "mode": "text",
+        "acceptedAnswers": [
+          "focal",
+          "focal point",
+          "a focal point",
+          "schelling",
+          "schelling point",
+          "a schelling point",
+          "the focal point"
+        ]
+      },
+      "explanation": "A **focal** point (Schelling point) is the solution that seems obvious to everyone *because* everyone expects everyone else to find it obvious — a self-fulfilling beacon for coordination. Schelling introduced the idea in his 1960 book *The Strategy of Conflict*.",
+      "references": "[Wikipedia: Focal point](https://en.wikipedia.org/wiki/Focal_point_%28game_theory%29)"
+    },
+    {
+      "id": "battle-of-the-sexes",
+      "title": "A couple want to spend the evening together, but one prefers a concert and the other a film. Being apart is the worst outcome for both, yet each would rather the shared plan be *their* pick. Which game is this?",
+      "type": "single-choice",
+      "options": [
+        { "text": "The battle of the sexes", "isCorrect": true },
+        { "text": "The prisoner's dilemma", "isCorrect": false },
+        { "text": "A pure coordination game", "isCorrect": false },
+        { "text": "The stag hunt", "isCorrect": false }
+      ],
+      "explanation": "This is the **battle of the sexes** (also called *Bach or Stravinsky*): a coordination game *with conflict*. The players agree they want to coordinate — being together beats being apart — but they disagree about *which* equilibrium to settle on, so there is a tug-of-war over whose preference wins. It differs from pure coordination (where players are indifferent between the matching outcomes) and from the prisoner's dilemma (where the conflict is about cooperating at all).",
+      "references": "[Wikipedia: Battle of the sexes](https://en.wikipedia.org/wiki/Battle_of_the_sexes_%28game_theory%29)"
+    },
+    {
+      "id": "stag-hunt",
+      "title": "Two flatmates can either both commit to a big deep-clean that needs both of them to pay off (the better result), or each just tidy their own corner for a small but guaranteed result. Joint cleaning is best but fails if one bails. Which game models this?",
+      "type": "single-choice",
+      "options": [
+        { "text": "The stag hunt (an assurance game)", "isCorrect": true },
+        { "text": "The prisoner's dilemma", "isCorrect": false },
+        { "text": "The game of chicken", "isCorrect": false },
+        { "text": "A zero-sum game", "isCorrect": false }
+      ],
+      "explanation": "This is the **stag hunt**: cooperating (hunt the stag together) gives the highest payoff, but only if *both* commit; going it alone (hunt a hare / tidy your own corner) is safe but smaller. Unlike the prisoner's dilemma, mutual cooperation here *is* a Nash equilibrium — the catch is that mutual caution is *also* one, so success hinges on trust and expectations rather than on overcoming a dominant temptation to defect. Game theorists call the trade-off payoff-dominance versus risk-dominance.",
+      "references": "[Wikipedia: Stag hunt](https://en.wikipedia.org/wiki/Stag_hunt)"
+    },
+    {
+      "id": "chicken-game-name",
+      "title": "Two drivers speed toward each other; whoever swerves is the 'loser', but if neither swerves they crash. What is this game called?",
+      "type": "single-choice",
+      "options": [
+        { "text": "Chicken (also known as hawk-dove)", "isCorrect": true },
+        { "text": "The stag hunt", "isCorrect": false },
+        { "text": "The prisoner's dilemma", "isCorrect": false },
+        { "text": "A pure coordination game", "isCorrect": false }
+      ],
+      "explanation": "This is the game of **chicken**, known to biologists as the **hawk-dove** game. Its signature is that the worst outcome is mutual aggression (the crash), so each player wants to stand firm *only if* the other yields — there are two pure Nash equilibria, one for each player backing down. It captures brinkmanship everywhere from teenage dares to labor strikes to nuclear standoffs.",
+      "references": "[Wikipedia: Chicken game](https://en.wikipedia.org/wiki/Chicken_%28game%29)"
+    },
+    {
+      "id": "chicken-credible-commitment",
+      "title": "In a game of chicken, what is the *surprisingly effective* way to make your threat 'I will never swerve' actually work?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Visibly destroy your own ability to swerve — e.g. rip off the steering wheel where your opponent can see — so backing down becomes impossible",
+          "isCorrect": true
+        },
+        {
+          "text": "Shout louder and look as angry as possible",
+          "isCorrect": false
+        },
+        {
+          "text": "Quietly decide, in your own mind, that you will not swerve",
+          "isCorrect": false
+        },
+        {
+          "text": "Offer to split the difference and both swerve halfway",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Schelling's famous counterintuitive insight: in chicken you win by *reducing* your own options. If you conspicuously remove your power to swerve, your opponent now faces a simple fact — you literally *cannot* yield — so their best reply is to swerve themselves. A private resolve or angry words are mere talk; a visible, irreversible move is a **commitment device** that makes the threat credible. This is why 'tying your hands' can be stronger than keeping them free.",
+      "references": "[Wikipedia: Chicken game](https://en.wikipedia.org/wiki/Chicken_%28game%29)\n[Wikipedia: Commitment device](https://en.wikipedia.org/wiki/Commitment_device)"
+    },
+    {
+      "id": "signaling-definition",
+      "title": "In game theory and economics, what is a *signal*?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "A costly, hard-to-fake action that credibly reveals private information you couldn't just assert in words",
+          "isCorrect": true
+        },
+        {
+          "text": "Any message at all that one player sends another",
+          "isCorrect": false
+        },
+        {
+          "text": "A random move designed to confuse the opponent",
+          "isCorrect": false
+        },
+        {
+          "text": "A public announcement of which strategy you will play",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A signal works precisely because it is **costly in a way that fakers can't easily match**. Michael Spence's 1973 job-market model showed how earning a tough degree can signal ability: if studying is genuinely harder for low-ability types, then the credential separates the strong from the weak even if everyone *claims* to be capable. The cost asymmetry — not the message itself — is what makes a signal believable.",
+      "references": "[Wikipedia: Signalling (economics)](https://en.wikipedia.org/wiki/Signalling_%28economics%29)\n[Wikipedia: Information asymmetry](https://en.wikipedia.org/wiki/Information_asymmetry)"
+    },
+    {
+      "id": "signal-term",
+      "title": "Fill in the term: economists use this one word for a costly, hard-to-fake action that reveals hidden quality (like a degree revealing ability).",
+      "type": "input",
+      "validation": {
+        "mode": "text",
+        "acceptedAnswers": [
+          "signal",
+          "a signal",
+          "signals",
+          "signaling",
+          "signalling",
+          "costly signal",
+          "a costly signal"
+        ]
+      },
+      "explanation": "The term is a **signal**. The economics of signaling, pioneered by Michael Spence, earned a share of the 2001 Nobel Memorial Prize (with George Akerlof and Joseph Stiglitz) for explaining how markets cope with asymmetric information. A signal is believable only when it would be too costly for the wrong type to imitate.",
+      "references": "[Wikipedia: Signalling (economics)](https://en.wikipedia.org/wiki/Signalling_%28economics%29)"
+    },
+    {
+      "id": "credible-signals-vs-cheap-talk",
+      "title": "Which of these are *credible signals* — costly and hard to fake — rather than cheap talk?",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "Spending four years and real tuition to earn a demanding degree",
+          "isCorrect": true
+        },
+        {
+          "text": "An engagement ring that costs a couple of months' salary",
+          "isCorrect": true
+        },
+        {
+          "text": "A founder putting their own savings into their startup",
+          "isCorrect": true
+        },
+        {
+          "text": "Saying 'trust me, I'm a really hard worker' in an interview",
+          "isCorrect": false
+        },
+        {
+          "text": "Telling someone 'we should totally hang out sometime'",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Credible signals share one feature: they **hurt to fake**. A hard degree, a costly ring, and putting your own money at risk all impose a price that someone *without* the underlying quality (ability, commitment, confidence) would find too steep to pay — so the action carries information that words cannot. By contrast, 'trust me' and 'we should hang out' are *cheap talk*: costless, non-binding, and equally easy for anyone to say, so they convey little.",
+      "references": "[Wikipedia: Signalling (economics)](https://en.wikipedia.org/wiki/Signalling_%28economics%29)\n[Wikipedia: Cheap talk](https://en.wikipedia.org/wiki/Cheap_talk)"
+    },
+    {
+      "id": "cheap-talk-name",
+      "title": "Costless, non-binding statements that anyone could make and that carry no real commitment — like 'we should hang out sometime' — are known in game theory as what?",
+      "type": "single-choice",
+      "options": [
+        { "text": "Cheap talk", "isCorrect": true },
+        { "text": "Credible signaling", "isCorrect": false },
+        { "text": "A focal point", "isCorrect": false },
+        { "text": "A commitment device", "isCorrect": false }
+      ],
+      "explanation": "**Cheap talk** is communication that costs nothing to send and binds the speaker to nothing. Because a liar could say exactly the same thing as an honest player, cheap talk only moves beliefs when the players' interests already align enough that there's no reason to deceive. When incentives conflict, talk is discounted — which is why costly *signals* exist.",
+      "references": "[Wikipedia: Cheap talk](https://en.wikipedia.org/wiki/Cheap_talk)"
+    },
+    {
+      "id": "commitment-device-burning-bridges",
+      "title": "A negotiator deliberately strips away their own option to back down — like a general burning the bridges behind his own army so retreat is impossible. What is this tactic called?",
+      "type": "single-choice",
+      "options": [
+        { "text": "A commitment device", "isCorrect": true },
+        { "text": "Cheap talk", "isCorrect": false },
+        { "text": "A focal point", "isCorrect": false },
+        { "text": "A dominant strategy", "isCorrect": false }
+      ],
+      "explanation": "A **commitment device** changes the game by *removing your own choices*, which makes a promise or threat credible. Burning the bridges means your army literally cannot flee, so the enemy must take your 'we will stand and fight' seriously. The paradox at the heart of strategic moves: limiting your future freedom can strengthen your present hand, because others respond to what you *can* do, not what you say.",
+      "references": "[Wikipedia: Commitment device](https://en.wikipedia.org/wiki/Commitment_device)"
+    },
+    {
+      "id": "non-credible-threat",
+      "title": "A colleague says, 'If you take that client, I'll resign on the spot' — but everyone knows resigning would hurt them far more than you, so they'd never actually do it. In game theory, this is a...",
+      "type": "single-choice",
+      "options": [
+        { "text": "Non-credible threat", "isCorrect": true },
+        { "text": "Credible signal", "isCorrect": false },
+        { "text": "Dominant strategy", "isCorrect": false },
+        { "text": "Focal point", "isCorrect": false }
+      ],
+      "explanation": "This is a **non-credible threat**: a threat that would *not* be in the threatener's own interest to carry out if the moment actually came. A sharp opponent reasons one step ahead — 'they'd never really quit' — and ignores it. Formally, the concept of *subgame-perfect equilibrium* rules out non-credible threats precisely because they don't survive backward reasoning. To matter, a threat needs a commitment device that makes carrying it out unavoidable or genuinely worthwhile.",
+      "references": "[Wikipedia: Non-credible threat](https://en.wikipedia.org/wiki/Non-credible_threat)\n[Wikipedia: Subgame-perfect equilibrium](https://en.wikipedia.org/wiki/Subgame_perfect_equilibrium)"
+    },
+    {
+      "id": "credible-commitment-features",
+      "title": "Which of the following make a promise or threat genuinely *credible*?",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "Announcing it publicly so backing down would be humiliating",
+          "isCorrect": true
+        },
+        {
+          "text": "Arranging an automatic penalty that fires without any further choice by you",
+          "isCorrect": true
+        },
+        {
+          "text": "Burning bridges so that not following through is literally impossible",
+          "isCorrect": true
+        },
+        {
+          "text": "Privately intending to follow through while keeping all your options open",
+          "isCorrect": false
+        },
+        {
+          "text": "Threatening something you would clearly never actually want to do",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Credibility comes from making the alternative — backing out — *costly, automatic, or impossible*. Public stakes, self-imposed penalties, and burned bridges all bind your future self so others can trust the commitment. By contrast, a private intention you can quietly abandon is just cheap talk, and a threat you'd never want to execute is a non-credible threat that a rational opponent discounts. The unifying idea: change your own incentives or options so following through becomes your *best* (or only) move.",
+      "references": "[Wikipedia: Commitment device](https://en.wikipedia.org/wiki/Commitment_device)\n[Wikipedia: Non-credible threat](https://en.wikipedia.org/wiki/Non-credible_threat)"
+    },
+    {
+      "id": "repeated-games-shadow-of-future",
+      "title": "Why can *repeated* interaction make cooperation easier than a one-off encounter, even when each round's payoffs are unchanged?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Because the prospect of future rewards and punishments — the 'shadow of the future' — gives each player a reason to cooperate now",
+          "isCorrect": true
+        },
+        {
+          "text": "Because repetition lowers the payoff to defecting within each single round",
+          "isCorrect": false
+        },
+        {
+          "text": "Because players eventually forget who defected on them",
+          "isCorrect": false
+        },
+        {
+          "text": "Because the repeated game becomes zero-sum",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The per-round temptation to defect is the same as ever; what changes is that defecting today can be *punished* tomorrow. When players expect to meet again (and value the future enough), the threat of losing all future cooperation can outweigh the one-time gain from cheating — game theorists call this the **shadow of the future**. It's why your reputation with people you'll see again (coworkers, neighbors) keeps you honest in ways a one-shot stranger interaction does not.",
+      "references": "[Wikipedia: Repeated game](https://en.wikipedia.org/wiki/Repeated_game)"
+    },
+    {
+      "id": "tit-for-tat-name",
+      "title": "In Robert Axelrod's famous computer tournaments for the repeated prisoner's dilemma, which simple strategy — cooperate first, then copy whatever the opponent did last — won?",
+      "type": "single-choice",
+      "options": [
+        { "text": "Tit for tat", "isCorrect": true },
+        { "text": "Always defect", "isCorrect": false },
+        { "text": "Always cooperate", "isCorrect": false },
+        { "text": "Grim trigger", "isCorrect": false }
+      ],
+      "explanation": "**Tit for tat**, submitted by Anatol Rapoport, won both of Axelrod's tournaments despite being the simplest program entered (just a few lines of code). It opens with cooperation and then mirrors the opponent's previous move — rewarding cooperation and punishing defection immediately, but only once. Its success launched a huge literature on how cooperation can emerge among self-interested agents.",
+      "references": "[Wikipedia: Tit for tat](https://en.wikipedia.org/wiki/Tit_for_tat)\n[Wikipedia: The Evolution of Cooperation](https://en.wikipedia.org/wiki/The_Evolution_of_Cooperation)"
+    },
+    {
+      "id": "tit-for-tat-properties",
+      "title": "Axelrod identified the traits that made tit-for-tat so successful. Which of these are among them?",
+      "type": "multiple-choice",
+      "options": [
+        { "text": "Nice — it is never the first to defect", "isCorrect": true },
+        {
+          "text": "Retaliatory — it punishes a defection rather than letting it slide",
+          "isCorrect": true
+        },
+        {
+          "text": "Forgiving — it returns to cooperation as soon as the opponent does",
+          "isCorrect": true
+        },
+        {
+          "text": "Clear — it is simple enough that opponents can predict and adapt to it",
+          "isCorrect": true
+        },
+        {
+          "text": "Exploitative — it defects early to grab an advantage",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Axelrod summarized the winners as **nice, retaliatory, forgiving, and clear**. Niceness avoids needless feuds; retaliation deters exploitation; forgiveness stops a single mistake from spiraling into endless mutual defection; and clarity lets opponents learn that cooperating pays. Strategies that opened by defecting (exploitative) tended to provoke retaliation and do worse over the long run. The same recipe — be kind, but don't be a doormat, and let bygones be bygones — describes a lot of healthy human relationships.",
+      "references": "[Wikipedia: Tit for tat](https://en.wikipedia.org/wiki/Tit_for_tat)"
+    },
+    {
+      "id": "grim-trigger-strategy",
+      "title": "One repeated-game strategy cooperates until the opponent defects even *once*, then defects forever after. What is this unforgiving strategy called?",
+      "type": "single-choice",
+      "options": [
+        { "text": "Grim trigger", "isCorrect": true },
+        { "text": "Tit for tat", "isCorrect": false },
+        { "text": "Always cooperate", "isCorrect": false },
+        { "text": "A focal point", "isCorrect": false }
+      ],
+      "explanation": "**Grim trigger** is the most unforgiving trigger strategy: a single defection flips it into permanent, no-take-backs retaliation. It can sustain cooperation when the future matters enough — the threat of losing *all* future cooperation is severe — but it is brittle, because one honest mistake or misread destroys the relationship for good. Contrast tit-for-tat, which punishes once and then forgives.",
+      "references": "[Wikipedia: Grim trigger](https://en.wikipedia.org/wiki/Grim_trigger)\n[Wikipedia: Trigger strategy](https://en.wikipedia.org/wiki/Trigger_strategy)"
+    },
+    {
+      "id": "folk-theorem-cooperation",
+      "title": "Game theory's *folk theorem* says cooperation can be sustained as an equilibrium in a repeated game under which condition?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "When the game is repeated infinitely or for an unknown number of rounds, and players value the future enough",
+          "isCorrect": true
+        },
+        {
+          "text": "When the game is played exactly once, with high stakes",
+          "isCorrect": false
+        },
+        {
+          "text": "When both players have a dominant strategy to cooperate",
+          "isCorrect": false
+        },
+        {
+          "text": "Only when the players can sign a binding legal contract",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The **folk theorem** shows that in an infinitely (or indefinitely) repeated game, a huge range of outcomes — including mutual cooperation — can be supported as Nash equilibria, *provided* players are patient enough and use punishment strategies like grim trigger or tit-for-tat. The key is an open-ended horizon: if players don't know when the game ends, no one can plan to defect 'on the last round'. No external contract is needed — the future itself enforces the deal.",
+      "references": "[Wikipedia: Folk theorem](https://en.wikipedia.org/wiki/Folk_theorem_%28game_theory%29)"
+    },
+    {
+      "id": "backward-induction-unravel",
+      "title": "You and a coworker have cooperated for months, but it's now provably your *last* day working together, and you both know it. Standard theory predicts cooperation collapses. Why?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "On a known final round defection can't be punished, so both defect — and that logic unravels backward through every earlier round",
+          "isCorrect": true
+        },
+        {
+          "text": "Because the per-round payoffs secretly change on the last day",
+          "isCorrect": false
+        },
+        {
+          "text": "Because people always behave worse when they are tired",
+          "isCorrect": false
+        },
+        {
+          "text": "Because the last round is always zero-sum",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "With a *known* final round, the shadow of the future vanishes on the last move — there's no tomorrow in which to be punished — so defection is the rational choice there. But then the second-to-last round effectively becomes the last meaningful one, so cooperation collapses there too, and so on all the way back to round one. This chain of reasoning is **backward induction**, and it's why finitely repeated prisoner's dilemmas with a known endpoint tend to unravel, while open-ended ones can sustain cooperation.",
+      "references": "[Wikipedia: Backward induction](https://en.wikipedia.org/wiki/Backward_induction)\n[Wikipedia: Repeated game](https://en.wikipedia.org/wiki/Repeated_game)"
+    },
+    {
+      "id": "free-rider-group-project",
+      "title": "In a group project where everyone shares the same grade, a few members coast while others carry the work. What is this classic problem called?",
+      "type": "single-choice",
+      "options": [
+        { "text": "The free-rider problem", "isCorrect": true },
+        { "text": "The endowment effect", "isCorrect": false },
+        { "text": "A focal point", "isCorrect": false },
+        { "text": "A zero-sum game", "isCorrect": false }
+      ],
+      "explanation": "This is the **free-rider problem**: when a benefit is shared regardless of who pays for it, each person is tempted to let *others* do the work and enjoy the result anyway. If everyone reasons that way, too little gets done — the same logic that makes public goods hard to fund voluntarily. It is a multi-player cousin of the prisoner's dilemma: individually rational coasting produces a collectively bad outcome.",
+      "references": "[Wikipedia: Free-rider problem](https://en.wikipedia.org/wiki/Free-rider_problem)"
+    },
+    {
+      "id": "free-rider-term",
+      "title": "Fill in the term (two words): someone who enjoys a shared benefit without contributing their share is a ___.",
+      "type": "input",
+      "validation": {
+        "mode": "text",
+        "acceptedAnswers": [
+          "free rider",
+          "free-rider",
+          "freerider",
+          "a free rider",
+          "free riders",
+          "free riding",
+          "free-riding"
+        ]
+      },
+      "explanation": "A **free rider** consumes a shared or public benefit without paying toward it — riding free on others' contributions. Because public goods are non-excludable (you can't easily stop non-payers from benefiting), free riding is the central reason markets under-provide things like clean air, public radio, or a tidy shared kitchen.",
+      "references": "[Wikipedia: Free-rider problem](https://en.wikipedia.org/wiki/Free-rider_problem)"
+    },
+    {
+      "id": "free-rider-situations",
+      "title": "Which of these everyday situations involve a *free-rider* (or public-goods) problem?",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "A group project where all members receive the same shared grade",
+          "isCorrect": true
+        },
+        {
+          "text": "Public broadcasting that anyone can enjoy but is funded by voluntary donations",
+          "isCorrect": true
+        },
+        {
+          "text": "A big group splitting one bill evenly, where your own extra dish is barely felt in your share",
+          "isCorrect": true
+        },
+        {
+          "text": "Herd immunity, where some skip a vaccine but still benefit from everyone else's",
+          "isCorrect": true
+        },
+        {
+          "text": "Buying a sandwich that only you will eat",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Free riding shows up whenever a benefit is **shared and hard to withhold** from non-contributors. Shared grades, voluntary-funded broadcasting, an evenly-split bill, and herd immunity all let an individual under-contribute while still reaping the group's output — so each person's selfish optimum starves the common good. A private sandwich is the opposite: it's *excludable* and *rival*, so you bear the full cost and reap the full benefit, with no free-rider tension. (The even-split bill is also known as the 'unscrupulous diner's dilemma'.)",
+      "references": "[Wikipedia: Free-rider problem](https://en.wikipedia.org/wiki/Free-rider_problem)\n[Wikipedia: Public goods game](https://en.wikipedia.org/wiki/Public_goods_game)"
+    },
+    {
+      "id": "tragedy-of-the-commons",
+      "title": "A shared resource — an office fridge, a fishery, a communal kitchen — gets overused and degraded because each person grabs their own benefit while the cost is spread across everyone. What is this called?",
+      "type": "single-choice",
+      "options": [
+        { "text": "The tragedy of the commons", "isCorrect": true },
+        { "text": "The battle of the sexes", "isCorrect": false },
+        { "text": "A focal point", "isCorrect": false },
+        { "text": "A credible commitment", "isCorrect": false }
+      ],
+      "explanation": "The **tragedy of the commons**, popularized by Garrett Hardin in 1968, describes how a shared, finite resource gets overexploited when individuals act in their own interest: each person reaps the *full* benefit of taking a bit more while the *cost* of depletion is shared by all. It's the free-rider problem viewed from the resource side, and it explains overfishing, traffic congestion, and that mysteriously empty office fridge. Solutions usually involve property rights, regulation, or community norms.",
+      "references": "[Wikipedia: Tragedy of the commons](https://en.wikipedia.org/wiki/Tragedy_of_the_commons)"
+    },
+    {
+      "id": "war-of-attrition-waiting",
+      "title": "Two people both want the other to text first after an argument, so each waits — and whoever holds out longer 'wins', but both pay in anxiety and lost time as the silence drags on. Which model best fits this waiting game?",
+      "type": "single-choice",
+      "options": [
+        { "text": "The war of attrition", "isCorrect": true },
+        { "text": "A pure coordination game", "isCorrect": false },
+        { "text": "The stag hunt", "isCorrect": false },
+        { "text": "A dominant-strategy equilibrium", "isCorrect": false }
+      ],
+      "explanation": "This is a **war of attrition**: a timing game where players burn a real, mounting cost (here, awkward silence and stress) while waiting to see who quits first. The longer you hold out the more it costs, and the 'prize' goes to whoever can bear the cost longest — so both sides may end up paying more than the win is worth. Originally modeled by John Maynard Smith for animal contests, it's a close relative of chicken played out over *time* rather than in one move.",
+      "references": "[Wikipedia: War of attrition](https://en.wikipedia.org/wiki/War_of_attrition_%28game%29)"
+    },
+    {
+      "id": "dollar-auction-escalation",
+      "title": "An auctioneer sells a $20 bill to the highest bidder — but the *second*-highest bidder also has to pay their last bid and gets nothing. Bidders often end up paying well over $20. What trap does this illustrate?",
+      "type": "single-choice",
+      "options": [
+        { "text": "Escalation of commitment (the dollar auction)", "isCorrect": true },
+        { "text": "A pure coordination failure", "isCorrect": false },
+        { "text": "The endowment effect", "isCorrect": false },
+        { "text": "A credible signal", "isCorrect": false }
+      ],
+      "explanation": "This is Martin Shubik's **dollar auction**, a vivid model of **escalation of commitment**. Once you're the second-highest bidder, raising your bid feels rational — you'd rather pay a little more and maybe win than pay your bid and get nothing — but your rival reasons identically, so both keep bidding past the prize's value to avoid being the loser who pays for nothing. It's why bidding wars, sunk-cost feuds, and drawn-out conflicts spiral: each next step looks locally sensible while the overall path is irrational.",
+      "references": "[Wikipedia: Dollar auction](https://en.wikipedia.org/wiki/Dollar_auction)\n[Wikipedia: Escalation of commitment](https://en.wikipedia.org/wiki/Escalation_of_commitment)"
+    },
+    {
+      "id": "zero-sum-framing",
+      "title": "In a salary negotiation, treating it as 'every extra dollar you get is a dollar I lose' assumes the situation is which kind of game?",
+      "type": "single-choice",
+      "options": [
+        { "text": "Zero-sum (a fixed pie)", "isCorrect": true },
+        { "text": "Non-zero-sum (a pie that can grow)", "isCorrect": false },
+        { "text": "A pure coordination game", "isCorrect": false },
+        { "text": "The stag hunt", "isCorrect": false }
+      ],
+      "explanation": "That framing assumes a **zero-sum** game: one side's gain exactly equals the other's loss, so the only question is how to divide a fixed pie. But most real negotiations are *non-zero-sum* — the parties value things differently (cash now vs. flexible hours vs. title vs. equity), so trades can make **both** better off and expand the pie. Mistaking a non-zero-sum situation for a zero-sum one is a classic negotiation error that leaves value on the table.",
+      "references": "[Wikipedia: Zero-sum game](https://en.wikipedia.org/wiki/Zero-sum_game)"
+    },
+    {
+      "id": "pareto-improvement",
+      "title": "A rearrangement that makes at least one person better off while making *no one* worse off is called a...",
+      "type": "single-choice",
+      "options": [
+        { "text": "Pareto improvement", "isCorrect": true },
+        { "text": "Nash equilibrium", "isCorrect": false },
+        { "text": "Dominant strategy", "isCorrect": false },
+        { "text": "Focal point", "isCorrect": false }
+      ],
+      "explanation": "A **Pareto improvement** helps someone at no one's expense; when no further such improvements are possible, an outcome is *Pareto efficient*. The concept is what makes win-win deals (and good non-zero-sum negotiations) possible — and it exposes the prisoner's dilemma's sting, since mutual defection is a Nash equilibrium that is *not* Pareto efficient: both players could be made better off by cooperating, yet neither will move there alone. Efficiency and equilibrium are different tests, and the gap between them is where much of strategy lives.",
+      "references": "[Wikipedia: Pareto efficiency](https://en.wikipedia.org/wiki/Pareto_efficiency)"
+    }
+  ]
+}

@@ -1,0 +1,254 @@
+{
+  "schemaVersion": 1,
+  "id": "cache-eviction-lru-swr-react-query",
+  "title": "What the Cache Forgets: LRU & Eviction in SWR/React Query",
+  "description": "You reach for TanStack Query and SWR every day — but do you know *when* they evict, and why a hand-rolled memo `Map` quietly leaks memory? Trace LRU eviction (hash map + doubly linked list), contrast LFU and TTL, reason about cache hits and misses, and cap a memoization `Map` at 100 entries. Anchored in 'why did React Query refetch this?'",
+  "language": "en",
+  "tags": ["react", "frontend", "performance", "data-structures"],
+  "questions": [
+    {
+      "id": "rq-why-refetch",
+      "title": "Why did React Query refetch this?",
+      "description": "A component reads `useQuery({ queryKey: ['user', 7], queryFn })` with TanStack Query's **default** options. On mount you instantly see the previously cached user, then a network request fires and the data refreshes. The query key never changed.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Default `staleTime` is `0`, so the cached data was already stale; mounting a fresh observer triggered a background refetch (`refetchOnMount`) while the stale data was shown immediately.",
+          "isCorrect": true
+        },
+        {
+          "text": "A built-in LRU size cap evicted the entry, so the data had to be fetched from scratch.",
+          "isCorrect": false
+        },
+        {
+          "text": "The `gcTime` timer elapsed and garbage-collected the cache entry, forcing a reload.",
+          "isCorrect": false
+        },
+        {
+          "text": "Reading the query created a brand-new cache entry under a different key.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "TanStack Query is *stale-while-revalidate*: it serves whatever is cached **instantly**, then decides whether to refresh in the background. Two defaults make the refetch happen here:\n\n- `staleTime: 0` — data is considered stale the moment it arrives, so it's always a refetch candidate.\n- `refetchOnMount: true` — mounting a new observer for a stale query kicks off a background refetch (the same is true for `refetchOnWindowFocus` and `refetchOnReconnect`).\n\nCrucially, you still *saw* the cached data — nothing was evicted. The LRU and `gcTime` options describe **removal** from the cache, but neither happened: the entry was present (you rendered it) and active (a component was mounted, so the `gcTime` timer wasn't even running). To stop the refetch, raise `staleTime` (e.g. `staleTime: 60_000`). SWR works the same way: `useSWR` returns cached data and revalidates on focus/reconnect by default.",
+      "references": "[TanStack Query: Important Defaults](https://tanstack.com/query/latest/docs/framework/react/guides/important-defaults)"
+    },
+    {
+      "id": "staletime-vs-gctime",
+      "title": "What correctly distinguishes `staleTime` from `gcTime`?",
+      "description": "In TanStack Query v5, `gcTime` is the option formerly called `cacheTime`.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`staleTime` is how long data stays *fresh* (no background refetch); `gcTime` is how long an **inactive** query — one with no mounted observers — is kept in the cache before it's removed.",
+          "isCorrect": true
+        },
+        {
+          "text": "They are two names for the same option; `gcTime` is simply the v5 rename of `staleTime`.",
+          "isCorrect": false
+        },
+        {
+          "text": "`staleTime` deletes the entry from the cache, while `gcTime` keeps a stale copy around.",
+          "isCorrect": false
+        },
+        {
+          "text": "`gcTime` must always be set smaller than `staleTime`, or the cache throws an error.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "These two timers answer different questions:\n\n- **`staleTime`** (default `0`): *How long is this data trusted as fresh?* While fresh, no background refetch fires on mount/focus/reconnect. It never removes anything.\n- **`gcTime`** (default `5 * 60 * 1000` = 5 minutes): *Once nobody is using this query, how long before we free its memory?* The garbage-collection timer only starts when the query goes **inactive** (its last observer unmounts). If the query becomes active again before the timer fires, the cached data is reused.\n\n`gcTime` is the v5 rename of `cacheTime` — **not** of `staleTime`. And there's no rule forcing `gcTime < staleTime`; in practice you usually want `gcTime` to outlast `staleTime`, so a re-mounted query can still find its (possibly stale) data and revalidate instead of starting cold.",
+      "references": "[TanStack Query: Caching](https://tanstack.com/query/latest/docs/framework/react/guides/caching)"
+    },
+    {
+      "id": "lru-which-eviction",
+      "title": "Which key does the LRU cache evict when `put('D', 4)` runs?",
+      "description": "An LRU cache with **capacity 3** processes this sequence (touching a key moves it to the most-recently-used end):\n\n```js\nput('A', 1);\nput('B', 2);\nput('C', 3);\nget('A');\nput('D', 4); // capacity exceeded — one key is evicted\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`B`",
+          "isCorrect": true
+        },
+        {
+          "text": "`A`",
+          "isCorrect": false
+        },
+        {
+          "text": "`C`",
+          "isCorrect": false
+        },
+        {
+          "text": "`D`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Track the recency order as `[least-recently-used … most-recently-used]`:\n\n```text\nput('A',1) -> [A]\nput('B',2) -> [A, B]\nput('C',3) -> [A, B, C]\nget('A')   -> [B, C, A]   // A touched -> moved to the MRU end\nput('D',4) -> over capacity -> evict LRU 'B' -> [C, A, D]\n```\n\nThe trap is picking `A` because it was inserted first. But LRU evicts by **last use**, not insertion order: `get('A')` promoted `A` to the most-recently-used end, so `B` — untouched since its insertion — became the least-recently-used and was evicted. After the insert the order is `[C, A, D]`, so `C` is next in line, not `A`.",
+      "references": "[Wikipedia: Cache replacement policies](https://en.wikipedia.org/wiki/Cache_replacement_policies)"
+    },
+    {
+      "id": "lru-doubly-linked-list",
+      "title": "Why does an LRU cache's list need to be **doubly** linked?",
+      "description": "The textbook O(1) LRU cache pairs a hash map (key → node) with a linked list that orders nodes by recency.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Removing or moving an arbitrary node in O(1) requires splicing out both neighbor links; in a singly linked list you can't reach a node's predecessor without an O(n) scan.",
+          "isCorrect": true
+        },
+        {
+          "text": "A doubly linked list lets you binary-search the keys in O(log n).",
+          "isCorrect": false
+        },
+        {
+          "text": "Two pointers per node are needed so each entry can store both its key and its value.",
+          "isCorrect": false
+        },
+        {
+          "text": "Singly linked lists can't be traversed in order, so iteration would be impossible.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Every `get`/`put` hit has to **move a node to the most-recently-used end**, and every eviction has to **unlink the least-recently-used node**. Both are arbitrary-position removals. To unlink a node in O(1) you must rewire its previous and next neighbors:\n\n```text\nprev <-> node <-> next   becomes   prev <-> next\n```\n\nWith a *singly* linked list you only have `next` pointers, so finding the predecessor of a given node means walking from the head — O(n) — which destroys the whole point of an O(1) cache. The hash map already gives O(1) key→node lookup; the doubly linked list gives O(1) reordering. Searching is never done by walking the list (that's the map's job), so the 'binary search' and 'can't traverse' options are red herrings."
+    },
+    {
+      "id": "unbounded-memo-leak",
+      "title": "What happens to this memo `Map` over a long-running server's lifetime?",
+      "description": "A hot function memoizes results in a module-level `Map`, keyed by a unique per-request id, and never deletes anything:\n\n```js\nconst cache = new Map();\nfunction getReport(reqId, build) {\n  if (!cache.has(reqId)) cache.set(reqId, build());\n  return cache.get(reqId);\n}\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The `Map` grows without bound — every id, its cached value, and anything that value references is retained for the life of the process. It's a memory leak.",
+          "isCorrect": true
+        },
+        {
+          "text": "Nothing leaks: once a `reqId` goes out of scope elsewhere, the garbage collector drops the matching `Map` entry automatically.",
+          "isCorrect": false
+        },
+        {
+          "text": "V8 silently caps a `Map` at 1024 entries, so memory plateaus.",
+          "isCorrect": false
+        },
+        {
+          "text": "Because keys are unique, each call overwrites the previous entry and memory stays roughly constant.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A `Map` holds **strong references** to its keys and values, so an entry lives until you explicitly `delete` it (or drop the whole `Map`). Keying by an ever-growing set of unique ids means the cache only grows — the textbook unbounded-cache memory leak. The GC can't help: the `Map` itself is reachable, so everything it points at is reachable too.\n\nTwo real fixes:\n\n- **Bound the cache** with an eviction policy (LRU/LFU/TTL) so old entries are removed.\n- If you key by **object identity** and only want an entry to live as long as its key object does, use a `WeakMap`, whose entries become GC-eligible once the key is otherwise unreachable. (A `WeakMap` can't take primitive keys like a numeric id and isn't iterable, so it doesn't help when you need a size cap.)",
+      "references": "[MDN: WeakMap](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/WeakMap)"
+    },
+    {
+      "id": "lru-impl-true-statements",
+      "title": "Which statements correctly describe a hash map + doubly linked list LRU cache?",
+      "description": "Select **all** that apply.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "On a cache **hit**, `get` moves the accessed node to the most-recently-used end so it isn't evicted next.",
+          "isCorrect": true
+        },
+        {
+          "text": "The hash map stores key → node references, giving O(1) lookup without scanning the list.",
+          "isCorrect": true
+        },
+        {
+          "text": "When `put` exceeds capacity, the node at the least-recently-used end is unlinked **and** its key is deleted from the map.",
+          "isCorrect": true
+        },
+        {
+          "text": "Nodes are kept in sorted key order so the cache can answer range queries.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The hash map and the list divide the labor: the **map** answers *'where is this key's node?'* in O(1), and the **doubly linked list** answers *'what's the recency order?'* and supports O(1) splicing.\n\n- Hit → promote the node to the MRU end (otherwise recency information goes stale).\n- Lookup → O(1) via the map; you never walk the list to find a key.\n- Overflow → drop the LRU-end node **and** delete its key from the map. Forgetting the map deletion is the classic bug: it leaks memory and desynchronizes `size` from the list.\n\nThe list is ordered by **recency**, not by key value, so it can't answer range/sorted queries — that would need a different structure such as a balanced BST."
+    },
+    {
+      "id": "lru-lfu-ttl-policies",
+      "title": "Which statements about LRU, LFU, and TTL eviction are accurate?",
+      "description": "Select **all** that apply.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "LRU evicts the entry that has gone the longest without being accessed.",
+          "isCorrect": true
+        },
+        {
+          "text": "LFU evicts the entry with the fewest accesses — so a briefly viral entry can linger long after it stops being useful, because raw counts don't age.",
+          "isCorrect": true
+        },
+        {
+          "text": "TTL evicts an entry once its age exceeds a fixed lifetime, regardless of how recently or often it was used.",
+          "isCorrect": true
+        },
+        {
+          "text": "A pure TTL policy guarantees the cache never holds more than a fixed number of entries.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Each policy optimizes for a different signal:\n\n- **LRU** — recency. Evicts the least-recently-*used* entry. Great when access has temporal locality.\n- **LFU** — frequency. Evicts the least-frequently-*used* entry. Its classic weakness is **cache pollution**: an item that once spiked in popularity keeps a high count and resists eviction forever, unless you add aging/decay (e.g. windowed counts).\n- **TTL** — age. Evicts on a clock, independent of usage. Ideal for data with a known freshness window.\n\nThe false statement confuses *age* with *count*. TTL bounds how **old** an entry can be, not how **many** exist: if 10,000 distinct keys arrive within the TTL window, all 10,000 live in the cache at once. To bound size you need a count-based policy like LRU/LFU (often combined with TTL).",
+      "references": "[Wikipedia: Cache replacement policies](https://en.wikipedia.org/wiki/Cache_replacement_policies)"
+    },
+    {
+      "id": "rq-refetch-triggers",
+      "title": "What makes TanStack Query refetch a stale query?",
+      "description": "Assume **default** options and a query that is currently stale. Select all that apply.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "A component mounts and subscribes as a new observer of the query (`refetchOnMount`).",
+          "isCorrect": true
+        },
+        {
+          "text": "The browser tab/window regains focus (`refetchOnWindowFocus`).",
+          "isCorrect": true
+        },
+        {
+          "text": "The network reconnects after the device was offline (`refetchOnReconnect`).",
+          "isCorrect": true
+        },
+        {
+          "text": "Another component simply reads the already-cached value, with no mount, focus, or reconnect event.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "TanStack Query's automatic refetch switches are all *true* by default, and each only fires when the query is **stale** (which, with `staleTime: 0`, is immediately):\n\n- `refetchOnMount` — a new observer mounts.\n- `refetchOnWindowFocus` — the user returns to the tab.\n- `refetchOnReconnect` — the network comes back.\n\nWhat does **not** trigger a fetch is merely reading cached data. Selecting an existing entry returns it synchronously; without a mount/focus/reconnect event (or an explicit `refetch()`, `invalidateQueries`, or a `refetchInterval`), no request is made. SWR exposes the same switches under different names — `revalidateOnFocus` and `revalidateOnReconnect`.",
+      "references": "[TanStack Query: Important Defaults](https://tanstack.com/query/latest/docs/framework/react/guides/important-defaults)"
+    },
+    {
+      "id": "cap-map-at-100",
+      "title": "Which statements correctly describe how a plain JS `Map` behaves?",
+      "description": "You want a bounded, roughly-LRU cache capped at 100 entries, built on a plain JS `Map`. Select **all** that apply.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "`cache.keys().next().value` returns the **oldest-inserted** key, a handy eviction target since `Map` iterates in insertion order.",
+          "isCorrect": true
+        },
+        {
+          "text": "Re-assigning an existing key with `cache.set(key, v)` updates the value but does **not** move the key to the end of the iteration order.",
+          "isCorrect": true
+        },
+        {
+          "text": "To approximate true LRU, on each hit you `delete` the key and `set` it again, moving it to the most-recently-used end.",
+          "isCorrect": true
+        },
+        {
+          "text": "`cache.set` automatically discards the oldest entry once `size` reaches 100, so no manual eviction is needed.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A JS `Map` remembers **insertion order** and exposes it cheaply, which gives you most of an LRU cache for free:\n\n```js\nfunction createLRU(max = 100) {\n  const cache = new Map();\n  return {\n    get(key) {\n      if (!cache.has(key)) return undefined;\n      const v = cache.get(key);\n      cache.delete(key);   // re-insert to move to the MRU end\n      cache.set(key, v);\n      return v;\n    },\n    set(key, v) {\n      cache.delete(key);             // refresh position if already present\n      cache.set(key, v);\n      if (cache.size > max) {\n        cache.delete(cache.keys().next().value); // evict the LRU (oldest) key\n      }\n    },\n  };\n}\n```\n\nThe facts the options test: `set` on an **existing** key keeps its original position (so you must `delete` then `set` to promote it), `keys().next().value` is the least-recently-used key, and there is **no** automatic capping — the size check and eviction are your job. This bounded cache is exactly the fix for the unbounded-memo memory leak.",
+      "references": "[MDN: Map](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Map)"
+    },
+    {
+      "id": "default-gctime-minutes",
+      "title": "After how many minutes is an inactive query garbage-collected?",
+      "description": "TanStack Query v5 with default settings; an **inactive** query is one with no mounted observers. Enter the number of minutes.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [5]
+      },
+      "explanation": "The default `gcTime` is `5 * 60 * 1000` ms = **5 minutes**. The timer starts only when a query becomes *inactive* — i.e. its last observer (component) unmounts. If nothing re-subscribes within those 5 minutes, the entry is removed and its memory freed; re-mount before then and the cached data is reused (and revalidated if stale). This is unrelated to `staleTime` (default `0`), which governs *freshness*, not removal. `gcTime` was called `cacheTime` before v5.",
+      "references": "[TanStack Query: Caching](https://tanstack.com/query/latest/docs/framework/react/guides/caching)"
+    }
+  ]
+}

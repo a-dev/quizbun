@@ -1,0 +1,139 @@
+name: CI
+
+on:
+  # Temporary disable automatic CI triggers.
+  # push:
+  #   branches:
+  #     - main
+  # pull_request:
+  #   branches:
+  #     - main
+  workflow_dispatch:
+    inputs:
+      deploy:
+        description: "Deploy to GitHub Pages after checks pass"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    name: Checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      # CSS Modules .d.ts files are gitignored; typecheck needs them regenerated.
+      - name: Generate CSS Modules typings
+        run: bun run css:dts
+
+      - name: Typecheck
+        run: bun run typecheck
+
+      # tsc doesn't see inside .astro templates; astro check covers them.
+      - name: Astro check
+        run: bun run check:astro
+
+      - name: Install Playwright browser (Chromium)
+        run: bunx playwright install --with-deps chromium
+
+      - name: Run unit and component tests
+        run: bun run test
+
+      - name: Run lint and format checks
+        run: bun run check
+
+      - name: Run CSS lint
+        run: bun run stylelint
+
+      - name: Validate docs examples
+        run: bun run validate:docs-examples
+
+      - name: Validate public quizzes (Public catalog profile)
+        run: bun run validate:public-quizzes
+
+      - name: Check JSON Schema drift
+        run: bun run schema:check
+
+      - name: Build static site
+        run: bun run build
+        env:
+          GITHUB_PAGES: "true"
+
+      - name: Check dist for base-path regressions
+        run: bash scripts/check-dist-base-paths.sh
+
+      - name: Upload Pages artifact
+        if: github.event_name == 'push' || inputs.deploy
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  e2e:
+    name: E2E
+    runs-on: ubuntu-latest
+    # Non-blocking: its own job, and `deploy` does NOT depend on it (deploy
+    # gates on `checks` only). Promote to a deploy gate once it's proven stable.
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # Full history: the build's recency pipeline reads git first-commit dates.
+          fetch-depth: 0
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Install Playwright browser (Chromium)
+        run: bunx playwright install --with-deps chromium
+
+      - name: Run e2e tests
+        run: bun run e2e
+
+      - name: Upload Playwright report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
+
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: checks
+    # Deploy on every push to main (continuous deployment), or on manual
+    # dispatch with the "deploy" input checked.
+    if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || inputs.deploy
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    # One deploy at a time; never cancel an in-flight production deploy.
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

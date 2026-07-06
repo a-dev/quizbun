@@ -1,0 +1,249 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "schemaVersion": {
+      "type": "number",
+      "const": 1
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "title": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "language": {
+      "type": "string",
+      "pattern": "^[a-zA-Z]{2,3}(?:-[a-zA-Z0-9]{2,8})*$"
+    },
+    "tags": {
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+      }
+    },
+    "author": {
+      "type": "string"
+    },
+    "questions": {
+      "minItems": 1,
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+              },
+              "title": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              },
+              "explanation": {
+                "type": "string"
+              },
+              "references": {
+                "type": "string"
+              },
+              "type": {
+                "type": "string",
+                "const": "single-choice"
+              },
+              "options": {
+                "minItems": 2,
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "text": {
+                      "type": "string"
+                    },
+                    "isCorrect": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "text",
+                    "isCorrect"
+                  ],
+                  "additionalProperties": false
+                },
+                "description": "Exactly one Option in this array must have `isCorrect: true`. JSON Schema cannot enforce this cross-field rule; the Zod validator and import page are the final authority."
+              }
+            },
+            "required": [
+              "id",
+              "title",
+              "explanation",
+              "type",
+              "options"
+            ],
+            "additionalProperties": false,
+            "description": "A single-choice Question must have exactly one Option where `isCorrect` is true. JSON Schema cannot enforce this cross-field rule; the Zod validator and import page are the final authority."
+          },
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+              },
+              "title": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              },
+              "explanation": {
+                "type": "string"
+              },
+              "references": {
+                "type": "string"
+              },
+              "type": {
+                "type": "string",
+                "const": "multiple-choice"
+              },
+              "options": {
+                "minItems": 2,
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "text": {
+                      "type": "string"
+                    },
+                    "isCorrect": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "text",
+                    "isCorrect"
+                  ],
+                  "additionalProperties": false
+                },
+                "description": "At least one Option in this array must have `isCorrect: true`. All Options may be correct. JSON Schema cannot enforce this cross-field rule; the Zod validator and import page are the final authority."
+              }
+            },
+            "required": [
+              "id",
+              "title",
+              "explanation",
+              "type",
+              "options"
+            ],
+            "additionalProperties": false,
+            "description": "A multiple-choice Question must have at least one Option where `isCorrect` is true. All Options may be correct. JSON Schema cannot enforce this cross-field rule; the Zod validator and import page are the final authority."
+          },
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+              },
+              "title": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              },
+              "explanation": {
+                "type": "string"
+              },
+              "references": {
+                "type": "string"
+              },
+              "type": {
+                "type": "string",
+                "const": "input"
+              },
+              "validation": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "mode": {
+                        "type": "string",
+                        "const": "text"
+                      },
+                      "acceptedAnswers": {
+                        "minItems": 1,
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "caseSensitive": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": [
+                      "mode",
+                      "acceptedAnswers"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "mode": {
+                        "type": "string",
+                        "const": "numeric"
+                      },
+                      "acceptedAnswers": {
+                        "minItems": 1,
+                        "type": "array",
+                        "items": {
+                          "type": "number"
+                        }
+                      },
+                      "tolerance": {
+                        "type": "number",
+                        "minimum": 0
+                      }
+                    },
+                    "required": [
+                      "mode",
+                      "acceptedAnswers"
+                    ],
+                    "additionalProperties": false
+                  }
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "title",
+              "explanation",
+              "type",
+              "validation"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      },
+      "description": "Question ids must be unique within the Quiz. JSON Schema cannot enforce this cross-field rule; the Zod validator and import page are the final authority."
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "id",
+    "title",
+    "questions"
+  ],
+  "additionalProperties": false,
+  "title": "Quiz Object Standard v1",
+  "description": "The published JSON Schema artifact for Quizbun's Quiz Object Standard v1. This artifact is generated from the Zod schema; the Zod validator and import page are the final authority."
+}

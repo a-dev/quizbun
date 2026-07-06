@@ -1,0 +1,94 @@
+.root {
+  inline-size: 100vw;
+
+  /* background bleeds full width. */
+  margin-inline: calc(50% - 50vw);
+  background:
+    radial-gradient(
+      60% 80% at 12% 8%,
+      color-mix(in oklch, var(--color-orange-400) 24%, transparent),
+      transparent 70%
+    ),
+    radial-gradient(
+      52% 70% at 88% 18%,
+      color-mix(in oklch, var(--color-seagrass-400) 22%, transparent),
+      transparent 70%
+    ),
+    radial-gradient(
+      72% 90% at 82% 96%,
+      color-mix(in oklch, var(--color-blue-400) 20%, transparent),
+      transparent 70%
+    ),
+    radial-gradient(
+      60% 80% at 6% 98%,
+      color-mix(in oklch, var(--color-yellow-300) 22%, transparent),
+      transparent 70%
+    ),
+    var(--color-main-bg);
+}
+
+.inner {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(1rem, 3vw, 2rem);
+  align-items: flex-start;
+
+  max-inline-size: var(--max-content-width);
+  margin-inline: auto;
+  padding-block: clamp(5rem, 15vw, 10rem) clamp(3rem, 6vw, 6rem);
+  padding-inline: 1.5rem;
+}
+
+.body {
+  max-inline-size: var(--max-prettified-text);
+
+  font-size: clamp(var(--fs-m), 2.5vw, var(--fs-xxl));
+  line-height: var(--lh-m);
+  color: var(--color-text-primary);
+  text-wrap: balance;
+}
+
+.link {
+  padding-block-end: 0.2rem;
+
+  font-weight: var(--fw-bold);
+  text-decoration: none;
+
+  background-image: linear-gradient(currentcolor, currentcolor);
+  background-repeat: no-repeat;
+  background-position: 0 100%;
+  background-size: 0% 0.12em;
+
+  transition: background-size 0.3s ease;
+}
+
+.link:hover,
+.link:focus-visible {
+  background-size: 100% 0.12em;
+}
+
+.catalog {
+  color: var(--color-primary-orange);
+}
+
+.prompt {
+  color: var(--color-primary-olive);
+}
+
+.library {
+  padding-inline: 0;
+  border-top: 0 solid transparent;
+  border-bottom: 0 solid transparent;
+
+  color: var(--color-text-on-user-surface);
+
+  background: var(--color-user-surface-bg);
+
+  transition: border 0.2s ease;
+}
+
+.library:hover,
+.library:focus-visible {
+  border-color: var(--color-user-surface-bg-accent);
+  border-width: 4px;
+}

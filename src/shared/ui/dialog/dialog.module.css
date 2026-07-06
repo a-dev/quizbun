@@ -1,0 +1,129 @@
+@layer ui {
+  .dialog-backdrop {
+    --_easing: cubic-bezier(0.22, 1, 0.36, 1);
+    --_animation-duration: 0.25s;
+
+    isolation: isolate;
+    position: fixed;
+    inset: 0;
+
+    background-color: var(--color-backdrop);
+
+    transition: opacity var(--_animation-duration) var(--_easing);
+
+    &[data-starting-style],
+    &[data-ending-style] {
+      opacity: 0;
+    }
+  }
+
+  .dialog-popup {
+    --_easing: cubic-bezier(0.22, 1, 0.36, 1);
+    --_animation-duration: 0.25s;
+
+    composes: rounded-m from "#styles/utils.module.css";
+
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+
+    width: calc(100vw - 2rem);
+
+    /* TODO: sizes */
+    max-width: 32rem;
+    max-height: calc(100dvh - 2rem);
+    padding-block: 1rem;
+    padding-inline: 1.25rem;
+    border: 1px solid var(--color-panel-outline);
+
+    color: var(--color-text-on-panel-primary);
+
+    background-color: var(--color-panel-bg);
+    box-shadow: var(--shadow-popup);
+
+    transition-timing-function: var(--_easing);
+    transition-duration: var(--_animation-duration);
+    transition-property: opacity, transform;
+
+    &[data-starting-style],
+    &[data-ending-style] {
+      transform: translate(-50%, -50%) scale(0.96);
+      opacity: 0;
+    }
+  }
+
+  .dialog-header {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+
+    /* Keep the heading clear of the absolutely-positioned close button. */
+    padding-right: 1rem;
+  }
+
+  .dialog-title {
+    margin: 0;
+
+    font-size: var(--fs-l);
+    font-weight: var(--fw-bold);
+    line-height: var(--lh-s);
+    color: var(--color-text-on-panel-primary);
+  }
+
+  .dialog-description {
+    margin: 0;
+    font-size: var(--fs-s);
+    line-height: var(--lh-s);
+    color: var(--color-text-on-panel-secondary);
+  }
+
+  .dialog-body {
+    overflow-y: auto;
+
+    margin: 0;
+
+    font-size: var(--fs-m);
+    line-height: var(--lh-m);
+    color: var(--color-text-on-panel-primary);
+  }
+
+  .dialog-footer {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: flex-end;
+  }
+
+  .dialog-close {
+    cursor: pointer;
+
+    position: absolute;
+    top: 0.35rem;
+    right: 0.4rem;
+
+    border-radius: var(--rounded-pill);
+
+    color: var(--color-panel-icon);
+
+    transition:
+      color 0.15s,
+      border-color 0.15s,
+      background-color 0.15s;
+
+    &:focus,
+    &:focus-visible {
+      outline: 2px solid var(--color-focus-ring);
+      outline-offset: 2px;
+    }
+
+    @media (hover: hover) {
+      &:hover:not([data-disabled]) {
+        color: var(--color-state-error);
+      }
+    }
+  }
+}

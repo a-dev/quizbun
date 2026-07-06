@@ -1,0 +1,262 @@
+{
+  "schemaVersion": 1,
+  "id": "websocket-framing-protocol",
+  "title": "WebSocket Frames: Opcodes, Masking & Close Codes",
+  "description": "Below the handshake lies the WebSocket wire format (RFC 6455): the frame header, opcodes, mandatory client masking and why it exists, payload-length encoding, fragmentation, control frames, and close codes. The masking and length facts here are verified in Node.",
+  "language": "en",
+  "tags": ["websockets", "networking", "real-time"],
+  "questions": [
+    {
+      "id": "ws-first-byte-decode",
+      "title": "A WebSocket frame's first byte is `0x81`. What does that tell you?",
+      "description": "Decode the most significant byte of the frame header.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "It is the **final** fragment (`FIN=1`) of a **text** message (opcode `0x1`).",
+          "isCorrect": true
+        },
+        {
+          "text": "It is a masked text frame.",
+          "isCorrect": false
+        },
+        {
+          "text": "It is the first fragment of a binary message.",
+          "isCorrect": false
+        },
+        {
+          "text": "It is a close control frame.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The first byte packs four fields: `FIN` (1 bit), three reserved bits `RSV1–3` (normally 0), and a 4-bit `opcode`. `0x81` is `1000 0001` in binary — `FIN=1`, `RSV=000`, `opcode=0001`. Opcode `0x1` is a text frame, and `FIN=1` means this is the last (here, the only) fragment of the message.\n\nMasking is signalled by a *different* byte — the high bit of the **second** byte — so the first byte alone says nothing about masking. For contrast, a binary first fragment would be `0x02` (`FIN=0`, opcode `0x2`), and a close frame would be `0x88` (`FIN=1`, opcode `0x8`).",
+      "references": "[MDN: Writing WebSocket servers — Format](https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API/Writing_WebSocket_servers)"
+    },
+    {
+      "id": "ws-binary-opcode",
+      "title": "Which opcode identifies a **binary** data frame? Give it as a decimal number.",
+      "description": "The opcode is the low 4 bits of the frame's first byte.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [
+          2
+        ]
+      },
+      "explanation": "The opcode registry: `0x0` continuation, `0x1` text, `0x2` binary, `0x8` close, `0x9` ping, `0xA` pong. Binary is `0x2` — decimal **2**. Binary frames carry arbitrary bytes (images, Protobuf, audio), whereas text frames (`0x1`) are constrained to valid UTF-8. The remaining opcode values are reserved for future use.",
+      "references": "[RFC 6455 §11.8: WebSocket Opcode Registry](https://datatracker.ietf.org/doc/html/rfc6455#section-11.8)"
+    },
+    {
+      "id": "ws-masking-facts",
+      "title": "Which statements about WebSocket frame masking are correct?",
+      "description": "Select every true statement.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "Every client→server frame must be masked using a 32-bit masking key.",
+          "isCorrect": true
+        },
+        {
+          "text": "Server→client frames must NOT be masked.",
+          "isCorrect": true
+        },
+        {
+          "text": "Unmasking is `payload[i] XOR key[i % 4]`, applied byte by byte.",
+          "isCorrect": true
+        },
+        {
+          "text": "Masking encrypts the payload, so `wss://` is unnecessary.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "RFC 6455 requires clients to mask every frame they send and forbids servers from masking; an endpoint that receives a frame masked the wrong way must fail the connection. The transform is a simple repeating-key XOR. Verified against the spec's worked example (a masked `\"Hello\"`):\n\n```js\nconst payload = [0x7f, 0x9f, 0x4d, 0x51, 0x58];\nconst key = [0x37, 0xfa, 0x21, 0x3d];\nconst out = payload.map((b, i) => b ^ key[i % 4]);\nconsole.log(String.fromCharCode(...out)); // Hello\n```\n\nBecause XOR is its own inverse and the key travels inside the frame *in the clear*, masking provides **zero** confidentiality — it is not encryption. For privacy you still need `wss://` (TLS).",
+      "references": "[RFC 6455 §5.3: Client-to-Server Masking](https://datatracker.ietf.org/doc/html/rfc6455#section-5.3)"
+    },
+    {
+      "id": "ws-masking-purpose",
+      "title": "What problem does mandatory client→server masking actually solve?",
+      "description": "It isn't secrecy — the key is sent in the clear. So why require it?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "It stops malicious page scripts from crafting byte sequences that poison non-compliant intermediary proxies and caches.",
+          "isCorrect": true
+        },
+        {
+          "text": "It encrypts the payload end-to-end.",
+          "isCorrect": false
+        },
+        {
+          "text": "It compresses the payload to save bandwidth.",
+          "isCorrect": false
+        },
+        {
+          "text": "It detects transmission bit-errors like a checksum.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Masking is a **security mitigation for intermediaries**, not for the endpoints. The threat: a script in a browser could deliberately send bytes that a buggy or transparent proxy might misread as a *second*, attacker-chosen HTTP request — enabling cache poisoning or request smuggling. Masking every frame with an unpredictable, per-frame random key makes the on-the-wire bytes impossible for the script to control, defeating that attack.\n\nIt is explicitly *not* about the other three: no confidentiality (XOR with a clear-text key), no compression (that's the optional `permessage-deflate` extension), and no error detection (TCP already guarantees integrity).",
+      "references": "[RFC 6455 §10.3: Attacks On Infrastructure (Masking)](https://datatracker.ietf.org/doc/html/rfc6455#section-10.3)"
+    },
+    {
+      "id": "ws-length-126",
+      "title": "A frame's 7-bit payload-length field holds the value `126`. What does that mean?",
+      "description": "Recall how WebSocket encodes payloads of differing sizes.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "It's an escape code: the actual length is read from the next 2 bytes as a 16-bit unsigned integer.",
+          "isCorrect": true
+        },
+        {
+          "text": "The payload is exactly 126 bytes long.",
+          "isCorrect": false
+        },
+        {
+          "text": "The payload is 126 kibibytes long.",
+          "isCorrect": false
+        },
+        {
+          "text": "126 is the length of the masking key.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The base length field is 7 bits, so it natively expresses 0–125. Two values are escapes: `126` means \"read the next **2** bytes as a 16-bit length\" (up to 65 535), and `127` means \"read the next **8** bytes as a 64-bit length.\" So `126` is never a literal size — it signals that the extended 16-bit field follows.\n\n```text\nlen 0–125  → that value IS the length\nlen 126    → next 2 bytes  = length (16-bit)\nlen 127    → next 8 bytes  = length (64-bit)\n```\n\nThis variable-length scheme keeps small frames tiny (a single length byte) while still allowing very large payloads.",
+      "references": "[RFC 6455 §5.2: Base Framing Protocol](https://datatracker.ietf.org/doc/html/rfc6455#section-5.2)"
+    },
+    {
+      "id": "ws-close-frame-name",
+      "title": "Name the control frame (opcode `0x8`) that initiates the WebSocket closing handshake.",
+      "description": "One or two words. The peer echoes it before the TCP connection ends.",
+      "type": "input",
+      "validation": {
+        "mode": "text",
+        "acceptedAnswers": [
+          "close",
+          "close frame",
+          "the close frame"
+        ]
+      },
+      "explanation": "The **Close** frame (opcode `0x8`) starts the closing handshake. It may carry a 2-byte status code followed by an optional UTF-8 reason. The peer replies with its own Close frame (echoing or choosing a code), and only then is the TCP connection torn down. That two-way Close exchange is what makes a shutdown *clean*; if the socket simply drops without it, the API reports an *abnormal* closure instead.",
+      "references": "[RFC 6455 §5.5.1: Close](https://datatracker.ietf.org/doc/html/rfc6455#section-5.5.1)"
+    },
+    {
+      "id": "ws-control-frame-rules",
+      "title": "Which rules apply to WebSocket control frames (Close, Ping, Pong)?",
+      "description": "Select every true statement about control frames.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "Their payload must be 125 bytes or fewer.",
+          "isCorrect": true
+        },
+        {
+          "text": "They must not be fragmented — `FIN` must be 1.",
+          "isCorrect": true
+        },
+        {
+          "text": "They may be injected between the fragments of a larger data message.",
+          "isCorrect": true
+        },
+        {
+          "text": "Like data frames, a control frame may be split across multiple continuation frames.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Control frames are identified by opcodes `0x8` (close), `0x9` (ping), and `0xA` (pong). The spec constrains them tightly so a peer can always process them promptly: payload ≤ **125 bytes** (which is also why they always fit in the 7-bit length with no escape), and they are **never fragmented** (`FIN=1` always). Importantly, a control frame *may* appear in the middle of a fragmented data message — so a Ping can be answered even while a large file is still mid-transfer. The false option inverts the no-fragmentation rule.",
+      "references": "[RFC 6455 §5.5: Control Frames](https://datatracker.ietf.org/doc/html/rfc6455#section-5.5)"
+    },
+    {
+      "id": "ws-close-code-normal",
+      "title": "What WebSocket close status code signals a **normal** closure?",
+      "description": "The code a peer sends in a Close frame when everything finished cleanly.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [
+          1000
+        ]
+      },
+      "explanation": "**1000** = Normal Closure: the connection fulfilled its purpose. Other common codes: `1001` going away (server shutting down or page navigating away), `1002` protocol error, `1003` unsupported data, `1009` message too big, `1011` server-side internal error. Application-defined codes live in the `4000–4999` range.\n\nWebSocket close codes start at 1000 (not in HTTP's 1xx/2xx ranges) precisely because they describe a *separate* protocol concern from the HTTP handshake that bootstrapped the connection.",
+      "references": "[RFC 6455 §7.4.1: Defined Status Codes](https://datatracker.ietf.org/doc/html/rfc6455#section-7.4.1)"
+    },
+    {
+      "id": "ws-close-code-1006",
+      "title": "Your client logs WebSocket close code `1006`, but the server insists it never sent it. Why?",
+      "description": "1006 means \"Abnormal Closure.\" So who sets it?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`1006` is reserved for local use — it means the connection dropped with no Close frame at all, so the endpoint's API sets it and it never travels on the wire.",
+          "isCorrect": true
+        },
+        {
+          "text": "`1006` is browser-only; Node servers send `1000` in its place.",
+          "isCorrect": false
+        },
+        {
+          "text": "`1006` actually means normal closure and is just an alias for `1000`.",
+          "isCorrect": false
+        },
+        {
+          "text": "`1006` is only emitted over `ws://`, never over `wss://`.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A few close codes are **reserved** and must never appear inside an actual Close frame: `1005` (no status code was present), `1006` (abnormal closure — the TCP connection dropped without a Close handshake), and `1015` (TLS failure). The local API surfaces them to *describe what it observed*, not because a peer transmitted them.\n\nSo `1006` is the very symptom of *not* receiving a Close frame: a network blip, a crashed peer, or a proxy/load-balancer idle-timeout. A flood of `1006`s points at infrastructure rather than application logic — the fix is Ping/Pong health-checks plus a reconnection strategy.",
+      "references": "[RFC 6455 §7.4.1: Defined Status Codes](https://datatracker.ietf.org/doc/html/rfc6455#section-7.4.1)"
+    },
+    {
+      "id": "ws-fragmentation-continuation",
+      "title": "A message is sent as several fragments. What opcode do the 2nd and later frames carry?",
+      "description": "Think about how a receiver knows where a fragmented message continues and ends.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`0x0` (continuation): only the first fragment carries the `text`/`binary` opcode; the rest are continuation frames, and the last sets `FIN=1`.",
+          "isCorrect": true
+        },
+        {
+          "text": "Each fragment repeats the original `text` or `binary` opcode.",
+          "isCorrect": false
+        },
+        {
+          "text": "`0x8` (close) is sent between each fragment.",
+          "isCorrect": false
+        },
+        {
+          "text": "Fragmentation isn't allowed — every message must be a single frame.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Fragmentation lets a sender start transmitting before it knows the total size. The pattern is:\n\n```text\nframe 1: FIN=0, opcode=0x1 (text)         ← first fragment names the type\nframe 2: FIN=0, opcode=0x0 (continuation)\nframe 3: FIN=1, opcode=0x0 (continuation) ← FIN=1 ends the message\n```\n\nThe receiver reassembles the fragments in order into one logical message. Control frames (ping/pong/close) may be interleaved between data fragments, but the data fragments themselves arrive strictly in order on the single TCP connection.",
+      "references": "[RFC 6455 §5.4: Fragmentation](https://datatracker.ietf.org/doc/html/rfc6455#section-5.4)"
+    },
+    {
+      "id": "ws-text-utf8",
+      "title": "Must a `text` frame's payload be valid UTF-8, and what happens if it isn't?",
+      "description": "Consider the difference between text (`0x1`) and binary (`0x2`) frames.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Yes — text frames must be valid UTF-8; a receiver that detects invalid UTF-8 must fail the connection with close code `1007`.",
+          "isCorrect": true
+        },
+        {
+          "text": "No — text frames may carry any bytes; the application decides the encoding.",
+          "isCorrect": false
+        },
+        {
+          "text": "Invalid bytes are silently replaced with the U+FFFD replacement character.",
+          "isCorrect": false
+        },
+        {
+          "text": "Text frames are restricted to 7-bit ASCII only.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Opcode `0x1` is defined as **UTF-8 text**. Receiving invalid UTF-8 in a text frame is a protocol violation, and the endpoint must fail the connection with close code `1007` (\"invalid frame payload data\"). To send arbitrary bytes instead, use a **binary** frame (`0x2`), which carries any octets with no encoding constraint.\n\nThis is exactly why libraries hand you a `string` for text frames but a `Buffer`/`ArrayBuffer` for binary ones — the frame's opcode, not a guess about the contents, decides the type.",
+      "references": "[RFC 6455 §8.1: Handling Errors in UTF-8 Data](https://datatracker.ietf.org/doc/html/rfc6455#section-8.1)"
+    }
+  ]
+}

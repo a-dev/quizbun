@@ -1,0 +1,117 @@
+---
+import Layout from "@/app/layout.astro";
+import { withBase } from "@/shared/lib/routing";
+import { prose } from "@/shared/ui/markdown";
+import { cx } from "#styles";
+
+interface Props {
+  title: string;
+  description?: string;
+}
+
+const { title, description } = Astro.props;
+
+const docsNavItems = [
+  { label: "Docs overview", path: "docs/" },
+  { label: "The Quiz Object Standard", path: "docs/standard/" },
+  { label: "AI generation prompt", path: "docs/prompt/" },
+  { label: "Example quizzes", path: "docs/examples/" },
+  { label: "Contributing", path: "docs/contributing/" },
+];
+
+const isCurrentPage = (path: string) => Astro.url.pathname === withBase(path);
+---
+
+<Layout title={`${title} · Quizbun docs`} description={description}>
+  <div class="docs">
+    <nav class="sidebar" aria-label="Docs pages">
+      <ul>
+        {
+          docsNavItems.map((item) => (
+            <li>
+              <a
+                href={withBase(item.path)}
+                aria-current={isCurrentPage(item.path) ? "page" : undefined}
+              >
+                {item.label}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </nav>
+
+    <article class={cx(prose.prose, prose.sizeArticle, "content")}>
+      <slot />
+    </article>
+  </div>
+</Layout>
+
+<style>
+  .docs {
+    display: grid;
+    gap: 1.5rem;
+    padding-block: 1.5rem;
+    padding-inline: var(--body-inline-padding);
+  }
+
+  .sidebar {
+    padding-block-end: 1rem;
+    border-block-end: 1px solid var(--color-border-subtle);
+  }
+
+  .sidebar ul {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+
+    margin: 0;
+    padding: 0;
+
+    list-style: none;
+  }
+
+  .sidebar a {
+    display: block;
+
+    padding-block: 0.4rem;
+    padding-inline: 0.6rem;
+    border-radius: var(--rounded-m);
+
+    font-size: var(--fs-s);
+    color: var(--color-text-on-panel);
+    text-decoration: none;
+  }
+
+  .sidebar a:hover {
+    background-color: var(--color-panel-hover-bg);
+  }
+
+  .sidebar a[aria-current="page"] {
+    font-weight: var(--fw-semibold);
+    color: var(--color-text-primary);
+    background-color: color-mix(in oklch, var(--color-panel-hover-bg) 60%, transparent);
+  }
+
+  .content {
+    min-width: 0;
+  }
+
+  /* Two columns once there is room: a fixed menu rail beside the article. */
+  @media (width >= 48rem) {
+    .docs {
+      grid-template-columns: 13rem minmax(0, 1fr);
+      gap: 2.5rem;
+    }
+
+    .sidebar {
+      position: sticky;
+      top: 1rem;
+
+      align-self: start;
+
+      padding-block-end: 0;
+      border-block-end: 0;
+    }
+  }
+</style>

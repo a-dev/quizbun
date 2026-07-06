@@ -1,0 +1,50 @@
+{
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  "ignorePatterns": ["public/schema/**"],
+  "overrides": [
+    {
+      "files": ["src/**/*.ts", "src/**/*.tsx"],
+      "options": {
+        "sortImports": {
+          "customGroups": [
+            {
+              "groupName": "styles",
+              "elementNamePattern": ["#styles", "#styles/**", "*.module.css"]
+            },
+            {
+              "groupName": "react",
+              "elementNamePattern": ["react", "react/**"]
+            },
+            {
+              "groupName": "shared",
+              "elementNamePattern": ["@/shared", "@/shared/**"]
+            },
+            {
+              "groupName": "entities",
+              "elementNamePattern": ["@/entities", "@/entities/**"]
+            },
+            {
+              "groupName": "features",
+              "elementNamePattern": ["@/features", "@/features/**"]
+            },
+            {
+              "groupName": "app-widgets",
+              "elementNamePattern": ["@/app", "@/app/**", "@/widgets", "@/widgets/**"]
+            }
+          ],
+          "groups": [
+            "react",
+            ["builtin", "external"],
+            "shared",
+            "entities",
+            "features",
+            "app-widgets",
+            ["parent", "sibling", "index"],
+            ["style", "styles"],
+            "unknown"
+          ]
+        }
+      }
+    }
+  ]
+}

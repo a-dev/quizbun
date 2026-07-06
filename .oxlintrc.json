@@ -1,0 +1,81 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["typescript", "unicorn", "oxc", "import"],
+  "categories": {
+    "correctness": "error"
+  },
+  "rules": {
+    "no-restricted-imports": "off",
+    "import/first": "error"
+  },
+  "overrides": [
+    {
+      "files": ["src/**"],
+      "excludeFiles": ["src/shared/styles/lib/cx.ts"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "classix",
+                "message": "Import { cx } from '#styles' instead. The barrel pins cx semantics so a future swap is one file."
+              }
+            ],
+            "patterns": [
+              {
+                "group": ["@base-ui/react", "@base-ui/react/*"],
+                "message": "Import from '@/shared/ui/*' instead. Direct Base UI imports are reserved for shared/ui wrappers so swapping the headless library stays a one-folder change."
+              },
+              {
+                "group": ["@/_pages/*/**"],
+                "message": "Import a page slice by its root only (@/_pages/<slice>). Segment paths (ui/lib/model) are slice-private."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/_pages/**", "src/features/**", "src/entities/**", "src/shared/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "classix",
+                "message": "Import { cx } from '#styles' instead. The barrel pins cx semantics so a future swap is one file."
+              }
+            ],
+            "patterns": [
+              {
+                "group": ["@base-ui/react", "@base-ui/react/*"],
+                "message": "Import from '@/shared/ui/*' instead. Direct Base UI imports are reserved for shared/ui wrappers so swapping the headless library stays a one-folder change."
+              },
+              {
+                "group": ["@/_pages", "@/_pages/**"],
+                "message": "Only route files (src/pages/) may import page slices. Lower layers never import upward, and page slices never import each other — duplicate small glue instead."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/shared/ui/**"],
+      "rules": {
+        "no-restricted-imports": ["error"]
+      }
+    },
+    {
+      "files": ["src/shared/styles/**"],
+      "rules": {
+        "no-restricted-imports": "off"
+      }
+    }
+  ],
+  "env": {
+    "builtin": true
+  }
+}

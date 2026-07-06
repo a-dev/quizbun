@@ -1,0 +1,44 @@
+---
+import type { GetStaticPaths } from "astro";
+import Layout from "@/app/layout.astro";
+import { loadPublicQuizzes } from "@/shared/lib/content";
+import type { PublicQuizSummary, TagCount } from "@/shared/lib/content";
+import { QuizzesCatalog } from "@/_pages/quizzes";
+import { layout } from "#styles";
+
+export const getStaticPaths = (({ paginate }) => {
+  const { summaries, tags } = loadPublicQuizzes();
+
+  return paginate(summaries, {
+    pageSize: 12,
+    props: { summaries, tags },
+  });
+}) satisfies GetStaticPaths;
+
+interface Props {
+  page: {
+    currentPage: number;
+  };
+  summaries: PublicQuizSummary[];
+  tags: TagCount[];
+}
+
+const { page, summaries, tags } = Astro.props;
+---
+
+<Layout
+  title={`Quizzes, page ${page.currentPage} · Quizbun`}
+  description="Browse the public Quizbun Catalog and filter explanation-first quizzes by Tag."
+>
+  <header class={layout.section}>
+    <h1>Quizzes</h1>
+    <p>Browse the public Catalog and filter quizzes by Tag.</p>
+  </header>
+
+  <QuizzesCatalog
+    client:load
+    summaries={summaries}
+    tags={tags}
+    initialPage={page.currentPage}
+  />
+</Layout>

@@ -1,0 +1,39 @@
+@layer layout {
+  .page {
+    display: grid;
+    padding-block: 1.25rem;
+    padding-inline: var(--body-inline-padding);
+  }
+
+  .container {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .section {
+    --_section-gap: 1.25rem;
+
+    display: grid;
+    gap: var(--_section-gap);
+    padding-block: 1.5rem;
+    padding-inline: var(--body-inline-padding);
+  }
+
+  .quiz-card-grid {
+    display: grid;
+
+    /* One row band per card (each card spans 4): counter, title, description,
+       then a flexible track that absorbs slack so tags sit at the bottom.
+       Shared tracks mean every title — and every description below it — lines
+       up across the row, regardless of how many lines a title wraps to. */
+    grid-auto-rows: auto auto auto 1fr;
+    grid-template-columns: 1fr;
+    gap: var(--_section-gap);
+  }
+
+  @media (width >= 26rem) {
+    .quiz-card-grid {
+      grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr));
+    }
+  }
+}

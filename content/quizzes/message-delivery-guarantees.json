@@ -1,0 +1,276 @@
+{
+  "schemaVersion": 1,
+  "id": "message-delivery-guarantees",
+  "title": "Message Delivery: Guarantees, Ordering & Idempotency",
+  "description": "At-most-once vs at-least-once vs \"exactly-once,\" why duplicates and gaps happen, and how idempotency, dedup, sequence numbers, and per-key ordering tame them. The duplicate/dedup behavior and HTTP idempotency facts are verified in Node and against RFC 9110.",
+  "language": "en",
+  "tags": ["system-design", "real-time", "networking"],
+  "questions": [
+    {
+      "id": "alo-lost-ack-duplicate",
+      "title": "In an at-least-once system, why can a receiver get the same message twice even when the network never corrupts data?",
+      "description": "Assume bytes are never garbled — yet duplicates still appear. What causes them?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The receiver's acknowledgment is lost, so the sender's retry timer fires and it resends a message that was already delivered.",
+          "isCorrect": true
+        },
+        {
+          "text": "TCP randomly reorders and duplicates application messages.",
+          "isCorrect": false
+        },
+        {
+          "text": "The receiver's buffer overflows and replays old messages.",
+          "isCorrect": false
+        },
+        {
+          "text": "It can't — duplicates only happen under at-most-once delivery.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "At-least-once means the sender keeps retrying until it sees an **acknowledgment**. The duplicate comes from a lost *ack*, not a lost *message*: the message arrives and is processed, but its ack never makes it back, so the sender times out and resends — and the receiver processes the same message again.\n\n```js\nconst processed = [];\nconst receiver = (id) => processed.push(id);\nreceiver(\"m1\");         // delivered + processed; ACK then lost\nreceiver(\"m1\");         // sender resent after timeout\nconsole.log(processed); // [\"m1\", \"m1\"]  ← double side effect\n```\n\nThis is *the* reason at-least-once delivery must be paired with idempotent processing or dedup. TCP doesn't duplicate application messages, and there's no buffer \"replay\" — the cause is the retry-on-missing-ack loop.",
+      "references": "[Brave New Geek: You Cannot Have Exactly-Once Delivery](https://bravenewgeek.com/you-cannot-have-exactly-once-delivery/)"
+    },
+    {
+      "id": "exactly-once-unattainable",
+      "title": "Why do engineers say \"exactly-once *delivery*\" is essentially unattainable — and what do real systems offer instead?",
+      "description": "Think about your only two options when an acknowledgment might be lost.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Over a lossy channel you must either retry (risking duplicates) or not (risking loss); systems combine at-least-once delivery with idempotent processing to get *effectively*-once.",
+          "isCorrect": true
+        },
+        {
+          "text": "It's already solved by TCP, which delivers every segment exactly once.",
+          "isCorrect": false
+        },
+        {
+          "text": "It needs specialized hardware that isn't widely deployed yet.",
+          "isCorrect": false
+        },
+        {
+          "text": "It works fine as long as every message carries a UUID.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "When an ack can go missing, the sender faces a forced choice: resend (and maybe duplicate) or don't (and maybe lose). You cannot have *both* guaranteed-no-loss and guaranteed-no-duplicate with certainty — the practical shadow of the **Two Generals' Problem**. So \"exactly-once\" is achieved at the *processing* layer, not the *delivery* layer: at-least-once delivery + idempotent handling (or dedup) = **effectively-once**.\n\nTCP gives exactly-once *segment* delivery within one connection, but that says nothing about application-level retries across reconnects or crashes (the distractor conflates the two layers). A UUID alone changes nothing unless you also store and check it — which is exactly the dedup step.",
+      "references": "[Wikipedia: Two Generals' Problem](https://en.wikipedia.org/wiki/Two_Generals%27_Problem)"
+    },
+    {
+      "id": "idempotency-facts",
+      "title": "Which statements about idempotency in message delivery are correct?",
+      "description": "Select every true statement.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "An idempotent operation has the same effect whether it's applied once or many times.",
+          "isCorrect": true
+        },
+        {
+          "text": "A unique idempotency key lets the receiver recognize and drop duplicate retries.",
+          "isCorrect": true
+        },
+        {
+          "text": "Idempotent processing turns at-least-once delivery into an effectively-once outcome.",
+          "isCorrect": true
+        },
+        {
+          "text": "Idempotency also guarantees that messages are never lost.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Idempotency targets **duplicates**, not loss. Loss is handled by retries (at-least-once); duplicates are handled by making the operation safe to repeat — or by remembering an idempotency key and ignoring repeats:\n\n```js\nconst seen = new Set(), log = [];\nconst handle = (id) => seen.has(id) ? log.push(id + \":dup\") : (seen.add(id), log.push(id + \":ok\"));\nhandle(\"m1\"); handle(\"m1\");\nconsole.log(log); // [\"m1:ok\", \"m1:dup\"]  ← second one is a no-op\n```\n\nThis is exactly Stripe's `Idempotency-Key` pattern: retrying a charge with the same key never double-charges. The false option mixes up the two concerns — an idempotent handler still needs at-least-once delivery underneath so that genuinely lost messages get retried at all.",
+      "references": "[Stripe API: Idempotent requests](https://docs.stripe.com/api/idempotent_requests)"
+    },
+    {
+      "id": "ordering-single-vs-multiple",
+      "title": "Messages on a single WebSocket connection arrive in the order sent. What most commonly breaks that?",
+      "description": "The guarantee is real — but narrow. Where does it stop applying?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Spreading messages across multiple connections, consumers, or partitions — order holds *within* one stream (TCP), not *across* several.",
+          "isCorrect": true
+        },
+        {
+          "text": "Nothing — a WebSocket server guarantees a global order across every client connection.",
+          "isCorrect": false
+        },
+        {
+          "text": "Choosing binary frames instead of text frames.",
+          "isCorrect": false
+        },
+        {
+          "text": "Turning on `permessage-deflate` compression.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A single TCP connection delivers bytes strictly in order, so one WebSocket or SSE stream is ordered for free. The guarantee evaporates the moment you fan out: two connections, several worker consumers, or multiple partitions can interleave arbitrarily, because nothing coordinates a global order between them.\n\nThe usual fix is **per-key ordering**: route every message that must stay ordered (all events for one user or document) through the *same* partition/connection, accepting per-key rather than global order. Frame type and compression have nothing to do with ordering.",
+      "references": "[MDN: TCP](https://developer.mozilla.org/en-US/docs/Glossary/TCP)"
+    },
+    {
+      "id": "strict-ordering-hol-blocking",
+      "title": "A queue enforces strict total ordering — each message is handled only after all earlier ones. What's the inherent cost?",
+      "description": "What happens when one message in the middle gets stuck?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Head-of-line blocking: one slow or stuck message delays every message queued behind it.",
+          "isCorrect": true
+        },
+        {
+          "text": "Messages behind it are silently dropped to keep throughput up.",
+          "isCorrect": false
+        },
+        {
+          "text": "Acknowledgments become impossible to combine with ordering.",
+          "isCorrect": false
+        },
+        {
+          "text": "There is no cost — strict ordering is free.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Strict total ordering and throughput pull against each other. If message #5 can't be processed (a slow handler, a poison message, a stalled consumer), then #6, #7, … must wait — that's **head-of-line (HOL) blocking**. It's the same phenomenon that hurts HTTP/2 over TCP, where one lost packet stalls every multiplexed stream, and that HTTP/3 over QUIC was designed to avoid.\n\nThe escape hatch is to relax \"total\" to \"per-key\": independent keys flow through independent lanes/partitions, so a stuck message blocks only its own key. You trade a global order you probably didn't need for parallelism you do.",
+      "references": "[Wikipedia: Head-of-line blocking](https://en.wikipedia.org/wiki/Head-of-line_blocking)"
+    },
+    {
+      "id": "two-generals-problem",
+      "title": "Which classic thought experiment proves two parties can never be *certain* they agree over a lossy channel — the theoretical root of why exactly-once delivery is unattainable?",
+      "description": "Two words naming the problem (about coordinating an attack). The full name adds \"Problem.\"",
+      "type": "input",
+      "validation": {
+        "mode": "text",
+        "acceptedAnswers": [
+          "Two Generals",
+          "Two Generals Problem",
+          "Two Generals' Problem",
+          "The Two Generals Problem",
+          "Two Generals Paradox"
+        ]
+      },
+      "explanation": "The **Two Generals' Problem** (also called the Two Armies Problem): two generals must agree on a time to attack, but every messenger crossing the valley might be captured. No finite exchange of acknowledgments can make *both* sides certain the other will attack — each new ack itself needs acknowledging, forever.\n\nThat impossibility is why message delivery can't be simultaneously loss-free and duplicate-free with certainty, and therefore why you choose at-most-once or at-least-once and build *effectively*-once on top with idempotency.",
+      "references": "[Wikipedia: Two Generals' Problem](https://en.wikipedia.org/wiki/Two_Generals%27_Problem)"
+    },
+    {
+      "id": "at-most-once-telemetry",
+      "title": "A high-frequency telemetry feed tolerates an occasional dropped reading, but duplicates would corrupt aggregate counters. Best delivery guarantee?",
+      "description": "Weigh the cost of a lost message against the cost of a duplicate one.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "At-most-once — don't retry; accept rare loss in exchange for never double-counting.",
+          "isCorrect": true
+        },
+        {
+          "text": "At-least-once — retry hard and rely on dedup to clean up later.",
+          "isCorrect": false
+        },
+        {
+          "text": "Exactly-once — the only acceptable choice for any metric.",
+          "isCorrect": false
+        },
+        {
+          "text": "Any of them — the guarantee makes no practical difference here.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Choose the guarantee by asking which failure is cheaper. For metrics/telemetry, one missing sample barely moves an aggregate, but a duplicate inflates counters — so **at-most-once** (fire-and-forget, no retries) is the standard fit. This is exactly why StatsD ships metrics over **UDP**: it deliberately accepts loss to avoid retries, duplication, and backpressure on the application.\n\nFor commands, payments, or state changes the calculus flips — losing one is unacceptable, so you use at-least-once plus idempotency. The lesson: there is no universally \"best\" guarantee, only the right trade-off between the cost of loss and the cost of duplication.",
+      "references": "[Etsy Code as Craft: Measure Anything, Measure Everything](https://www.etsy.com/codeascraft/measure-anything-measure-everything/)"
+    },
+    {
+      "id": "dedup-bounded-window",
+      "title": "You dedup by remembering the ids you've already processed. What's the practical catch?",
+      "description": "Consider how much history a real receiver can actually keep.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "You can't remember every id forever — dedup works only within a bounded window, so a duplicate arriving after the window can still slip through.",
+          "isCorrect": true
+        },
+        {
+          "text": "You must store every id permanently, after which dedup is always perfect.",
+          "isCorrect": false
+        },
+        {
+          "text": "Deduping silently reorders the surviving messages.",
+          "isCorrect": false
+        },
+        {
+          "text": "Dedup only works on text frames, never binary.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Remembering processed ids costs memory, so real systems keep a **bounded dedup window** — by time (ids seen in the last 24h) or by count. A retry that arrives *after* its id has aged out of the window looks brand-new and gets processed again. That's why dedup is a best-effort *optimization*, while truly **idempotent operations** — where reprocessing is harmless by construction — are the robust foundation.\n\nStripe, for example, retains idempotency keys for 24 hours; Amazon's guidance is the same: pair a bounded key store with operations that are safe to repeat. Frame type is irrelevant to dedup.",
+      "references": "[Amazon Builders' Library: Making retries safe with idempotent APIs](https://aws.amazon.com/builders-library/making-retries-safe-with-idempotent-APIs/)"
+    },
+    {
+      "id": "ordering-techniques",
+      "title": "Which techniques help a consumer preserve or restore order in a real-time stream?",
+      "description": "Select every technique that actually helps with ordering.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "Tag each message with a monotonically increasing sequence number so the consumer can detect gaps and reorder.",
+          "isCorrect": true
+        },
+        {
+          "text": "Partition by a key so all messages for that key travel through one ordered lane.",
+          "isCorrect": true
+        },
+        {
+          "text": "Buffer briefly to reassemble out-of-order arrivals before delivering them upward.",
+          "isCorrect": true
+        },
+        {
+          "text": "Send each message on a brand-new connection to maximize parallelism.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Three real tools: **sequence numbers** let a receiver notice \"I have 5 and 7 but not 6\" and wait or request a resend; **per-key partitioning** (Kafka's model) keeps everything for one key on a single ordered log; and a small **reorder buffer** smooths out arrivals that race each other.\n\nThe false option does the opposite of all three: spraying messages across fresh connections removes the single-stream ordering guarantee entirely and maximizes interleaving. Parallelism and strict ordering pull in opposite directions — partition by key to get *both* (order within a key, parallelism across keys).",
+      "references": "[Apache Kafka: Design](https://kafka.apache.org/documentation/#design)"
+    },
+    {
+      "id": "kafka-exactly-once-semantics",
+      "title": "When a system advertises \"exactly-once semantics\" (e.g. Kafka EOS), what does it really mean?",
+      "description": "Does it repeal the impossibility results — or work around them?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Inside its own boundary it combines idempotent producers with transactional commits so each record affects state once; it's not magic across arbitrary external systems.",
+          "isCorrect": true
+        },
+        {
+          "text": "It physically transmits each network packet exactly one time.",
+          "isCorrect": false
+        },
+        {
+          "text": "It disables retries so a message is never sent twice.",
+          "isCorrect": false
+        },
+        {
+          "text": "It is a proof that the Two Generals' Problem was wrong.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Kafka's exactly-once semantics is **effectively-once processing**, built from two ingredients: an **idempotent producer** (each message carries a producer id + sequence number, so the broker drops retries) and **transactions** (the write and the consumer-offset commit are committed atomically). Under the hood it's still at-least-once delivery plus dedup — fully consistent with the impossibility results, not a refutation of them.\n\nThe catch every senior engineer remembers: EOS holds *within* Kafka. The moment a consumer triggers an external side effect (charge a card, send an email), you're back to needing idempotency at that boundary.",
+      "references": "[Confluent: Exactly-Once Semantics Are Possible — Here's How Kafka Does It](https://www.confluent.io/blog/exactly-once-semantics-are-possible-heres-how-apache-kafka-does-it/)"
+    },
+    {
+      "id": "idempotent-method-count",
+      "title": "Per RFC 9110, how many HTTP methods are idempotent (the safe methods plus PUT and DELETE)?",
+      "description": "Count them: the safe methods, plus PUT and DELETE. Give a single number.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [
+          6
+        ]
+      },
+      "explanation": "RFC 9110 defines **6** idempotent methods: the four *safe* ones — `GET`, `HEAD`, `OPTIONS`, `TRACE` — plus `PUT` and `DELETE`. Repeating any of them has the same server-visible effect as a single call, so a client can safely retry them after a timeout.\n\n`POST` and `PATCH` are **not** idempotent — retrying a `POST` may create a second resource or double-charge a card. That's precisely why payment APIs require an `Idempotency-Key` header on `POST`: it manufactures idempotency for a method that lacks it.\n\n```js\nconst idempotent = [\"GET\", \"HEAD\", \"OPTIONS\", \"TRACE\", \"PUT\", \"DELETE\"];\nconsole.log(idempotent.length);           // 6\nconsole.log(idempotent.includes(\"POST\")); // false\n```",
+      "references": "[RFC 9110 §9.2.2: Idempotent Methods](https://datatracker.ietf.org/doc/html/rfc9110#section-9.2.2)"
+    }
+  ]
+}

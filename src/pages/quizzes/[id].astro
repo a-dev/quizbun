@@ -1,0 +1,29 @@
+---
+import Layout from "@/app/layout.astro";
+import { loadPublicQuizzes } from "@/shared/lib/content";
+import type { Quiz } from "@/shared/lib/quiz";
+import { renderMarkdownFieldText } from "@/shared/lib/render";
+import { CatalogQuizScreen } from "@/_pages/quiz";
+
+export function getStaticPaths() {
+  return loadPublicQuizzes().quizzes.map((quiz) => ({
+    params: { id: quiz.id },
+    props: { quiz },
+  }));
+}
+
+interface Props {
+  quiz: Quiz;
+}
+
+const { quiz } = Astro.props;
+const titleText = renderMarkdownFieldText("quizTitle", quiz.title);
+const descriptionText =
+  quiz.description === undefined
+    ? undefined
+    : renderMarkdownFieldText("quizDescription", quiz.description);
+---
+
+<Layout title={`${titleText} · Quizbun`} description={descriptionText}>
+  <CatalogQuizScreen client:load quiz={quiz} />
+</Layout>

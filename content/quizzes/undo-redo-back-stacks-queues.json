@@ -1,0 +1,260 @@
+{
+  "schemaVersion": 1,
+  "id": "undo-redo-back-stacks-queues",
+  "title": "Undo, Redo, and Back: Stacks and Queues in the UI",
+  "description": "LIFO and FIFO made concrete in the interfaces you build every day: undo/redo as two mirrored stacks, the classic bug where a fresh edit must clear the redo stack, the browser's Back button as a history stack, a render/task queue as FIFO, and a deque-backed \"recent items\" list. Every code trace is verified by running it in Node.",
+  "language": "en",
+  "tags": ["data-structures", "frontend", "javascript"],
+  "questions": [
+    {
+      "id": "undo-stack-lifo",
+      "title": "Undo modeled as a stack: which edit is undone first?",
+      "description": "You record edits with `history.push(op)` and undo with `history.pop()`. Three edits go in, in order.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The most recently applied edit, `edit3` — a stack is **LIFO** (last in, first out).",
+          "isCorrect": true
+        },
+        {
+          "text": "The oldest edit, `edit1` — a stack is FIFO (first in, first out).",
+          "isCorrect": false
+        },
+        {
+          "text": "A random edit, since arrays don't guarantee order.",
+          "isCorrect": false
+        },
+        {
+          "text": "All three edits at once.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A stack adds and removes at the **same end** (the *top*), so the last thing pushed is the first thing popped — last in, first out. That is exactly what Undo needs: it reverses your *most recent* action first.\n\n```js\nconst history = [];\nhistory.push('edit1');\nhistory.push('edit2');\nhistory.push('edit3');\nconsole.log(history.pop()); // 'edit3'\n```\n\nArrays in JavaScript preserve insertion order, and `pop()` always removes the final element, so the result is deterministic — never random, and never \"all at once.\" Reach for the oldest item first and you've described a *queue* (FIFO), not a stack.",
+      "references": "[MDN: Array.prototype.pop()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/pop)"
+    },
+    {
+      "id": "fifo-array-ops",
+      "title": "Which array operations turn a JS array into a FIFO queue?",
+      "description": "A render/task queue must serve work in arrival order: the first job enqueued is the first one run.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`push()` to enqueue at the back, `shift()` to dequeue from the front.",
+          "isCorrect": true
+        },
+        {
+          "text": "`push()` to enqueue, `pop()` to dequeue.",
+          "isCorrect": false
+        },
+        {
+          "text": "`unshift()` to enqueue, `shift()` to dequeue.",
+          "isCorrect": false
+        },
+        {
+          "text": "`pop()` to enqueue, `shift()` to dequeue.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "FIFO requires adding and removing at **opposite** ends. `push` appends to the back and `shift` removes from the front, so items leave in the order they arrived:\n\n```js\nconst queue = [];\nqueue.push('taskA'); // enqueue\nqueue.push('taskB');\nqueue.push('taskC');\nconsole.log(queue.shift()); // 'taskA' — first in, first out\nconsole.log(queue.shift()); // 'taskB'\n```\n\nThe distractors all act on a **single end**, which makes a *stack* (LIFO): `push`+`pop` both touch the back, `unshift`+`shift` both touch the front, and `pop` removes an element so it can't \"enqueue\" anything. (`unshift`+`pop` is the *other* valid FIFO pairing — it's just slower, because `unshift` reindexes the whole array on every call.)",
+      "references": "[MDN: Array.prototype.shift()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/shift)"
+    },
+    {
+      "id": "redo-is-a-stack",
+      "title": "Pressing Undo moves the popped operation where?",
+      "description": "Undo/redo is the classic *two-stack* design. You press **Undo** and the operation comes off the undo stack. Where must it go so **Redo** replays correctly?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Onto the **redo stack** (push) — redo is LIFO, mirroring the undo stack.",
+          "isCorrect": true
+        },
+        {
+          "text": "Back onto the undo stack.",
+          "isCorrect": false
+        },
+        {
+          "text": "Into a **FIFO redo queue**, so redos replay oldest-first.",
+          "isCorrect": false
+        },
+        {
+          "text": "Nowhere — it is discarded, and Redo re-derives it from the document.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The two stacks mirror each other. **Undo** pops the top of `undo` and pushes it onto `redo`; **Redo** pops the top of `redo` and pushes it back onto `undo`. Crucially, redo must be a *stack*, not a queue — otherwise repeated redo replays in the wrong order:\n\n```js\nconst undo = [], redo = [];\nconst apply  = (op) => { undo.push(op); redo.length = 0; };\nconst doUndo = () => { if (undo.length) redo.push(undo.pop()); };\nconst doRedo = () => { if (redo.length) undo.push(redo.pop()); };\n\napply('A'); apply('B'); apply('C');\ndoUndo(); doUndo();      // undo C, then B\nconsole.log(redo);       // [ 'C', 'B' ] — B is on top\ndoRedo();                // redo pops B first (LIFO)\nconsole.log(undo);       // [ 'A', 'B' ]\nconsole.log(redo);       // [ 'C' ]\n```\n\nBecause you undid C and then B, redo holds `[C, B]` with **B on top**. The next Redo must replay B before C to retrace your path exactly. A FIFO redo *queue* would replay C first and corrupt the sequence.",
+      "references": "[Refactoring Guru: Command pattern](https://refactoring.guru/design-patterns/command)"
+    },
+    {
+      "id": "new-edit-clears-redo",
+      "title": "The classic bug: a fresh edit after Undo",
+      "description": "The user undoes twice, then makes a brand-new edit. What must `applyEdit()` do to the redo stack to stay correct?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Clear it — the old redo entries describe a future that is now unreachable.",
+          "isCorrect": true
+        },
+        {
+          "text": "Leave it untouched, so the user can still redo the abandoned branch.",
+          "isCorrect": false
+        },
+        {
+          "text": "Move its contents onto the undo stack.",
+          "isCorrect": false
+        },
+        {
+          "text": "Reverse it, so the redo order matches the new edit.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "This is the most famous undo/redo bug. After undoing, the redo stack holds the \"future\" you backed out of. A brand-new edit forks a **new branch** of history; the saved redo operations were recorded against a document state you can no longer reach, so replaying them would apply changes to the wrong content and corrupt the document. The fix is one line — every action that is not itself an undo/redo clears redo:\n\n```js\nconst undo = [];\nlet redo = [];\nconst applyEdit = (op) => { undo.push(op); redo = []; }; // <-- clears redo\nconst undoOnce  = () => { if (undo.length) redo.push(undo.pop()); };\n\napplyEdit('a');\napplyEdit('b');\nundoOnce();\nconsole.log(redo.length); // 1  (redo available)\napplyEdit('X');           // brand-new edit forks a new branch\nconsole.log(redo.length); // 0  (redo correctly discarded)\n```\n\nThis is why most editors offer only *linear* undo: preserving the redo branch instead would require an **undo tree**, which is much harder to model and to present in a UI.",
+      "references": "[Wikipedia: Undo](https://en.wikipedia.org/wiki/Undo)"
+    },
+    {
+      "id": "back-then-new-nav",
+      "title": "Back, then a new link: what happens to forward history?",
+      "description": "You visit A → B → C, press **Back** to land on B, then click a link to a new page D. What happens to C in the session history stack?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "C is discarded — a new navigation truncates the forward entries, leaving A → B → D.",
+          "isCorrect": true
+        },
+        {
+          "text": "C stays, giving A → B → C → D.",
+          "isCorrect": false
+        },
+        {
+          "text": "C moves to the bottom of the stack.",
+          "isCorrect": false
+        },
+        {
+          "text": "C and D both become forward entries from B.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Session history is a stack with a *current-entry pointer*. **Back** and **Forward** only move the pointer — they don't delete entries, which is exactly why Forward still works. But a brand-new navigation (a link click or `history.pushState`) pushes a new entry and **discards everything after the current pointer**:\n\n```js\nlet stack = ['A']; let i = 0;\nconst navigate = (page) => { stack = stack.slice(0, i + 1); stack.push(page); i = stack.length - 1; };\nconst back = () => { if (i > 0) i--; };\n\nnavigate('B'); navigate('C'); // ['A','B','C'], pointer at C\nback();                        // pointer back to B; 'C' still ahead\nnavigate('D');                 // new nav from B drops 'C'\nconsole.log(stack);            // [ 'A', 'B', 'D' ]\n```\n\nThis is the *same shape* as the redo bug above: pressing **Back** is like **Undo**, and a fresh navigation is like a new edit that invalidates the \"forward\" (redo) branch.",
+      "references": "[MDN: Working with the History API](https://developer.mozilla.org/en-US/docs/Web/API/History_API/Working_with_the_History_API)"
+    },
+    {
+      "id": "breadcrumbs-hierarchy",
+      "title": "What does a breadcrumb trail actually represent?",
+      "description": "A product page shows the trail `Home / Products / Laptops`. Which structure does this most directly reflect?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The page's position in the site **hierarchy** — the path from the root, regardless of how you arrived.",
+          "isCorrect": true
+        },
+        {
+          "text": "The exact sequence of pages you visited to get here.",
+          "isCorrect": false
+        },
+        {
+          "text": "A FIFO queue of your most recently viewed pages.",
+          "isCorrect": false
+        },
+        {
+          "text": "The browser's forward stack.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The everyday breadcrumb is *location-based*: it encodes **where the page sits in the information architecture** — the chain of ancestors from the root down to the current page. Two users who reach `/products/laptops` see the identical trail even if one came from search and the other from the home page, because it is derived from the site tree, not from visit order.\n\nThat is what separates it from the **Back** stack (which *does* record your actual path) and from a \"recently viewed\" list (a bounded queue/deque ordered by recency). A rarer *path-based* breadcrumb does mirror history, but it largely duplicates the Back button and is seldom used in practice.",
+      "references": "[Nielsen Norman Group: Breadcrumb Navigation](https://www.nngroup.com/articles/breadcrumbs/)"
+    },
+    {
+      "id": "stack-queue-operations",
+      "title": "Stack and queue operations and terminology",
+      "description": "Select every statement that is correct.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "A stack's two core operations are **push** and **pop**, both acting on the same end (the top).",
+          "isCorrect": true
+        },
+        {
+          "text": "A queue's core operations are **enqueue** (add at the back) and **dequeue** (remove from the front).",
+          "isCorrect": true
+        },
+        {
+          "text": "**peek** (a.k.a. `top` / `front`) returns the next element to be removed, without removing it.",
+          "isCorrect": true
+        },
+        {
+          "text": "A stack removes elements in the same order they were added — that is, FIFO.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A **stack** is LIFO: `push` and `pop` both operate on the *top*, so the most recent arrival leaves first. A **queue** is FIFO: you `enqueue` at the back and `dequeue` from the front, so arrivals leave in order. Both expose a non-destructive **peek** that reveals the next element to come off — the top of a stack, the front of a queue — without mutating the structure.\n\nThe false statement swaps the definitions: leaving in *arrival* order (FIFO) is the **queue's** behavior. A stack is **LIFO**, so it removes elements in the *reverse* of the order they were added.",
+      "references": "[Wikipedia: Stack (abstract data type)](https://en.wikipedia.org/wiki/Stack_%28abstract_data_type%29)"
+    },
+    {
+      "id": "which-are-lifo",
+      "title": "Which of these behave like a stack (LIFO)?",
+      "description": "Select every mechanism whose behavior is last-in, first-out.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "Undo history — your most recent edit is the first one reversed.",
+          "isCorrect": true
+        },
+        {
+          "text": "The browser's **Back** button walking back through visited pages.",
+          "isCorrect": true
+        },
+        {
+          "text": "The event loop's macrotask (task) queue, draining callbacks in the order they were scheduled.",
+          "isCorrect": false
+        },
+        {
+          "text": "A \"Recently viewed products\" list that shows the newest item first.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Undo and **Back** are textbook stacks: both reverse your *most recent* action first (LIFO). The two distractors are tempting but are **not** stacks.\n\nThe event loop's task queue is **FIFO** — callbacks run in the order they were enqueued, which is why a `setTimeout(a, 0)` scheduled before `setTimeout(b, 0)` runs `a` first. A \"recently viewed\" list *displays* newest-first, but as a data structure it is a bounded **deque**: you add to the front and evict the oldest from the *back* — the opposite end from a stack — and you never \"pop\" the newest item to consume it.",
+      "references": "[MDN: The event loop](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Event_loop)"
+    },
+    {
+      "id": "bounded-history-deque",
+      "title": "Bounded history and a recent-items deque",
+      "description": "An editor caps undo history at 50 steps and shows a \"Recently viewed\" list of the last 10 items. Select every correct statement.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "When the 51st edit arrives, a bounded undo stack should **drop the oldest** entry (from the bottom) while pushing the newest on top.",
+          "isCorrect": true
+        },
+        {
+          "text": "A fixed-size \"recent items\" list is naturally a **deque**: add the newest to the front, evict the oldest from the back.",
+          "isCorrect": true
+        },
+        {
+          "text": "Capping undo history bounds memory, but the very oldest edits can no longer be undone.",
+          "isCorrect": true
+        },
+        {
+          "text": "To bound the undo stack, you should drop the **newest** edit so older history is preserved.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A bounded history keeps a *sliding window* of the most recent N actions. When full, you discard from the **bottom** (the oldest) and push the new action on **top** — which is why an array-backed stack calls `shift()` to evict before `push()`:\n\n```js\nconst MAX = 3, undo = [];\nconst push = (op) => { undo.push(op); if (undo.length > MAX) undo.shift(); };\npush('e1'); push('e2'); push('e3'); push('e4');\nconsole.log(undo); // [ 'e2', 'e3', 'e4' ] — oldest 'e1' dropped\n```\n\nThat makes a bounded stack internally a **deque** (operations at *both* ends) — the same shape as a \"recent items\" list: newest in at the front, oldest out at the back. The trade-off is real: bounding caps memory but means the oldest edits fall off and can no longer be undone. The false option is backwards — you must never discard the action the user just took in order to keep stale history.",
+      "references": "[Wikipedia: Double-ended queue](https://en.wikipedia.org/wiki/Double-ended_queue)"
+    },
+    {
+      "id": "deque-name",
+      "title": "Name the double-ended structure",
+      "description": "A queue you can add to and remove from at **both** ends — the structure behind a bounded \"recent items\" list. Enter its common 5-letter shortened name.",
+      "type": "input",
+      "validation": {
+        "mode": "text",
+        "acceptedAnswers": [
+          "deque",
+          "double-ended queue",
+          "double ended queue"
+        ]
+      },
+      "explanation": "The structure is a **deque** (pronounced \"deck\"), short for *double-ended queue*. Unlike a stack (one open end) or a plain queue (add at one end, remove at the other), a deque lets you push and pop at *either* end, so it can act as a stack, a queue, or both at once. That flexibility is why it backs a bounded \"recent items\" list — add the newest to the front, evict the oldest from the back:\n\n```js\nconst MAX = 3, recent = [];\nconst visit = (item) => {\n  const dup = recent.indexOf(item);\n  if (dup !== -1) recent.splice(dup, 1); // de-dupe\n  recent.unshift(item);                  // newest to the front\n  if (recent.length > MAX) recent.pop(); // evict oldest from the back\n};\nvisit('a'); visit('b'); visit('c'); visit('d');\nconsole.log(recent); // [ 'd', 'c', 'b' ] — 'a' evicted\n```\n\nNote that *deque* (the structure) is different from *dequeue* (the queue operation that removes the front element) — they are spelled and pronounced differently.",
+      "references": "[Wikipedia: Double-ended queue](https://en.wikipedia.org/wiki/Double-ended_queue)"
+    }
+  ]
+}

@@ -1,0 +1,118 @@
+@layer ui {
+  .label {
+    cursor: pointer;
+    user-select: none;
+
+    display: inline-flex;
+    gap: 0.6rem;
+    align-items: start;
+
+    color: var(--color-text-primary);
+  }
+
+  .label:has(.root[data-disabled]) {
+    cursor: auto;
+    user-select: auto;
+    color: var(--color-text-secondary);
+  }
+
+  .label.feedback-correct {
+    color: var(--color-state-success-text);
+  }
+
+  .label.feedback-incorrect {
+    color: var(--color-state-error-text);
+  }
+
+  .root {
+    composes: rounded-s from "#styles/utils.module.css";
+
+    cursor: inherit;
+
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+
+    box-sizing: border-box;
+    inline-size: 1.25rem;
+    block-size: 1.25rem;
+    margin-block-start: 4px;
+
+    color: var(--color-text-white);
+
+    background-color: var(--color-secondary-gray);
+
+    transition:
+      box-shadow 0.2s ease,
+      background-color 0.2s ease,
+      color 0.2s ease;
+
+    &[data-checked] {
+      color: var(--color-text-on-primary-seagrass);
+      background-color: var(--color-primary-seagrass);
+    }
+
+    &[data-indeterminate] {
+      color: var(--color-text-on-primary-seagrass);
+      opacity: 0.9;
+      background-color: var(--color-primary-seagrass-accent);
+    }
+
+    &[data-disabled] {
+      cursor: auto;
+      color: var(--color-text-tertiary);
+      background-color: var(--color-panel-disabled-bg);
+    }
+
+    &.control-feedback-correct {
+      color: var(--color-text-on-primary-seagrass);
+      background-color: var(--color-state-success-icon);
+    }
+
+    &.control-feedback-incorrect {
+      color: var(--color-text-on-primary-orange);
+      background-color: var(--color-state-error-icon);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--color-focus-ring);
+      outline-offset: 2px;
+    }
+  }
+
+  .indicator {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    &[data-unchecked] {
+      display: none;
+    }
+  }
+
+  .root[data-disabled] + .text {
+    cursor: not-allowed;
+    color: var(--color-text-tertiary);
+    opacity: 0.9;
+  }
+
+  .root.control-feedback-correct[data-disabled] + .text {
+    color: var(--color-state-success-text);
+  }
+
+  .root.control-feedback-incorrect[data-disabled] + .text {
+    color: var(--color-state-error-text);
+  }
+
+  @media (hover: hover) {
+    .label:not(
+        :has(.root[data-disabled]),
+        :has(.root[data-checked]),
+        :has(.root[data-indeterminate])
+      ):hover
+      .root {
+      box-shadow: var(--inset-shadow-seagrass);
+    }
+  }
+}

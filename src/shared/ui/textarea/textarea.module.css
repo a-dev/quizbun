@@ -1,0 +1,55 @@
+@layer ui {
+  .root {
+    composes: rounded-s from "#styles/utils.module.css";
+
+    resize: none;
+
+    display: block;
+
+    box-sizing: border-box;
+    inline-size: 100%;
+    min-inline-size: 0;
+    height: var(--_height, auto);
+    padding-block: 0.5rem;
+    padding-inline: 0.625rem;
+    border: 1px solid var(--color-border-subtle);
+
+    font-family: var(--_font-family, inherit);
+    font-size: var(--fs-s);
+    font-weight: inherit;
+    font-style: inherit;
+    font-variant: inherit;
+    line-height: var(--_line-height, var(--lh-m));
+    color: var(--color-text-primary);
+
+    background-color: var(--color-panel-bg);
+
+    transition:
+      border-color 0.2s,
+      box-shadow 0.2s,
+      background-color 0.2s;
+
+    &::placeholder {
+      color: var(--color-text-secondary);
+    }
+
+    &:focus-visible {
+      border-color: var(--color-focus-ring);
+      outline: 0;
+    }
+
+    &:disabled {
+      cursor: not-allowed;
+      color: var(--color-text-secondary);
+      background-color: var(--color-panel-disabled-bg);
+    }
+
+    &[aria-invalid="true"] {
+      border-color: var(--color-primary-orange);
+    }
+
+    &[aria-invalid="true"]:focus-visible {
+      outline: 1px solid var(--color-primary-orange-accent);
+    }
+  }
+}

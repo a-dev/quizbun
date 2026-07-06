@@ -1,0 +1,288 @@
+{
+  "schemaVersion": 1,
+  "id": "typescript-generics-inference-type-level",
+  "title": "TypeScript Generics, Inference & Type-Level Programming",
+  "description": "Two clusters in one quiz: **Generics & Inference** (when TS infers vs. when you must annotate, `extends` constraints, defaults, and why an unconstrained `<T>` leaks `unknown`) and **Type-Level Programming** (conditional types, `infer`, mapped & template-literal types). Read gnarly utility types and predict exactly what they resolve to. Every type-resolution claim was verified by compiling it with `tsc` 6.0 using `Expect<Equal<…>>` assertions.",
+  "language": "en",
+  "tags": ["typescript", "javascript"],
+  "questions": [
+    {
+      "id": "literal-widening-on-inference",
+      "title": "What type does `wrap(\"hi\")` produce?",
+      "description": "```ts\ndeclare function wrap<T>(value: T): T[];\n\nconst a = wrap(\"hi\");\n//    ^? what is the type of `a`?\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`\"hi\"[]`",
+          "isCorrect": false
+        },
+        {
+          "text": "`string[]`",
+          "isCorrect": true
+        },
+        {
+          "text": "`readonly string[]`",
+          "isCorrect": false
+        },
+        {
+          "text": "`string`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "TypeScript infers `T` from the argument, but for a *plain* (non-`const`) type parameter a string-**literal value** is **widened** to its base type during inference. So `T` becomes `string`, not `\"hi\"`, and the return type `T[]` is `string[]`.\n\nTo keep the literal you have to opt in to a `const` context:\n\n```ts\ndeclare function wrap<const T>(value: T): T[];\nconst a = wrap(\"hi\"); // now: \"hi\"[]\n```\n\nWidening is why a freshly inferred generic \"loses\" literal types unless you reach for `as const` or a `const` type parameter.",
+      "references": "[TypeScript Handbook: Type Inference](https://www.typescriptlang.org/docs/handbook/type-inference.html)"
+    },
+    {
+      "id": "const-type-parameter-shape",
+      "title": "With a `const` type parameter, what is the type of `x`?",
+      "description": "```ts\n// TS 5.0+\ndeclare function asConst<const T>(value: T): T;\n\nconst x = asConst({ name: \"Ada\", roles: [\"admin\"] });\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`{ name: string; roles: string[] }`",
+          "isCorrect": false
+        },
+        {
+          "text": "`{ readonly name: \"Ada\"; readonly roles: readonly [\"admin\"] }`",
+          "isCorrect": true
+        },
+        {
+          "text": "`{ name: \"Ada\"; roles: [\"admin\"] }`",
+          "isCorrect": false
+        },
+        {
+          "text": "`{ readonly name: string; readonly roles: readonly string[] }`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The `const` modifier on a type parameter (TS 5.0) makes inference behave **as if the caller wrote `as const`**: object properties become `readonly` and keep their literal types, and array literals become `readonly` *tuples* of literals.\n\nSo `name` is the literal `\"Ada\"` and `roles` is `readonly [\"admin\"]` — both `readonly`. Without the modifier the very same call widens to `{ name: string; roles: string[] }`. The two distractors that drop `readonly` or keep mutability are the half-right traps: `const T` always brings the `readonly` along.",
+      "references": "[TypeScript 5.0 Release Notes: `const` Type Parameters](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-5-0.html#const-type-parameters)"
+    },
+    {
+      "id": "inference-from-default-type-parameter",
+      "title": "An uninferable type parameter *with a default* — what is `b`?",
+      "description": "```ts\ndeclare function makeBox<T = string>(): T[];\n\nconst b = makeBox(); // nothing is passed; T can't be inferred\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`unknown[]`",
+          "isCorrect": false
+        },
+        {
+          "text": "`string[]`",
+          "isCorrect": true
+        },
+        {
+          "text": "`never[]`",
+          "isCorrect": false
+        },
+        {
+          "text": "`[]` (the empty tuple)",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "When a type parameter has no inference site, TypeScript reaches for its **declared default**. There is no argument to infer `T` from, so `T` falls back to its default `string`, giving `string[]`.\n\nThis is the key contrast with the next idea: an *undeclared* default — a bare unconstrained `<T>` that can't be inferred — falls back to `unknown` (the \"leaks `unknown`\" behavior), **not** to a default. Defaults are how a library hands you a sensible type without forcing `makeBox<string>()` at every call site.",
+      "references": "[TypeScript Handbook: Generic Parameter Defaults](https://www.typescriptlang.org/docs/handbook/2/generics.html#generic-parameter-defaults)"
+    },
+    {
+      "id": "distributive-conditional-type",
+      "title": "What does `ToArray<string | number>` resolve to?",
+      "description": "```ts\ntype ToArray<T> = T extends unknown ? T[] : never;\n\ntype R = ToArray<string | number>;\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`(string | number)[]`",
+          "isCorrect": false
+        },
+        {
+          "text": "`string[] | number[]`",
+          "isCorrect": true
+        },
+        {
+          "text": "`unknown[]`",
+          "isCorrect": false
+        },
+        {
+          "text": "`string[] & number[]`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A conditional type whose checked type is a **naked type parameter** is *distributive*: it is applied to each member of the union independently, then the results are re-unioned. So:\n\n```ts\nToArray<string | number>\n// => ToArray<string> | ToArray<number>\n// => string[] | number[]\n```\n\nTo get the non-distributive `(string | number)[]`, disable distribution by wrapping both sides in a one-element tuple so the parameter is no longer \"naked\":\n\n```ts\ntype ToArray<T> = [T] extends [unknown] ? T[] : never;\n// ToArray<string | number> => (string | number)[]\n```",
+      "references": "[TypeScript Handbook: Distributive Conditional Types](https://www.typescriptlang.org/docs/handbook/2/conditional-types.html#distributive-conditional-types)"
+    },
+    {
+      "id": "boolean-distributes-as-true-false",
+      "title": "Does `Wrap<boolean>` collapse to `boolean[]`?",
+      "description": "```ts\ntype Wrap<T> = T extends unknown ? T[] : never;\n\ntype R = Wrap<boolean>;\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`boolean[]`",
+          "isCorrect": false
+        },
+        {
+          "text": "`true[] | false[]`",
+          "isCorrect": true
+        },
+        {
+          "text": "`(true | false)[]`",
+          "isCorrect": false
+        },
+        {
+          "text": "`never`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`boolean` is internally the union `true | false`. Because `Wrap` is a distributive conditional (naked `T`), it distributes over that union: `Wrap<true> | Wrap<false>` = `true[] | false[]`.\n\nTypeScript does **not** re-collapse `true[] | false[]` into `boolean[]` — they are genuinely different types. `boolean[]` accepts a mixed array like `[true, false]`; `true[] | false[]` does not (every element would have to be all-`true` *or* all-`false`). This bites whenever a \"harmless\" helper is applied to `boolean` and the result no longer behaves like a plain `boolean[]`.",
+      "references": "[TypeScript Handbook: Distributive Conditional Types](https://www.typescriptlang.org/docs/handbook/2/conditional-types.html#distributive-conditional-types)"
+    },
+    {
+      "id": "contravariant-infer-intersection",
+      "title": "A gnarly one: what is `R` when the same `infer U` sits in two parameter slots?",
+      "description": "```ts\ntype Contra<T> = T extends {\n  a: (x: infer U) => void;\n  b: (x: infer U) => void;\n}\n  ? U\n  : never;\n\ntype R = Contra<{ a: (x: string) => void; b: (x: number) => void }>;\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`string | number`",
+          "isCorrect": false
+        },
+        {
+          "text": "`never`",
+          "isCorrect": true
+        },
+        {
+          "text": "`string`",
+          "isCorrect": false
+        },
+        {
+          "text": "`unknown`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "When one `infer U` appears in several positions, **variance decides how the candidates combine**. In *covariant* positions (like return types) TS takes the **union**; in *contravariant* positions — function **parameters** — it takes the **intersection**.\n\nHere `x: infer U` is in two parameter slots, so `U = string & number`. No value is simultaneously a `string` and a `number`, so that intersection collapses to `never` — hence `R` is `never`.\n\nFlip the methods to *return* the values and you get the union instead:\n\n```ts\ntype Co<T> = T extends { a: () => infer U; b: () => infer U } ? U : never;\ntype R2 = Co<{ a: () => string; b: () => number }>; // string | number\n```",
+      "references": "[TypeScript Handbook: Inferring Within Conditional Types](https://www.typescriptlang.org/docs/handbook/2/conditional-types.html#inferring-within-conditional-types)"
+    },
+    {
+      "id": "mapped-type-key-remap-getters",
+      "title": "What shape does `Getters<{ name: string; age: number }>` produce?",
+      "description": "```ts\ntype Getters<T> = {\n  [K in keyof T as `get${Capitalize<string & K>}`]: () => T[K];\n};\n\ntype R = Getters<{ name: string; age: number }>;\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`{ getName: () => string; getAge: () => number }`",
+          "isCorrect": true
+        },
+        {
+          "text": "`{ getname: () => string; getage: () => number }`",
+          "isCorrect": false
+        },
+        {
+          "text": "`{ name: () => string; age: () => number }`",
+          "isCorrect": false
+        },
+        {
+          "text": "`{ getName: string; getAge: number }`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Three features combine here. The mapped type iterates `K in keyof T`; the **`as` clause remaps each key** using a template-literal type; and `Capitalize<…>` upper-cases the first letter. `string & K` narrows `K` (which is `string | number | symbol`) down to `string` so the template will accept it. Each value type becomes `() => T[K]`.\n\nResult: `{ getName: () => string; getAge: () => number }`. The distractors each drop one step — no `Capitalize`, no rename, or forgetting to wrap the value in `() => …`. Key remapping via `as` (TS 4.1) is also how you *filter* keys: map a key to `never` and it disappears from the result.",
+      "references": "[TypeScript Handbook: Key Remapping via `as`](https://www.typescriptlang.org/docs/handbook/2/mapped-types.html#key-remapping-via-as)"
+    },
+    {
+      "id": "noinfer-controls-inference",
+      "title": "Which statements about `NoInfer<T>` are true?",
+      "description": "```ts\n// TS 5.4+\ndeclare function light<C extends string>(colors: C[], def?: C): void;\ndeclare function lightSafe<C extends string>(colors: C[], def?: NoInfer<C>): void;\n```",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "`light([\"red\", \"green\"], \"blue\")` compiles, because `\"blue\"` widens `C` to `\"red\" | \"green\" | \"blue\"`.",
+          "isCorrect": true
+        },
+        {
+          "text": "`lightSafe([\"red\", \"green\"], \"blue\")` is a compile-time error.",
+          "isCorrect": true
+        },
+        {
+          "text": "`NoInfer<C>` removes `def` as an *inference site*, so `C` is fixed by `colors` alone.",
+          "isCorrect": true
+        },
+        {
+          "text": "`NoInfer<C>` changes the runtime value of `def`.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "By default **every** argument typed `C` is an inference site. In `light`, the literal `\"blue\"` adds itself as a candidate, so `C` widens to `\"red\" | \"green\" | \"blue\"` and the call type-checks even though `\"blue\"` isn't a real color — a classic inference leak.\n\nWrapping the parameter in `NoInfer<C>` (TS 5.4) says *\"use `C` here, but don't infer from this position.\"* Now `C` is pinned to `\"red\" | \"green\"` by the `colors` array and `\"blue\"` is correctly rejected. Like every type-level construct, `NoInfer` is erased during compilation and has **zero** runtime effect — so the last option is false.",
+      "references": "[TypeScript 5.4 Release Notes: The `NoInfer` Utility Type](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-5-4.html#the-noinfer-utility-type)"
+    },
+    {
+      "id": "extends-keyof-constraint",
+      "title": "Given this constrained `pluck`, which statements are true?",
+      "description": "```ts\ndeclare function pluck<T, K extends keyof T>(obj: T, key: K): T[K];\n\nconst user = { id: 1, name: \"Ada\", active: true };\n```",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "`pluck(user, \"name\")` has type `string`.",
+          "isCorrect": true
+        },
+        {
+          "text": "`pluck(user, \"id\")` has type `number`.",
+          "isCorrect": true
+        },
+        {
+          "text": "`pluck(user, \"email\")` is a compile-time error.",
+          "isCorrect": true
+        },
+        {
+          "text": "`pluck(user, \"active\")` has type `string`.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The constraint `K extends keyof T` ties `key` to the actual keys of `obj`. TS infers `T` as `{ id: number; name: string; active: boolean }`, so `keyof T` is `\"id\" | \"name\" | \"active\"`. Passing `\"email\"` violates the constraint, so it fails to compile *before the code ever runs*.\n\nThe return type `T[K]` is an **indexed access** — it resolves to the type stored at that exact key. Hence `\"name\"` ⇒ `string`, `\"id\"` ⇒ `number`, and `\"active\"` ⇒ `boolean` (not `string`, which makes the last option false). This `<T, K extends keyof T>` pairing is the backbone of type-safe getters, lodash-style `get`, and form libraries that keep field names and value types in lockstep.",
+      "references": "[TypeScript Handbook: Using Type Parameters in Generic Constraints](https://www.typescriptlang.org/docs/handbook/2/generics.html#using-type-parameters-in-generic-constraints)"
+    },
+    {
+      "id": "unconstrained-leaks-unknown",
+      "title": "An unconstrained `<T>` that can't be inferred falls back to which type?",
+      "description": "```ts\ndeclare function identity<T>(x?: T): T;\n\nconst r = identity(); // no argument, no default, no constraint\n//    ^? what is the type of `r`?\n```\n\nAnswer with the single type name TypeScript uses here.",
+      "type": "input",
+      "validation": {
+        "mode": "text",
+        "acceptedAnswers": [
+          "unknown"
+        ]
+      },
+      "explanation": "With no argument there is no inference site for `T`, and there is no declared default, so the compiler falls back to **`unknown`** — `r` has type `unknown`. This is the modern \"`<T>` leaks `unknown`\" behavior (very old TypeScript used the empty type `{}` instead).\n\nIt's a design smell: an unconstrained parameter that escapes into the return type usually means you should add a constraint (`<T extends …>`), supply a default (`<T = …>`), or annotate the call (`identity<number>()`). `unknown` is the safe top type — it can hold any value, but you must narrow it before you can use it.",
+      "references": "[TypeScript Handbook: `unknown`](https://www.typescriptlang.org/docs/handbook/2/functions.html#unknown)"
+    },
+    {
+      "id": "template-literal-head-split",
+      "title": "What does `Head<\"a.b.c\">` resolve to?",
+      "description": "```ts\ntype Head<S extends string> = S extends `${infer H}.${infer _Rest}`\n  ? H\n  : S;\n\ntype R = Head<\"a.b.c\">;\n```\n\nAnswer with the resolved string literal, written as its text without quotes.",
+      "type": "input",
+      "validation": {
+        "mode": "text",
+        "acceptedAnswers": [
+          "a",
+          "\"a\"",
+          "`a`"
+        ]
+      },
+      "explanation": "Template-literal inference splits at the **first** occurrence of the literal delimiter. The pattern `` `${infer H}.${infer _Rest}` `` matches the first `.` in `\"a.b.c\"`, so `H` captures `\"a\"` and `_Rest` captures `\"b.c\"`. Therefore `R` is the literal type `\"a\"`.\n\nRecurse on `_Rest` and you have a compile-time string splitter — the backbone of typed routers, i18n key checkers, and ORM path types. If the string contains no `.`, the conditional takes its false branch and returns `S` unchanged.",
+      "references": "[TypeScript Handbook: Template Literal Types](https://www.typescriptlang.org/docs/handbook/2/template-literal-types.html)"
+    },
+    {
+      "id": "recursive-deep-flatten",
+      "title": "Predict this recursive utility: what is `Flatten<number[][][]>`?",
+      "description": "```ts\ntype Flatten<T> = T extends Array<infer Inner> ? Flatten<Inner> : T;\n\ntype R = Flatten<number[][][]>;\n```\n\nAnswer with the resolved type.",
+      "type": "input",
+      "validation": {
+        "mode": "text",
+        "acceptedAnswers": [
+          "number"
+        ]
+      },
+      "explanation": "`Flatten` peels exactly one array layer per recursion:\n\n```text\nnumber[][][]  is Array<number[][]>  -> Inner = number[][]  (recurse)\nnumber[][]    is Array<number[]>    -> Inner = number[]    (recurse)\nnumber[]      is Array<number>      -> Inner = number      (recurse)\nnumber        is NOT an array       -> false branch, return number\n```\n\nThe recursion stops when the element is no longer an array, yielding `number`. It's a *deep* version of the one-level `type ElementType<T> = T extends (infer U)[] ? U : T`. Recursive conditional types like this are how `Awaited`, deep `Readonly`, and JSON-path utilities are built.",
+      "references": "[TypeScript Handbook: Conditional Types](https://www.typescriptlang.org/docs/handbook/2/conditional-types.html)"
+    }
+  ]
+}
