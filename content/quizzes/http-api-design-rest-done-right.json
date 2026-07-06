@@ -110,7 +110,7 @@
           "isCorrect": false
         }
       ],
-      "explanation": "In JSON Patch, the path token `-` means \"append to the array.\" Applying the patch once gives `items: [..., \"sku-9\"]`; applying the **same** request again gives `items: [..., \"sku-9\", \"sku-9\"]`. Two applications produce different states ⇒ not idempotent. RFC 5789 states plainly that PATCH is \"neither safe nor idempotent.\"\n\n`PUT` is idempotent because it carries the *entire* target state: sending it N times leaves the resource exactly as one send would.\n\nNote the nuance in the second distractor: a `PATCH` *can* be made idempotent (e.g., a patch that only sets absolute values), but the method gives you no guarantee — so clients and intermediaries must not assume it.",
+      "explanation": "In JSON Patch, the path token `-` means \"append to the array.\" Applying the patch once gives `items: [..., \"sku-9\"]`; applying the **same** request again gives `items: [..., \"sku-9\", \"sku-9\"]`. Two applications produce different states ⇒ not idempotent. RFC 5789 states plainly that PATCH is \"neither safe nor idempotent.\"\n\n`PUT` is idempotent because it carries the *entire* target state: sending it N times leaves the resource exactly as one send would.\n\nOne nuance: a *specific* `PATCH` *can* be made idempotent (e.g., a patch that only sets absolute values), but the method gives you no guarantee — so clients and intermediaries must not assume it.",
       "references": "[RFC 5789: PATCH (not safe or idempotent)](https://www.rfc-editor.org/rfc/rfc5789#section-1) · [RFC 6902: JSON Patch](https://www.rfc-editor.org/rfc/rfc6902)"
     },
     {

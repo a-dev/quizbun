@@ -211,7 +211,7 @@
           "isCorrect": false
         }
       ],
-      "explanation": "By default **every** argument typed `C` is an inference site. In `light`, the literal `\"blue\"` adds itself as a candidate, so `C` widens to `\"red\" | \"green\" | \"blue\"` and the call type-checks even though `\"blue\"` isn't a real color — a classic inference leak.\n\nWrapping the parameter in `NoInfer<C>` (TS 5.4) says *\"use `C` here, but don't infer from this position.\"* Now `C` is pinned to `\"red\" | \"green\"` by the `colors` array and `\"blue\"` is correctly rejected. Like every type-level construct, `NoInfer` is erased during compilation and has **zero** runtime effect — so the last option is false.",
+      "explanation": "By default **every** argument typed `C` is an inference site. In `light`, the literal `\"blue\"` adds itself as a candidate, so `C` widens to `\"red\" | \"green\" | \"blue\"` and the call type-checks even though `\"blue\"` isn't a real color — a classic inference leak.\n\nWrapping the parameter in `NoInfer<C>` (TS 5.4) says *\"use `C` here, but don't infer from this position.\"* Now `C` is pinned to `\"red\" | \"green\"` by the `colors` array and `\"blue\"` is correctly rejected. Like every type-level construct, `NoInfer` is erased during compilation and has **zero** runtime effect — so the claim that it changes the runtime value of `def` is false.",
       "references": "[TypeScript 5.4 Release Notes: The `NoInfer` Utility Type](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-5-4.html#the-noinfer-utility-type)"
     },
     {
@@ -237,7 +237,7 @@
           "isCorrect": false
         }
       ],
-      "explanation": "The constraint `K extends keyof T` ties `key` to the actual keys of `obj`. TS infers `T` as `{ id: number; name: string; active: boolean }`, so `keyof T` is `\"id\" | \"name\" | \"active\"`. Passing `\"email\"` violates the constraint, so it fails to compile *before the code ever runs*.\n\nThe return type `T[K]` is an **indexed access** — it resolves to the type stored at that exact key. Hence `\"name\"` ⇒ `string`, `\"id\"` ⇒ `number`, and `\"active\"` ⇒ `boolean` (not `string`, which makes the last option false). This `<T, K extends keyof T>` pairing is the backbone of type-safe getters, lodash-style `get`, and form libraries that keep field names and value types in lockstep.",
+      "explanation": "The constraint `K extends keyof T` ties `key` to the actual keys of `obj`. TS infers `T` as `{ id: number; name: string; active: boolean }`, so `keyof T` is `\"id\" | \"name\" | \"active\"`. Passing `\"email\"` violates the constraint, so it fails to compile *before the code ever runs*.\n\nThe return type `T[K]` is an **indexed access** — it resolves to the type stored at that exact key. Hence `\"name\"` ⇒ `string`, `\"id\"` ⇒ `number`, and `\"active\"` ⇒ `boolean` — not `string`, as the false statement claims. This `<T, K extends keyof T>` pairing is the backbone of type-safe getters, lodash-style `get`, and form libraries that keep field names and value types in lockstep.",
       "references": "[TypeScript Handbook: Using Type Parameters in Generic Constraints](https://www.typescriptlang.org/docs/handbook/2/generics.html#using-type-parameters-in-generic-constraints)"
     },
     {

@@ -27,6 +27,7 @@ Follow these rules:
 - Numeric input answers must be JSON numbers. Use `tolerance` only when rounded answers should count as correct.
 - Put the question itself in the Question `title`, phrased as the actual ask — usually ending in `?`. Use the optional Question `description` only for supporting context: the scenario, a code snippet, data, or answer-format hints. Renderers show the `description` as smaller secondary text, so it must never carry the real question.
 - Include an `explanation` for every Question. The Explanation should teach the concept, not only restate the correct answer.
+- Renderers shuffle Options, so the order in the JSON is not the order the learner sees. Never refer to an Option by its position or an invented label in any text field — no "the first option", "the last option", "the third distractor", "option B", or "(option 2)". Identify an Option by quoting or paraphrasing its text instead. (Positional labels are acceptable only when the Question defines them itself, e.g. as comments in a code snippet in the `description`.)
 - Add optional `references` when a Question benefits from source links, citations, or further reading. References appear after the Explanation and must be non-empty when present. Where practical, prefer link text that names both the publication and the linked article or topic (for example, `[MDN: Array.prototype.sort()](...)`); this is a recommendation, not a requirement.
 - Every text field is Markdown. Titles and Option text are inline-only; descriptions, Explanations, and References may use full Markdown. Never use raw HTML.
 - Fenced code blocks in descriptions, Explanations, and References are syntax-highlighted for JavaScript/TypeScript (`js`, `ts`, `jsx`, `tsx`), `json`, `html`, `css`, Python (`py`), Bash (`bash`, `sh`), and `sql`. Other languages still render, just without colors. Prefer these hints, and always tag the fence with its language.
@@ -43,6 +44,7 @@ Before emitting the final JSON, silently check:
 - No unknown fields exist anywhere.
 - Single-choice and multiple-choice correctness counts satisfy the rules above.
 - Every Question `title` states the actual question; no `description` carries the ask on its own.
+- No text field refers to an Option by position or label ("first option", "option B", …).
 
 JSON Schema:
 

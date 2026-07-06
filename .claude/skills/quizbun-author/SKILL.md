@@ -27,6 +27,7 @@ A passing quiz is more than valid JSON. The bundled prompt holds the full rules;
 
 - **Verify, don't recall.** Prove every answer before marking it correct — execute code in your head, compute numbers, check definitions and dates. If you cannot verify it, change the question.
 - **Prove it in the `explanation`.** Show _why_ the answer is right (the computation, rule, counterexample, or citation) and teach the concept, so a wrong answer becomes a lesson — never just restate the correct Option.
+- **Never refer to Options by position.** Renderers shuffle Options, so the JSON order is not the display order — "the first option", "the last option", "option B", or "(option 2)" point at nothing stable. Identify an Option by quoting or paraphrasing its text instead. (Labels are fine only when the question itself defines them in its own `description`, e.g. inside a code snippet.)
 - **Make it interesting and easy to read.** Concrete scenarios over abstractions; tight, unambiguous titles that carry the question itself (supporting context goes in `description`); distractors that are plausible misconceptions yet clearly wrong.
 - **Illustrate.** Where the topic allows, ground it in real material — a runnable code snippet (tagged with a highlightable language), a worked example, or a short attributed quote from a book, article, standard, notable person, or proverb. Put sources in `references`.
 

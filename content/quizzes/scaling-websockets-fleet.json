@@ -55,7 +55,7 @@
           "isCorrect": false
         }
       ],
-      "explanation": "Each server's map of `userId → socket` is **per process**; server A simply has no handle to a socket living on B. A pub/sub bus decouples *publishing* a message from *which* server holds the recipient: every app server subscribes to the relevant channels, and when a message is published, each server delivers it to whichever matching clients it happens to hold.\n\nThis backplane is exactly what Socket.IO's Redis adapter, Phoenix PubSub, and similar tools provide — it's the standard way to scale WebSockets past a single box. Mesh-connecting every server pair (the first distractor) is O(n²) and brittle.",
+      "explanation": "Each server's map of `userId → socket` is **per process**; server A simply has no handle to a socket living on B. A pub/sub bus decouples *publishing* a message from *which* server holds the recipient: every app server subscribes to the relevant channels, and when a message is published, each server delivers it to whichever matching clients it happens to hold.\n\nThis backplane is exactly what Socket.IO's Redis adapter, Phoenix PubSub, and similar tools provide — it's the standard way to scale WebSockets past a single box. Mesh-connecting the servers to each other instead — opening server-to-server sockets to relay messages — is O(n²) and brittle.",
       "references": "[Socket.IO: Redis adapter](https://socket.io/docs/v4/redis-adapter/)"
     },
     {
