@@ -39,6 +39,11 @@ jobs:
       - name: Generate CSS Modules typings
         run: bun run css:dts
 
+      # .astro/types.d.ts is gitignored; without it import.meta.env falls back
+      # to Bun's loose typings and BASE_URL becomes `string | undefined`.
+      - name: Generate Astro types
+        run: bun run astro sync
+
       - name: Typecheck
         run: bun run typecheck
 
