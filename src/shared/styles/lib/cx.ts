@@ -10,7 +10,7 @@ import { cx as classix } from "classix";
  * Falsy entries are dropped — for optional passthrough only: a `className`
  * prop that may be `undefined`, or an optional enum lookup like
  * `!!size && SIZE_CLASS[size]`. Boolean state never rides `cx` conditionals;
- * it belongs on `data-*` attributes (css-modules-quizbun skill). Other shapes (numbers,
+ * it belongs on `data-*` attributes (css-modules skill). Other shapes (numbers,
  * arrays, objects) are intentionally not accepted.
  */
 export type ClassValue = string | false | null | undefined;

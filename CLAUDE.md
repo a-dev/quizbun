@@ -39,7 +39,7 @@ GitHub Pages builds set `GITHUB_PAGES=true`, which switches the Astro `base` to 
 
 ## CSS
 
-Conventions are documented and enforced via the `css-modules-quizbun` skill ([.claude/skills/css-modules-quizbun/SKILL.md](.claude/skills/css-modules-quizbun/SKILL.md)). Key rules:
+Conventions are documented and enforced via the `css-modules` skill ([.claude/skills/css-modules/SKILL.md](.claude/skills/css-modules/SKILL.md)). Key rules:
 
 - CSS Modules co-located with components; no Tailwind. `localsConvention: camelCaseOnly`.
 - Two-tier tokens in `src/shared/styles/vars/`: primitive palette (`palette.css`) → semantic tokens (`colors.css`, `fonts.css`, …). Components consume **semantic tokens only** — raw palette tokens or hex/oklch values in component modules are forbidden.

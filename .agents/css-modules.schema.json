@@ -1,0 +1,442 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "./css-modules.schema.json",
+  "title": "Typed CSS Modules project contract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "methodologyVersion",
+    "profileSchemaVersion",
+    "adapter",
+    "appRoot",
+    "stylesRoot",
+    "globalStylesheet",
+    "alias",
+    "helpers",
+    "sharedApi",
+    "layers",
+    "composition",
+    "colorTokens",
+    "commands"
+  ],
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "methodologyVersion": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "profileSchemaVersion": {
+      "const": 1
+    },
+    "adapter": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "version": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+        }
+      }
+    },
+    "appRoot": {
+      "type": "string",
+      "minLength": 1
+    },
+    "stylesRoot": {
+      "type": "string",
+      "minLength": 1
+    },
+    "globalStylesheet": {
+      "type": "string",
+      "minLength": 1
+    },
+    "alias": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["bare", "subpath"],
+      "properties": {
+        "bare": {
+          "type": "string",
+          "minLength": 1
+        },
+        "subpath": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "helpers": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["classNames", "cssVariables"],
+      "properties": {
+        "classNames": {
+          "type": "string",
+          "minLength": 1
+        },
+        "cssVariables": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "sharedApi": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["entryPoint", "modules", "admissionRule"],
+      "properties": {
+        "entryPoint": {
+          "type": "string",
+          "minLength": 1
+        },
+        "modules": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "path", "layer"],
+            "properties": {
+              "name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "export": {
+                "type": ["string", "null"]
+              },
+              "path": {
+                "type": "string",
+                "minLength": 1
+              },
+              "layer": {
+                "type": "string",
+                "minLength": 1
+              },
+              "publicClasses": {
+                "type": "array",
+                "uniqueItems": true,
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            }
+          }
+        },
+        "admissionRule": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["strategy"],
+          "properties": {
+            "strategy": {
+              "enum": ["project-review", "second-semantic-consumer", "explicit"]
+            },
+            "document": {
+              "type": "string"
+            }
+          },
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "strategy": {
+                    "const": "explicit"
+                  }
+                }
+              },
+              "then": {
+                "required": ["document"]
+              }
+            }
+          ]
+        }
+      }
+    },
+    "layers": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["order", "ownership", "localModules"],
+      "properties": {
+        "order": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "ownership": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["glob", "layer"],
+            "properties": {
+              "glob": {
+                "type": "string",
+                "minLength": 1
+              },
+              "layer": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
+        "localModules": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["strategy"],
+          "properties": {
+            "strategy": {
+              "enum": ["unlayered", "profiled", "custom"]
+            },
+            "layer": {
+              "type": "string"
+            },
+            "document": {
+              "type": "string"
+            }
+          },
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "strategy": {
+                    "const": "profiled"
+                  }
+                }
+              },
+              "then": {
+                "required": ["layer"]
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "strategy": {
+                    "const": "custom"
+                  }
+                }
+              },
+              "then": {
+                "required": ["document"]
+              }
+            }
+          ]
+        },
+        "importantPolicy": {
+          "type": "string"
+        }
+      }
+    },
+    "composition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode"],
+      "properties": {
+        "mode": {
+          "enum": ["markup", "composes", "mixed-with-rule"]
+        },
+        "rule": {
+          "type": "string"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "mode": {
+                "const": "mixed-with-rule"
+              }
+            }
+          },
+          "then": {
+            "required": ["rule"]
+          }
+        }
+      ]
+    },
+    "colorTokens": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["enabled"],
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "paletteFiles": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string"
+          }
+        },
+        "semanticFiles": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string"
+          }
+        },
+        "themeOwner": {
+          "type": "string"
+        },
+        "themeAttribute": {
+          "type": "string"
+        },
+        "modes": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "enabled": {
+                "const": true
+              }
+            }
+          },
+          "then": {
+            "required": ["paletteFiles", "semanticFiles", "themeOwner", "themeAttribute", "modes"]
+          }
+        }
+      ]
+    },
+    "commands": {
+      "type": "object",
+      "minProperties": 2,
+      "required": ["css:generate", "css:types"],
+      "additionalProperties": false,
+      "properties": {
+        "css:generate": {
+          "type": "string",
+          "minLength": 1
+        },
+        "css:types": {
+          "type": "string",
+          "minLength": 1
+        },
+        "css:check": {
+          "type": "string",
+          "minLength": 1
+        },
+        "css:verify": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "runtimeVerification": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "entry": {
+          "type": "string"
+        },
+        "themes": {
+          "$ref": "#/$defs/stringArray"
+        },
+        "viewports": {
+          "$ref": "#/$defs/stringArray"
+        },
+        "interactions": {
+          "$ref": "#/$defs/stringArray"
+        },
+        "states": {
+          "$ref": "#/$defs/stringArray"
+        },
+        "preferences": {
+          "$ref": "#/$defs/stringArray"
+        },
+        "directions": {
+          "$ref": "#/$defs/stringArray"
+        }
+      }
+    },
+    "enforcement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["severity"],
+      "properties": {
+        "severity": {
+          "enum": ["warning", "error"]
+        },
+        "privateBooleanAttributes": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^data-[a-z0-9-]+$"
+          }
+        }
+      }
+    },
+    "exceptions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["kind", "scope", "reason"],
+        "properties": {
+          "kind": {
+            "type": "string"
+          },
+          "scope": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "rule": {
+            "type": "string",
+            "minLength": 1
+          },
+          "match": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "kind": { "const": "rule" }
+              }
+            },
+            "then": {
+              "required": ["rule"]
+            }
+          }
+        ]
+      }
+    },
+    "extensions": {
+      "type": "object",
+      "additionalProperties": true
+    }
+  },
+  "$defs": {
+    "stringArray": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}

@@ -1,0 +1,97 @@
+{
+  "$schema": "./css-modules.schema.json",
+  "methodologyVersion": "1.0.0",
+  "profileSchemaVersion": 1,
+  "adapter": {
+    "name": "vite-react",
+    "version": "1.0.0"
+  },
+  "appRoot": ".",
+  "stylesRoot": "src/shared/styles",
+  "globalStylesheet": "src/shared/styles/global.css",
+  "alias": {
+    "bare": "#styles",
+    "subpath": "#styles/*"
+  },
+  "helpers": {
+    "classNames": "cx",
+    "cssVariables": "cssVars"
+  },
+  "sharedApi": {
+    "entryPoint": "src/shared/styles/index.ts",
+    "modules": [
+      {
+        "name": "layout",
+        "export": "layout",
+        "path": "src/shared/styles/layout.module.css",
+        "layer": "atoms",
+        "publicClasses": ["cluster"]
+      },
+      {
+        "name": "typography",
+        "export": "typography",
+        "path": "src/shared/styles/typography.module.css",
+        "layer": "atoms",
+        "publicClasses": ["heading"]
+      },
+      {
+        "name": "utils",
+        "export": "utils",
+        "path": "src/shared/styles/utils.module.css",
+        "layer": "atoms",
+        "publicClasses": ["visually-hidden"]
+      }
+    ],
+    "admissionRule": {
+      "strategy": "project-review"
+    }
+  },
+  "layers": {
+    "order": ["reset", "base", "atoms", "ui"],
+    "ownership": [
+      {
+        "glob": "src/shared/styles/*.module.css",
+        "layer": "atoms"
+      },
+      {
+        "glob": "src/shared/ui/**/*.module.css",
+        "layer": "ui"
+      }
+    ],
+    "localModules": {
+      "strategy": "unlayered"
+    },
+    "importantPolicy": "No application !important without a documented integration exception."
+  },
+  "composition": {
+    "mode": "markup"
+  },
+  "colorTokens": {
+    "enabled": true,
+    "paletteFiles": ["src/shared/styles/vars/palette.css"],
+    "semanticFiles": ["src/shared/styles/vars/colors.css"],
+    "themeOwner": "src/app/theme.ts",
+    "themeAttribute": "data-theme",
+    "modes": ["system", "light", "dark"]
+  },
+  "commands": {
+    "css:generate": "npm run css:generate",
+    "css:types": "npm run css:types",
+    "css:check": "npm run css:check",
+    "css:verify": "npm run css:verify"
+  },
+  "runtimeVerification": {
+    "entry": "storybook",
+    "themes": ["system", "light", "dark"],
+    "viewports": ["360px", "768px", "1280px"],
+    "interactions": ["default", "hover", "focus-visible", "active"],
+    "states": ["disabled", "loading", "selected", "error"],
+    "preferences": ["reduced-motion", "forced-colors"],
+    "directions": ["ltr"]
+  },
+  "enforcement": {
+    "severity": "warning",
+    "privateBooleanAttributes": ["data-loading"]
+  },
+  "exceptions": []
+}

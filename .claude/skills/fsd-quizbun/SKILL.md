@@ -94,7 +94,7 @@ app → pages(routes) → _pages(page slices) → features → entities → shar
   discouraged.
 - `index.ts` exports are **named, never default**.
 - CSS Modules co-located with a generated, git-ignored `*.module.css.d.ts`
-  (`bun run css:dts`); styling rules live in the `css-modules-quizbun` skill.
+  (`bun run css:dts`); styling rules live in the `css-modules` skill.
 
 ## Tests & stories (extension picks the lane)
 

@@ -271,7 +271,7 @@ Tests run on **Vitest**, in two in-repo lanes plus a separate end-to-end lane:
 - **Mobile:** fully responsive; the player is designed phone-first.
 - **Accessibility:** semantic HTML, full keyboard operability (the player is completable without a mouse), visible focus states, labeled form controls, `fieldset`/`legend` per Question, live-region announcement of correctness on submit, focus trapped and restored in dialogs. WCAG AA is the target, not a certified audit gate. Read aloud is an additive aid on top of this baseline, never a substitute for it.
 - **Performance:** the architecture _is_ the strategy — static pages, islands only where interactivity exists, and no client-side rendering of build-time-known content. No numeric budget is chased in v1.
-- **Theming:** `light-dark()` with `<html data-theme>` is the only theming mechanism; components consume semantic tokens only (never raw palette values). CSS Modules are co-located; conventions are documented and enforced by the `css-modules-quizbun` skill (`.claude/skills/css-modules-quizbun/SKILL.md`).
+- **Theming:** `light-dark()` with `<html data-theme>` is the only theming mechanism; components consume semantic tokens only (never raw palette values). CSS Modules are co-located; conventions are documented and enforced by the `css-modules` skill (`.claude/skills/css-modules/SKILL.md`).
 
 ## 9. Release status and what remains open
 

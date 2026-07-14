@@ -1,0 +1,60 @@
+@layer ui {
+  .root {
+    display: inline-flex;
+    align-items: center;
+    color: var(--color-action-fg);
+    background: var(--color-action-bg);
+  }
+
+  .root[data-loading] .spinner {
+    opacity: 1;
+  }
+
+  .root:focus-visible {
+    outline: 2px solid currentcolor;
+    outline-offset: 2px;
+  }
+
+  .spinner {
+    inline-size: 1em;
+    block-size: 1em;
+    border-radius: 50%;
+    opacity: 0;
+    background: conic-gradient(currentcolor calc(var(--_progress) * 1turn), transparent 0);
+    animation: reference-button-spin 1s linear infinite;
+  }
+
+  .label {
+    opacity: 1;
+  }
+
+  .variant-primary {
+    border: 2px solid var(--color-action-border);
+  }
+
+  .variant-secondary {
+    border: 2px dashed var(--color-action-border);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .spinner {
+      animation: none;
+    }
+  }
+
+  @media (forced-colors: active) {
+    .root {
+      border-color: ButtonText;
+    }
+
+    .spinner {
+      background: CanvasText;
+    }
+  }
+
+  @keyframes reference-button-spin {
+    to {
+      transform: rotate(1turn);
+    }
+  }
+}

@@ -1,0 +1,111 @@
+{
+  "$schema": "./css-modules.schema.json",
+  "methodologyVersion": "1.0.0",
+  "profileSchemaVersion": 1,
+  "adapter": {
+    "name": "astro-vite",
+    "version": "1.0.0"
+  },
+  "appRoot": ".",
+  "stylesRoot": "src/shared/styles",
+  "globalStylesheet": "src/shared/styles/index.css",
+  "alias": {
+    "bare": "#styles",
+    "subpath": "#styles/*"
+  },
+  "helpers": {
+    "classNames": "cx",
+    "cssVariables": "cssVars"
+  },
+  "sharedApi": {
+    "entryPoint": "src/shared/styles/index.ts",
+    "modules": [
+      {
+        "name": "layout",
+        "export": "layout",
+        "path": "src/shared/styles/layout.module.css",
+        "layer": "layout"
+      },
+      {
+        "name": "typography",
+        "export": "typography",
+        "path": "src/shared/styles/typography.module.css",
+        "layer": "typography"
+      },
+      {
+        "name": "utils",
+        "export": "utils",
+        "path": "src/shared/styles/utils.module.css",
+        "layer": "utils"
+      }
+    ],
+    "admissionRule": {
+      "strategy": "explicit",
+      "document": ".claude/skills/css-modules/SKILL.md"
+    }
+  },
+  "layers": {
+    "order": [
+      "reset",
+      "base",
+      "layout",
+      "typography",
+      "utils",
+      "ui"
+    ],
+    "ownership": [
+      {
+        "glob": "src/shared/styles/reset.css",
+        "layer": "reset"
+      },
+      {
+        "glob": "src/shared/styles/global.css",
+        "layer": "base"
+      },
+      {
+        "glob": "src/shared/styles/layout.module.css",
+        "layer": "layout"
+      },
+      {
+        "glob": "src/shared/styles/typography.module.css",
+        "layer": "typography"
+      },
+      {
+        "glob": "src/shared/styles/utils.module.css",
+        "layer": "utils"
+      },
+      {
+        "glob": "src/shared/ui/**/*.module.css",
+        "layer": "ui"
+      }
+    ],
+    "localModules": {
+      "strategy": "unlayered"
+    },
+    "importantPolicy": "Only the documented [hidden] reset exception may use !important."
+  },
+  "composition": {
+    "mode": "mixed-with-rule",
+    "rule": "External composes is limited to utilities from #styles/utils.module.css."
+  },
+  "colorTokens": {
+    "enabled": true,
+    "paletteFiles": [
+      "src/shared/styles/vars/palette.css"
+    ],
+    "semanticFiles": [
+      "src/shared/styles/vars/colors.css"
+    ],
+    "themeOwner": "src/app/ui/theme-switcher.astro",
+    "themeAttribute": "data-theme",
+    "modes": [
+      "system",
+      "light",
+      "dark"
+    ]
+  },
+  "commands": {
+    "css:generate": "bun run css:dts",
+    "css:types": "bun run typecheck"
+  }
+}
