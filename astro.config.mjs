@@ -1,9 +1,13 @@
 // @ts-check
 import { defineConfig, fontProviders } from "astro/config";
 import react from "@astrojs/react";
+import sitemap from '@astrojs/sitemap';
 import { patchCssModules } from "vite-css-modules";
 import { loadEnv } from "vite";
+
+
 import { sharedViteConfig } from "./vite.shared.ts";
+
 
 const githubPagesBase = "/quizbun";
 const githubPagesSite = `https://a-dev.github.io${githubPagesBase}`;
@@ -22,7 +26,7 @@ export default defineConfig({
   server: {
     allowedHosts,
   },
-  integrations: [react()],
+  integrations: [react(), sitemap()],
   output: "static",
   site: githubPagesSite,
   vite: {

@@ -1,5 +1,6 @@
 ---
 import { Font } from "astro:assets";
+import { SEO } from "astro-seo";
 
 import "#styles/index.css";
 
@@ -25,6 +26,7 @@ const {
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="icon" type="image/svg+xml" href={withBase("favicon.svg")} />
+    <link rel="sitemap" href="/sitemap-index.xml" />
     <link rel="icon" href={withBase("favicon.ico")} />
     <meta name="generator" content={Astro.generator} />
     <meta name="theme-color" content="#4d84a7" />
@@ -33,6 +35,31 @@ const {
     <meta name="description" content={description} />
     <script is:inline set:html={themeBootstrapScript} />
     <title>{title}</title>
+    <SEO
+      title={title}
+      description={description}
+      openGraph={{
+        basic: {
+          title: title,
+          type: "website",
+          image: "/quizbun-og-image.png",
+        }
+      }}
+      twitter={{
+        creator: "@a_dev0"
+      }}
+      extend={{
+        link: [{ rel: "icon", href: "/favicon.ico" }],
+        meta: [
+          {
+            name: "twitter:image",
+            content: "/quizbun-og-image.png",
+          },
+          { name: "twitter:title", content: title },
+          { name: "twitter:description", content: description },
+        ],
+      }}
+    />
   </head>
   <body class={utils.cellBackground}>
     <a class="skip-link" href="#content">Skip to content</a>
