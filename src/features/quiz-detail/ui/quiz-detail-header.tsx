@@ -11,7 +11,7 @@ import { Button } from "@/shared/ui/button";
 import { MarkdownRender } from "@/shared/ui/markdown";
 
 import { typography } from "#styles";
-import styles from "./quiz-detail.module.css";
+import styles from "./quiz-detail-header.module.css";
 
 interface QuizDetailHeaderProps {
   quiz: Quiz;
@@ -35,7 +35,7 @@ function QuizDetailHeaderComponent({ quiz, runStatus }: QuizDetailHeaderProps) {
   );
 
   return (
-    <header className={styles.header}>
+    <header className={styles.root}>
       {quiz.tags.length > 0 && (
         <div className={styles.tags} aria-label="Tags">
           {quiz.tags.map((tag) => (

@@ -183,6 +183,8 @@ Do not infer typography, spacing, shape, or sizing token systems from the color 
 
 Do not hardcode layer names. Use `layers.order`, `layers.ownership`, and `layers.localModules` from the project profile.
 
+Exactly one matching `ownership` glob wins; otherwise apply `localModules`: `profiled` uses its `layer`, `unlayered` forbids a wrapper, and `custom` follows its `document`. Treat multiple matches or disagreement with existing CSS as drift; do not normalize wrappers outside an explicit migration.
+
 For normal declarations, verify the configured precedence. Remember that important declarations reverse layer order.
 
 ### The shared API is project-owned

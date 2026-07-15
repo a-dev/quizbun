@@ -114,6 +114,16 @@
     }
   }
 
+  .popup-size-s {
+    --_item-font-size: var(--fs-s);
+    --_item-padding-block: 0.375rem;
+  }
+
+  .popup-size-m {
+    --_item-font-size: var(--fs-m);
+    --_item-padding-block: 0.5rem;
+  }
+
   .list {
     scroll-padding-block: 1.5rem;
 
@@ -153,9 +163,10 @@
     align-items: center;
 
     box-sizing: border-box;
-    padding: 0.5rem 1rem 0.5rem 0.625rem;
+    padding-block: var(--_item-padding-block);
+    padding-inline: 1rem 0.625rem;
 
-    font-size: var(--fs-m);
+    font-size: var(--_item-font-size);
     line-height: 1;
 
     outline: 0;
@@ -185,12 +196,6 @@
 
     &[data-disabled] {
       color: var(--color-text-on-panel-secondary);
-    }
-
-    /* Match a small trigger; the popup carries `data-size`. */
-    [data-size="s"] & {
-      padding-block: 0.375rem;
-      font-size: var(--fs-s);
     }
 
     @media (pointer: coarse) {

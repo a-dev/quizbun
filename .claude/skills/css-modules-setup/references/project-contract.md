@@ -62,6 +62,14 @@ Record:
 - local module strategy;
 - any documented `!important` exception.
 
+Layer ownership resolves by file path. Exactly one matching ownership glob selects its layer. More than one match is ambiguous. When no glob matches, `layers.localModules` is the fallback:
+
+- `unlayered` requires the module's rules to remain outside `@layer`;
+- `profiled` assigns `localModules.layer` to every unmatched CSS Module;
+- `custom` delegates to `localModules.document`.
+
+Scoped ownership and the fallback may intentionally select the same layer. The path rule remains unchanged: an ownership match wins, and only unmatched modules use the fallback.
+
 ## Template rules
 
 Files under `assets/templates/` contain placeholders. Resolve every placeholder from discovered or selected values before creating a project file.

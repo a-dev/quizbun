@@ -72,16 +72,16 @@ function PopoverRoot({
         <PopoverPrimitive.Positioner
           sideOffset={8}
           {...positioner}
-          className={styles.popoverPositioner}
+          className={styles.positioner}
           style={maxWidth !== undefined ? cssVars({ "--_max-width": maxWidth }) : undefined}
         >
           <PopoverPrimitive.Popup
-            className={cx(styles.popoverPopup, classNames?.content)}
+            className={cx(styles.popup, classNames?.content)}
             data-testid="ui-popover-popup"
           >
             {showArrow && (
               <PopoverPrimitive.Arrow
-                className={styles.popoverArrow}
+                className={styles.arrow}
                 render={
                   <svg width="20" height="10" viewBox="0 0 20 10" fill="none">
                     <path d="M0 0 L10 10 L20 0" strokeWidth="1" strokeLinejoin="round" />
@@ -96,7 +96,7 @@ function PopoverRoot({
             {showCloseButton && (
               <PopoverPrimitive.Close
                 aria-label="Close"
-                className={styles.popoverClose}
+                className={styles.close}
                 data-testid="ui-popover-content-close"
                 onClick={(e) => e.stopPropagation()}
                 nativeButton={false}
@@ -132,16 +132,16 @@ export function PopoverWithPayload({
           <PopoverPrimitive.Positioner
             sideOffset={8}
             {...positioner}
-            className={styles.popoverPositioner}
+            className={styles.positioner}
             style={maxWidth !== undefined ? cssVars({ "--_max-width": maxWidth }) : undefined}
           >
             <PopoverPrimitive.Popup
-              className={cx(styles.popoverPopup, classNames?.content)}
+              className={cx(styles.popup, classNames?.content)}
               data-testid="ui-popover-popup"
             >
               {showArrow && (
                 <PopoverPrimitive.Arrow
-                  className={styles.popoverArrow}
+                  className={styles.arrow}
                   render={
                     <svg width="20" height="10" viewBox="0 0 20 10" fill="none">
                       <path d="M0 0 L10 10 L20 0" strokeWidth="1" strokeLinejoin="round" />
@@ -152,7 +152,7 @@ export function PopoverWithPayload({
                   })}
                 />
               )}
-              <PopoverPrimitive.Viewport className={styles.popoverViewport}>
+              <PopoverPrimitive.Viewport className={styles.viewport}>
                 {payload?.children}
               </PopoverPrimitive.Viewport>
             </PopoverPrimitive.Popup>

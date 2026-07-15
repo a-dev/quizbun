@@ -13,6 +13,11 @@ const SIZE_CLASS = {
   m: styles.sizeM,
 } satisfies Record<SelectSize, string>;
 
+const POPUP_SIZE_CLASS = {
+  s: styles.popupSizeS,
+  m: styles.popupSizeM,
+} satisfies Record<SelectSize, string>;
+
 /* ─── Root ───────────────────────────────────────────── */
 
 type SelectProps<Value, Multiple extends boolean | undefined = false> = Omit<
@@ -77,7 +82,9 @@ function SelectRoot<Value, Multiple extends boolean | undefined = false>({
           sideOffset={sideOffset}
           alignItemWithTrigger={alignItemWithTrigger}
         >
-          <SelectPrimitive.Popup className={cx(styles.popup, classNames?.popup)} data-size={size}>
+          <SelectPrimitive.Popup
+            className={cx(styles.popup, POPUP_SIZE_CLASS[size], classNames?.popup)}
+          >
             {scrollArrows && (
               <SelectPrimitive.ScrollUpArrow className={styles.scrollArrow}>
                 ▲

@@ -40,4 +40,40 @@ describe("LinkAsButton", () => {
       .element(screen.getByRole("link", { name: "Library" }))
       .toHaveAttribute("aria-disabled", "true");
   });
+
+  it("does not expose disabled styling state or activate when enabled", async () => {
+    const onClick = vi.fn();
+    const screen = await page.render(
+      <LinkAsButton
+        href="/library/"
+        onClick={(event) => {
+          event.preventDefault();
+          onClick();
+        }}
+      >
+        Library
+      </LinkAsButton>,
+    );
+    const link = screen.getByRole("link", { name: "Library" });
+
+    await expect.element(link).not.toHaveAttribute("data-disabled");
+    await userEvent.click(link);
+
+    await expect(onClick).toHaveBeenCalledOnce();
+  });
+
+  it("prevents activation when disabled", async () => {
+    const onClick = vi.fn();
+    const screen = await page.render(
+      <LinkAsButton href="/library/" disabled onClick={onClick}>
+        Library
+      </LinkAsButton>,
+    );
+
+    const clickEvent = new MouseEvent("click", { bubbles: true, cancelable: true });
+    screen.getByRole("link", { name: "Library" }).element().dispatchEvent(clickEvent);
+
+    expect(clickEvent.defaultPrevented).toBe(true);
+    await expect(onClick).not.toHaveBeenCalled();
+  });
 });

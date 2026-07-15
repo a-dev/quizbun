@@ -78,36 +78,34 @@ export function DialogRoot({
     >
       {trigger && <DialogPrimitive.Trigger nativeButton={triggerIsNativeButton} render={trigger} />}
       <DialogPrimitive.Portal>
-        <DialogPrimitive.Backdrop className={cx(styles.dialogBackdrop, classNames?.backdrop)} />
+        <DialogPrimitive.Backdrop className={cx(styles.backdrop, classNames?.backdrop)} />
         <DialogPrimitive.Popup
-          className={cx(styles.dialogPopup, classNames?.popup)}
+          className={cx(styles.popup, classNames?.popup)}
           initialFocus={initialFocus}
           finalFocus={finalFocus}
           data-testid="ui-dialog-popup"
         >
           {(title || description) && (
-            <header className={styles.dialogHeader}>
+            <header className={styles.header}>
               {title && (
-                <DialogPrimitive.Title className={styles.dialogTitle}>
-                  {title}
-                </DialogPrimitive.Title>
+                <DialogPrimitive.Title className={styles.title}>{title}</DialogPrimitive.Title>
               )}
               {description && (
-                <DialogPrimitive.Description className={styles.dialogDescription}>
+                <DialogPrimitive.Description className={styles.description}>
                   {description}
                 </DialogPrimitive.Description>
               )}
             </header>
           )}
 
-          {children && <div className={styles.dialogBody}>{children}</div>}
+          {children && <div className={styles.body}>{children}</div>}
 
-          {footer && <footer className={styles.dialogFooter}>{footer}</footer>}
+          {footer && <footer className={styles.footer}>{footer}</footer>}
 
           {showCloseButton && (
             <DialogPrimitive.Close
               aria-label="Close"
-              className={styles.dialogClose}
+              className={styles.close}
               data-testid="ui-dialog-close"
               nativeButton={false}
               render={<X size={24} />}

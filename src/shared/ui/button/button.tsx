@@ -36,7 +36,7 @@ const SIZE_CLASS = {
 export function Button({ children, variant = "primary", size = "m", className, ...props }: Props) {
   return (
     <ButtonPrimitive
-      className={cx(styles.button, VARIANT_CLASS[variant], SIZE_CLASS[size], className)}
+      className={cx(styles.root, VARIANT_CLASS[variant], SIZE_CLASS[size], className)}
       {...props}
     >
       {children}
@@ -68,12 +68,19 @@ export function LinkAsButton({
     <a
       href={href}
       target={target}
-      className={cx(styles.button, !!size && SIZE_CLASS[size], VARIANT_CLASS[variant], className)}
+      className={cx(styles.root, !!size && SIZE_CLASS[size], VARIANT_CLASS[variant], className)}
       aria-current={ariaCurrent}
-      aria-disabled={disabled}
+      aria-disabled={disabled || undefined}
       aria-label={ariaLabel}
-      data-disabled={disabled}
-      onClick={onClick}
+      data-disabled={disabled || undefined}
+      onClick={(event) => {
+        if (disabled) {
+          event.preventDefault();
+          return;
+        }
+
+        onClick?.(event);
+      }}
     >
       {children}
     </a>

@@ -128,13 +128,16 @@ const plugins = [
     "css-modules/layer-by-profile",
     "Place the module in the layer selected by the project profile.",
     (root, options, warn) => {
-      if (!options.expectedLayer) return;
+      if (options.expectedLayer === undefined) return;
       root.walkRules((rule) => {
         const actual = enclosingLayer(rule);
         if (actual !== options.expectedLayer) {
+          const expected = options.expectedLayer
+            ? `@layer ${options.expectedLayer}`
+            : "an unlayered rule";
           warn(
             rule,
-            `Expected @layer ${options.expectedLayer}; found ${actual ? `@layer ${actual}` : "an unlayered rule"}.`,
+            `Expected ${expected}; found ${actual ? `@layer ${actual}` : "an unlayered rule"}.`,
           );
         }
       });

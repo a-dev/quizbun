@@ -53,7 +53,13 @@ function expectedLayer(profile, relativeFile) {
   if (relativeFile.endsWith(".module.css") && profile.layers.localModules.strategy === "profiled") {
     return profile.layers.localModules.layer;
   }
-  return null;
+  if (
+    relativeFile.endsWith(".module.css") &&
+    profile.layers.localModules.strategy === "unlayered"
+  ) {
+    return null;
+  }
+  return undefined;
 }
 
 async function runEslint(root, profile, severity) {

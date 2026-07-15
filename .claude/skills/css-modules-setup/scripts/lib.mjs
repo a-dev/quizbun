@@ -222,6 +222,13 @@ export function validateProfile(profile) {
     errors.push("profiled local modules require a layer");
   }
   if (
+    profile?.layers?.localModules?.strategy === "profiled" &&
+    Array.isArray(order) &&
+    !order.includes(profile.layers.localModules.layer)
+  ) {
+    errors.push("layers.localModules.layer is absent from layers.order");
+  }
+  if (
     profile?.layers?.localModules?.strategy === "custom" &&
     !profile.layers.localModules.document
   ) {

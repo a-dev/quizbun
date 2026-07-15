@@ -42,6 +42,9 @@ export function Textarea({ className, ref, onBeforeInput, onInput, ...props }: T
     // Measure at the intrinsic height instead of collapsing a focused field to
     // zero. A zero-height textarea can make the browser scroll the caret into
     // view before the final height is restored.
+    // Imperative measurement is an integration boundary: using React state here
+    // would add a render to each keystroke. This private property is not a
+    // caller-facing styling API, so it is intentionally managed on the element.
     textarea.style.removeProperty("--_height");
 
     const borderHeight = textarea.offsetHeight - textarea.clientHeight;

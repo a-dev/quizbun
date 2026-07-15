@@ -5,7 +5,7 @@ import { Button } from "@/shared/ui/button";
 
 import type { PlayerView } from "../model/player-route";
 
-import styles from "./quiz-detail.module.css";
+import styles from "./detail-actions.module.css";
 
 interface DetailActionsProps {
   runStatus: RunStatus;
@@ -30,7 +30,7 @@ function DetailActionsComponent({
 }: DetailActionsProps) {
   if (runStatus.kind === "none") {
     return (
-      <div className={styles.actions}>
+      <div className={styles.root}>
         <Button size="l" variant="primary" onClick={() => onPlay("questions")}>
           Start
         </Button>
@@ -41,7 +41,7 @@ function DetailActionsComponent({
   const finished = runStatus.kind === "finished";
 
   return (
-    <div className={styles.actions}>
+    <div className={styles.root}>
       <Button size="m" variant="primary" onClick={() => onPlay(finished ? "summary" : "questions")}>
         {finished ? "See summary" : "Continue"}
       </Button>

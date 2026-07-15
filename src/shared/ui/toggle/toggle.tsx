@@ -29,7 +29,7 @@ const SIZE_CLASS = {
 export function Toggle({ size = "icon-m", variant = "ghost", className, ...props }: Props) {
   return (
     <TogglePrimitive
-      className={cx(styles.toggle, VARIANT_CLASS[variant], SIZE_CLASS[size], className)}
+      className={cx(styles.root, VARIANT_CLASS[variant], SIZE_CLASS[size], className)}
       {...props}
     />
   );

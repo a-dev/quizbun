@@ -14,7 +14,7 @@ import { PageSizeControl } from "./page-size-control";
 import { QuestionCard } from "./question-card";
 
 import { cx, typography } from "#styles";
-import styles from "./player.module.css";
+import styles from "./questions-view.module.css";
 
 interface QuestionsViewProps {
   quiz: Quiz;

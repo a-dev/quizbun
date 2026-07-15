@@ -17,7 +17,7 @@ test("trigger and pressure evaluations pass by category", async () => {
   );
 });
 
-test("the scorer rejects activation drift and spacing invention", () => {
+test("the scorer rejects activation drift, spacing invention, and layer-profile normalization", () => {
   const result = evaluateResponses(
     [
       {
@@ -32,15 +32,27 @@ test("the scorer rejects activation drift and spacing invention", () => {
         requiredSignals: ["project decision"],
         forbiddenSignals: ["created a 4px scale"],
       },
+      {
+        id: "layer-drift",
+        category: "pressure",
+        expectedActivation: true,
+        requiredSignals: ["drift", "migration"],
+        forbiddenSignals: ["updated all modules"],
+      },
     ],
     [
       { id: "negative", activated: true, response: "Applied the skill." },
       { id: "spacing", activated: true, response: "I created a 4px scale." },
+      {
+        id: "layer-drift",
+        activated: true,
+        response: "I updated all modules to match the profile.",
+      },
     ],
   );
 
   assert.equal(result.status, "failed");
-  assert.equal(result.categories.find(({ category }) => category === "pressure")?.failed, 1);
+  assert.equal(result.categories.find(({ category }) => category === "pressure")?.failed, 2);
   assert.equal(
     result.categories.find(({ category }) => category === "trigger-negative")?.failed,
     1,

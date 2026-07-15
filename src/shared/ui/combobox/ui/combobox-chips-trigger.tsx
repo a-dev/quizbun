@@ -41,11 +41,7 @@ export function ComboboxChipsTrigger({
 
               return (
                 <>
-                  <div
-                    className={styles.chips}
-                    data-disabled={disabled}
-                    data-clearable={isClearable || undefined}
-                  >
+                  <div className={styles.chips} data-clearable={isClearable || undefined}>
                     {!value.length && (
                       <ComboboxPlaceholder placeholder={placeholder} classNames={classNames} />
                     )}

@@ -131,7 +131,7 @@ export function ImportQuizForm() {
                   variant="secondary"
                   size="m"
                   onClick={() => void confirmSave(result.quiz)}
-                  style={{ backgroundColor: "var(--color-state-success-bg)" }}
+                  className={styles.saveButton}
                 >
                   Save to Library
                 </Button>

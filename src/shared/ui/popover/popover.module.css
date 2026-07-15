@@ -1,5 +1,5 @@
 @layer ui {
-  .popover-positioner {
+  .positioner {
     --_easing: cubic-bezier(0.22, 1, 0.36, 1);
     --_animation-duration: 0.35s;
 
@@ -17,7 +17,7 @@
     }
   }
 
-  .popover-popup {
+  .popup {
     composes: rounded-s from "#styles/utils.module.css";
 
     will-change: transform, opacity;
@@ -53,7 +53,7 @@
     }
   }
 
-  .popover-arrow {
+  .arrow {
     display: flex;
     fill: var(--color-panel-bg);
     stroke: var(--color-panel-outline);
@@ -79,7 +79,7 @@
     }
   }
 
-  .popover-close {
+  .close {
     cursor: pointer;
 
     position: absolute;
@@ -113,8 +113,8 @@
   }
 
   /* Viewport */
-  .popover-viewport {
-    --viewport-inline-padding: 0.5rem;
+  .viewport {
+    --_viewport-inline-padding: 0.5rem;
 
     /* Required to clip the overflowing content during the slide in/out animations */
     position: relative;
@@ -134,11 +134,11 @@
        The 'previous` container receives the width of the previous content, while the `next` container
         receives the width of the new content.
     */
-      width: calc(var(--popup-width) - 2 * var(--viewport-inline-padding));
+      width: calc(var(--popup-width) - 2 * var(--_viewport-inline-padding));
       opacity: 1;
       transition:
-        transform var(--animation-duration) var(--easing),
-        opacity calc(var(--animation-duration) / 2) var(--easing);
+        transform var(--_animation-duration) var(--_easing),
+        opacity calc(var(--_animation-duration) / 2) var(--_easing);
     }
 
     &[data-activation-direction~="right"] [data-previous][data-ending-style] {

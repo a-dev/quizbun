@@ -221,6 +221,60 @@ test("accepts a compliant project without inventing spacing or extraction policy
   }
 });
 
+test("rejects a layer on a local module configured as unlayered", async () => {
+  const root = await createFixture();
+
+  try {
+    const currentProfile = JSON.parse(
+      await readFile(path.join(root, ".agents/css-modules.json"), "utf8"),
+    );
+    const unexpectedLayer = currentProfile.layers.order.at(-1);
+    const moduleCss = await readFile(path.join(root, "src/button.module.css"), "utf8");
+    await write(root, "src/button.module.css", `@layer ${unexpectedLayer} {\n${moduleCss}}\n`);
+
+    const result = await checkProject({ root });
+    const layerFinding = result.findings.find(
+      ({ ruleId, file }) =>
+        ruleId === "css-modules/layer-by-profile" && file === "src/button.module.css",
+    );
+
+    assert.equal(
+      layerFinding?.message,
+      `Expected an unlayered rule; found @layer ${unexpectedLayer}.`,
+    );
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test("reports disagreement between a profiled fallback and an existing unmatched module", async () => {
+  const fallbackLayer = "layer-a";
+  const root = await createFixture({
+    overrides: {
+      layers: {
+        order: ["base", "atoms", fallbackLayer],
+        ownership: [{ glob: "src/styles/*.module.css", layer: "atoms" }],
+        localModules: { strategy: "profiled", layer: fallbackLayer },
+      },
+    },
+  });
+
+  try {
+    const result = await checkProject({ root });
+    const layerFinding = result.findings.find(
+      ({ ruleId, file }) =>
+        ruleId === "css-modules/layer-by-profile" && file === "src/button.module.css",
+    );
+
+    assert.equal(
+      layerFinding?.message,
+      `Expected @layer ${fallbackLayer}; found an unlayered rule.`,
+    );
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
 test("supports warning-first migration and narrow, documented rule exceptions", async () => {
   const root = await createFixture({
     invalid: true,
