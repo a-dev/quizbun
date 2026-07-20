@@ -1,16 +1,16 @@
 // @ts-check
 import { defineConfig, fontProviders } from "astro/config";
 import react from "@astrojs/react";
-import sitemap from '@astrojs/sitemap';
+import sitemap from "@astrojs/sitemap";
+import { DevTools } from "@vitejs/devtools";
 import { patchCssModules } from "vite-css-modules";
 import { loadEnv } from "vite";
 
-
 import { sharedViteConfig } from "./vite.shared.ts";
-
 
 const githubPagesBase = "/quizbun";
 const githubPagesSite = `https://a-dev.github.io${githubPagesBase}`;
+const devtoolsBuild = process.env.DEVTOOLS === "true";
 
 const { ALLOWED_HOSTS = "", GITHUB_PAGES } = loadEnv(
   process.env.NODE_ENV ?? "development",
@@ -32,11 +32,21 @@ export default defineConfig({
   vite: {
     ...sharedViteConfig,
     plugins: [
+      ...(devtoolsBuild ? await DevTools({ build: { withApp: true } }) : []),
       patchCssModules({
         generateSourceTypes: true,
         declarationMap: true,
       }),
     ],
+    ...(devtoolsBuild
+      ? {
+          build: {
+            rolldownOptions: {
+              devtools: {},
+            },
+          },
+        }
+      : {}),
     optimizeDeps: {
       include: ["react", "react-dom", "react-dom/client", "react/jsx-runtime"],
     },
