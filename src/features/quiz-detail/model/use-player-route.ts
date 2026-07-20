@@ -3,6 +3,7 @@ import { useCallback, useMemo, useSyncExternalStore } from "react";
 import type { Quiz } from "@/shared/lib/quiz";
 import { parsePlayerUrlState, updatePlayerUrlSearch } from "@/shared/lib/routing";
 import type { PlayerUrlState } from "@/shared/lib/routing";
+import { withViewTransition } from "@/shared/lib/view-transition";
 
 import { surfaceFromState } from "./player-route";
 import type { PlayerView, Surface } from "./player-route";
@@ -18,12 +19,18 @@ import type { PlayerView, Surface } from "./player-route";
 const listeners = new Set<() => void>();
 
 function subscribe(onStoreChange: () => void): () => void {
+  // Browser Back/Forward flips the surface too (detail ↔ player), so it gets
+  // the same view transition as the in-page actions below. On this route a
+  // popstate is always a surface flip: player-internal state only ever
+  // `replaceState`s, so it never creates entries to pop between.
+  const onPopState = () => withViewTransition(onStoreChange);
+
   listeners.add(onStoreChange);
-  window.addEventListener("popstate", onStoreChange);
+  window.addEventListener("popstate", onPopState);
 
   return () => {
     listeners.delete(onStoreChange);
-    window.removeEventListener("popstate", onStoreChange);
+    window.removeEventListener("popstate", onPopState);
   };
 }
 
@@ -72,12 +79,19 @@ export function usePlayerRoute(quiz: Quiz): PlayerRoute {
   const questionIds = useMemo(() => quiz.questions.map((question) => question.id), [quiz]);
   const state = useMemo(() => parsePlayerUrlState(search, questionIds), [search, questionIds]);
 
+  // Enter/exit swap the whole surface, so they run inside a same-document
+  // view transition (detail ↔ player morph). `replace` stays unwrapped: it
+  // only mirrors player-internal state into the URL, nothing visual swaps.
   const enter = useCallback((view: PlayerView) => {
-    writeHistory("push", { mode: view === "summary" ? "summary" : "run" });
+    withViewTransition(() => {
+      writeHistory("push", { mode: view === "summary" ? "summary" : "run" });
+    });
   }, []);
 
   const exit = useCallback(() => {
-    writeHistory("replace", { mode: "detail" });
+    withViewTransition(() => {
+      writeHistory("replace", { mode: "detail" });
+    });
   }, []);
 
   const replace = useCallback((next: PlayerUrlState) => {

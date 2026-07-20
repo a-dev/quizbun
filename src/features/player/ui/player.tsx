@@ -6,6 +6,7 @@ import { Note } from "@/shared/ui/note";
 
 import { usePlayer } from "../model/use-player";
 import type { View } from "../model/use-player";
+import { PlayerFrame } from "./player-frame";
 import { QuestionsView } from "./questions-view";
 import { Summary } from "./summary";
 
@@ -25,7 +26,7 @@ interface PlayerProps {
 }
 
 /**
- * Run player (T6): thin shell over `usePlayer`. All loading, navigation, and
+ * Run player: thin shell over `usePlayer`. All loading, navigation, and
  * persistence live in the hook; this component only chooses which screen to
  * render and wires handlers through.
  */
@@ -44,7 +45,15 @@ export function Player({
   }
 
   if (player.status === "loading" || player.currentPage === undefined) {
-    return <TopLineLoader />;
+    // The full frame, not a bare loader: the detail → player view transition
+    // captures this state as its "after" frame, so the title must already be
+    // in place for the morph to connect (and the header appearing instantly
+    // reads faster regardless).
+    return (
+      <PlayerFrame quiz={quiz} headingRef={player.headingRef} onExit={onExit}>
+        <TopLineLoader />
+      </PlayerFrame>
+    );
   }
 
   if (player.view === "summary") {

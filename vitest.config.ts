@@ -71,7 +71,9 @@ const browserProject = defineProject({
     },
     browser: {
       enabled: true,
-      provider: playwright() as any,
+      // Reduced motion makes `withViewTransition` (detail ↔ player swap) apply
+      // updates directly, so component tests never race a 220ms transition.
+      provider: playwright({ contextOptions: { reducedMotion: "reduce" } }) as any,
       instances: [{ browser: "chromium" }],
     },
   },

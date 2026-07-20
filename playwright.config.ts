@@ -28,6 +28,10 @@ export default defineConfig({
   use: {
     baseURL,
     trace: "on-first-retry",
+    // View transitions honor reduced motion (CSS opt-in and JS guard both
+    // check it); forcing the preference keeps journeys deterministic — no
+    // transition overlays between navigations or surface swaps.
+    contextOptions: { reducedMotion: "reduce" },
   },
   // Chromium only for v1. Phone-first journeys opt in per-spec via
   // `test.use(devices["Pixel 5"])`; WebKit/Firefox are deferred until a real

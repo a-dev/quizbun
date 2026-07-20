@@ -1,9 +1,8 @@
 import type { Ref } from "react";
 
 import type { Question, Quiz } from "@/shared/lib/quiz";
-import { renderMarkdownFieldText } from "@/shared/lib/render";
 import type { PageSize, SubmittedAnswer } from "@/shared/lib/storage";
-import { BackButton } from "@/shared/ui/breadcrumbs";
+import { quizTransitionStyle } from "@/shared/lib/view-transition";
 import { Button } from "@/shared/ui/button";
 import { Note } from "@/shared/ui/note";
 import { Pagination } from "@/shared/ui/pagination";
@@ -11,9 +10,9 @@ import { Pagination } from "@/shared/ui/pagination";
 import type { OptionOrderByQuestionId } from "../model/option-order";
 import type { PlayerPage } from "../model/run-engine";
 import { PageSizeControl } from "./page-size-control";
+import { PlayerFrame } from "./player-frame";
 import { QuestionCard } from "./question-card";
 
-import { cx, typography } from "#styles";
 import styles from "./questions-view.module.css";
 
 interface QuestionsViewProps {
@@ -53,19 +52,18 @@ export function QuestionsView({
   onExit,
 }: QuestionsViewProps) {
   return (
-    <section aria-labelledby="player-page-title" className={styles.root}>
-      <BackButton onClick={onExit} text="Back to quiz details" />
-      <header className={styles.header}>
-        <h1
-          id="player-page-title"
-          ref={headingRef}
-          // Quiz titles allow inline Markdown only; raw HTML is always stripped.
-          dangerouslySetInnerHTML={{ __html: renderMarkdownFieldText("quizTitle", quiz.title) }}
-          className={cx(typography.h1, styles.title)}
-        />
+    <PlayerFrame
+      quiz={quiz}
+      headingRef={headingRef}
+      onExit={onExit}
+      statusBar={
         <div className={styles.statusBar}>
           {submitted > 0 ? (
-            <div className={styles.submittedCounter}>
+            <div
+              className={styles.submittedCounter}
+              // Pairs with the detail header's progress line for the swap morph.
+              style={quizTransitionStyle("progress", quiz.id)}
+            >
               {submitted} of {quiz.questions.length} answered
             </div>
           ) : null}
@@ -74,8 +72,8 @@ export function QuestionsView({
           </div>
           <PageSizeControl value={pageSize} onChange={onChangePageSize} />
         </div>
-      </header>
-
+      }
+    >
       {error !== undefined && <Note type="error">{error}</Note>}
 
       {currentPage.questions.map(({ question, index, progress }) => (
@@ -101,6 +99,6 @@ export function QuestionsView({
           Finish
         </Button>
       )}
-    </section>
+    </PlayerFrame>
   );
 }

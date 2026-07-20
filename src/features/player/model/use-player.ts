@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { RefObject } from "react";
 
 import { messageFromError } from "@/shared/lib/errors";
@@ -14,6 +14,7 @@ import {
   setPageSize as persistPageSize,
 } from "@/shared/lib/storage";
 import type { PageSize, RunSource, SubmittedAnswer } from "@/shared/lib/storage";
+import { holdViewTransitionUntil } from "@/shared/lib/view-transition";
 
 import { createOptionOrderByQuestionId } from "./option-order";
 import type { OptionOrderByQuestionId } from "./option-order";
@@ -164,6 +165,30 @@ export function usePlayer({
   }, [quiz, source, urlQuestionId, urlView, emitRunAnchor, emitSummary]);
 
   const isLoaded = answers !== undefined;
+
+  // The player mounts inside the detail → player view transition while its
+  // Run is still loading from IndexedDB. Hold the transition's new-state
+  // capture open until the loaded view is committed, so the morph lands on
+  // real content instead of a loader-only frame. Layout effects on purpose:
+  // registration must happen inside the same synchronous flush that mounts
+  // the player, and release right after the loaded commit is painted-ready.
+  const releaseTransitionHold = useRef<(() => void) | undefined>(undefined);
+
+  useLayoutEffect(() => {
+    holdViewTransitionUntil(
+      new Promise<void>((resolve) => {
+        releaseTransitionHold.current = resolve;
+      }),
+    );
+
+    // Unmounting mid-load must not keep a pending transition waiting.
+    return () => releaseTransitionHold.current?.();
+  }, []);
+
+  useLayoutEffect(() => {
+    // A load failure releases too — the capture then shows the error state.
+    if (isLoaded || loadError !== undefined) releaseTransitionHold.current?.();
+  }, [isLoaded, loadError]);
 
   // Move focus to the page heading on entry and on page/view changes (T7.1).
   // The player only mounts when the user activates the primary action, whose

@@ -1,0 +1,24 @@
+/* Cross-document view transitions (Catalog/home card → quiz page): a pure CSS
+  opt-in, active only without a reduced-motion preference. Browsers without
+  support (or with the preference) keep instant navigation. The at-rule stays
+  outside @layer on purpose: it is not a style rule, and engine support for
+  nesting it inside layers is not guaranteed. */
+@media (prefers-reduced-motion: no-preference) {
+  @view-transition {
+    navigation: auto;
+  }
+}
+
+@layer base {
+  /* Keep the page clickable while a transition plays. */
+  ::view-transition {
+    pointer-events: none;
+  }
+
+  /* One shared rhythm for every morphing group, root crossfade included. Short
+     enough that scaled text snapshots read as movement, not distortion. */
+  ::view-transition-group(*) {
+    animation-duration: 220ms;
+    animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+}

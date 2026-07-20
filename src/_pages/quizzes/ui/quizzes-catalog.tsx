@@ -209,6 +209,9 @@ export function QuizzesCatalog({
                 summary={summary}
                 href={withBase(`quizzes/${encodeURIComponent(summary.id)}/`)}
                 showDescription
+                // Catalog ids are repo-wide unique and each renders once per
+                // page, so every card may join the card → quiz-page morph.
+                morph
               />
             ))}
           </div>
