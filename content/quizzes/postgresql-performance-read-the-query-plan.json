@@ -1,0 +1,755 @@
+{
+  "schemaVersion": 1,
+  "id": "postgresql-performance-read-the-query-plan",
+  "title": "PostgreSQL Performance: Read the Query Plan",
+  "description": "Thirty questions about diagnosing PostgreSQL performance from real `EXPLAIN ANALYZE` output. Covers index design, sequential scans, cardinality estimates, composite-index order, locking, transaction isolation, and pagination. Assume default settings and a recent PostgreSQL major version unless a question says otherwise.",
+  "language": "en",
+  "tags": [
+    "postgresql",
+    "sql",
+    "performance",
+    "explain",
+    "indexes",
+    "query-planner",
+    "transactions",
+    "pagination"
+  ],
+  "questions": [
+    {
+      "id": "plan-cost-numbers",
+      "title": "In `cost=0.29..8.31`, what do the two numbers mean?",
+      "description": "```\nIndex Scan using orders_pkey on orders  (cost=0.29..8.31 rows=1 width=48)\n  Index Cond: (id = 42)\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Cost before the first row is returned, and cost to return all rows",
+          "isCorrect": true
+        },
+        {
+          "text": "Best-case and worst-case runtime of the node in milliseconds",
+          "isCorrect": false
+        },
+        {
+          "text": "Cost of the cheapest row and cost of the most expensive row",
+          "isCorrect": false
+        },
+        {
+          "text": "Cost with a cold cache and cost with a warm cache",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The first number is the startup cost: work the node must finish before it can hand up a single row. The second is the total cost to produce all of them.\n\nBoth are in arbitrary units anchored to `seq_page_cost = 1.0`, the modelled cost of reading one page sequentially. They are not milliseconds, so comparing a cost against an `actual time` value tells you nothing. Only the ratio between competing plans matters.\n\nStartup cost is what makes `LIMIT` interesting. An index scan can stop as soon as it has enough rows, so a `LIMIT` above it is charged only a fraction of the run cost. A `Sort` has to consume its entire input before it can emit anything, which puts nearly all of its cost into the startup number, and a `LIMIT` above a sort saves nothing.",
+      "references": "- [PostgreSQL: Using EXPLAIN](https://www.postgresql.org/docs/current/using-explain.html)\n- [PostgreSQL: Planner Cost Constants](https://www.postgresql.org/docs/current/runtime-config-query.html#RUNTIME-CONFIG-QUERY-CONSTANTS)"
+    },
+    {
+      "id": "loops-are-averages",
+      "title": "How many rows did the inner index scan return in total?",
+      "description": "```\nNested Loop  (actual time=0.028..3.114 rows=250 loops=1)\n  ->  Seq Scan on customers  (actual time=0.008..0.041 rows=25 loops=1)\n  ->  Index Scan using orders_customer_id_idx on orders\n        (actual time=0.005..0.010 rows=10 loops=25)\n        Index Cond: (customer_id = customers.id)\n```\n\nEnter the total number of rows the index scan produced across all of its executions.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [250]
+      },
+      "explanation": "When a node runs more than once, `EXPLAIN ANALYZE` reports `rows` and `actual time` as averages per execution, and `loops` as the number of executions. The index scan ran 25 times and averaged 10 rows, so it produced 250 rows. Its real share of the runtime is about 25 times 0.010 ms, not 0.010 ms.\n\nThis is the most common way to misread a plan. An inner node that looks trivially cheap can dominate the query once `loops` reaches the thousands. The rounding hides work in the other direction too. A node showing `rows=0 loops=100000` did not return nothing; it averaged under half a row per execution, which can still add up to tens of thousands of rows.",
+      "references": "[PostgreSQL: EXPLAIN ANALYZE](https://www.postgresql.org/docs/current/using-explain.html#USING-EXPLAIN-ANALYZE)"
+    },
+    {
+      "id": "index-cond-vs-filter",
+      "title": "What does the large `Rows Removed by Filter` count tell you here?",
+      "description": "```\nIndex Scan using events_tenant_id_idx on events\n  (actual time=0.031..184.702 rows=12 loops=1)\n  Index Cond: (tenant_id = 7)\n  Filter: (event_type = 'signup'::text)\n  Rows Removed by Filter: 418322\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The index matched 418,334 rows, every one was read from the heap, and all but 12 were then discarded",
+          "isCorrect": true
+        },
+        {
+          "text": "418,322 rows were rejected inside the index without any heap access, so the plan is efficient",
+          "isCorrect": false
+        },
+        {
+          "text": "The index has become bloated or corrupt and needs a `REINDEX`",
+          "isCorrect": false
+        },
+        {
+          "text": "The predicates were evaluated in the wrong order, which reordering the `WHERE` clause fixes",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`Index Cond` and `Filter` mark the two sides of the heap boundary. A condition shown as `Index Cond` is evaluated inside the index, so entries that fail it never cost a heap visit. Anything left in `Filter` is evaluated on a row that has already been fetched from the heap. This plan therefore performed about 418,334 heap lookups to keep 12 rows, which is where the 184 ms went.\n\nReordering the `WHERE` clause changes nothing, because PostgreSQL does not care what order you write predicates in. Extending the index to `(tenant_id, event_type)` moves the second condition into the `Index Cond`, and the query then touches 12 heap tuples instead of 418,334. A large `Rows Removed by Filter` under an index scan is usually a hint that the filtered column belongs in the index.",
+      "references": "- [PostgreSQL: Using EXPLAIN](https://www.postgresql.org/docs/current/using-explain.html)\n- [PostgreSQL: Multicolumn Indexes](https://www.postgresql.org/docs/current/indexes-multicolumn.html)"
+    },
+    {
+      "id": "bitmap-lossy-heap-blocks",
+      "title": "What does `lossy=8134` mean in this bitmap heap scan, and how do you remove it?",
+      "description": "```\nBitmap Heap Scan on measurements  (actual rows=304416 loops=1)\n  Recheck Cond: (sensor_id = ANY ('{3,17,42}'::integer[]))\n  Rows Removed by Index Recheck: 1159884\n  Heap Blocks: exact=1122 lossy=8134\n  ->  Bitmap Index Scan on measurements_sensor_id_idx  (actual rows=304416 loops=1)\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The bitmap outgrew `work_mem`, so those pages are tracked page-wise and every tuple rechecked",
+          "isCorrect": true
+        },
+        {
+          "text": "8,134 index entries point at rows that no longer exist, so the index needs a `REINDEX`",
+          "isCorrect": false
+        },
+        {
+          "text": "8,134 heap pages came from disk rather than shared buffers, so `shared_buffers` is too small",
+          "isCorrect": false
+        },
+        {
+          "text": "8,134 rows failed the recheck because of concurrent updates, which MVCC makes unavoidable",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A bitmap scan first builds an in-memory bitmap of every tuple the index matched, then visits the heap in physical page order. That ordering is why it beats a plain index scan when many scattered rows match.\n\nIf the bitmap would outgrow `work_mem`, PostgreSQL degrades part of it to page granularity. Those pages are lossy: the executor knows the page holds at least one match but not which tuples, so it re-evaluates the condition on every tuple in the page. `Rows Removed by Index Recheck` counts what that costs, more than a million comparisons here that produced nothing.\n\nPages marked `exact` carry per-tuple bits and need no recheck at all. Giving the query more `work_mem`, ideally with `SET LOCAL` rather than globally, shrinks the bitmap back to exact. A more selective predicate does the same thing by producing a smaller bitmap in the first place.",
+      "references": "- [PostgreSQL: Combining Multiple Indexes](https://www.postgresql.org/docs/current/indexes-bitmap-scans.html)\n- [PostgreSQL: work_mem](https://www.postgresql.org/docs/current/runtime-config-resource.html#GUC-WORK-MEM)"
+    },
+    {
+      "id": "index-only-heap-fetches",
+      "title": "Why does an `Index Only Scan` report `Heap Fetches: 214938`?",
+      "description": "```\nIndex Only Scan using orders_created_at_idx on orders\n  (actual time=0.042..812.365 rows=214938 loops=1)\n  Index Cond: (created_at >= '2026-01-01'::date)\n  Heap Fetches: 214938\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Those pages are not marked all-visible, so each row's visibility must be checked in the heap",
+          "isCorrect": true
+        },
+        {
+          "text": "The query asked for columns the index does not contain, forcing one heap fetch per row",
+          "isCorrect": false
+        },
+        {
+          "text": "An index-only scan always reads the heap; the name describes only how the condition is evaluated",
+          "isCorrect": false
+        },
+        {
+          "text": "The index does not store `created_at` itself, so the values have to be read from the table",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "An index entry holds a value and a row pointer, but nothing about whether that row version is visible to your snapshot. An index-only scan can skip the heap only for pages the visibility map marks as all-visible. Heavy write traffic, or a recent bulk load, leaves pages unmarked, so every row costs a heap lookup and the scan quietly turns into an ordinary index scan carrying extra bookkeeping.\n\n`VACUUM` is what sets those visibility map bits, so the fix here is usually autovacuum tuning rather than anything to do with the index. And if the query really did need a column the index lacks, the planner would not have chosen an index-only scan at all; it would have chosen a plain `Index Scan`. The number you want to see is `Heap Fetches: 0`.",
+      "references": "- [PostgreSQL: Index-Only Scans and Covering Indexes](https://www.postgresql.org/docs/current/indexes-index-only-scans.html)\n- [PostgreSQL: Visibility Map](https://www.postgresql.org/docs/current/storage-vm.html)"
+    },
+    {
+      "id": "why-seq-scan-wins",
+      "title": "When is a sequential scan the right choice even though a usable index exists?",
+      "description": "Select every situation where the planner is making a reasonable decision rather than a mistake.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "The predicate matches a large fraction of the table, so random heap access would cost more than reading every page in order",
+          "isCorrect": true
+        },
+        {
+          "text": "The table is small enough to occupy a handful of pages",
+          "isCorrect": true
+        },
+        {
+          "text": "The query has no restricting `WHERE` clause and genuinely needs every row",
+          "isCorrect": true
+        },
+        {
+          "text": "The table was bulk-loaded and never analyzed, so the planner is working from hardcoded default guesses",
+          "isCorrect": false
+        },
+        {
+          "text": "The indexed column is `text`, which B-tree indexes cannot search or order efficiently",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A sequential scan is often the correct answer. PostgreSQL models a random page fetch at four times the cost of a sequential one (`random_page_cost = 4.0` against `seq_page_cost = 1.0`), and an index scan still has to visit the same heap pages, just in random order and with the index pages on top. Once a query touches more than a few percent of a table, reading it straight through wins. Small tables and unfiltered queries come out of the same arithmetic.\n\nMissing statistics looks similar but is a different problem. The planner is not choosing badly there, it is choosing from fiction, and `ANALYZE` is the fix. B-tree indexes also order `text` perfectly well; collation decides which operator class supports pattern matching, never whether the column can be indexed at all.",
+      "references": "- [PostgreSQL: Planner Cost Constants](https://www.postgresql.org/docs/current/runtime-config-query.html#RUNTIME-CONFIG-QUERY-CONSTANTS)\n- [PostgreSQL: Statistics Used by the Planner](https://www.postgresql.org/docs/current/planner-stats.html)"
+    },
+    {
+      "id": "random-page-cost",
+      "title": "Which planner setting should you lower on SSD-backed storage to make index scans more competitive?",
+      "description": "Type the exact parameter name. It defaults to `4.0`, four times `seq_page_cost`, a ratio chosen for spinning disks.",
+      "type": "input",
+      "validation": {
+        "mode": "text",
+        "acceptedAnswers": ["random_page_cost"]
+      },
+      "explanation": "`random_page_cost` estimates the cost of fetching one page non-sequentially, relative to `seq_page_cost = 1.0`. The default of 4.0 encodes the seek penalty of a rotating disk. On SSDs, and on any server whose working set mostly sits in RAM, values between 1.0 and 2.0 are the usual recommendation, and lowering it moves the planner toward index scans and nested loops.\n\nThe number is a ratio, not a duration, so it only means anything relative to the other cost constants. Pushing it too low has its own failure mode: the planner starts picking index scans for queries a sequential read would have finished sooner. If only part of your storage is fast, set it per tablespace with `ALTER TABLESPACE … SET (random_page_cost = …)` instead of globally.",
+      "references": "[PostgreSQL: random_page_cost](https://www.postgresql.org/docs/current/runtime-config-query.html#GUC-RANDOM-PAGE-COST)"
+    },
+    {
+      "id": "composite-index-order",
+      "title": "Which index serves this query best?",
+      "description": "```sql\nSELECT id, subject\nFROM tickets\nWHERE status = 'open'\n  AND created_at >= now() - interval '30 days'\nORDER BY created_at DESC\nLIMIT 20;\n```\n\nOpen tickets are a small minority of the table.",
+      "type": "single-choice",
+      "options": [
+        { "text": "`(status, created_at)`", "isCorrect": true },
+        { "text": "`(created_at, status)`", "isCorrect": false },
+        {
+          "text": "Separate indexes on `(created_at)` and `(status)`, combined by a bitmap scan",
+          "isCorrect": false
+        },
+        {
+          "text": "`(status)` alone, since equality predicates are all a B-tree index needs",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Equality columns come first, then the range or ordering column. With `(status, created_at)` every open ticket sits in one contiguous stretch of the index, already sorted by `created_at` inside that stretch. PostgreSQL reads the stretch backwards, stops after 20 entries, and produces no `Sort` node. The query then costs the same whether the table holds a thousand rows or a billion.\n\nReverse the columns and the leading column becomes a range, so the scan has to start 30 days back and test `status` on every entry until it has collected 20 matches. When open tickets are rare, that is close to unbounded work. Two single-column indexes are worse still, because a bitmap scan returns rows in heap order, so the whole result has to be sorted before `LIMIT` can take anything. `(status)` on its own leaves both the sort and the range filter in place.",
+      "references": "- [PostgreSQL: Multicolumn Indexes](https://www.postgresql.org/docs/current/indexes-multicolumn.html)\n- [PostgreSQL: Indexes and ORDER BY](https://www.postgresql.org/docs/current/indexes-ordering.html)"
+    },
+    {
+      "id": "include-covering-index",
+      "title": "What does the `INCLUDE (total)` clause actually buy you?",
+      "description": "```sql\nCREATE INDEX orders_customer_id_idx\n  ON orders (customer_id) INCLUDE (total);\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`total` is stored only in leaf pages, so a scan can return it but never search or sort on it",
+          "isCorrect": true
+        },
+        {
+          "text": "`total` becomes a second key column, making the index equivalent to `(customer_id, total)`",
+          "isCorrect": false
+        },
+        {
+          "text": "`total` can appear in `Index Cond`, so range predicates on it are pushed into the index",
+          "isCorrect": false
+        },
+        {
+          "text": "`total` is recomputed on each read, which keeps the index small but slows scans down",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`INCLUDE` columns are payload, not key. They live only in the leaf tuples, which keeps internal pages narrow and the tree shallow, and they let an index-only scan return the value without touching the heap.\n\nThey cannot do any of the things a key column does. The planner will not use them in an `Index Cond`, cannot satisfy `ORDER BY total` from them, and on a `UNIQUE` index the constraint still applies to the key columns alone. If you need to search or sort on `total`, make it a key column and accept the wider index. Note also that `INCLUDE` on its own does not guarantee `Heap Fetches: 0`, because an index-only scan still depends on the visibility map.",
+      "references": "- [PostgreSQL: CREATE INDEX](https://www.postgresql.org/docs/current/sql-createindex.html)\n- [PostgreSQL: Index-Only Scans and Covering Indexes](https://www.postgresql.org/docs/current/indexes-index-only-scans.html)"
+    },
+    {
+      "id": "like-prefix-opclass",
+      "title": "Why does `WHERE name LIKE 'Ann%'` ignore the plain B-tree index on `name`?",
+      "description": "The database was initialized with the `en_US.UTF-8` collation, and the index is a plain `CREATE INDEX ON people (name)`.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Prefix matching relies on byte ordering, so a non-C collation needs `text_pattern_ops`",
+          "isCorrect": true
+        },
+        {
+          "text": "`LIKE` can never use an index; only `=` and range operators are indexable",
+          "isCorrect": false
+        },
+        {
+          "text": "The pattern must be anchored, so only regular-expression operators such as `~ '^Ann'` can use an index",
+          "isCorrect": false
+        },
+        {
+          "text": "B-tree indexes support `LIKE` only after `ANALYZE` has built a most-common-values list",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "To use an index for `LIKE 'Ann%'`, PostgreSQL rewrites the pattern as a range: `name >= 'Ann' AND name < 'Ano'`. That rewrite is sound only if the index is sorted in plain byte order. Locale-aware collations such as `en_US.UTF-8` order strings by rules that treat case and punctuation differently, which breaks the bounds, so the optimization is switched off and the predicate falls back to a `Filter`.\n\n`CREATE INDEX people_name_pattern_idx ON people (name text_pattern_ops)` builds a C-ordered index that supports the rewrite. It does not replace the ordinary index, since equality and `ORDER BY name` still want collation-aware ordering, so tables that need both usually carry both. Databases created with `--locale=C`, and columns declared `COLLATE \"C\"`, get prefix matching from the ordinary index for free.",
+      "references": "- [PostgreSQL: Operator Classes and Operator Families](https://www.postgresql.org/docs/current/indexes-opclass.html)\n- [PostgreSQL: Collation Support](https://www.postgresql.org/docs/current/collation.html)"
+    },
+    {
+      "id": "expression-index-lower",
+      "title": "Which index lets `WHERE lower(email) = $1` use an index scan?",
+      "description": "`users` has 4 million rows, and email addresses are stored with their original casing.",
+      "type": "single-choice",
+      "options": [
+        { "text": "`CREATE INDEX ON users (lower(email))`", "isCorrect": true },
+        { "text": "`CREATE INDEX ON users (email)`", "isCorrect": false },
+        { "text": "`CREATE INDEX ON users (email text_pattern_ops)`", "isCorrect": false },
+        { "text": "`CREATE INDEX ON users (email COLLATE \"C\")`", "isCorrect": false }
+      ],
+      "explanation": "An index stores the result of whatever expression it indexes. An index on `email` stores `'Ada@Example.com'`, which says nothing about `lower(email)`, so the predicate cannot use it and becomes a `Filter` over a sequential scan of all 4 million rows. A different operator class or collation does not help, because both still index the raw column.\n\nAn expression index stores the lowercased value, so the predicate matches it directly. The query has to spell the expression the same way: `lower(email)` will not match an index built on `lower(trim(email))`. The cost is that the expression runs on every insert and update. The bonus is that PostgreSQL collects separate statistics for the expression, which often improves row estimates as well. If you would rather have case-insensitivity built into the type, use the `citext` extension.",
+      "references": "- [PostgreSQL: Indexes on Expressions](https://www.postgresql.org/docs/current/indexes-expressional.html)\n- [PostgreSQL: citext](https://www.postgresql.org/docs/current/citext.html)"
+    },
+    {
+      "id": "partial-index-queue",
+      "title": "When will the planner actually use this partial index?",
+      "description": "```sql\nCREATE INDEX jobs_pending_idx\n  ON jobs (run_after)\n  WHERE state = 'pending';\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Only when the query's own restrictions imply that every matching row has `state = 'pending'`",
+          "isCorrect": true
+        },
+        {
+          "text": "For any query on `jobs`, because the executor rechecks the index predicate at runtime",
+          "isCorrect": false
+        },
+        {
+          "text": "Only when the query repeats `state = 'pending'` verbatim, character for character",
+          "isCorrect": false
+        },
+        {
+          "text": "Only while `jobs` has been analyzed more recently than it has been written to",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The planner runs a small proof: it uses a partial index only when the query's restrictions imply the index predicate. That is more capable than matching text, since `state = 'pending' AND run_after < now()` implies `state = 'pending'`, and `run_after < now() - interval '1 hour'` implies `run_after < now()`. It is also less capable than full logic, so implications that look obvious to you are sometimes missed. What it never does is recheck at runtime. If the proof fails, the index is not considered at all, even when it happens to contain exactly the rows the query wants.\n\nFor a queue table the payoff compounds. The index holds only the live backlog, so it stays small enough to remain cached even as the completed-jobs history grows into the hundreds of millions, and a row drops out of the index for free the moment `state` changes.",
+      "references": "[PostgreSQL: Partial Indexes](https://www.postgresql.org/docs/current/indexes-partial.html)"
+    },
+    {
+      "id": "ndistinct-estimate",
+      "title": "How many rows will the planner estimate for `WHERE region_id = 7`?",
+      "description": "`pg_class.reltuples` for `sales` is `1000000`. In `pg_stats` for `sales.region_id`, `n_distinct` is `40`, `null_frac` is `0`, and `most_common_vals` is empty, so the planner treats the 40 values as uniformly distributed. Enter the estimated row count.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [25000]
+      },
+      "explanation": "With no most-common-values list to consult, the planner estimates equality selectivity as `1 / n_distinct`, so 1/40 = 0.025, then multiplies by the row count: 0.025 × 1,000,000 = 25,000.\n\nA negative `n_distinct` means something different. It is a ratio rather than a count, so `-0.5` reads as \"half the rows are distinct\", which lets the estimate scale with the table instead of going stale. And when a most-common-values list does exist, the planner uses the recorded frequency for the values in it and applies the uniform rule only to whatever is left over. That is why skewed columns benefit from a larger `default_statistics_target`, or a targeted `ALTER TABLE … ALTER COLUMN … SET STATISTICS 1000`: a longer MCV list leaves fewer values to the uniform guess.",
+      "references": "- [PostgreSQL: Row Estimation Examples](https://www.postgresql.org/docs/current/row-estimation-examples.html)\n- [PostgreSQL: pg_stats](https://www.postgresql.org/docs/current/view-pg-stats.html)"
+    },
+    {
+      "id": "correlated-columns-statistics",
+      "title": "Why is this row estimate 300 times too low, and what actually fixes it?",
+      "description": "```\nSeq Scan on addresses  (cost=0.00..21350.00 rows=5 width=64)\n                       (actual time=0.031..142.884 rows=1522 loops=1)\n  Filter: ((city = 'Toronto'::text) AND (province = 'ON'::text))\n```\n\n`addresses` was analyzed minutes ago and its per-column statistics are accurate.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The planner multiplies the selectivities as if the columns were independent; `CREATE STATISTICS` fixes it",
+          "isCorrect": true
+        },
+        {
+          "text": "The table has not been analyzed recently enough, so another `ANALYZE addresses` will correct it",
+          "isCorrect": false
+        },
+        {
+          "text": "`Seq Scan` nodes cannot produce accurate estimates, so an index on `(city, province)` is what fixes the number",
+          "isCorrect": false
+        },
+        {
+          "text": "The estimate counts only rows visible to the current snapshot, while `actual rows` counts every row version",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "By default PostgreSQL estimates `A AND B` as `sel(A) × sel(B)`, which is right only when the columns are independent. City and province are almost perfectly correlated, since every Toronto row is an Ontario row, so multiplying in the province clause discounts the estimate by a factor reality never applies. `ANALYZE` cannot help, because the per-column statistics are already correct. What is missing is the relationship between the columns.\n\n`CREATE STATISTICS addresses_city_prov (dependencies) ON city, province FROM addresses;` followed by `ANALYZE` records the functional dependency, and the estimate comes back into range. The `ndistinct` kind fixes grouping estimates for `GROUP BY city, province`, and `mcv` handles skewed combinations of values. The consequences reach well past this one node: an estimate of 5 invites the planner to put this scan on the outer side of a nested loop, which falls apart at 1,522 rows.",
+      "references": "- [PostgreSQL: Extended Statistics](https://www.postgresql.org/docs/current/planner-stats.html#PLANNER-STATS-EXTENDED)\n- [PostgreSQL: CREATE STATISTICS](https://www.postgresql.org/docs/current/sql-createstatistics.html)\n- [PostgreSQL: Multivariate Statistics Examples](https://www.postgresql.org/docs/current/multivariate-statistics-examples.html)"
+    },
+    {
+      "id": "find-the-misestimate",
+      "title": "Which node in this plan should you fix first?",
+      "description": "```\nNested Loop  (cost=0.86..1290.42 rows=3 width=72)\n             (actual time=0.094..9418.552 rows=41230 loops=1)\n  ->  Index Scan using shipments_carrier_idx on shipments s\n        (cost=0.43..612.10 rows=3 width=40)\n        (actual time=0.041..38.117 rows=41230 loops=1)\n        Index Cond: (carrier_id = 12)\n        Filter: (status = 'in_transit'::text)\n  ->  Index Scan using events_shipment_id_idx on events e\n        (cost=0.43..226.09 rows=1 width=40)\n        (actual time=0.198..0.222 rows=1 loops=41230)\n        Index Cond: (shipment_id = s.id)\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The `shipments` scan, which was estimated at 3 rows and returned 41,230",
+          "isCorrect": true
+        },
+        {
+          "text": "The `events` scan, which ran 41,230 times and accounts for nearly all of the runtime",
+          "isCorrect": false
+        },
+        {
+          "text": "The join method, best corrected by setting `enable_nestloop` to off for this query",
+          "isCorrect": false
+        },
+        {
+          "text": "Nothing, since 9.4 seconds is a normal cost for joining 41,230 rows through two indexes",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Read a plan from the bottom up and look for the deepest node where the estimate and the actual row count diverge. Errors propagate upward, so a wrong estimate at the top is usually a symptom of one further down. Here the `shipments` scan is off by four orders of magnitude, most likely because `carrier_id` and `status` are correlated, or because `status` is skewed and the filter is being guessed at.\n\nBelieving the estimate of 3 rows, the planner chose a nested loop, which is the cheapest join for a tiny outer side and the worst one for a large outer side. The inner scan then ran 41,230 times at roughly 0.22 ms each, about 9.1 seconds, which is the whole query. Each execution of the inner node is cheap; the cost comes from how many times it runs.\n\nTurning off `enable_nestloop` treats the symptom and distorts every other plan in the session. Correcting the estimate lets the planner reach for a hash join on its own, whether through extended statistics, a higher statistics target, or a `(carrier_id, status)` index that turns the filter into an `Index Cond`.",
+      "references": "- [PostgreSQL: Using EXPLAIN](https://www.postgresql.org/docs/current/using-explain.html)\n- [PostgreSQL: Extended Statistics](https://www.postgresql.org/docs/current/planner-stats.html#PLANNER-STATS-EXTENDED)"
+    },
+    {
+      "id": "sort-external-merge",
+      "title": "What can you conclude from `Sort Method: external merge  Disk: 24800kB`?",
+      "description": "```\nSort  (actual time=1842.117..2103.884 rows=812004 loops=1)\n  Sort Key: created_at DESC\n  Sort Method: external merge  Disk: 24800kB\n```\n\nSelect every statement that is true.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "The sort did not fit in `work_mem` and spilled to temporary files on disk",
+          "isCorrect": true
+        },
+        {
+          "text": "Setting `work_mem` to exactly 24800kB may still not be enough, because the on-disk format is more compact than the in-memory one",
+          "isCorrect": true
+        },
+        {
+          "text": "An index on `created_at` could remove the `Sort` node entirely by delivering rows already ordered",
+          "isCorrect": true
+        },
+        {
+          "text": "`work_mem` is budgeted per sort or hash node and per worker, so one query can consume several multiples of it",
+          "isCorrect": true
+        },
+        {
+          "text": "The spill is written into `shared_buffers`, so raising `shared_buffers` avoids the I/O",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`external merge` means the tuples did not fit in `work_mem`, so PostgreSQL wrote sorted runs into temporary files under `base/pgsql_tmp` and merged them. None of this involves `shared_buffers`, which caches table and index pages only.\n\nThe `Disk:` figure is the peak size of those temp files, and it is a lower bound on the memory you would need, because the on-disk tuple format is leaner than the in-memory one. Set `work_mem` well above the reported number, then re-check for `Sort Method: quicksort  Memory: …`. Keep the change local while you are at it: the budget applies per sort or hash node and per parallel worker, so a plan with three sorts and two workers can allocate many times what you thought you were authorising. `SET LOCAL work_mem` inside the transaction that needs it beats raising it server-wide.\n\nBetter than any of that is not sorting. An index in the required order lets the planner drop the node, which also lets a `LIMIT` stop early instead of sorting all 812,004 rows to return the first twenty.",
+      "references": "- [PostgreSQL: work_mem](https://www.postgresql.org/docs/current/runtime-config-resource.html#GUC-WORK-MEM)\n- [PostgreSQL: Indexes and ORDER BY](https://www.postgresql.org/docs/current/indexes-ordering.html)"
+    },
+    {
+      "id": "hash-join-batches",
+      "title": "What does `Batches: 8` mean in a hash join?",
+      "description": "```\nHash Join  (actual time=284.117..3921.552 rows=1204882 loops=1)\n  Hash Cond: (o.customer_id = c.id)\n  ->  Seq Scan on orders o  (actual rows=1204882 loops=1)\n  ->  Hash  (actual time=283.004..283.004 rows=500000 loops=1)\n        Buckets: 65536  Batches: 8  Memory Usage: 3841kB\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The hash table did not fit in `work_mem`, so both inputs were partitioned and spilled to disk",
+          "isCorrect": true
+        },
+        {
+          "text": "Eight parallel workers each built and probed their own private copy of the hash table",
+          "isCorrect": false
+        },
+        {
+          "text": "The join key produced only 8 distinct hash values, which is a sign of severe key skew",
+          "isCorrect": false
+        },
+        {
+          "text": "The outer relation was rescanned eight times, once for each pass over the hash table",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`Batches: 1` is the healthy case: the whole inner relation fits in `work_mem` and each outer row is probed once. When it does not fit, PostgreSQL falls back to a hybrid hash join. It splits both sides by hash value into N partitions, keeps batch 0 in memory, and spills the rest to temporary files to process in turn. So the 1.2 million row outer side gets written out and read back as well, which is where the seconds go.\n\n`Memory Usage: 3841kB` is the trap in this output. It reports only the resident batch, so a join that is thrashing can look reassuringly small. Raise `work_mem` until batches drop to 1, or shrink the inner side with a filter, a narrower column list, or a different join order. `Buckets` is a separate thing entirely, the number of slots in the hash table, and it tells you nothing about whether the join spilled.",
+      "references": "- [PostgreSQL: work_mem](https://www.postgresql.org/docs/current/runtime-config-resource.html#GUC-WORK-MEM)\n- [PostgreSQL: Using EXPLAIN](https://www.postgresql.org/docs/current/using-explain.html)"
+    },
+    {
+      "id": "parallel-rows-per-worker",
+      "title": "How many rows did this parallel scan read in total?",
+      "description": "```\nGather  (actual time=0.412..2841.117 rows=3000000 loops=1)\n  Workers Planned: 2\n  Workers Launched: 2\n  ->  Parallel Seq Scan on readings  (actual time=0.021..1904.882 rows=1000000 loops=3)\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "3,000,000, because `loops=3` counts two workers plus the leader and `rows` is an average",
+          "isCorrect": true
+        },
+        {
+          "text": "2,000,000, because only the launched workers scan while the leader collects their output",
+          "isCorrect": false
+        },
+        {
+          "text": "1,000,000, because each process scans the whole table and `Gather` removes the duplicates",
+          "isCorrect": false
+        },
+        {
+          "text": "9,000,000, because the `Gather` row count must be multiplied by `loops` as well",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Below a `Gather`, `loops` counts every process that executed the node. `parallel_leader_participation` is on by default, so the leader scans alongside the workers and two launched workers give `loops=3`. The averaging rule then applies as usual: 3 × 1,000,000 = 3,000,000, which is what `Gather` reports above it. Nothing is scanned twice and nothing is de-duplicated, because the workers divide the table between them.\n\nWatch for `Workers Launched` coming in below `Workers Planned`. It means the cluster ran out of `max_parallel_workers` or `max_worker_processes`, so the query ran with less parallelism than it was costed for, which explains a fair share of \"the same query is sometimes slow\" reports. Elapsed time is not additive either: 1,904 ms is wall-clock per worker running concurrently, which is why `Gather` reports 2,841 ms rather than 5,700 ms.",
+      "references": "- [PostgreSQL: How Parallel Query Works](https://www.postgresql.org/docs/current/how-parallel-query-works.html)\n- [PostgreSQL: parallel_leader_participation](https://www.postgresql.org/docs/current/runtime-config-resource.html#GUC-PARALLEL-LEADER-PARTICIPATION)"
+    },
+    {
+      "id": "offset-pagination-cost",
+      "title": "Why does page 5,000 of this listing take vastly longer than page 1?",
+      "description": "```sql\nSELECT id, title, created_at\nFROM articles\nORDER BY created_at DESC\nLIMIT 20 OFFSET 99980;\n```\n\nThere is an index on `created_at`.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The server still produces and discards the 99,980 skipped rows before returning any",
+          "isCorrect": true
+        },
+        {
+          "text": "`OFFSET` disables index usage, forcing a sequential scan once the offset exceeds `work_mem`",
+          "isCorrect": false
+        },
+        {
+          "text": "Each page opens a fresh server-side cursor, and cursor setup dominates at high offsets",
+          "isCorrect": false
+        },
+        {
+          "text": "`OFFSET` is applied client-side, so the extra time goes into transferring the skipped rows",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "PostgreSQL's manual states the mechanism plainly: the \"rows skipped by an OFFSET clause still have to be computed inside the server\". Even with a perfect index, the executor walks 99,980 index entries, fetches each heap tuple unless the scan is index-only, and throws all of it away. Page 1 is instant, page 5,000 costs 5,000 times as much, and a crawler paging to the end will discover that on your behalf.\n\nThere is a correctness problem alongside the performance one. Each request runs in its own snapshot, so a row inserted between two requests shifts every later page by one position. Users then see a duplicate at the top of the next page and never see the row that slid off the previous one. Keyset pagination, also called seek pagination, fixes both by remembering where the previous page ended instead of counting from the beginning.",
+      "references": "- [PostgreSQL: LIMIT and OFFSET](https://www.postgresql.org/docs/current/queries-limit.html)\n- [Use the Index, Luke: Paging Through Results](https://use-the-index-luke.com/sql/partial-results/fetch-next-page)"
+    },
+    {
+      "id": "keyset-pagination-predicate",
+      "title": "Which `WHERE` clause correctly fetches the page after the row `('2026-03-01 10:00:00', 8412)`?",
+      "description": "The listing is ordered by `ORDER BY created_at DESC, id DESC`, `created_at` is not unique, and there is an index on `(created_at, id)`. The last row of the previous page had `created_at = '2026-03-01 10:00:00'` and `id = 8412`.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`WHERE (created_at, id) < ('2026-03-01 10:00:00', 8412)`",
+          "isCorrect": true
+        },
+        {
+          "text": "`WHERE created_at < '2026-03-01 10:00:00' AND id < 8412`",
+          "isCorrect": false
+        },
+        {
+          "text": "`WHERE created_at <= '2026-03-01 10:00:00' AND id < 8412`",
+          "isCorrect": false
+        },
+        {
+          "text": "`WHERE created_at <= '2026-03-01 10:00:00' OR (created_at = '2026-03-01 10:00:00' AND id < 8412)`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Row-constructor comparison does the work here. `(created_at, id) < ($1, $2)` compares lexicographically: everything with an earlier `created_at`, plus, within an equal `created_at`, everything with a smaller `id`. That is exactly \"further along in the sort order\", and PostgreSQL can turn it into a single index condition on `(created_at, id)`, so the scan jumps straight to the right leaf entry and reads twenty entries. Page 5,000 costs what page 1 costs.\n\nBoth `AND` forms return wrong results rather than merely slow ones. `created_at < X AND id < 8412` silently drops every later row whose `id` happens to be larger than 8412, and nothing raises an error. Rows simply stop appearing in the listing.\n\nThe `OR` form has the right shape but the wrong operator. Its `created_at <= X` branch re-admits the entire tied timestamp, including rows the previous page already showed. Written with a strict `<` it is logically equivalent to the row comparison, though the row-constructor form is shorter and more reliably recognised as an index condition.",
+      "references": "- [PostgreSQL: Row Constructor Comparison](https://www.postgresql.org/docs/current/functions-comparisons.html#ROW-WISE-COMPARISON)\n- [Use the Index, Luke: Paging Through Results](https://use-the-index-luke.com/sql/partial-results/fetch-next-page)"
+    },
+    {
+      "id": "keyset-pagination-requirements",
+      "title": "What does keyset pagination require to be both correct and fast?",
+      "description": "Select every requirement that genuinely applies.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "A tiebreaker column that makes the sort key unique, so no two rows share a position",
+          "isCorrect": true
+        },
+        {
+          "text": "An index whose leading columns match the `ORDER BY` list",
+          "isCorrect": true
+        },
+        {
+          "text": "All sort columns ordered in the same direction, or an index declared with matching per-column directions",
+          "isCorrect": true
+        },
+        {
+          "text": "The client to carry the previous page's key values forward instead of a page number",
+          "isCorrect": true
+        },
+        {
+          "text": "A total row count, since the page size has to divide the result set evenly",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Each requirement removes a specific failure. Without a unique tiebreaker, rows that share a `created_at` have no defined position, so pages repeat them or skip them, which is the bug keyset pagination exists to fix. Without a matching index the seek predicate is still correct, but the executor sorts the whole table for every page, which throws the benefit away.\n\nDirection matters because a B-tree can be read forwards or backwards, but not in a zig-zag. `ORDER BY a DESC, b ASC` cannot be served in order by an index on `(a, b)`; it needs `(a DESC, b ASC)` declared explicitly.\n\nThe API changes shape as well, since an opaque cursor token replaces `?page=17`. That is the real price of the technique: you give up random access to page N, and a total count becomes a separate, expensive query. It is why infinite-scroll feeds use keyset while admin tables with numbered pages often stay on `OFFSET`.",
+      "references": "- [PostgreSQL: Indexes and ORDER BY](https://www.postgresql.org/docs/current/indexes-ordering.html)\n- [Use the Index, Luke: Paging Through Results](https://use-the-index-luke.com/sql/partial-results/fetch-next-page)"
+    },
+    {
+      "id": "create-index-concurrently",
+      "title": "What is true of `CREATE INDEX CONCURRENTLY`?",
+      "description": "Select every statement that holds.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "It does not block concurrent `INSERT`, `UPDATE`, or `DELETE` on the table",
+          "isCorrect": true
+        },
+        {
+          "text": "It scans the table twice and waits for older transactions in between, so it takes longer than a plain `CREATE INDEX`",
+          "isCorrect": true
+        },
+        { "text": "It cannot run inside an explicit transaction block", "isCorrect": true },
+        {
+          "text": "On failure it can leave an invalid index behind, which must be dropped and rebuilt",
+          "isCorrect": true
+        },
+        {
+          "text": "It is unaffected by long-running transactions elsewhere in the database",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "An ordinary `CREATE INDEX` takes a `SHARE` lock. Reads continue, but every write on the table blocks for the whole build, which is unacceptable on a busy table. The concurrent variant takes only `SHARE UPDATE EXCLUSIVE`. It builds the index in one pass, waits for every transaction that could still be working from the pre-index state, then makes a second pass to pick up rows written during the first.\n\nThat waiting step is why long-running transactions elsewhere do matter: one forgotten `idle in transaction` session can stall the build indefinitely. A failure, whether a unique violation or a cancelled session, leaves an `INVALID` index that still pays the write overhead while never being used to answer a query. Find them with `SELECT indexrelid::regclass FROM pg_index WHERE NOT indisvalid;`, then `DROP INDEX CONCURRENTLY` and retry. And because it manages its own transactions internally, it cannot be wrapped in `BEGIN … COMMIT`, so it cannot be bundled atomically with other DDL in a migration.",
+      "references": "- [PostgreSQL: Building Indexes Concurrently](https://www.postgresql.org/docs/current/sql-createindex.html#SQL-CREATEINDEX-CONCURRENTLY)\n- [PostgreSQL: Explicit Locking](https://www.postgresql.org/docs/current/explicit-locking.html)"
+    },
+    {
+      "id": "lock-queue-access-exclusive",
+      "title": "Why did every read on the table freeze the moment this migration started?",
+      "description": "A reporting query has been running against `orders` for 20 minutes. A migration then issues `ALTER TABLE orders ADD COLUMN note text;`. Within seconds, plain `SELECT`s on `orders` from unrelated sessions hang too, even though the `ALTER TABLE` has not begun doing anything yet.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Lock requests queue in order, so the waiting `ACCESS EXCLUSIVE` blocks everything behind it",
+          "isCorrect": true
+        },
+        {
+          "text": "The `ALTER TABLE` escalated the reporting query's lock to a table lock and deadlocked the readers",
+          "isCorrect": false
+        },
+        {
+          "text": "Adding a column rewrites the table at once, and readers must wait for the rewrite to finish",
+          "isCorrect": false
+        },
+        {
+          "text": "The new column invalidates the table's statistics, so readers wait for an automatic `ANALYZE`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Locks are granted in request order. The `ALTER TABLE` needs `ACCESS EXCLUSIVE`, which conflicts with the reporting query's `ACCESS SHARE`, so it joins the queue and waits. A `SELECT` arriving after it needs `ACCESS SHARE`, which does not conflict with the reporting query at all, but does conflict with the `ACCESS EXCLUSIVE` request sitting ahead of it in the queue. So it waits too. One slow query plus one DDL statement is enough to take a table offline for as long as the slow query runs.\n\nThe defence is to make the DDL give up instead of queueing. `SET lock_timeout = '2s';` before the statement, wrapped in a retry loop, turns a potential outage into a two-second failed attempt. Since PostgreSQL 11, an `ADD COLUMN` with a non-volatile `DEFAULT` no longer rewrites the table, so the statement itself finishes almost instantly once it holds the lock. All of the danger is in the waiting.",
+      "references": "- [PostgreSQL: Table-Level Locks](https://www.postgresql.org/docs/current/explicit-locking.html#LOCKING-TABLES)\n- [PostgreSQL: lock_timeout](https://www.postgresql.org/docs/current/runtime-config-client.html#GUC-LOCK-TIMEOUT)\n- [PostgreSQL: ALTER TABLE notes](https://www.postgresql.org/docs/current/sql-altertable.html#SQL-ALTERTABLE-NOTES)"
+    },
+    {
+      "id": "skip-locked-queue",
+      "title": "What does `FOR UPDATE SKIP LOCKED` do for a job-queue worker?",
+      "description": "```sql\nSELECT id, payload\nFROM jobs\nWHERE state = 'pending'\nORDER BY run_after\nLIMIT 1\nFOR UPDATE SKIP LOCKED;\n```\n\nTen workers run this statement continuously.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Each worker locks a different row instead of queueing behind the same one",
+          "isCorrect": true
+        },
+        {
+          "text": "It takes a table-level lock so that only one worker can read the queue at a time",
+          "isCorrect": false
+        },
+        {
+          "text": "It marks the row as processed so that other workers ignore it permanently",
+          "isCorrect": false
+        },
+        {
+          "text": "It retries the `SELECT` until every matching row is unlocked, guaranteeing a consistent view",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Without `SKIP LOCKED`, all ten workers pick the same top row. Nine of them block on `FOR UPDATE`, then wake one at a time to find that the row's `state` has changed and start over. Throughput collapses to serial no matter how many workers you add.\n\n`SKIP LOCKED` tells the executor to pass silently over rows already locked by another transaction, so each worker walks a little further down the ordered scan and claims the first free job. The manual is explicit about the trade: the result is deliberately not a consistent view of the table, since you see fewer rows than your snapshot contains. That is right for a queue and wrong for a report. `NOWAIT` is the sibling that raises an error instead of skipping, which suits \"claim this specific row or fail fast\".\n\nOne operational detail: the row lock is held until the transaction ends, so run the actual job outside that transaction, or the queue serializes again on the slowest worker.",
+      "references": "[PostgreSQL: The Locking Clause in SELECT](https://www.postgresql.org/docs/current/sql-select.html#SQL-FOR-UPDATE-SHARE)"
+    },
+    {
+      "id": "long-transaction-bloat",
+      "title": "What harm does a session sitting `idle in transaction` for hours do to query performance?",
+      "description": "The session ran one `SELECT`, never committed, and holds no lock on the tables in question. Select every consequence.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "It holds back the xmin horizon, so `VACUUM` cannot remove dead tuples anywhere in the database",
+          "isCorrect": true
+        },
+        {
+          "text": "Tables and indexes bloat, so scans read more pages for the same number of live rows",
+          "isCorrect": true
+        },
+        {
+          "text": "Index-only scans lose their advantage as the visibility map stops being updated",
+          "isCorrect": true
+        },
+        {
+          "text": "It can stall maintenance that waits for old snapshots, such as `CREATE INDEX CONCURRENTLY`",
+          "isCorrect": true
+        },
+        {
+          "text": "It forces every other session to re-plan its prepared statements",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "An open transaction pins a snapshot, and `VACUUM` may only remove row versions that are invisible to every live snapshot. So one idle transaction protects the dead tuples of tables it never touched.\n\nThe symptoms are all indirect, which is what makes this hard to spot from a plan. Tables and indexes grow, so scans read more pages for the same live rows. The visibility map goes stale, so index-only scans start reporting `Heap Fetches`. Maintenance that waits for old snapshots stops making progress. None of it touches plan caching.\n\nFind it with `SELECT pid, state, now() - xact_start AS age FROM pg_stat_activity ORDER BY xact_start;` and cap it with `idle_in_transaction_session_timeout`. That setting is not the same as `statement_timeout`: it targets sessions holding a transaction open with nothing running, which is the shape connection pools and ORMs produce most often.",
+      "references": "- [PostgreSQL: Routine Vacuuming](https://www.postgresql.org/docs/current/routine-vacuuming.html)\n- [PostgreSQL: idle_in_transaction_session_timeout](https://www.postgresql.org/docs/current/runtime-config-client.html#GUC-IDLE-IN-TRANSACTION-SESSION-TIMEOUT)"
+    },
+    {
+      "id": "hot-updates-fillfactor",
+      "title": "Why did adding one index slow down writes across the whole table?",
+      "description": "`sessions` is updated constantly, and every update sets `last_seen_at` and nothing else. After `CREATE INDEX ON sessions (last_seen_at)`, write throughput dropped and the table began bloating quickly.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Updating an indexed column disables Heap-Only Tuple updates, so every index is now written",
+          "isCorrect": true
+        },
+        {
+          "text": "The index must be locked exclusively for each update, which serializes the writers",
+          "isCorrect": false
+        },
+        {
+          "text": "B-tree indexes on timestamps are rebuilt when values move past the rightmost leaf page",
+          "isCorrect": false
+        },
+        {
+          "text": "Autovacuum stops running on tables that carry more than one index",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A Heap-Only Tuple update writes the new row version into the same page as the old one and chains them together, so no index has to be touched. Existing index entries still point at the head of the chain. HOT applies only when two conditions hold: no indexed column changed, and the page has free space.\n\nIndexing `last_seen_at` breaks the first condition permanently. Every update now inserts an entry into every index on `sessions` and leaves dead entries behind for VACUUM to clean up, which explains both the write slowdown and the bloat.\n\nThe levers available are to avoid indexing columns you overwrite on every write, and to lower `fillfactor` (`ALTER TABLE sessions SET (fillfactor = 80)`) so pages keep room for in-page updates. Note that fillfactor rescues only the second condition, never the first. Compare `n_tup_upd` with `n_tup_hot_upd` in `pg_stat_user_tables` to see how often HOT is actually applying.",
+      "references": "- [PostgreSQL: Heap-Only Tuples (HOT)](https://www.postgresql.org/docs/current/storage-hot.html)\n- [PostgreSQL: CREATE TABLE storage parameters](https://www.postgresql.org/docs/current/sql-createtable.html#SQL-CREATETABLE-STORAGE-PARAMETERS)"
+    },
+    {
+      "id": "explain-analyze-executes-dml",
+      "title": "What happens when you run `EXPLAIN ANALYZE DELETE FROM orders WHERE created_at < '2020-01-01';`?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The rows are really deleted, so measure inside `BEGIN; … ROLLBACK;`",
+          "isCorrect": true
+        },
+        {
+          "text": "Nothing is deleted, because `EXPLAIN` never executes the statement it is given",
+          "isCorrect": false
+        },
+        {
+          "text": "The rows are deleted and then automatically restored when the statement finishes",
+          "isCorrect": false
+        },
+        {
+          "text": "It raises an error, because `EXPLAIN ANALYZE` only accepts `SELECT`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Plain `EXPLAIN` only plans. `EXPLAIN ANALYZE` runs the statement in order to collect real timings and row counts, and that applies just as much to `INSERT`, `UPDATE`, `DELETE`, `CREATE TABLE AS`, and `EXECUTE`. The manual recommends bracketing it: `BEGIN; EXPLAIN ANALYZE DELETE …; ROLLBACK;`.\n\nThe timing instrumentation carries real overhead, occasionally severe on machines with a slow clock source, and `pg_test_timing` measures yours. When you only care about row counts, `EXPLAIN (ANALYZE, TIMING OFF)` gives more trustworthy numbers.\n\nA rollback also does not undo everything. Sequence values consumed by `nextval` are not given back, and anything a trigger did outside the database has already happened.",
+      "references": "- [PostgreSQL: EXPLAIN ANALYZE](https://www.postgresql.org/docs/current/using-explain.html#USING-EXPLAIN-ANALYZE)\n- [PostgreSQL: EXPLAIN](https://www.postgresql.org/docs/current/sql-explain.html)"
+    },
+    {
+      "id": "buffers-hit-vs-read",
+      "title": "What does `Buffers: shared hit=142 read=88231` tell you?",
+      "description": "```\nSeq Scan on invoices  (actual time=0.019..1284.771 rows=2100000 loops=1)\n  Buffers: shared hit=142 read=88231\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "142 pages were already in shared buffers; 88,231 came from the OS cache or the device",
+          "isCorrect": true
+        },
+        {
+          "text": "142 pages were served by the OS cache and 88,231 came from physical disk",
+          "isCorrect": false
+        },
+        {
+          "text": "88,231 rows were read from disk while 142 rows were already cached",
+          "isCorrect": false
+        },
+        {
+          "text": "The scan read 88,231 pages twice, once to check visibility and once for the data",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`shared hit` counts pages already resident in PostgreSQL's buffer cache. `read` counts pages PostgreSQL had to request from the operating system, and PostgreSQL cannot tell whether the OS served those from its own page cache or from the device. A high `read` count therefore never proves physical I/O on its own. Turn on `track_io_timing` and read the `I/O Timings` line when you need to know.\n\nBuffers are counted in 8 kB pages, not rows. 88,373 pages is about 690 MB, so this table is nowhere near cached, which is context the row count alone does not give you. Two neighbouring counters matter just as much. `dirtied` counts pages the query modified, something a plain `SELECT` can do through hint-bit updates, and `temp read/written` is where a spilled sort or a multi-batch hash join shows up in these same units.",
+      "references": "- [PostgreSQL: EXPLAIN](https://www.postgresql.org/docs/current/sql-explain.html)\n- [PostgreSQL: track_io_timing](https://www.postgresql.org/docs/current/runtime-config-statistics.html#GUC-TRACK-IO-TIMING)"
+    },
+    {
+      "id": "read-committed-update-recheck",
+      "title": "How do `READ COMMITTED` and `REPEATABLE READ` differ when two transactions update the same row?",
+      "description": "Transaction A runs `UPDATE accounts SET balance = balance - 100 WHERE id = 1;` and does not commit. Transaction B then runs the same statement and blocks. A commits.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`READ COMMITTED` re-checks the `WHERE` clause against the new row version; `REPEATABLE READ` aborts",
+          "isCorrect": true
+        },
+        {
+          "text": "Both isolation levels detect the conflict and abort transaction B with a deadlock error",
+          "isCorrect": false
+        },
+        {
+          "text": "Both behave identically here, because the isolation level only affects `SELECT` statements",
+          "isCorrect": false
+        },
+        {
+          "text": "`READ COMMITTED` silently overwrites A's change using the value from B's original snapshot",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`READ COMMITTED` takes a fresh snapshot for every statement. When B unblocks it does not restart from its old snapshot. It follows the update chain to the newest committed version, re-evaluates the `WHERE` clause against that version, and skips the row if it no longer matches. This is why `balance = balance - 100` composes correctly: both decrements land and no update is lost.\n\n`REPEATABLE READ` cannot do that without breaking its own promise that the transaction sees one snapshot throughout, so it raises `could not serialize access due to concurrent update` (SQLSTATE `40001`) and the application has to retry the whole transaction. Anything running at `REPEATABLE READ` or `SERIALIZABLE` therefore needs a retry loop around the transaction, not around the statement.\n\nUnder `READ COMMITTED`, read-modify-write logic has to be either a single atomic expression like the one here or protected by `SELECT … FOR UPDATE`. Reading a value into the application and writing it back is where lost updates actually come from.",
+      "references": "[PostgreSQL: Transaction Isolation](https://www.postgresql.org/docs/current/transaction-iso.html)"
+    },
+    {
+      "id": "limit-trap-wrong-index",
+      "title": "Why is this query instant for most users and catastrophic for a few?",
+      "description": "```sql\nSELECT * FROM events\nWHERE user_id = $1\nORDER BY created_at DESC\nLIMIT 10;\n```\n\n`events` holds 200 million rows with separate indexes on `(user_id)` and `(created_at)`. Most calls return in a millisecond; for a handful of users the same query takes 40 seconds.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The planner scans the `created_at` index expecting matches early, and for those users they never come",
+          "isCorrect": true
+        },
+        {
+          "text": "Those users have far more than 10 events, so the `LIMIT` cannot stop the scan early enough",
+          "isCorrect": false
+        },
+        {
+          "text": "The `(user_id)` index has bloated for those particular users and needs a `REINDEX`",
+          "isCorrect": false
+        },
+        {
+          "text": "A parameterized query cannot use an index, so `$1` always forces a sequential scan",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`ORDER BY … LIMIT` makes the planner weigh two strategies: filter by `user_id` and then sort, or read the `created_at` index in order and stop once 10 rows survive the filter. The second looks cheap because the cost model assumes matching rows are spread evenly through the index, so it charges only a fraction of the scan. For an active user that assumption holds and the scan stops after a few hundred entries.\n\nFor a user whose last event was two years ago the assumption is badly wrong, and the executor walks most of a 200 million entry index to find ten rows. `ANALYZE` cannot fix it, because the faulty input is the uniformity assumption rather than the statistics. This is the classic `LIMIT` trap, and it is nastier than an ordinary slow query because it hides inside your average latency and fires only for particular parameter values.\n\nAn index on `(user_id, created_at)` collapses both requirements into a single contiguous range that is already in the right order, so the query costs the same for every user.",
+      "references": "- [PostgreSQL: Multicolumn Indexes](https://www.postgresql.org/docs/current/indexes-multicolumn.html)\n- [PostgreSQL: Indexes and ORDER BY](https://www.postgresql.org/docs/current/indexes-ordering.html)"
+    }
+  ]
+}

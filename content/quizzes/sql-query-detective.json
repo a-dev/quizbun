@@ -1,0 +1,580 @@
+{
+  "schemaVersion": 1,
+  "id": "sql-query-detective",
+  "title": "SQL Query Detective",
+  "description": "Work out what each query returns and find the bug when it returns the wrong result. The quiz covers joins, fan-out, NULL, aggregation, and misleading filters. Unless stated otherwise, assume standard SQL behavior. Without `ORDER BY`, row order does not matter.",
+  "language": "en",
+  "tags": ["sql", "joins", "null", "aggregation", "debugging"],
+  "questions": [
+    {
+      "id": "inner-join-match-count",
+      "title": "How many rows does this inner join return?",
+      "description": "Tables:\n\n- `customers`: `(1, 'Ada')`, `(2, 'Lin')`, `(3, 'Sam')`\n- `orders`: `(101, 1)`, `(102, 1)`, `(103, 3)`, `(104, NULL)`\n\nColumns are `customers(id, name)` and `orders(id, customer_id)`.\n\n```sql\nSELECT c.name, o.id\nFROM customers AS c\nJOIN orders AS o ON o.customer_id = c.id;\n```\n\nEnter the number of result rows.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [3]
+      },
+      "explanation": "Ada matches orders 101 and 102. Sam matches order 103. Lin has no order, and order 104 has a NULL `customer_id`, so neither produces a row. The query returns 3 rows.",
+      "references": "[PostgreSQL documentation: Joined tables](https://www.postgresql.org/docs/current/queries-table-expressions.html#QUERIES-JOIN)"
+    },
+    {
+      "id": "left-join-where-collapse",
+      "title": "Which customer names survive this query?",
+      "description": "Using the same `customers` and `orders` data, suppose orders also contain `status`: order 101 is `paid`, 102 is `pending`, 103 is `pending`, and 104 is `paid`.\n\n```sql\nSELECT c.name\nFROM customers AS c\nLEFT JOIN orders AS o ON o.customer_id = c.id\nWHERE o.status = 'paid';\n```",
+      "type": "single-choice",
+      "options": [
+        { "text": "Only `Ada`", "isCorrect": true },
+        { "text": "`Ada` and `Lin`", "isCorrect": false },
+        { "text": "`Ada` and `Sam`", "isCorrect": false },
+        { "text": "`Ada`, `Lin`, and `Sam`", "isCorrect": false }
+      ],
+      "explanation": "The `LEFT JOIN` first keeps Lin and fills the order columns with NULL. The `WHERE` clause then removes that row because `NULL = 'paid'` is unknown, not true. Ada remains because order 101 is paid. Sam's only order is pending. For this filter, the query behaves like an inner join.",
+      "references": "[PostgreSQL documentation: `ON` and `WHERE` with outer joins](https://www.postgresql.org/docs/current/queries-table-expressions.html#QUERIES-JOIN)"
+    },
+    {
+      "id": "left-join-filter-in-on",
+      "title": "What rows does moving the paid filter into `ON` produce?",
+      "description": "The data is the same as in the previous Question.\n\n```sql\nSELECT c.name, o.id\nFROM customers AS c\nLEFT JOIN orders AS o\n  ON o.customer_id = c.id\n AND o.status = 'paid';\n```",
+      "type": "single-choice",
+      "options": [
+        { "text": "`(Ada, 101)`, `(Lin, NULL)`, and `(Sam, NULL)`", "isCorrect": true },
+        { "text": "Only `(Ada, 101)`", "isCorrect": false },
+        { "text": "`(Ada, 101)` and `(Sam, 103)`", "isCorrect": false },
+        { "text": "`(Ada, 101)`, `(Lin, 104)`, and `(Sam, NULL)`", "isCorrect": false }
+      ],
+      "explanation": "The `ON` clause limits which orders can match, but the left join still keeps every customer. Ada matches paid order 101. Lin and Sam have no paid order, so their order columns are NULL. Order 104 has no customer id and matches nobody.",
+      "references": "[PostgreSQL documentation: `ON` and `WHERE` with outer joins](https://www.postgresql.org/docs/current/queries-table-expressions.html#QUERIES-JOIN)"
+    },
+    {
+      "id": "count-star-versus-column",
+      "title": "What are the counts for customers with no orders?",
+      "description": "```sql\nSELECT c.name, COUNT(*) AS rows_seen, COUNT(o.id) AS orders_seen\nFROM customers AS c\nLEFT JOIN orders AS o ON o.customer_id = c.id\nGROUP BY c.id, c.name;\n```\n\nFocus on Lin, who has no matching order.",
+      "type": "single-choice",
+      "options": [
+        { "text": "`rows_seen = 1`, `orders_seen = 0`", "isCorrect": true },
+        { "text": "`rows_seen = 0`, `orders_seen = 0`", "isCorrect": false },
+        { "text": "`rows_seen = 1`, `orders_seen = 1`", "isCorrect": false },
+        { "text": "Both counts are `NULL`", "isCorrect": false }
+      ],
+      "explanation": "The left join keeps one row for Lin and fills its order columns with NULL. `COUNT(*)` counts the row, so `rows_seen` is 1. `COUNT(o.id)` ignores the NULL order id, so `orders_seen` is 0.",
+      "references": "[PostgreSQL documentation: Aggregate functions](https://www.postgresql.org/docs/current/functions-aggregate.html)"
+    },
+    {
+      "id": "fanout-two-child-tables",
+      "title": "What total does the query report after accidental fan-out?",
+      "description": "Order 10 has two items priced 30 and 20, plus three payments of 10 each.\n\n```sql\nSELECT SUM(i.price) AS item_total\nFROM orders AS o\nJOIN order_items AS i ON i.order_id = o.id\nJOIN payments AS p ON p.order_id = o.id\nWHERE o.id = 10;\n```\n\nEnter the reported `item_total`.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [150]
+      },
+      "explanation": "Each of the 2 items matches each of the 3 payments, so the joins create `2 × 3 = 6` rows. Each item price appears three times. The query calculates `(30 + 20) × 3 = 150`, although the real item total is 50.",
+      "references": "[PostgreSQL documentation: Joined tables](https://www.postgresql.org/docs/current/queries-table-expressions.html#QUERIES-JOIN)"
+    },
+    {
+      "id": "repair-two-child-fanout",
+      "title": "Which approaches safely compute both item and payment totals per order?",
+      "description": "Select every safe approach. Both child tables may contain equal amounts in different rows.",
+      "type": "multiple-choice",
+      "options": [
+        { "text": "Aggregate `order_items` and `payments` separately by `order_id`, then join those one-row-per-order results", "isCorrect": true },
+        { "text": "Use correlated scalar subqueries that aggregate each child table independently for the current order", "isCorrect": true },
+        { "text": "Replace both sums with `SUM(DISTINCT amount)`", "isCorrect": false },
+        { "text": "Add `DISTINCT` to the final `SELECT` while leaving both raw child joins intact", "isCorrect": false }
+      ],
+      "explanation": "Aggregate each child table on its own before joining, or calculate each total in a separate correlated subquery. Both approaches keep the child tables from multiplying each other. `SUM(DISTINCT amount)` is wrong when two real rows have the same amount. A final `DISTINCT` runs too late: `SUM` has already counted the duplicated input rows.",
+      "references": "[PostgreSQL documentation: Aggregate expressions](https://www.postgresql.org/docs/current/sql-expressions.html#SYNTAX-AGGREGATES)"
+    },
+    {
+      "id": "null-equality-predicate",
+      "title": "What does `NULL = NULL` evaluate to in a SQL predicate?",
+      "type": "single-choice",
+      "options": [
+        { "text": "Unknown", "isCorrect": true },
+        { "text": "True", "isCorrect": false },
+        { "text": "False", "isCorrect": false },
+        { "text": "A syntax error", "isCorrect": false }
+      ],
+      "explanation": "The result is unknown. NULL means the value is unknown, so SQL cannot prove that two NULL values are equal. A `WHERE` clause keeps only rows where its condition is true.",
+      "references": "[PostgreSQL documentation: NULL comparisons](https://www.postgresql.org/docs/current/functions-comparison.html)"
+    },
+    {
+      "id": "null-safe-equality-standard",
+      "title": "Which standard SQL predicate considers two NULL values equal?",
+      "type": "single-choice",
+      "options": [
+        { "text": "`a IS NOT DISTINCT FROM b`", "isCorrect": true },
+        { "text": "`a = b OR a = NULL`", "isCorrect": false },
+        { "text": "`a == b`", "isCorrect": false },
+        { "text": "`a IS b`", "isCorrect": false }
+      ],
+      "explanation": "`a IS NOT DISTINCT FROM b` is true when `a` and `b` are equal or when both are NULL. It always returns true or false, never unknown. Ordinary equality does not work this way when either value is NULL. Some databases also have their own NULL-safe operators.",
+      "references": "[PostgreSQL documentation: `IS NOT DISTINCT FROM`](https://www.postgresql.org/docs/current/functions-comparison.html)"
+    },
+    {
+      "id": "not-in-null-poison",
+      "title": "Which values does this `NOT IN` query return?",
+      "description": "Table `candidate(id)` contains `1`, `2`, and `3`. Table `blocked(id)` contains `2` and `NULL`.\n\n```sql\nSELECT id\nFROM candidate\nWHERE id NOT IN (SELECT id FROM blocked);\n```",
+      "type": "single-choice",
+      "options": [
+        { "text": "No values", "isCorrect": true },
+        { "text": "`1` and `3`", "isCorrect": false },
+        { "text": "Only `2`", "isCorrect": false },
+        { "text": "`1`, `2`, and `3`", "isCorrect": false }
+      ],
+      "explanation": "For ids 1 and 3, the comparison with 2 is unequal, but the comparison with NULL is unknown. That makes `NOT IN` unknown rather than true. For id 2, `NOT IN` is false because 2 is present. `WHERE` keeps only true results, so the query returns no rows.",
+      "references": "[PostgreSQL documentation: `NOT IN` subqueries](https://www.postgresql.org/docs/current/functions-subquery.html#FUNCTIONS-SUBQUERY-NOTIN)"
+    },
+    {
+      "id": "not-exists-antijoin",
+      "title": "Which values does the `NOT EXISTS` anti-join return?",
+      "description": "Use the same `candidate` values `1`, `2`, `3` and `blocked` values `2`, `NULL`.\n\n```sql\nSELECT c.id\nFROM candidate AS c\nWHERE NOT EXISTS (\n  SELECT 1\n  FROM blocked AS b\n  WHERE b.id = c.id\n);\n```",
+      "type": "single-choice",
+      "options": [
+        { "text": "`1` and `3`", "isCorrect": true },
+        { "text": "No values", "isCorrect": false },
+        { "text": "Only `2`", "isCorrect": false },
+        { "text": "`1`, `2`, and `3`", "isCorrect": false }
+      ],
+      "explanation": "The subquery finds a matching blocked row only for id 2. The NULL in `blocked.id` does not equal any candidate id. It does not affect the other candidates, so ids 1 and 3 pass `NOT EXISTS`.",
+      "references": "[PostgreSQL documentation: `EXISTS` subqueries](https://www.postgresql.org/docs/current/functions-subquery.html#FUNCTIONS-SUBQUERY-EXISTS)"
+    },
+    {
+      "id": "not-equal-excludes-null",
+      "title": "How many rows satisfy `rating <> 5`?",
+      "description": "The `rating` values are `5`, `4`, and `NULL`.\n\n```sql\nSELECT * FROM reviews WHERE rating <> 5;\n```\n\nEnter the row count.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [1]
+      },
+      "explanation": "Only rating 4 makes `rating <> 5` true. Rating 5 makes it false, and NULL makes it unknown. To include missing ratings, write that rule explicitly: `rating <> 5 OR rating IS NULL`.",
+      "references": "[PostgreSQL documentation: NULL comparisons](https://www.postgresql.org/docs/current/functions-comparison.html)"
+    },
+    {
+      "id": "coalesce-filter-semantics",
+      "title": "Which rows satisfy `COALESCE(discount, 0) = 0`?",
+      "description": "The `discount` values are `0`, `10`, and `NULL`.",
+      "type": "single-choice",
+      "options": [
+        { "text": "The rows with `0` and `NULL`", "isCorrect": true },
+        { "text": "Only the row with `0`", "isCorrect": false },
+        { "text": "Only the row with `NULL`", "isCorrect": false },
+        { "text": "All three rows", "isCorrect": false }
+      ],
+      "explanation": "`COALESCE` returns the first non-NULL argument. A stored 0 stays 0, while NULL becomes 0. Both rows pass the filter. Be careful: this expression treats 'no discount recorded' and 'a recorded discount of zero' as the same thing.",
+      "references": "[PostgreSQL documentation: `COALESCE`](https://www.postgresql.org/docs/current/functions-conditional.html#FUNCTIONS-COALESCE-NVL-IFNULL)"
+    },
+    {
+      "id": "sum-over-empty-set",
+      "title": "What does `SUM(amount)` return when no rows qualify?",
+      "description": "```sql\nSELECT SUM(amount)\nFROM payments\nWHERE status = 'missing-status';\n```",
+      "type": "single-choice",
+      "options": [
+        { "text": "`NULL`", "isCorrect": true },
+        { "text": "`0`", "isCorrect": false },
+        { "text": "No result row", "isCorrect": false },
+        { "text": "An error", "isCorrect": false }
+      ],
+      "explanation": "The query still returns one row because it has no `GROUP BY`. `COUNT` returns 0 for an empty input, but `SUM` and most other aggregates return NULL. Use `COALESCE(SUM(amount), 0)` when zero is the right business value.",
+      "references": "[PostgreSQL documentation: Aggregate functions over no rows](https://www.postgresql.org/docs/current/functions-aggregate.html)"
+    },
+    {
+      "id": "count-over-empty-set",
+      "title": "What does `COUNT(amount)` return when no rows qualify?",
+      "type": "single-choice",
+      "options": [
+        { "text": "`0`", "isCorrect": true },
+        { "text": "`NULL`", "isCorrect": false },
+        { "text": "No result row", "isCorrect": false },
+        { "text": "An error", "isCorrect": false }
+      ],
+      "explanation": "An aggregate query without `GROUP BY` still returns one row when its input is empty. `COUNT(amount)` counts non-NULL amounts. There are none, so it returns 0.",
+      "references": "[PostgreSQL documentation: `count`](https://www.postgresql.org/docs/current/functions-aggregate.html)"
+    },
+    {
+      "id": "average-ignores-null",
+      "title": "What is `AVG(score)` for scores `10`, `20`, and `NULL`?",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [15]
+      },
+      "explanation": "`AVG(score)` ignores NULL, so it calculates `(10 + 20) / 2 = 15`. If you replace the missing score with zero, the result becomes 10. That is a different rule and must be written explicitly, for example as `AVG(COALESCE(score, 0))`.",
+      "references": "[PostgreSQL documentation: `avg`](https://www.postgresql.org/docs/current/functions-aggregate.html)"
+    },
+    {
+      "id": "count-distinct-null",
+      "title": "What is `COUNT(DISTINCT category)` for `A`, `A`, `B`, and `NULL`?",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [2]
+      },
+      "explanation": "The distinct non-NULL values are A and B. `COUNT(expression)` ignores NULL even when used with `DISTINCT`, so the result is 2.",
+      "references": "[PostgreSQL documentation: Aggregate functions](https://www.postgresql.org/docs/current/functions-aggregate.html)"
+    },
+    {
+      "id": "group-by-null-bucket",
+      "title": "How many groups does `GROUP BY region` form?",
+      "description": "The `region` values are `'east'`, `'east'`, `NULL`, and `NULL`.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [2]
+      },
+      "explanation": "`GROUP BY` puts the two NULL values in one group. The query therefore creates an `east` group and a NULL group. This differs from ordinary equality, where `NULL = NULL` is unknown.",
+      "references": "[PostgreSQL documentation: `GROUP BY`](https://www.postgresql.org/docs/current/queries-table-expressions.html#QUERIES-GROUP)"
+    },
+    {
+      "id": "having-count-zero",
+      "title": "Which customers does this query find?",
+      "description": "```sql\nSELECT c.id\nFROM customers AS c\nLEFT JOIN orders AS o ON o.customer_id = c.id\nGROUP BY c.id\nHAVING COUNT(o.id) = 0;\n```",
+      "type": "single-choice",
+      "options": [
+        { "text": "Customers with no matching orders", "isCorrect": true },
+        { "text": "Customers with exactly one matching order", "isCorrect": false },
+        { "text": "No customers, because a left join always makes `COUNT(*)` positive", "isCorrect": false },
+        { "text": "Customers whose order ids are duplicated", "isCorrect": false }
+      ],
+      "explanation": "A customer without orders still gets one row from the left join, but `o.id` is NULL. `COUNT(o.id)` ignores that NULL and returns 0, so `HAVING` keeps the customer. `COUNT(*)` would return 1 and would not work for this test.",
+      "references": "[PostgreSQL documentation: `GROUP BY` and `HAVING`](https://www.postgresql.org/docs/current/queries-table-expressions.html#QUERIES-GROUP)"
+    },
+    {
+      "id": "where-before-grouping",
+      "title": "Why does this query omit departments with no sales since 2026 began?",
+      "description": "```sql\nSELECT d.id, SUM(s.amount)\nFROM departments AS d\nLEFT JOIN sales AS s ON s.department_id = d.id\nWHERE s.sold_at >= DATE '2026-01-01'\nGROUP BY d.id;\n```",
+      "type": "single-choice",
+      "options": [
+        { "text": "The `WHERE` predicate rejects NULL-extended rows before grouping", "isCorrect": true },
+        { "text": "`SUM` automatically removes departments whose total is zero", "isCorrect": false },
+        { "text": "`GROUP BY` cannot group rows produced by a left join", "isCorrect": false },
+        { "text": "Date predicates are evaluated after aggregation", "isCorrect": false }
+      ],
+      "explanation": "The join runs before `WHERE`. A department with no sale since January 1 gets a row where `s.sold_at` is NULL. The date test is then unknown, so `WHERE` removes the row. Put the date condition in `ON` to keep every department.",
+      "references": "[PostgreSQL documentation: Table-expression processing](https://www.postgresql.org/docs/current/queries-table-expressions.html)"
+    },
+    {
+      "id": "where-versus-having",
+      "title": "Which clause should filter groups whose total sales exceed 1,000?",
+      "type": "single-choice",
+      "options": [
+        { "text": "`HAVING SUM(amount) > 1000`", "isCorrect": true },
+        { "text": "`WHERE SUM(amount) > 1000`", "isCorrect": false },
+        { "text": "`ON SUM(amount) > 1000`", "isCorrect": false },
+        { "text": "`ORDER BY SUM(amount) > 1000`", "isCorrect": false }
+      ],
+      "explanation": "`WHERE` filters rows before SQL forms the groups. `HAVING` filters the completed groups, so `HAVING SUM(amount) > 1000` is the correct condition.",
+      "references": "[PostgreSQL documentation: `WHERE`, `GROUP BY`, and `HAVING`](https://www.postgresql.org/docs/current/queries-table-expressions.html)"
+    },
+    {
+      "id": "missing-composite-join-key",
+      "title": "What defect causes the duplicated matches?",
+      "description": "Prices are unique only by `(sku, region)`. Product `X` has one price row for `US` and one for `EU`. An order line for `(X, US)` is queried with:\n\n```sql\nSELECT l.sku, p.amount\nFROM order_lines AS l\nJOIN prices AS p ON p.sku = l.sku;\n```",
+      "type": "single-choice",
+      "options": [
+        { "text": "The join omits `p.region = l.region` from the composite key", "isCorrect": true },
+        { "text": "The join should use `CROSS JOIN`", "isCorrect": false },
+        { "text": "The price table needs a NULL row", "isCorrect": false },
+        { "text": "The query needs `ORDER BY region`", "isCorrect": false }
+      ],
+      "explanation": "The US order line matches both price rows because the join checks only `sku`. The full key is `(sku, region)`, so the join must also include `p.region = l.region`. Sorting the result would not fix the extra match.",
+      "references": "[PostgreSQL documentation: Join conditions](https://www.postgresql.org/docs/current/queries-table-expressions.html#QUERIES-JOIN)"
+    },
+    {
+      "id": "self-join-unique-pairs",
+      "title": "Which predicate produces each unordered employee pair exactly once?",
+      "description": "```sql\nSELECT a.id, b.id\nFROM employees AS a\nJOIN employees AS b ON /* predicate */;\n```\n\nAssume employee ids are unique and non-NULL. No employee should pair with themself.",
+      "type": "single-choice",
+      "options": [
+        { "text": "`a.id < b.id`", "isCorrect": true },
+        { "text": "`a.id <> b.id`", "isCorrect": false },
+        { "text": "`a.id = b.id`", "isCorrect": false },
+        { "text": "`a.id <= b.id`", "isCorrect": false }
+      ],
+      "explanation": "`a.id < b.id` removes self-pairs and keeps one ordering of each pair. With `a.id <> b.id`, both `(a, b)` and `(b, a)` appear. With `a.id <= b.id`, every employee also pairs with themself.",
+      "references": "[PostgreSQL documentation: Self-joins and aliases](https://www.postgresql.org/docs/current/queries-table-expressions.html#QUERIES-TABLE-ALIASES)"
+    },
+    {
+      "id": "many-to-many-bridge-count",
+      "title": "How many rows result from joining students through enrollments?",
+      "description": "Student 1 has 2 enrollment rows, student 2 has 3, and student 3 has none. Every enrollment references one existing course.\n\n```sql\nSELECT s.id, c.id\nFROM students AS s\nJOIN enrollments AS e ON e.student_id = s.id\nJOIN courses AS c ON c.id = e.course_id;\n```\n\nEnter the result row count.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [5]
+      },
+      "explanation": "Each enrollment links one student to one course, so each enrollment becomes one result row. Students 1 and 2 contribute `2 + 3 = 5` rows. Student 3 has no enrollment and disappears in the inner join. Five rows is correct here because the query asks for student-course pairs.",
+      "references": "[PostgreSQL documentation: Inner joins](https://www.postgresql.org/docs/current/queries-table-expressions.html#QUERIES-JOIN)"
+    },
+    {
+      "id": "duplicate-dimension-key",
+      "title": "What should you check when a many-to-one join doubles some sales?",
+      "description": "A sales fact table joins to `stores` on `store_code`. Each sale should match one store, but some sales appear twice.",
+      "type": "multiple-choice",
+      "options": [
+        { "text": "Whether `stores.store_code` actually contains duplicate rows", "isCorrect": true },
+        { "text": "Whether the join predicate omits part of the store's real key", "isCorrect": true },
+        { "text": "Whether temporal dimension versions require an effective-date predicate", "isCorrect": true },
+        { "text": "Whether adding final `DISTINCT` makes the model correct", "isCorrect": false }
+      ],
+      "explanation": "The join is not many-to-one in practice if a sale matches two store rows. Check for duplicate `store_code` values, a missing part of the real key, or historical rows that need an effective-date condition. `DISTINCT` can hide some repeated output rows, but it does not fix the relationship or a wrong total.",
+      "references": "[PostgreSQL documentation: Join conditions](https://www.postgresql.org/docs/current/queries-table-expressions.html#QUERIES-JOIN)"
+    },
+    {
+      "id": "distinct-masks-join-bug",
+      "title": "Why is `SELECT DISTINCT` a risky repair for an unexpectedly duplicating join?",
+      "type": "multiple-choice",
+      "options": [
+        { "text": "It can hide a wrong join cardinality instead of fixing the relationship", "isCorrect": true },
+        { "text": "It removes rows based only on projected columns, which may collapse legitimate records", "isCorrect": true },
+        { "text": "It cannot undo inflation already used inside an aggregate expression", "isCorrect": true },
+        { "text": "It guarantees one output row per left-table key", "isCorrect": false }
+      ],
+      "explanation": "`DISTINCT` compares the columns in the final result. Two real records can look identical after projection and be collapsed, while bad join matches that differ in one column remain. It also cannot fix `SUM(...)`: the aggregate has already read the duplicated rows before final deduplication.",
+      "references": "[PostgreSQL documentation: `DISTINCT`](https://www.postgresql.org/docs/current/queries-select-lists.html#QUERIES-DISTINCT)"
+    },
+    {
+      "id": "and-or-precedence-in-join",
+      "title": "Which rows can match because of missing parentheses?",
+      "description": "```sql\nSELECT *\nFROM users AS u\nJOIN events AS e\n  ON e.user_id = u.id\n AND e.kind = 'purchase'\n  OR e.kind = 'signup';\n```",
+      "type": "single-choice",
+      "options": [
+        { "text": "Every signup event can match every user, regardless of `user_id`", "isCorrect": true },
+        { "text": "Only purchase events can match", "isCorrect": false },
+        { "text": "Signup events match only when `e.user_id = u.id`", "isCorrect": false },
+        { "text": "No rows, because `AND` and `OR` cannot appear together in `ON`", "isCorrect": false }
+      ],
+      "explanation": "`AND` is evaluated before `OR`. SQL reads the condition as `(e.user_id = u.id AND e.kind = 'purchase') OR e.kind = 'signup'`. A signup event therefore matches every user. Parentheses fix it: `e.user_id = u.id AND (e.kind = 'purchase' OR e.kind = 'signup')`.",
+      "references": "[PostgreSQL documentation: Operator precedence](https://www.postgresql.org/docs/current/sql-syntax-lexical.html#SQL-PRECEDENCE)"
+    },
+    {
+      "id": "full-outer-join-cardinality",
+      "title": "How many rows does the full outer join return?",
+      "description": "Table `a(k)` contains `1`, `2`, `2`; table `b(k)` contains `2`, `2`, `3`.\n\n```sql\nSELECT a.k, b.k\nFROM a\nFULL OUTER JOIN b ON b.k = a.k;\n```\n\nEnter the row count.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [6]
+      },
+      "explanation": "Each of the two rows where `a.k = 2` matches both rows where `b.k = 2`. That produces `2 × 2 = 4` rows. The unmatched value 1 from `a` adds one row, and the unmatched value 3 from `b` adds another. The total is 6.",
+      "references": "[PostgreSQL documentation: Full outer joins](https://www.postgresql.org/docs/current/queries-table-expressions.html#QUERIES-JOIN)"
+    },
+    {
+      "id": "union-all-versus-union",
+      "title": "How many rows do `UNION ALL` and `UNION` return?",
+      "description": "Query X yields values `1, 1, 2`; query Y yields `2, 3`. Consider `X UNION ALL Y` and `X UNION Y`.",
+      "type": "single-choice",
+      "options": [
+        { "text": "`UNION ALL` returns 5 rows; `UNION` returns 3 rows", "isCorrect": true },
+        { "text": "Both return 5 rows", "isCorrect": false },
+        { "text": "`UNION ALL` returns 3 rows; `UNION` returns 5 rows", "isCorrect": false },
+        { "text": "Both return 3 rows", "isCorrect": false }
+      ],
+      "explanation": "`UNION ALL` keeps every row: three from X and two from Y, for 5 rows. `UNION` removes duplicate result rows, leaving 1, 2, and 3, for 3 rows.",
+      "references": "[PostgreSQL documentation: `UNION` and `UNION ALL`](https://www.postgresql.org/docs/current/queries-union.html)"
+    },
+    {
+      "id": "cross-join-cardinality",
+      "title": "How many rows does a cross join produce?",
+      "description": "Table `sizes` has 4 rows and table `colors` has 6 rows.\n\n```sql\nSELECT * FROM sizes CROSS JOIN colors;\n```",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [24]
+      },
+      "explanation": "A cross join pairs every size with every color. The result has `4 × 6 = 24` rows. That is useful when you want every combination and a bug when you do not.",
+      "references": "[PostgreSQL documentation: Cross joins](https://www.postgresql.org/docs/current/queries-table-expressions.html#QUERIES-JOIN)"
+    },
+    {
+      "id": "chained-left-then-inner-join",
+      "title": "Why do authors without books disappear from this join chain?",
+      "description": "```sql\nSELECT a.name, p.name\nFROM authors AS a\nLEFT JOIN books AS b ON b.author_id = a.id\nJOIN publishers AS p ON p.id = b.publisher_id;\n```",
+      "type": "single-choice",
+      "options": [
+        { "text": "The inner join to `publishers` rejects the NULL book row", "isCorrect": true },
+        { "text": "A left join cannot be followed by another join", "isCorrect": false },
+        { "text": "The database evaluates the publisher join before the author join", "isCorrect": false },
+        { "text": "Authors without books are grouped away", "isCorrect": false }
+      ],
+      "explanation": "The left join keeps an author without books and fills the `b` columns with NULL. The inner join then tests `p.id = b.publisher_id`. No publisher matches the NULL value, so the author disappears. Use another left join for `publishers` if authors without books must remain.",
+      "references": "[PostgreSQL documentation: Chained joins](https://www.postgresql.org/docs/current/queries-table-expressions.html#QUERIES-JOIN)"
+    },
+    {
+      "id": "nullable-foreign-key-join",
+      "title": "Does a NULL join value match another NULL join value?",
+      "description": "Assume the join uses ordinary equality: `left.value = right.value`.",
+      "type": "single-choice",
+      "options": [
+        { "text": "No; ordinary equality with NULL is unknown", "isCorrect": true },
+        { "text": "Yes; joins automatically match NULL with NULL", "isCorrect": false },
+        { "text": "Yes, but only in an inner join", "isCorrect": false },
+        { "text": "It depends on row order", "isCorrect": false }
+      ],
+      "explanation": "Join conditions use the same NULL rules as other SQL conditions. `NULL = NULL` is unknown, not true, so the two rows do not match under ordinary equality.",
+      "references": "[PostgreSQL documentation: NULL comparisons](https://www.postgresql.org/docs/current/functions-comparison.html)"
+    },
+    {
+      "id": "window-after-fanout",
+      "title": "Why does a window total repeat an inflated value after a join?",
+      "description": "```sql\nSELECT o.id,\n       SUM(i.price) OVER (PARTITION BY o.id) AS item_total\nFROM orders AS o\nJOIN order_items AS i ON i.order_id = o.id\nJOIN shipments AS s ON s.order_id = o.id;\n```\n\nOne order has 2 items and 3 shipments.",
+      "type": "single-choice",
+      "options": [
+        { "text": "Window functions operate on the six joined rows, after fan-out has occurred", "isCorrect": true },
+        { "text": "Window functions always multiply sums by the number of tables", "isCorrect": false },
+        { "text": "`PARTITION BY` performs a distinct aggregation first", "isCorrect": false },
+        { "text": "The window frame excludes item rows", "isCorrect": false }
+      ],
+      "explanation": "The joins create `2 × 3 = 6` rows before the window function runs. Each item price now appears three times, once per shipment. The window sum reads all six rows and repeats the inflated total on each one. A window function keeps the input rows; it does not undo fan-out.",
+      "references": "[PostgreSQL documentation: Window functions](https://www.postgresql.org/docs/current/tutorial-window.html)"
+    },
+    {
+      "id": "limit-without-order",
+      "title": "What is guaranteed by `SELECT id FROM tasks LIMIT 1` without `ORDER BY`?",
+      "type": "single-choice",
+      "options": [
+        { "text": "At most one qualifying row, but not which row", "isCorrect": true },
+        { "text": "The row with the smallest `id`", "isCorrect": false },
+        { "text": "The earliest inserted row", "isCorrect": false },
+        { "text": "The row most recently updated", "isCorrect": false }
+      ],
+      "explanation": "`LIMIT 1` guarantees no more than one row. It does not choose which row. Without `ORDER BY`, the database may return any qualifying row, and a different query plan may choose another one.",
+      "references": "[PostgreSQL documentation: `LIMIT` and unpredictable row order](https://www.postgresql.org/docs/current/queries-limit.html)"
+    },
+    {
+      "id": "inclusive-between-timestamp",
+      "title": "Which 2026 rows can an inclusive `BETWEEN` filter accidentally omit?",
+      "description": "```sql\nWHERE created_at BETWEEN TIMESTAMP '2026-01-01 00:00:00'\n                     AND TIMESTAMP '2026-12-31 00:00:00'\n```",
+      "type": "single-choice",
+      "options": [
+        { "text": "Rows later than midnight on December 31, 2026", "isCorrect": true },
+        { "text": "Rows on January 1, 2026", "isCorrect": false },
+        { "text": "Rows exactly at midnight on December 31, 2026", "isCorrect": false },
+        { "text": "All rows, because `BETWEEN` ignores timestamps", "isCorrect": false }
+      ],
+      "explanation": "`BETWEEN` includes both endpoints, but the upper endpoint is midnight at the start of December 31. Every later time that day is greater and gets excluded. Use a half-open range instead: `created_at >= TIMESTAMP '2026-01-01 00:00:00' AND created_at < TIMESTAMP '2027-01-01 00:00:00'`.",
+      "references": "[PostgreSQL documentation: `BETWEEN`](https://www.postgresql.org/docs/current/functions-comparison.html)"
+    },
+    {
+      "id": "conditional-count-else-zero",
+      "title": "Why does this expression count every row?",
+      "description": "```sql\nCOUNT(CASE WHEN status = 'paid' THEN 1 ELSE 0 END)\n```",
+      "type": "single-choice",
+      "options": [
+        { "text": "`COUNT(expression)` counts both 1 and 0 because both are non-NULL", "isCorrect": true },
+        { "text": "`COUNT` treats every status as `paid`", "isCorrect": false },
+        { "text": "`CASE` cannot be used inside an aggregate", "isCorrect": false },
+        { "text": "Zero is equivalent to NULL in SQL", "isCorrect": false }
+      ],
+      "explanation": "`COUNT(expression)` counts every non-NULL result. This `CASE` returns either 1 or 0, so it never returns NULL and every row is counted. Remove `ELSE 0` so non-paid rows return NULL, or use `SUM(CASE WHEN status = 'paid' THEN 1 ELSE 0 END)`.",
+      "references": "[PostgreSQL documentation: Aggregate functions](https://www.postgresql.org/docs/current/functions-aggregate.html) and [conditional expressions](https://www.postgresql.org/docs/current/functions-conditional.html)"
+    },
+    {
+      "id": "sum-case-without-else",
+      "title": "What does `SUM(CASE WHEN paid THEN amount END)` return when no row is paid?",
+      "type": "single-choice",
+      "options": [
+        { "text": "`NULL`", "isCorrect": true },
+        { "text": "Always `0`", "isCorrect": false },
+        { "text": "The sum of all amounts", "isCorrect": false },
+        { "text": "A syntax error because `ELSE` is mandatory", "isCorrect": false }
+      ],
+      "explanation": "Without `ELSE`, the `CASE` returns NULL for every non-paid row. If no row is paid, `SUM` receives only NULL values and returns NULL. Add `ELSE 0` or wrap the sum in `COALESCE` when you need zero.",
+      "references": "[PostgreSQL documentation: Aggregate functions](https://www.postgresql.org/docs/current/functions-aggregate.html) and [conditional expressions](https://www.postgresql.org/docs/current/functions-conditional.html)"
+    },
+    {
+      "id": "left-join-is-null-antijoin-trap",
+      "title": "When is `LEFT JOIN ... WHERE right.key IS NULL` a reliable anti-join?",
+      "type": "single-choice",
+      "options": [
+        { "text": "When the tested right-side column is guaranteed non-NULL on every genuine match", "isCorrect": true },
+        { "text": "Whenever any nullable right-side column is tested", "isCorrect": false },
+        { "text": "Only when the left table has no primary key", "isCorrect": false },
+        { "text": "Only when both tables are empty", "isCorrect": false }
+      ],
+      "explanation": "An unmatched left row gets NULL in every right-side column. Test a right-side column that can never be NULL on a real match, such as a non-NULL key. If you test a nullable column, a real match with NULL in that column can look like an unmatched row.",
+      "references": "[PostgreSQL documentation: Left outer joins](https://www.postgresql.org/docs/current/queries-table-expressions.html#QUERIES-JOIN)"
+    },
+    {
+      "id": "predicate-on-left-side-of-left-join",
+      "title": "What happens when a left-table filter is placed inside the `ON` clause?",
+      "description": "```sql\nSELECT c.id, o.id\nFROM customers AS c\nLEFT JOIN orders AS o\n  ON o.customer_id = c.id\n AND c.active = TRUE;\n```\n\nSome customers are inactive.",
+      "type": "single-choice",
+      "options": [
+        { "text": "Inactive customers remain, but with NULL order columns", "isCorrect": true },
+        { "text": "Inactive customers are removed from the result", "isCorrect": false },
+        { "text": "Inactive customers match every order", "isCorrect": false },
+        { "text": "The query is invalid because `ON` cannot reference the left table", "isCorrect": false }
+      ],
+      "explanation": "In a left join, `ON` decides whether a right row matches. It does not remove rows from the left table. An inactive customer fails the match condition but still appears with NULL order columns. Put `c.active = TRUE` in `WHERE` if inactive customers should disappear.",
+      "references": "[PostgreSQL documentation: Outer-join conditions](https://www.postgresql.org/docs/current/queries-table-expressions.html#QUERIES-JOIN)"
+    },
+    {
+      "id": "aggregate-grain-mismatch",
+      "title": "What is wrong with grouping by both customer and order when one row per customer is required?",
+      "description": "```sql\nSELECT c.id, o.id, SUM(i.amount)\nFROM customers AS c\nJOIN orders AS o ON o.customer_id = c.id\nJOIN order_items AS i ON i.order_id = o.id\nGROUP BY c.id, o.id;\n```",
+      "type": "single-choice",
+      "options": [
+        { "text": "The query's grain is one row per customer-order pair, not one row per customer", "isCorrect": true },
+        { "text": "`SUM` cannot be used with two grouping columns", "isCorrect": false },
+        { "text": "Grouping by an order id combines all customers", "isCorrect": false },
+        { "text": "The joins must be cross joins for aggregation", "isCorrect": false }
+      ],
+      "explanation": "The grouping columns define the level of each result row. Because `o.id` is included, the query returns one row per customer and order, not one row per customer. Remove the order id from both `SELECT` and `GROUP BY` to calculate a customer-level total.",
+      "references": "[PostgreSQL documentation: `GROUP BY`](https://www.postgresql.org/docs/current/queries-table-expressions.html#QUERIES-GROUP)"
+    },
+    {
+      "id": "having-null-average",
+      "title": "Does a group containing only NULL scores pass `HAVING AVG(score) >= 0`?",
+      "type": "single-choice",
+      "options": [
+        { "text": "No; `AVG(score)` is NULL and the comparison is unknown", "isCorrect": true },
+        { "text": "Yes; an all-NULL average is zero", "isCorrect": false },
+        { "text": "Yes; NULL is greater than every number", "isCorrect": false },
+        { "text": "The aggregate query always throws an error", "isCorrect": false }
+      ],
+      "explanation": "`AVG` ignores NULL values. With no non-NULL scores, the average itself is NULL. `NULL >= 0` is unknown, and `HAVING` keeps only groups where the condition is true, so this group is removed.",
+      "references": "[PostgreSQL documentation: Aggregate functions](https://www.postgresql.org/docs/current/functions-aggregate.html)"
+    },
+    {
+      "id": "join-diagnostic-cardinality-check",
+      "title": "Which checks help find where unexpected fan-out begins?",
+      "type": "multiple-choice",
+      "options": [
+        { "text": "Compare row counts and distinct business keys before and after each join", "isCorrect": true },
+        { "text": "Group the candidate right-side key and inspect keys with `COUNT(*) > 1`", "isCorrect": true },
+        { "text": "Temporarily select the join keys and duplicated entity ids for a small failing case", "isCorrect": true },
+        { "text": "Add `ORDER BY` and assume adjacent duplicates prove the rows are identical", "isCorrect": false }
+      ],
+      "explanation": "Check the row count and the number of distinct business keys after each join. Then look for duplicate values in the right-side join key. A small failing example shows exactly which rows matched. Sorting may make duplicates easier to see, but it does not prove that two rows mean the same thing.",
+      "references": "[PostgreSQL documentation: Joined tables](https://www.postgresql.org/docs/current/queries-table-expressions.html#QUERIES-JOIN)"
+    },
+    {
+      "id": "join-then-filter-versus-filter-then-join",
+      "title": "Which rewrite preserves all accounts while counting only successful logins?",
+      "description": "The result must include accounts with zero successful logins. Assume `logins.id` is non-NULL.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`LEFT JOIN logins l ON l.account_id = a.id AND l.success = TRUE`, then `COUNT(l.id)`",
+          "isCorrect": true
+        },
+        {
+          "text": "`LEFT JOIN logins l ON l.account_id = a.id`, then `WHERE l.success = TRUE` and `COUNT(*)`",
+          "isCorrect": false
+        },
+        {
+          "text": "`INNER JOIN logins l ON l.account_id = a.id`, then `COUNT(l.id)`",
+          "isCorrect": false
+        },
+        {
+          "text": "`CROSS JOIN logins l`, then `COUNT(DISTINCT a.id)`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The condition in `ON` allows only successful logins to match, while the left join keeps every account. For an account with no successful login, `l.id` is NULL and `COUNT(l.id)` returns 0. Putting `l.success = TRUE` in `WHERE`, or using an inner join, would remove that account.",
+      "references": "[PostgreSQL documentation: `ON` and `WHERE` with outer joins](https://www.postgresql.org/docs/current/queries-table-expressions.html#QUERIES-JOIN)"
+    }
+  ]
+}
