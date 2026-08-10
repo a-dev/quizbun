@@ -2,7 +2,7 @@
 // the inline Vite config inside astro.config.mjs.
 import { defineConfig } from "vite";
 import { patchCssModules } from "vite-css-modules";
-import { sharedViteConfig } from "./vite.shared";
+import { sharedViteConfig } from "./vite.shared.ts";
 
 export default defineConfig({
   ...sharedViteConfig,

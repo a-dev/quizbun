@@ -1,7 +1,7 @@
 import { defaultExclude, defineConfig, defineProject } from "vitest/config";
 import { playwright } from "@vitest/browser-playwright";
 
-import { sharedViteConfig } from "./vite.shared";
+import { sharedViteConfig } from "./vite.shared.ts";
 
 // Unit lane — `.spec.ts`, pure logic, Node environment. Co-located in `src/`
 // (and `.storybook/`). Resolves through the same Vite aliases as the app so
