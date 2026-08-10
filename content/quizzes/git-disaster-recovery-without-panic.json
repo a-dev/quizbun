@@ -1,0 +1,827 @@
+{
+  "schemaVersion": 1,
+  "id": "git-disaster-recovery-without-panic",
+  "title": "Git Disaster Recovery Without Panic",
+  "description": "Thirty-three realistic Git recovery problems. Practice reading reflogs and saving lost commits, including work left on detached HEAD. Learn which undo command fits the situation and how to repair shared history without erasing a teammate's work.",
+  "language": "en",
+  "tags": ["git", "disaster-recovery", "reflog", "collaboration", "advanced"],
+  "questions": [
+    {
+      "id": "anchor-before-surgery",
+      "title": "You found a possible lost commit at `7ac91e2`. What should you do first?",
+      "description": "The repository is stable, but you are not sure that `7ac91e2` is the right recovery point.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Create `rescue/lost-work` at `7ac91e2`, then inspect the commit",
+          "isCorrect": true
+        },
+        {
+          "text": "Immediately run `git reset --hard 7ac91e2`",
+          "isCorrect": false
+        },
+        {
+          "text": "Expire every reflog so Git stops changing the evidence",
+          "isCorrect": false
+        },
+        {
+          "text": "Force-push `7ac91e2` to the shared default branch",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Run `git branch rescue/lost-work 7ac91e2` before changing anything else. The new branch keeps the commit reachable without moving `HEAD` or touching your files. Inspect it with `git show` and compare it with the current branch. A hard reset can discard local work, while a force-push changes shared history before you know what needs fixing.",
+      "references": "[Git manual: git-branch](https://git-scm.com/docs/git-branch)\n\n[Git manual: git-reset](https://git-scm.com/docs/git-reset)"
+    },
+    {
+      "id": "what-reflogs-record",
+      "title": "What does a Git reflog primarily record?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Updates to local refs, including movements recorded in the `HEAD` reflog",
+          "isCorrect": true
+        },
+        {
+          "text": "Every line ever typed in the terminal",
+          "isCorrect": false
+        },
+        {
+          "text": "A server-wide audit log automatically shared by every clone",
+          "isCorrect": false
+        },
+        {
+          "text": "Only commits that remain reachable from a current branch",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A reflog records updates to local refs. The `HEAD` reflog also records branch switches, so it often helps after a reset, rebase, or detached HEAD session. It is not a shell transcript or a shared server log. It can name commits that no current branch reaches.",
+      "references": "[Git manual: git-reflog](https://git-scm.com/docs/git-reflog)"
+    },
+    {
+      "id": "reflog-ordinal-versus-ancestry",
+      "title": "Why can `HEAD@{2}` name a different commit from `HEAD~2`?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`HEAD@{2}` means two `HEAD` updates ago, while `HEAD~2` follows two first-parent links",
+          "isCorrect": true
+        },
+        {
+          "text": "`HEAD@{2}` counts merge parents, while `HEAD~2` counts calendar days",
+          "isCorrect": false
+        },
+        {
+          "text": "`HEAD@{2}` is always a remote commit, while `HEAD~2` is always local",
+          "isCorrect": false
+        },
+        {
+          "text": "They are aliases and can never differ",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Reflog ordinals count earlier values of a ref. Commits, resets, rebases, and branch switches can all add entries. `HEAD~2` does something different: it follows the first parent twice through the commit graph. Do not guess a reflog entry from the number of commits in the graph.",
+      "references": "[Git manual: Specifying revisions](https://git-scm.com/docs/gitrevisions)"
+    },
+    {
+      "id": "reflog-is-local",
+      "title": "After your local hard reset, a teammate makes a fresh clone. Can they inspect your old `HEAD@{1}`?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "No. Your reflog belongs to your clone and is not transferred",
+          "isCorrect": true
+        },
+        {
+          "text": "Yes. Every clone receives every contributor's `HEAD` reflog",
+          "isCorrect": false
+        },
+        {
+          "text": "Yes, but only after `git fetch --reflogs`",
+          "isCorrect": false
+        },
+        {
+          "text": "No, because reflogs never record resets",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Reflogs are local to one repository. A fresh clone starts its own reflog and cannot read `HEAD@{1}` from your clone. If only your object database contains the lost commit, recover it there. Another existing clone may also have a copy.",
+      "references": "[Pro Git: Revision Selection, reflog shortnames](https://git-scm.com/book/en/v2/Git-Tools-Revision-Selection)"
+    },
+    {
+      "id": "recover-private-hard-reset",
+      "title": "How should you recover this clean, private branch after an accidental reset?",
+      "description": "The working tree is clean. `git reflog` shows:\n\n```text\n91be320 HEAD@{0}: reset: moving to HEAD~2\nc3c8a11 HEAD@{1}: commit: finish migration\n5bd206a HEAD@{2}: commit: add migration tests\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Create `rescue/pre-reset` at `c3c8a11`, inspect it, then reset the branch to `c3c8a11`",
+          "isCorrect": true
+        },
+        {
+          "text": "`git reset --hard HEAD~2`",
+          "isCorrect": false
+        },
+        {
+          "text": "`git revert 91be320`",
+          "isCorrect": false
+        },
+        {
+          "text": "`git rebase --skip`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The reflog shows that `c3c8a11` was the branch tip just before the reset. First run `git branch rescue/pre-reset c3c8a11` so the commit has a stable name. After you inspect it, `git reset --hard c3c8a11` restores this private branch. Before using `--hard`, also check that no untracked or ignored files are in the way.",
+      "references": "[Git manual: git-reflog](https://git-scm.com/docs/git-reflog)\n\n[Git manual: git-reset](https://git-scm.com/docs/git-reset)"
+    },
+    {
+      "id": "recover-deleted-branch",
+      "title": "A deleted branch's commit still appears in a reflog. How do you restore the branch?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Create a new branch at the recovered commit with `git branch recovered-work <commit>`",
+          "isCorrect": true
+        },
+        {
+          "text": "Run `git switch -c recovered-work` at the current `HEAD`",
+          "isCorrect": false
+        },
+        {
+          "text": "Run `git restore --staged <commit>`",
+          "isCorrect": false
+        },
+        {
+          "text": "Delete the reflog entry so the old branch becomes visible",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Deleting a branch removes its name, but the commit may still exist. If a reflog gives you the commit, run `git branch recovered-work <commit>`. This creates a new ref at the recovered commit. Creating a branch at the current `HEAD` would point to the wrong place, and `git restore --staged` changes the index rather than branch refs.",
+      "references": "[Git manual: git-branch](https://git-scm.com/docs/git-branch)\n\n[Git manual: git-reflog](https://git-scm.com/docs/git-reflog)"
+    },
+    {
+      "id": "detached-head-keep-current",
+      "title": "You made a useful commit while `HEAD` was detached, and `HEAD` still points to it. How do you keep it?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`git switch -c rescue-detached`",
+          "isCorrect": true
+        },
+        {
+          "text": "`git switch --detach HEAD~1`",
+          "isCorrect": false
+        },
+        {
+          "text": "`git reset --hard origin/main`",
+          "isCorrect": false
+        },
+        {
+          "text": "`git branch -D rescue-detached`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Run `git switch -c rescue-detached` while `HEAD` still points to the commit. Git creates the branch at that commit and switches to it. New commits will advance the branch instead of remaining detached.",
+      "references": "[Git manual: git-switch, detached HEAD](https://git-scm.com/docs/git-switch)"
+    },
+    {
+      "id": "detached-head-after-leaving",
+      "title": "You already switched away from commits made on a detached `HEAD`. How do you recover them?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Find the abandoned tip in `git reflog`, inspect it, then create a branch at that commit",
+          "isCorrect": true
+        },
+        {
+          "text": "Run `git switch -c rescue` and assume the current `HEAD` is the abandoned tip",
+          "isCorrect": false
+        },
+        {
+          "text": "Run `git pull --force` to download the detached commits",
+          "isCorrect": false
+        },
+        {
+          "text": "Revert the branch switch commit",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The current `HEAD` no longer points to the abandoned tip, so creating a branch there would save the wrong commit. Find the old tip in the `HEAD` reflog, inspect it, and create a branch at its hash. You cannot revert a branch switch because it is not a commit.",
+      "references": "[Git manual: git-reflog](https://git-scm.com/docs/git-reflog)\n\n[Git manual: git-switch](https://git-scm.com/docs/git-switch)"
+    },
+    {
+      "id": "reset-mode-effects",
+      "title": "Which statements about commit-level `git reset` modes are true?",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "`git reset --soft <commit>` moves the branch tip but leaves both index and working tree unchanged",
+          "isCorrect": true
+        },
+        {
+          "text": "`git reset --mixed <commit>` moves the branch tip, resets the index, and leaves working-tree files unchanged",
+          "isCorrect": true
+        },
+        {
+          "text": "`git reset --hard <commit>` resets the branch tip, index, and working tree. It may overwrite untracked files",
+          "isCorrect": true
+        },
+        {
+          "text": "`git reset --soft <commit>` is the safest way to erase sensitive uncommitted files from disk",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`--soft` moves the branch but leaves the index and working tree alone. `--mixed`, the default, also resets the index. `--hard` goes further and makes the working tree match the target commit, so it can destroy local file changes. `--soft` cannot erase a file because it does not touch the working tree.",
+      "references": "[Git manual: git-reset, modes](https://git-scm.com/docs/git-reset)"
+    },
+    {
+      "id": "unstage-without-discarding",
+      "title": "How do you unstage `config.ts` while keeping its working-tree edits?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`git restore --staged config.ts`",
+          "isCorrect": true
+        },
+        {
+          "text": "`git restore --worktree config.ts`",
+          "isCorrect": false
+        },
+        {
+          "text": "`git reset --hard HEAD -- config.ts`",
+          "isCorrect": false
+        },
+        {
+          "text": "`git clean -f config.ts`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "With `--staged`, `git restore` copies the version from `HEAD` into the index by default. It does not change the working-tree file, so your edits stay on disk but are no longer staged. `git restore --worktree` would target the file contents you want to keep.",
+      "references": "[Git manual: git-restore](https://git-scm.com/docs/git-restore)"
+    },
+    {
+      "id": "restore-one-file",
+      "title": "How do you restore only `src/parser.ts` from commit `a41d2c0` into the working tree?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`git restore --source=a41d2c0 --worktree -- src/parser.ts`",
+          "isCorrect": true
+        },
+        {
+          "text": "`git reset --hard a41d2c0`",
+          "isCorrect": false
+        },
+        {
+          "text": "`git revert a41d2c0 -- src/parser.ts`",
+          "isCorrect": false
+        },
+        {
+          "text": "`git rebase --onto src/parser.ts a41d2c0`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`git restore --source=<tree> --worktree -- <path>` copies one path from the chosen commit into the working tree. It does not move the current branch. A hard reset affects the whole branch, index, and working tree. `git revert` and `git rebase` do not restore one file this way.",
+      "references": "[Git manual: git-restore, source and restore location](https://git-scm.com/docs/git-restore)"
+    },
+    {
+      "id": "undo-published-bug",
+      "title": "A bad commit reached a shared, protected branch. How should you normally undo it?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Use `git revert <faulty-commit>` and send the new commit through the normal review flow",
+          "isCorrect": true
+        },
+        {
+          "text": "Remove it locally with `git reset --hard <parent>` and force-push",
+          "isCorrect": false
+        },
+        {
+          "text": "Delete the branch and recreate it from a local reflog",
+          "isCorrect": false
+        },
+        {
+          "text": "Run an interactive rebase on every teammate's clone",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`git revert` creates a new commit that reverses the bad commit's effect. Teammates can pull the correction without repairing their local history. Resetting or rebasing the published branch would rewrite commit IDs and force everyone downstream to deal with the rewrite.",
+      "references": "[Git manual: git-revert](https://git-scm.com/docs/git-revert)\n\n[Pro Git: Rewriting History](https://git-scm.com/book/en/v2/Git-Tools-Rewriting-History)"
+    },
+    {
+      "id": "revert-versus-reset-object",
+      "title": "How do `git revert` and a commit-level `git reset` differ?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Revert adds a commit that reverses an earlier change. Reset moves the current branch tip",
+          "isCorrect": true
+        },
+        {
+          "text": "Revert moves a branch without a commit; reset always creates an inverse commit",
+          "isCorrect": false
+        },
+        {
+          "text": "Both commands only modify untracked files",
+          "isCorrect": false
+        },
+        {
+          "text": "Both commands preserve identical commit IDs and graph shape",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Revert keeps the existing history and adds a new commit with the opposite change. A commit-level reset moves the current branch to another commit. Depending on the reset mode, it may also change the index and working tree. This is why revert is usually safer for shared history, while reset fits unpublished work.",
+      "references": "[Git manual: git-revert](https://git-scm.com/docs/git-revert)\n\n[Git manual: git-reset](https://git-scm.com/docs/git-reset)"
+    },
+    {
+      "id": "revert-a-merge",
+      "title": "Why must you normally choose a mainline parent when reverting a merge?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Git needs to know which parent is the baseline against which the merge's effect should be reversed",
+          "isCorrect": true
+        },
+        {
+          "text": "Merge commits have no tree and must borrow one from a parent",
+          "isCorrect": false
+        },
+        {
+          "text": "The number selects how many later commits should also be reverted",
+          "isCorrect": false
+        },
+        {
+          "text": "The number identifies a remote repository",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A merge has more than one parent, so Git needs to know which parent is the mainline you want to keep. `git revert -m <parent-number> <merge>` reverses the merge relative to that parent. The choice also affects later merges: Git still treats the reverted merge's ancestors as already merged.",
+      "references": "[Git manual: git-revert, `--mainline`](https://git-scm.com/docs/git-revert)\n\n[Git project how-to: Revert a faulty merge](https://git-scm.com/docs/howto/revert-a-faulty-merge)"
+    },
+    {
+      "id": "operation-selection",
+      "title": "Which commands match the stated goal?",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "Use reset to move a private branch tip when rewriting its unpublished history is acceptable",
+          "isCorrect": true
+        },
+        {
+          "text": "Use revert to record the reversal of an already-shared change",
+          "isCorrect": true
+        },
+        {
+          "text": "Use rebase to replay selected unpublished commits onto a different base",
+          "isCorrect": true
+        },
+        {
+          "text": "Use restore to change the ancestry of a published branch",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Reset moves refs. Revert adds a commit that reverses an earlier change. Rebase replays commits and rewrites their history. Restore changes paths in the index or working tree, not commit ancestry. Rewriting a branch that other people use requires coordination and a guarded push.",
+      "references": "[Git manual: Reset, restore and revert](https://git-scm.com/docs/git#_reset_restore_and_revert)\n\n[Git manual: git-rebase](https://git-scm.com/docs/git-rebase)"
+    },
+    {
+      "id": "rebase-replays-commits",
+      "title": "What usually happens to commits that rebase replays onto a new base?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Their changes are replayed and normally become new commit objects with new identities",
+          "isCorrect": true
+        },
+        {
+          "text": "The original commits are edited in place while keeping their object IDs",
+          "isCorrect": false
+        },
+        {
+          "text": "Only the branch name changes; commit parent links stay identical",
+          "isCorrect": false
+        },
+        {
+          "text": "Every rebased commit becomes a merge commit",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Rebase finds the commits to replay, checks out the new base, and applies those changes in order. This is similar to a series of cherry-picks. Because the new commits have different parents, they normally get new object IDs. The reflog may still name the old branch tip until its entries expire.",
+      "references": "[Git manual: git-rebase, description](https://git-scm.com/docs/git-rebase)"
+    },
+    {
+      "id": "rebase-conflict-commands",
+      "title": "A rebase stopped at a conflict. Which statements are true?",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "After resolving and staging conflicts, `git rebase --continue` resumes the rebase",
+          "isCorrect": true
+        },
+        {
+          "text": "`git rebase --abort` returns to the state from before the rebase",
+          "isCorrect": true
+        },
+        {
+          "text": "`git rebase --skip` omits the current patch, so it can drop work you meant to keep",
+          "isCorrect": true
+        },
+        {
+          "text": "`git rebase --continue` automatically chooses the semantically correct conflict resolution",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Resolve the files and stage them before running `git rebase --continue`. Git cannot decide what the code should mean. Use `--abort` to return to the state from before the rebase. Use `--skip` only when you truly want to omit the current patch.",
+      "references": "[Git manual: git-rebase, conflict recovery](https://git-scm.com/docs/git-rebase)"
+    },
+    {
+      "id": "rebase-abort-versus-quit",
+      "title": "How does `git rebase --quit` differ from `git rebase --abort`?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`--quit` stops managing the rebase but leaves `HEAD`, index, and working tree as they are; `--abort` resets to the original state",
+          "isCorrect": true
+        },
+        {
+          "text": "`--quit` deletes the branch, while `--abort` deletes only conflicted files",
+          "isCorrect": false
+        },
+        {
+          "text": "`--quit` publishes the partial rebase, while `--abort` force-pushes the old branch",
+          "isCorrect": false
+        },
+        {
+          "text": "They are exact aliases",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`--abort` cancels the rebase and returns to the original branch state. `--quit` only removes the rebase's administrative state. It leaves `HEAD`, the index, and the working tree unchanged. If rebase created an autostash, `--quit` saves it in the stash list.",
+      "references": "[Git manual: git-rebase, `--abort` and `--quit`](https://git-scm.com/docs/git-rebase)"
+    },
+    {
+      "id": "orig-head-is-volatile",
+      "title": "Why should `ORIG_HEAD` not be your only bookmark during a complicated recovery?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Commands such as reset can overwrite it. A rescue branch keeps its own name",
+          "isCorrect": true
+        },
+        {
+          "text": "`ORIG_HEAD` always points to the repository's root commit",
+          "isCorrect": false
+        },
+        {
+          "text": "`ORIG_HEAD` exists only on remote servers",
+          "isCorrect": false
+        },
+        {
+          "text": "`ORIG_HEAD` stores file contents but never a commit",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "More than one history-changing command writes `ORIG_HEAD`. For example, `git reset` can replace the value you hoped to recover. Treat `ORIG_HEAD` as a temporary convenience. Once you find an important commit, give it a rescue branch or tag before running more commands.",
+      "references": "[Git manual: git-rebase, `ORIG_HEAD` note](https://git-scm.com/docs/git-rebase)\n\n[Git manual: git-reset](https://git-scm.com/docs/git-reset)"
+    },
+    {
+      "id": "recover-pre-rebase-tip",
+      "title": "An interactive rebase produced the wrong result. Where should you look for the old branch tip?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The branch or `HEAD` reflog, then anchor the candidate tip with a rescue branch",
+          "isCorrect": true
+        },
+        {
+          "text": "Only the working-tree file modification times",
+          "isCorrect": false
+        },
+        {
+          "text": "The current branch's first parent, which is guaranteed to be the old tip",
+          "isCorrect": false
+        },
+        {
+          "text": "The remote default branch, which automatically stores every local pre-rebase tip",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The branch reflog records its earlier tip. Find the pre-rebase commit there, inspect it, and create a rescue branch at that commit. Reflog positions change as you run more commands, so do not leave the commit identified only as something like `@{1}`.",
+      "references": "[Git manual: git-rebase, previous branch tip](https://git-scm.com/docs/git-rebase)\n\n[Git manual: git-reflog](https://git-scm.com/docs/git-reflog)"
+    },
+    {
+      "id": "recover-from-upstream-rewrite",
+      "title": "After upstream was rewritten, what does `git rebase --onto origin/main origin/main@{1} topic` try to do?",
+      "description": "Assume `origin/main@{1}` really is the old upstream tip and `topic` contains work based on that old tip.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Replay the part of `topic` after the old upstream tip onto the new `origin/main`",
+          "isCorrect": true
+        },
+        {
+          "text": "Reset `origin/main` on the server back to its old tip",
+          "isCorrect": false
+        },
+        {
+          "text": "Revert every commit currently reachable from `origin/main`",
+          "isCorrect": false
+        },
+        {
+          "text": "Merge both versions of upstream and preserve duplicate copies of every topic commit",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Git takes the commits reachable from `topic` but not from the old upstream tip, then replays them onto the current `origin/main`. This is Git's documented hard-case recovery pattern. Check that `origin/main@{1}` is really the old tip. A wrong boundary can bring back commits that upstream removed on purpose.",
+      "references": "[Git manual: git-rebase, recovering from an upstream rebase](https://git-scm.com/docs/git-rebase#_recovering_from_upstream_rebase)"
+    },
+    {
+      "id": "guarded-force-push",
+      "title": "After a coordinated rewrite, which push rejects an unexpected update to remote `main`?",
+      "description": "You agreed that remote `main` may be replaced only if it still points to `a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4`.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`git push --force-with-lease=refs/heads/main:a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4 origin main:main`",
+          "isCorrect": true
+        },
+        {
+          "text": "`git push --force origin main:main`",
+          "isCorrect": false
+        },
+        {
+          "text": "`git push origin :main`",
+          "isCorrect": false
+        },
+        {
+          "text": "`git push --all --force origin`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The explicit lease says that remote `main` must still point to the expected object ID. Git rejects the push if someone has updated the branch since then. Plain `--force` removes that protection. Deleting `main` or forcing every ref would change more than the team agreed to change.",
+      "references": "[Git manual: git-push, `--force-with-lease`](https://git-scm.com/docs/git-push#Documentation/git-push.txt---force-with-leaseltrefnamegtltexpectgt)"
+    },
+    {
+      "id": "lease-with-background-fetch",
+      "title": "Why is `--force-with-lease` weaker without an expected object ID when tools fetch in the background?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "A background fetch can update the remote-tracking ref used by the lease, even if you never reviewed the new commits",
+          "isCorrect": true
+        },
+        {
+          "text": "Background fetch rewrites every local commit with a new hash",
+          "isCorrect": false
+        },
+        {
+          "text": "A lease without an object ID disables authentication for the remote",
+          "isCorrect": false
+        },
+        {
+          "text": "An explicit expected commit causes Git to ignore all remote changes",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Without an expected value, the lease compares the remote branch with your remote-tracking ref. A background fetch can update that local ref even if you have not reviewed the new commits. An explicit object ID states exactly which remote version you are willing to replace.",
+      "references": "[Git manual: git-push, force-with-lease safety note](https://git-scm.com/docs/git-push#Documentation/git-push.txt---force-with-leaseltrefnamegtltexpectgt)"
+    },
+    {
+      "id": "coworker-clone-as-rescue",
+      "title": "A force-push removed commits from the server branch, but a coworker still has them. What should the team do?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Ask the coworker to create and push a new rescue branch at the old tip, then inspect and integrate it",
+          "isCorrect": true
+        },
+        {
+          "text": "Ask the coworker to force-push the old tip directly over the shared branch without checking current work",
+          "isCorrect": false
+        },
+        {
+          "text": "Have everyone delete and reclone before naming the old commit",
+          "isCorrect": false
+        },
+        {
+          "text": "Run `git reflog` in your clone and assume it contains the coworker's local branch history",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The coworker's clone may still contain commits that the server no longer names. They can push the old tip under a new rescue branch without changing the current shared branch. The team can then compare both histories and decide whether to cherry-pick, merge, or revert anything.",
+      "references": "[Pro Git: About Version Control, distributed repositories](https://git-scm.com/book/en/v2/Getting-Started-About-Version-Control)\n\n[Pro Git: Working with Remotes](https://git-scm.com/book/en/v2/Git-Basics-Working-with-Remotes)"
+    },
+    {
+      "id": "remote-tracking-reflog",
+      "title": "After `git fetch` sees a force-update to `origin/main`, where might the old tip still appear?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The local reflog for `origin/main`, such as `origin/main@{1}`",
+          "isCorrect": true
+        },
+        {
+          "text": "A guaranteed server-side `HEAD@{1}` downloaded by fetch",
+          "isCorrect": false
+        },
+        {
+          "text": "The working tree's modification timestamps",
+          "isCorrect": false
+        },
+        {
+          "text": "The staging area under the old remote branch name",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`origin/main` is a local ref that fetch updates. Its reflog may still record the value from before the force-update, such as `origin/main@{1}`. This is local and temporary. It does not mean the server has a reflog you can read.",
+      "references": "[Git manual: git-rebase, recovering from an upstream rebase](https://git-scm.com/docs/git-rebase#_recovering_from_upstream_rebase)\n\n[Pro Git: Remote Branches](https://git-scm.com/book/en/v2/Git-Branching-Remote-Branches)"
+    },
+    {
+      "id": "fsck-last-resort",
+      "title": "The reflog no longer names a lost commit, but the object may still exist. Which command can find dangling objects?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`git fsck --lost-found`",
+          "isCorrect": true
+        },
+        {
+          "text": "`git reset --hard --all`",
+          "isCorrect": false
+        },
+        {
+          "text": "`git reflog expire --expire=all --all`",
+          "isCorrect": false
+        },
+        {
+          "text": "`git clean -fdx`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`git fsck` checks the object database and reports dangling objects. With `--lost-found`, Git writes dangling commits under `.git/lost-found/commit/` and other dangling objects under `.git/lost-found/other/`. It can only find objects that have not been pruned.",
+      "references": "[Git manual: git-fsck, `--lost-found`](https://git-scm.com/docs/git-fsck)"
+    },
+    {
+      "id": "unreachable-reflog-expiry-days",
+      "title": "By default, when do unreachable reflog entries become eligible for expiration?",
+      "description": "Assume `gc.reflogExpireUnreachable` has not been configured. Enter the number of days.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [30]
+      },
+      "explanation": "`gc.reflogExpireUnreachable` defaults to 30 days. Ordinary reflog entries default to 90 days. Repository settings and explicit maintenance commands can change those periods. Expiring a reflog entry and pruning the object are separate events.",
+      "references": "[Git manual: git-reflog, expiration options](https://git-scm.com/docs/git-reflog#Documentation/git-reflog.txt---expire-unreachablelttimegt)"
+    },
+    {
+      "id": "reflog-not-a-backup",
+      "title": "Which facts explain why a reflog is not a backup system?",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "Reflogs are local and are not copied into every clone",
+          "isCorrect": true
+        },
+        {
+          "text": "Reflog entries expire according to maintenance policy",
+          "isCorrect": true
+        },
+        {
+          "text": "Once Git prunes an unreachable object, that repository can no longer recover it",
+          "isCorrect": true
+        },
+        {
+          "text": "A reflog makes every uncommitted editor buffer permanently recoverable",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A reflog is useful during recovery, but it is local and its entries expire. If no ref or reflog protects an object, maintenance may eventually prune it. Reflogs record ref values. They do not save uncommitted files or editor buffers. Keep important work in commits and maintain backups or other clones.",
+      "references": "[Git manual: git-reflog](https://git-scm.com/docs/git-reflog)\n\n[Git manual: git-gc](https://git-scm.com/docs/git-gc)\n\n[Pro Git: Revision Selection, reflogs are local](https://git-scm.com/book/en/v2/Git-Tools-Revision-Selection)"
+    },
+    {
+      "id": "hard-reset-uncommitted-work",
+      "title": "Can a reflog reliably recover unstaged edits erased by `git reset --hard`?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "No. Reflogs record ref movement, not snapshots of unstaged files",
+          "isCorrect": true
+        },
+        {
+          "text": "Yes. `HEAD@{1}` always includes every byte from the old working tree",
+          "isCorrect": false
+        },
+        {
+          "text": "Yes. Git commits all unstaged edits automatically before a hard reset",
+          "isCorrect": false
+        },
+        {
+          "text": "No. A hard reset deletes the entire `.git` directory",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A hard reset makes tracked files match the target commit. A reflog only records where refs pointed. It does not contain ordinary unstaged content that Git never stored as an object. An editor's local history, a filesystem snapshot, or a backup may help, but Git does not promise recovery.",
+      "references": "[Git manual: git-reset, `--hard`](https://git-scm.com/docs/git-reset)\n\n[Git manual: git-reflog](https://git-scm.com/docs/git-reflog)"
+    },
+    {
+      "id": "cherry-pick-recovered-commit",
+      "title": "You recovered one useful commit and want to add its change to the current branch. What should you use?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`git cherry-pick <recovered-commit>`",
+          "isCorrect": true
+        },
+        {
+          "text": "`git reset --hard <recovered-commit>`",
+          "isCorrect": false
+        },
+        {
+          "text": "`git reflog expire <recovered-commit>`",
+          "isCorrect": false
+        },
+        {
+          "text": "`git branch -D <recovered-commit>`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Cherry-pick applies the recovered commit's change to the current branch and normally creates a new commit. Reset would move the branch itself and might also change the index and working tree. Give the recovered commit a rescue branch, inspect it, and then cherry-pick it.",
+      "references": "[Git manual: git-cherry-pick](https://git-scm.com/docs/git-cherry-pick)"
+    },
+    {
+      "id": "commits-on-wrong-branch",
+      "title": "Three unpublished commits landed on `main`. How do you move them to a topic branch?",
+      "description": "The working tree is clean, nobody else has received these commits, and `main` should return to `HEAD~3`.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Create `topic/wip` at the current tip, reset local `main` to `HEAD~3`, then switch to `topic/wip`",
+          "isCorrect": true
+        },
+        {
+          "text": "Reset `main` first, expire the reflog, and hope the commits remain discoverable",
+          "isCorrect": false
+        },
+        {
+          "text": "Revert all three commits on `main` and then delete their objects",
+          "isCorrect": false
+        },
+        {
+          "text": "Force-push `main` before creating the topic branch",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Create `topic/wip` before the reset so all three commits have a branch name. Because the commits are unpublished and the working tree is clean, you can reset local `main` back three commits. Then switch to `topic/wip` and continue working. Resetting first would make recovery depend on the reflog.",
+      "references": "[Git manual: git-reset, moving commits to a topic branch](https://git-scm.com/docs/git-reset)"
+    },
+    {
+      "id": "abort-conflicted-merge",
+      "title": "A merge stopped at conflicts, and you want to abandon it. Which command should you run?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`git merge --abort`",
+          "isCorrect": true
+        },
+        {
+          "text": "`git rebase --skip`",
+          "isCorrect": false
+        },
+        {
+          "text": "`git revert MERGE_HEAD` before the merge has committed",
+          "isCorrect": false
+        },
+        {
+          "text": "`git branch -D HEAD`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`git merge --abort` stops the merge and tries to restore the pre-merge state. Git may fail to reconstruct uncommitted changes if you modified them after starting the merge. Commit or stash important changes before merging when possible. An unfinished merge has no merge commit to revert.",
+      "references": "[Git manual: git-merge, `--abort`](https://git-scm.com/docs/git-merge)"
+    },
+    {
+      "id": "panic-free-response-order",
+      "title": "What is the safest order of work after a possible history-loss incident?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Stop making changes, inspect status and reflogs, create rescue refs, verify the commits, then choose the repair",
+          "isCorrect": true
+        },
+        {
+          "text": "Force-push immediately, then ask teammates which commits disappeared",
+          "isCorrect": false
+        },
+        {
+          "text": "Expire reflogs, run garbage collection, and start recovery after the repository is smaller",
+          "isCorrect": false
+        },
+        {
+          "text": "Run hard reset repeatedly until the working tree looks familiar",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Preserve evidence before moving more refs or changing files. `git status` shows uncommitted work. Reflogs and the commit graph help you find candidates, while rescue refs keep those commits reachable. Inspect the commits and diffs before choosing reset, revert, cherry-pick, or a coordinated rewrite. Repeated resets, garbage collection, and an early force-push can make recovery harder.",
+      "references": "[Git manual: git-reflog](https://git-scm.com/docs/git-reflog)\n\n[Git manual: git-reset](https://git-scm.com/docs/git-reset)\n\n[Git manual: git-revert](https://git-scm.com/docs/git-revert)\n\n[Git manual: git-push](https://git-scm.com/docs/git-push)"
+    }
+  ]
+}

@@ -1,0 +1,900 @@
+{
+  "schemaVersion": 1,
+  "id": "docker-what-actually-happens",
+  "title": "Docker: What Actually Happens?",
+  "description": "Test what Docker does with build contexts, caching, image layers, multi-stage builds, Unix signals, networking, storage, and Linux isolation. Each Question asks you to reason through a concrete situation.",
+  "language": "en",
+  "tags": ["docker", "containers", "devops", "linux", "networking"],
+  "questions": [
+    {
+      "id": "copy-outside-build-context",
+      "title": "Can `COPY` reach a sibling directory outside the build context?",
+      "description": "The project is `/work/app`, a secret is `/work/private-key`, and the build runs as `docker build /work/app`. The Dockerfile contains `COPY ../private-key /run/private-key`.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Yes. `COPY` resolves paths relative to the Dockerfile on the client",
+          "isCorrect": false
+        },
+        {
+          "text": "No. The builder can read only the selected build context or a named context",
+          "isCorrect": true
+        },
+        {
+          "text": "Yes, but only when the destination is under `/run`",
+          "isCorrect": false
+        },
+        {
+          "text": "No. `COPY` can copy only files tracked by Git",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`docker build /work/app` makes `/work/app` the default context. Docker cannot read `/work/private-key` from there. BuildKit strips leading `../` segments instead of letting `COPY` escape the context. To use another directory, pass it as a named context.",
+      "references": "[Docker Docs: Build context](https://docs.docker.com/build/concepts/context/)\n\n[Docker Docs: `docker image build`: accessing paths outside the context](https://docs.docker.com/reference/cli/docker/image/build/#accessing-paths-outside-the-build-context)"
+    },
+    {
+      "id": "dockerignore-removes-before-transfer",
+      "title": "What happens when `.dockerignore` excludes a file that `COPY` requests?",
+      "description": "`.dockerignore` contains `secrets.env`, while the Dockerfile contains `COPY secrets.env /app/secrets.env`.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The file is sent to the builder but omitted from the final image",
+          "isCorrect": false
+        },
+        {
+          "text": "The file is replaced with an empty file so the build can continue",
+          "isCorrect": false
+        },
+        {
+          "text": "The file is removed from the context before transfer, so `COPY` fails because the source is missing",
+          "isCorrect": true
+        },
+        {
+          "text": "The ignore rule affects `ADD` but not `COPY`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Docker removes ignored files before sending the context to the builder. `secrets.env` never arrives, so `COPY` cannot find it and the build fails. `.dockerignore` can keep a secret out of the context, but an ignored file cannot also be copied.",
+      "references": "[Docker Docs: `.dockerignore` files](https://docs.docker.com/build/concepts/context/#dockerignore-files)\n\n[Docker Docs: CopyIgnoredFile check](https://docs.docker.com/reference/build-checks/copy-ignored-file/)"
+    },
+    {
+      "id": "dockerfile-specific-ignore-precedence",
+      "title": "Which ignore file controls a build when both applicable files exist?",
+      "description": "The context root has `.dockerignore`. A build using `docker/build.Dockerfile` also has `docker/build.Dockerfile.dockerignore` beside that Dockerfile.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Docker merges both files, with the root file evaluated last",
+          "isCorrect": false
+        },
+        {
+          "text": "The Dockerfile-specific `build.Dockerfile.dockerignore` takes precedence",
+          "isCorrect": true
+        },
+        {
+          "text": "Only the root `.dockerignore` is recognized",
+          "isCorrect": false
+        },
+        {
+          "text": "Whichever file has the newer modification time wins",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Docker can use an ignore file named after a specific Dockerfile and placed beside it. If that file exists, it takes precedence over the root `.dockerignore`. This lets different builds use different ignore rules.",
+      "references": "[Docker Docs: Dockerfile-specific ignore files](https://docs.docker.com/build/concepts/context/#filename-and-location)"
+    },
+    {
+      "id": "empty-build-context-copy",
+      "title": "Why does `COPY main.c /src/` fail when the Dockerfile is piped as the build context?",
+      "description": "The command is `docker build - < Dockerfile`, and `main.c` exists in the current client directory.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "A text-file context has no filesystem context, so local files such as `main.c` are unavailable",
+          "isCorrect": true
+        },
+        {
+          "text": "Standard input builds prohibit every `COPY`, including `--from` copies",
+          "isCorrect": false
+        },
+        {
+          "text": "The `-` argument selects the root directory `/` as context",
+          "isCorrect": false
+        },
+        {
+          "text": "Docker requires the source file to be executable when using standard input",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Here, `-` supplies a text-file context, not the current directory. Docker reads the text as a Dockerfile and provides no filesystem context. The builder therefore cannot see `main.c`, even though the file exists on the client.",
+      "references": "[Docker Docs: Empty build context](https://docs.docker.com/build/concepts/context/#empty-context)"
+    },
+    {
+      "id": "mtime-only-cache-key",
+      "title": "Does touching a copied file invalidate its build cache?",
+      "description": "`app.js` has identical content, permissions, ownership, and size, but its modification time changes before rebuilding `COPY app.js /app/app.js`.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Yes. Any newer modification time forces `COPY` and all later instructions to run",
+          "isCorrect": false
+        },
+        {
+          "text": "No. Docker leaves modification time out of the cache checksum",
+          "isCorrect": true
+        },
+        {
+          "text": "Only if the modification time changes by more than one second",
+          "isCorrect": false
+        },
+        {
+          "text": "Only remote builders ignore modification time",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "For `ADD`, `COPY`, and `RUN` bind mounts, Docker builds a checksum from file metadata. It leaves out `mtime`. If only the modification time changed, the cache entry remains valid. A content change or other relevant metadata change can still invalidate it.",
+      "references": "[Docker Docs: Build cache invalidation: general rules](https://docs.docker.com/build/cache/invalidation/#general-rules)"
+    },
+    {
+      "id": "copy-cache-invalidators",
+      "title": "Which changes can invalidate the cache for `COPY package.json /app/`?",
+      "description": "Select every change that can affect Docker's checksum for this file.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "Changing the contents of `package.json`",
+          "isCorrect": true
+        },
+        {
+          "text": "Changing relevant file metadata such as its permissions",
+          "isCorrect": true
+        },
+        {
+          "text": "Changing only the file's modification time",
+          "isCorrect": false
+        },
+        {
+          "text": "Changing a file excluded by `.dockerignore` and not used by the instruction",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Docker checks the files used by `COPY`. Changes to content or metadata such as permissions can change the checksum, but a modification-time change alone cannot. An ignored, unrelated file has no effect because the builder never receives it.",
+      "references": "[Docker Docs: Build cache invalidation](https://docs.docker.com/build/cache/invalidation/)\n\n[Docker Docs: Using the build cache](https://docs.docker.com/get-started/docker-concepts/building-images/using-the-build-cache/)"
+    },
+    {
+      "id": "stale-package-index-cache",
+      "title": "Why can `RUN apt-get update` return week-old data during a rebuild?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Docker checks the package repository only when the base image tag changes",
+          "isCorrect": false
+        },
+        {
+          "text": "Docker reuses the cached `RUN` result without checking whether remote package data changed",
+          "isCorrect": true
+        },
+        {
+          "text": "Docker freezes network access for all cached Dockerfiles",
+          "isCorrect": false
+        },
+        {
+          "text": "Package managers automatically restore their index to the image creation date",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Docker does not contact the package repository while checking this cache entry. If the command and earlier layers still match, Docker can reuse the old result. Use `--no-cache`, `--no-cache-filter`, or a changed earlier layer when the step must run again.",
+      "references": "[Docker Docs: Cache invalidation for `RUN`](https://docs.docker.com/build/cache/invalidation/#run-instructions)"
+    },
+    {
+      "id": "dependency-layer-ordering",
+      "title": "Which Dockerfile order keeps the dependency cache when application source changes?",
+      "description": "Assume a Node project whose dependencies are determined by `package.json` and `package-lock.json`.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Copy all source, install dependencies, then copy the manifests again",
+          "isCorrect": false
+        },
+        {
+          "text": "Copy the manifests, install dependencies, then copy the frequently changing source",
+          "isCorrect": true
+        },
+        {
+          "text": "Install dependencies before copying any manifests",
+          "isCorrect": false
+        },
+        {
+          "text": "Copy source and manifests in separate instructions after dependency installation",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Once a layer changes, later cache entries are invalid. Copy the package files and install dependencies before copying the source. A source edit then rebuilds only the later layers, while a dependency change still reruns the install step.",
+      "references": "[Docker Docs: Optimize cache usage: order your layers](https://docs.docker.com/build/cache/optimize/#order-your-layers)"
+    },
+    {
+      "id": "cache-mount-semantics",
+      "title": "What must be true of a build that uses `RUN --mount=type=cache`?",
+      "description": "A package manager uses a cache mount to retain downloaded packages between builds.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The final image will contain the cache directory exactly as the build saw it",
+          "isCorrect": false
+        },
+        {
+          "text": "The build must work with any cache contents, including an empty cache",
+          "isCorrect": true
+        },
+        {
+          "text": "Every build receives an immutable snapshot of the cache",
+          "isCorrect": false
+        },
+        {
+          "text": "A cache mount can be read only by the build that created it",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A cache mount saves reusable downloads between builds, but Docker may overwrite or garbage-collect its contents. The build must work with an empty or unexpected cache. Files in the cache mount do not become normal output of the `RUN` layer.",
+      "references": "[Docker Docs: Optimize cache usage: cache mounts](https://docs.docker.com/build/cache/optimize/#use-cache-mounts)\n\n[Docker Docs: Dockerfile reference: `RUN --mount=type=cache`](https://docs.docker.com/reference/dockerfile/#run---mounttypecache)"
+    },
+    {
+      "id": "build-secret-delivery",
+      "title": "How should you pass a private registry token to one build step?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Declare it with `ARG TOKEN` and pass `--build-arg TOKEN=...`",
+          "isCorrect": false
+        },
+        {
+          "text": "Declare it with `ENV TOKEN=...` and unset it in a later layer",
+          "isCorrect": false
+        },
+        {
+          "text": "Pass it with `docker build --secret` and consume it using `RUN --mount=type=secret`",
+          "isCorrect": true
+        },
+        {
+          "text": "Copy it into the image and delete it before `CMD`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`ARG` and `ENV` can leave a secret in the final image, its metadata, or its history. A secret mount exposes the token only while that `RUN` step executes. The normal image layer does not contain the mounted secret.",
+      "references": "[Docker Docs: Build secrets](https://docs.docker.com/build/building/secrets/)"
+    },
+    {
+      "id": "secret-value-cache-invalidation",
+      "title": "Does rotating a build secret automatically invalidate the consuming `RUN` cache?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Yes. Secret contents always become part of the layer checksum",
+          "isCorrect": false
+        },
+        {
+          "text": "No. Docker ignores the secret value but includes the secret ID and mount path",
+          "isCorrect": true
+        },
+        {
+          "text": "Only secrets longer than 32 bytes invalidate the cache",
+          "isCorrect": false
+        },
+        {
+          "text": "No. Neither the secret value nor its mount settings can ever affect caching",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Docker does not include a secret's value in the cache checksum, so rotating the value alone can still produce a cache hit. The secret ID and mount path do affect the checksum. If rotation must rerun the step, change a separate build argument as a cache buster.",
+      "references": "[Docker Docs: Build cache invalidation: build secrets](https://docs.docker.com/build/cache/invalidation/#build-secrets)"
+    },
+    {
+      "id": "multi-stage-runtime-contents",
+      "title": "Which build-stage files end up in the final image?",
+      "description": "A `build` stage contains a compiler, source tree, package cache, and `/out/server`. A fresh runtime stage contains `COPY --from=build /out/server /server`.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Every build-stage layer plus a marker hiding the compiler",
+          "isCorrect": false
+        },
+        {
+          "text": "Only the runtime stage's base and files added to that stage, such as `/server`",
+          "isCorrect": true
+        },
+        {
+          "text": "The compiler and source tree, but not the package cache",
+          "isCorrect": false
+        },
+        {
+          "text": "Nothing from the build stage because stages cannot exchange files",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Each `FROM` starts a new stage. The runtime stage receives only what its own instructions add, including `/server` from `COPY --from=build`. The compiler, source tree, and package cache stay in the build stage.",
+      "references": "[Docker Docs: Multi-stage builds](https://docs.docker.com/build/building/multi-stage/)"
+    },
+    {
+      "id": "build-target-stage",
+      "title": "Which image does `docker build --target test .` produce?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "An image from the named `test` stage instead of continuing to the Dockerfile's final stage",
+          "isCorrect": true
+        },
+        {
+          "text": "Only the individual instruction labeled `test`",
+          "isCorrect": false
+        },
+        {
+          "text": "The final image, with tests disabled",
+          "isCorrect": false
+        },
+        {
+          "text": "All stages merged into a single filesystem",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`--target test` makes the named `test` stage the output. BuildKit builds that stage and its dependencies, but it can skip unrelated earlier stages. This lets one Dockerfile provide separate test, debug, and runtime images.",
+      "references": "[Docker Docs: Stop at a specific build stage](https://docs.docker.com/build/building/multi-stage/#stop-at-a-specific-build-stage)\n\n[Docker Docs: BuildKit stage dependency differences](https://docs.docker.com/build/building/multi-stage/#differences-between-legacy-builder-and-buildkit)"
+    },
+    {
+      "id": "delete-in-later-layer-size",
+      "title": "Why can deleting a 200 MB archive in a later `RUN` leave the image roughly 200 MB larger?",
+      "description": "The Dockerfile downloads `/tmp/sdk.tar` in one `RUN` instruction and deletes it in a later `RUN` instruction.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The delete changes the visible filesystem, but the archive's bytes remain in the earlier immutable layer",
+          "isCorrect": true
+        },
+        {
+          "text": "Docker compresses deleted files only after the container starts",
+          "isCorrect": false
+        },
+        {
+          "text": "Files under `/tmp` always count twice in image size",
+          "isCorrect": false
+        },
+        {
+          "text": "`RUN rm` changes image metadata but never the filesystem",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Image layers are immutable. The later deletion hides the archive in the combined filesystem, but its bytes remain in the earlier layer and still count toward image size. Create and remove temporary data in one layer, or keep the work in a build stage that the final image does not use.",
+      "references": "[Docker Docs: Storage drivers: images and layers](https://docs.docker.com/engine/storage/drivers/#images-and-layers)"
+    },
+    {
+      "id": "container-writable-layer",
+      "title": "Where does a running container write `/etc/app.conf` when the file came from its image?",
+      "description": "Assume no mount covers `/etc/app.conf`.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Directly into the image's newest read-only layer",
+          "isCorrect": false
+        },
+        {
+          "text": "Into that container's thin writable layer, leaving the shared image layers unchanged",
+          "isCorrect": true
+        },
+        {
+          "text": "Into every container created from the same image",
+          "isCorrect": false
+        },
+        {
+          "text": "Into a Docker volume that is created automatically for every path",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Docker puts a writable layer on top of the image for each container. The change goes into that layer, so other containers still see the image's original file. Docker removes the writable layer when it removes the container.",
+      "references": "[Docker Docs: Understanding image layers](https://docs.docker.com/get-started/docker-concepts/building-images/understanding-image-layers/)\n\n[Docker Docs: Storage drivers: containers and layers](https://docs.docker.com/engine/storage/drivers/#container-and-layers)"
+    },
+    {
+      "id": "overlay-copy-up-cost",
+      "title": "What can happen when an OverlayFS-backed container changes one byte in a large image file for the first time?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "OverlayFS copies the whole file into the writable layer before modifying the copy",
+          "isCorrect": true
+        },
+        {
+          "text": "Only the changed byte is stored, because OverlayFS always copies at block granularity",
+          "isCorrect": false
+        },
+        {
+          "text": "The lower image layer becomes writable for that container",
+          "isCorrect": false
+        },
+        {
+          "text": "The change is rejected unless the file is on a named volume",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "With the `overlay2` storage driver, the first write triggers `copy_up`. OverlayFS copies the whole file into the writable layer and changes that copy. It works at file level, so a one-byte edit can copy a large file. Later writes use the copied file.",
+      "references": "[Docker Docs: OverlayFS: writing to a file for the first time](https://docs.docker.com/engine/storage/drivers/overlayfs-driver/#writing-to-a-file-for-the-first-time)"
+    },
+    {
+      "id": "digest-versus-tag",
+      "title": "Which image reference guarantees the same published image content on later pulls?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`ubuntu:latest`",
+          "isCorrect": false
+        },
+        {
+          "text": "`ubuntu:24.04`",
+          "isCorrect": false
+        },
+        {
+          "text": "`ubuntu@sha256:<exact-digest>`",
+          "isCorrect": true
+        },
+        {
+          "text": "`ubuntu` without a tag",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A publisher can move a tag to a newer image. A digest identifies exact content, so pulling by digest gives you the same published image each time. You must update the digest yourself to receive a newer image or security fixes.",
+      "references": "[Docker Docs: Pull an image by digest](https://docs.docker.com/reference/cli/docker/image/pull/#pull-an-image-by-digest-immutable-identifier)"
+    },
+    {
+      "id": "shell-form-entrypoint-signal",
+      "title": "Why might `ENTRYPOINT node server.js` hide Docker's stop signal from Node?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Shell form runs through `/bin/sh -c`, so the shell can remain PID 1 instead of replacing itself with Node",
+          "isCorrect": true
+        },
+        {
+          "text": "Node processes cannot receive Unix signals in containers",
+          "isCorrect": false
+        },
+        {
+          "text": "`ENTRYPOINT` disables signals unless an `EXPOSE` instruction is present",
+          "isCorrect": false
+        },
+        {
+          "text": "Docker sends stop signals only to programs started by `CMD`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Shell form runs through `/bin/sh -c`, so the shell can become PID 1 while Node runs as its child. The shell may not forward Docker's signal. Exec form, `ENTRYPOINT [\"node\", \"server.js\"]`, starts Node as the main process. A wrapper script must forward signals and use `exec` when it hands control to the application.",
+      "references": "[Docker Docs: Dockerfile `ENTRYPOINT`](https://docs.docker.com/reference/dockerfile/#entrypoint)"
+    },
+    {
+      "id": "docker-stop-sequence",
+      "title": "What does `docker stop` do when the main process does not exit during its grace period?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "It pauses the container indefinitely",
+          "isCorrect": false
+        },
+        {
+          "text": "It sends the configured stop signal (normally `SIGTERM`), waits, then forcibly sends `SIGKILL`",
+          "isCorrect": true
+        },
+        {
+          "text": "It immediately sends `SIGKILL` and never waits",
+          "isCorrect": false
+        },
+        {
+          "text": "It sends `SIGINT` repeatedly until every process exits",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Docker sends the configured stop signal to the main process. The default is `SIGTERM`. If the process is still running after the timeout, Docker sends `SIGKILL`, which the process cannot catch for cleanup. `STOPSIGNAL`, `--stop-signal`, and timeout settings can change the graceful phase.",
+      "references": "[Docker Docs: `docker container stop`](https://docs.docker.com/reference/cli/docker/container/stop/)"
+    },
+    {
+      "id": "default-linux-stop-timeout",
+      "title": "By default, how many seconds does Docker wait before killing an unresponsive Linux container?",
+      "description": "Assume neither the container nor the command configures a different stop timeout. Enter the number of seconds.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [10]
+      },
+      "explanation": "Docker waits 10 seconds by default for a Linux container and 30 seconds for a Windows container. It then sends `SIGKILL` if the process is still running. A timeout of `-1` tells Docker to wait without a deadline.",
+      "references": "[Docker Docs: Stop container with timeout](https://docs.docker.com/reference/cli/docker/container/stop/#stop-container-with-timeout--t---timeout)"
+    },
+    {
+      "id": "init-process-responsibilities",
+      "title": "Why would you use `docker run --init`?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "It inserts a small PID 1 that forwards signals and reaps zombie processes",
+          "isCorrect": true
+        },
+        {
+          "text": "It rebuilds the image before every container start",
+          "isCorrect": false
+        },
+        {
+          "text": "It grants the container a private kernel",
+          "isCorrect": false
+        },
+        {
+          "text": "It waits for every declared network port to become healthy",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "PID 1 has special process-management duties on Linux. `--init` inserts a small init process, backed by `tini` in Docker's default installation, that reaps zombie processes. Docker's Compose documentation also states that the init process forwards signals.",
+      "references": "[Docker Docs: `docker run --init`](https://docs.docker.com/reference/cli/docker/container/run/#specify-an-init-process)\n\n[Docker Docs: Compose `init`](https://docs.docker.com/reference/compose-file/services/#init)"
+    },
+    {
+      "id": "expose-versus-publish",
+      "title": "What does `EXPOSE 8080` do by itself?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "It opens host port 8080 to the public internet",
+          "isCorrect": false
+        },
+        {
+          "text": "It records container port 8080 in the image but does not publish a host port",
+          "isCorrect": true
+        },
+        {
+          "text": "It forces the application to listen on port 8080",
+          "isCorrect": false
+        },
+        {
+          "text": "It creates a user-defined bridge network named `8080`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`EXPOSE` records the port that the image expects the application to use. It does not start a listener or create a host mapping. Use `-p` for a chosen mapping, or `-P` to publish every exposed port to an ephemeral host port.",
+      "references": "[Docker Docs: Dockerfile `EXPOSE`](https://docs.docker.com/reference/dockerfile/#expose)"
+    },
+    {
+      "id": "host-container-port-order",
+      "title": "Where does traffic to host port 8080 go with `docker run -p 8080:80 nginx`?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "To TCP port 80 inside the container",
+          "isCorrect": true
+        },
+        {
+          "text": "To TCP port 8080 inside the container",
+          "isCorrect": false
+        },
+        {
+          "text": "To host port 80 after passing through container port 8080",
+          "isCorrect": false
+        },
+        {
+          "text": "Nowhere unless the Dockerfile also says `EXPOSE 8080`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The syntax is `HOST_PORT:CONTAINER_PORT`. Docker forwards connections from host port 8080 to TCP port 80 in the container. An explicit `-p` mapping works even if the Dockerfile has no matching `EXPOSE` instruction.",
+      "references": "[Docker Docs: Port publishing and mapping](https://docs.docker.com/engine/network/port-publishing/)"
+    },
+    {
+      "id": "published-port-bind-address",
+      "title": "Who can potentially reach `-p 8080:80` when no host IP is specified?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Only processes inside the Docker host",
+          "isCorrect": false
+        },
+        {
+          "text": "Anyone who can reach a host network interface, subject to firewall and routing",
+          "isCorrect": true
+        },
+        {
+          "text": "Only containers on the same bridge",
+          "isCorrect": false
+        },
+        {
+          "text": "Only the user who launched the container",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Docker publishes on all host addresses when you omit the host IP, so another machine may be able to reach the port. Bind to loopback, such as `-p 127.0.0.1:8080:80`, when only the Docker host should connect. Add the equivalent IPv6 loopback mapping if needed.",
+      "references": "[Docker Docs: Publishing ports](https://docs.docker.com/engine/network/port-publishing/#publishing-ports)"
+    },
+    {
+      "id": "user-defined-bridge-dns",
+      "title": "How should `web` connect to `db` on the same user-defined bridge?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Use `db` as the hostname and the database's container port",
+          "isCorrect": true
+        },
+        {
+          "text": "Use `localhost` because both containers share loopback",
+          "isCorrect": false
+        },
+        {
+          "text": "Use the Docker host's published database port in every case",
+          "isCorrect": false
+        },
+        {
+          "text": "Read the database container's IP once and hard-code it",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A user-defined bridge provides DNS by container name or alias. `web` can connect to `db` at the database's container port without publishing that port on the host. Unlike a hard-coded IP address, the name still works after Docker recreates the container with a new address.",
+      "references": "[Docker Docs: User-defined bridge networks](https://docs.docker.com/engine/network/drivers/bridge/#differences-between-user-defined-bridges-and-the-default-bridge)"
+    },
+    {
+      "id": "localhost-inside-container",
+      "title": "What does `localhost` mean inside the `web` container?",
+      "description": "A database runs in a separate `db` container on the same user-defined network.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The `web` container's own loopback interface",
+          "isCorrect": true
+        },
+        {
+          "text": "The Docker host",
+          "isCorrect": false
+        },
+        {
+          "text": "Whichever container started most recently",
+          "isCorrect": false
+        },
+        {
+          "text": "Every container attached to the bridge",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Each container has its own network stack and loopback interface. Inside `web`, `localhost` points back to `web`, not to `db` or the Docker host. Use the hostname `db` to reach the database on this network.",
+      "references": "[Docker Docs: Networking overview](https://docs.docker.com/engine/network/)\n\n[Docker Docs: Bridge network driver](https://docs.docker.com/engine/network/drivers/bridge/)"
+    },
+    {
+      "id": "same-bridge-unpublished-ports",
+      "title": "Must a database port be published for a peer on the same user-defined bridge to reach it?",
+      "description": "Assume the database listens on its container network interface.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Yes. Every container-to-container connection must go through a host port",
+          "isCorrect": false
+        },
+        {
+          "text": "No. Containers on the same user-defined bridge can connect directly",
+          "isCorrect": true
+        },
+        {
+          "text": "Yes, unless both containers use the same image",
+          "isCorrect": false
+        },
+        {
+          "text": "No, but only ports named by `EXPOSE` are reachable between peers",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Containers on the same user-defined bridge can connect directly to one another's ports. Publishing makes a port available through the host or, under the default bridge rules, to other networks. It is not needed for peers on the same network. `EXPOSE` does not filter this traffic.",
+      "references": "[Docker Docs: Bridge network driver](https://docs.docker.com/engine/network/drivers/bridge/)\n\n[Docker Docs: Dockerfile `EXPOSE`](https://docs.docker.com/reference/dockerfile/#expose)"
+    },
+    {
+      "id": "named-volume-after-container-removal",
+      "title": "What happens to a named volume after the container using it is removed?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "It persists independently until the volume itself is removed",
+          "isCorrect": true
+        },
+        {
+          "text": "It is copied back into the image",
+          "isCorrect": false
+        },
+        {
+          "text": "It is always deleted with the container",
+          "isCorrect": false
+        },
+        {
+          "text": "It survives only while another container is running",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A volume has its own lifecycle. Removing a container does not remove a named volume, even if the removal command also cleans up attached anonymous volumes. A replacement container can mount the same named volume and read its data.",
+      "references": "[Docker Docs: Volumes](https://docs.docker.com/engine/storage/volumes/)\n\n[Docker Docs: `docker container rm --volumes`](https://docs.docker.com/reference/cli/docker/container/rm/#remove-a-container-and-its-volumes--v---volumes)"
+    },
+    {
+      "id": "empty-volume-population",
+      "title": "What initially appears in a new empty volume mounted over a non-empty image directory?",
+      "description": "The image contains `/app/defaults/config.ini`. A newly created empty volume is mounted at `/app/defaults` with default volume behavior.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The image's existing files are copied into the empty volume, so `config.ini` appears there",
+          "isCorrect": true
+        },
+        {
+          "text": "The directory is always empty because every mount discards image content",
+          "isCorrect": false
+        },
+        {
+          "text": "The volume contains a symbolic link to the image layer",
+          "isCorrect": false
+        },
+        {
+          "text": "Container creation fails because the target directory is non-empty",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "By default, Docker copies files already at the mount target into a new empty volume. In this case, the volume receives `config.ini`. Use `volume-nocopy` when the volume should remain empty.",
+      "references": "[Docker Docs: Mounting a volume over existing data](https://docs.docker.com/engine/storage/volumes/#mounting-a-volume-over-existing-data)"
+    },
+    {
+      "id": "bind-mount-effects",
+      "title": "What does a default read-write bind mount over `/app` do?",
+      "description": "The image already has files in `/app`, and the host directory `/work/source` is mounted there. Select every correct statement.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "The image's pre-existing `/app` files are obscured while the mount is present",
+          "isCorrect": true
+        },
+        {
+          "text": "Container processes can modify files in `/work/source` because bind mounts are writable by default",
+          "isCorrect": true
+        },
+        {
+          "text": "The image's hidden `/app` files are permanently deleted from its layers",
+          "isCorrect": false
+        },
+        {
+          "text": "Docker copies `/work/source` into a daemon-managed volume before the container starts",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The bind mount covers the image's `/app` files while the mount exists, but it does not delete them from the image. Bind mounts are writable by default, so the container can change files in `/work/source` on the host. Use `readonly` or `ro` when the container needs only read access.",
+      "references": "[Docker Docs: Bind mounts](https://docs.docker.com/engine/storage/bind-mounts/)"
+    },
+    {
+      "id": "tmpfs-lifecycle",
+      "title": "What happens to files in a Docker `tmpfs` mount when the container stops?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "They are committed into a new image layer",
+          "isCorrect": false
+        },
+        {
+          "text": "They are removed with the temporary mount and do not persist as container storage",
+          "isCorrect": true
+        },
+        {
+          "text": "They move automatically into a named volume",
+          "isCorrect": false
+        },
+        {
+          "text": "They remain in host RAM until Docker is uninstalled",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Docker removes a `tmpfs` mount when the container stops, so its files do not persist as container storage. The data normally lives in host memory instead of the container's writable layer. Linux may still write tmpfs pages to swap, so `tmpfs` is not a guarantee that bytes never touch disk.",
+      "references": "[Docker Docs: tmpfs mounts](https://docs.docker.com/engine/storage/tmpfs/)"
+    },
+    {
+      "id": "writable-layer-lifecycle",
+      "title": "What happens to database files written only into a container's writable layer after that container is deleted?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "They are available to the next container using the same image tag",
+          "isCorrect": false
+        },
+        {
+          "text": "They are lost with the deleted container's writable layer",
+          "isCorrect": true
+        },
+        {
+          "text": "They are pushed to the registry with the image",
+          "isCorrect": false
+        },
+        {
+          "text": "They become an anonymous volume automatically",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The writable layer belongs to one container. Stopping the container keeps that layer, but deleting the container removes it. Put durable or write-heavy data in a volume or another storage system.",
+      "references": "[Docker Docs: Storage: container layer basics](https://docs.docker.com/engine/storage/#container-layer-basics)\n\n[Docker Docs: Storage drivers versus volumes](https://docs.docker.com/engine/storage/drivers/#storage-drivers-versus-docker-volumes)"
+    },
+    {
+      "id": "container-isolation-model",
+      "title": "Which statements accurately describe default Linux container isolation?",
+      "description": "Select every correct statement for ordinary Docker Engine containers, not Docker Desktop's additional VM boundary.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "Namespaces separate views of resources such as processes and networks",
+          "isCorrect": true
+        },
+        {
+          "text": "Containers share the host's Linux kernel rather than booting a private kernel per container",
+          "isCorrect": true
+        },
+        {
+          "text": "A container is automatically safe to treat as a hardware virtual machine boundary",
+          "isCorrect": false
+        },
+        {
+          "text": "Root inside a container always has unrestricted root access to the host",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Namespaces give a container separate views of resources such as processes and networks. Cgroups account for and limit resources. Containers still use the host kernel, while capabilities and seccomp reduce what their processes may do. The strength of the boundary depends on the container configuration and the host kernel; it is not the same as a VM with its own kernel.",
+      "references": "[Docker Docs: Docker Engine security](https://docs.docker.com/engine/security/)\n\n[Docker Docs: Isolation layers: containers share the host kernel](https://docs.docker.com/ai/sandboxes/security/isolation/)"
+    },
+    {
+      "id": "default-resource-limits",
+      "title": "Without resource limits, how much CPU and memory can a container use?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "At most one CPU and 512 MB of memory",
+          "isCorrect": false
+        },
+        {
+          "text": "As much as the host kernel scheduler and available resources allow",
+          "isCorrect": true
+        },
+        {
+          "text": "An equal hard partition of the host for each running container",
+          "isCorrect": false
+        },
+        {
+          "text": "No CPU until `--cpus` and no memory until `--memory` are supplied",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Docker does not set a hard CPU or memory limit by default. A container can use as much as the host kernel allows, which can starve other workloads or trigger out-of-memory handling. Use flags such as `--cpus` and `--memory` to set cgroup limits.",
+      "references": "[Docker Docs: Resource constraints](https://docs.docker.com/engine/containers/resource_constraints/)"
+    },
+    {
+      "id": "memory-swap-arithmetic",
+      "title": "With these limits, how many megabytes of swap can the container use?",
+      "description": "The container starts with `--memory=300m --memory-swap=600m`. Enter only the swap amount in megabytes.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [300]
+      },
+      "explanation": "`--memory-swap` sets the combined RAM and swap allowance. Subtract the 300 MB RAM limit from the 600 MB combined limit: `600 - 300 = 300`. The container may use 300 MB of swap.",
+      "references": "[Docker Docs: `--memory-swap` details](https://docs.docker.com/engine/containers/resource_constraints/#--memory-swap-details)"
+    },
+    {
+      "id": "default-seccomp-profile",
+      "title": "What does Docker's default seccomp profile do on a supported Linux host?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "It filters selected system calls to reduce the kernel attack surface while allowing common workloads",
+          "isCorrect": true
+        },
+        {
+          "text": "It gives each container a separate Linux kernel",
+          "isCorrect": false
+        },
+        {
+          "text": "It encrypts all container filesystem layers",
+          "isCorrect": false
+        },
+        {
+          "text": "It publishes only ports named by `EXPOSE`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Seccomp is a Linux kernel feature that restricts system calls. Docker uses a default profile when the host supports it, unless you override that profile. Seccomp works alongside namespaces, capabilities, cgroups, and other controls; it does not give the container a private kernel.",
+      "references": "[Docker Docs: Seccomp security profiles](https://docs.docker.com/engine/security/seccomp/)"
+    }
+  ]
+}
