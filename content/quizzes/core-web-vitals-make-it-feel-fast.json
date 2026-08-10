@@ -1,0 +1,646 @@
+{
+  "schemaVersion": 1,
+  "id": "core-web-vitals-make-it-feel-fast",
+  "title": "Core Web Vitals: Make It Feel Fast",
+  "description": "Practice diagnosing slow loading, delayed interactions, and shifting layouts. The scenarios cover LCP, INP, CLS, resource loading, hydration, web fonts, and differences between lab and field data.",
+  "language": "en",
+  "tags": ["web-performance", "core-web-vitals", "frontend", "lcp", "inp", "cls"],
+  "questions": [
+    {
+      "id": "good-scorecard",
+      "title": "Which results are in the \"good\" Core Web Vitals range?",
+      "description": "Select every result that passes at the 75th percentile of visits. Mobile and desktop are assessed separately.",
+      "type": "multiple-choice",
+      "options": [
+        { "text": "LCP of 2.4 seconds", "isCorrect": true },
+        { "text": "INP of 180 milliseconds", "isCorrect": true },
+        { "text": "CLS of 0.08", "isCorrect": true },
+        { "text": "LCP of 3.2 seconds", "isCorrect": false },
+        { "text": "All three metrics pass only at the 50th percentile", "isCorrect": false }
+      ],
+      "explanation": "The \"good\" limits are 2.5 seconds for LCP, 200 milliseconds for INP, and 0.1 for CLS. Each limit includes its boundary. Core Web Vitals use the 75th percentile, not the median.",
+      "references": "[web.dev: Web Vitals](https://web.dev/articles/vitals)"
+    },
+    {
+      "id": "lcp-candidate-can-change",
+      "title": "What is the final LCP when a larger hero appears after the heading?",
+      "description": "A large heading paints at 0.9 seconds. At 1.8 seconds, a larger eligible hero image finishes rendering in the initial viewport. No larger eligible content appears later.",
+      "type": "single-choice",
+      "options": [
+        { "text": "The hero image at 1.8 seconds", "isCorrect": true },
+        { "text": "The heading at 0.9 seconds", "isCorrect": false },
+        { "text": "Whichever resource started downloading first", "isCorrect": false },
+        { "text": "The final element in DOM order", "isCorrect": false }
+      ],
+      "explanation": "The browser updates the LCP candidate when larger eligible content appears. The hero replaces the heading, so the final LCP is the hero's render time: 1.8 seconds. Download order and DOM order do not decide LCP.",
+      "references": "[web.dev: Largest Contentful Paint](https://web.dev/articles/lcp)"
+    },
+    {
+      "id": "eligible-lcp-content",
+      "title": "Which visible content can be an LCP candidate?",
+      "type": "multiple-choice",
+      "options": [
+        { "text": "An image rendered by an `<img>` element", "isCorrect": true },
+        { "text": "A block-level element containing text", "isCorrect": true },
+        { "text": "A video's poster image", "isCorrect": true },
+        { "text": "An element with a CSS `url()` background image", "isCorrect": true },
+        { "text": "A bare root `<svg>` element solely because its box is large", "isCorrect": false }
+      ],
+      "explanation": "LCP can use images, video poster images, and text blocks. A root `<svg>` element is not eligible by itself. An SVG loaded through `<img>` can be eligible, as can an `<image>` inside an SVG.",
+      "references": "[web.dev: Largest Contentful Paint, eligible elements](https://web.dev/articles/lcp#what-elements-are-considered)"
+    },
+    {
+      "id": "sum-lcp-subparts",
+      "title": "What LCP does this trace imply, in milliseconds?",
+      "description": "TTFB is 600 ms, resource load delay is 350 ms, resource load duration is 700 ms, and element render delay is 250 ms. Enter a number without units.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [1900]
+      },
+      "explanation": "Add the four LCP subparts: `600 + 350 + 700 + 250 = 1900` ms. The breakdown shows whether time is going into the server response, resource discovery, downloading, or rendering.",
+      "references": "[web.dev: Optimize Largest Contentful Paint, LCP breakdown](https://web.dev/articles/optimize-lcp#lcp-breakdown)"
+    },
+    {
+      "id": "background-image-discovery-delay",
+      "title": "Why does this hero image start downloading late?",
+      "description": "The HTML links `app.css`. The browser discovers `background-image: url('/hero.webp')` only after it has downloaded and parsed that stylesheet.",
+      "type": "single-choice",
+      "options": [
+        { "text": "The browser must process the stylesheet before it can discover the image URL", "isCorrect": true },
+        { "text": "The image file must be slow to download", "isCorrect": false },
+        { "text": "The browser cannot use background images as LCP candidates", "isCorrect": false },
+        { "text": "The HTML document's TTFB is, by definition, the only delay", "isCorrect": false }
+      ],
+      "explanation": "The image URL is inside an external stylesheet, so the browser cannot request it until that stylesheet is ready. This increases resource load delay even if the image itself downloads quickly. An accurate preload can expose the URL sooner.",
+      "references": "[web.dev: Optimize LCP, eliminate resource load delay](https://web.dev/articles/optimize-lcp#1_eliminate_resource_load_delay)"
+    },
+    {
+      "id": "element-render-delay",
+      "title": "Which LCP subpart is inflated when a loaded hero remains hidden until JavaScript adds a class?",
+      "type": "single-choice",
+      "options": [
+        { "text": "Element render delay", "isCorrect": true },
+        { "text": "Resource load duration", "isCorrect": false },
+        { "text": "Resource load delay", "isCorrect": false },
+        { "text": "Time to First Byte", "isCorrect": false }
+      ],
+      "explanation": "The image has already loaded, so the remaining wait belongs to element render delay. Compressing the image will not fix the JavaScript that keeps it hidden.",
+      "references": "[web.dev: Optimize Largest Contentful Paint](https://web.dev/articles/optimize-lcp)"
+    },
+    {
+      "id": "preload-versus-fetchpriority",
+      "title": "Which statements about preload and `fetchpriority` are correct?",
+      "type": "multiple-choice",
+      "options": [
+        { "text": "Preload can reveal a critical resource before normal discovery finds it", "isCorrect": true },
+        { "text": "`fetchpriority=\"high\"` hints that a discovered resource should receive higher priority", "isCorrect": true },
+        { "text": "A late-discovered LCP image may benefit from both an accurate preload and high fetch priority", "isCorrect": true },
+        { "text": "`fetchpriority=\"high\"` makes `loading=\"lazy\"` eager", "isCorrect": false },
+        { "text": "Preload guarantees that the resource will become the LCP element", "isCorrect": false }
+      ],
+      "explanation": "Preload helps the browser discover a resource earlier. Fetch Priority affects how the browser schedules a resource it knows about. Neither is a guarantee. A lazy image remains lazy even when its later request has high priority.",
+      "references": "[web.dev: Optimize resource loading with the Fetch Priority API](https://web.dev/articles/fetch-priority)\n\n[web.dev: Browser-level image lazy loading](https://web.dev/articles/browser-level-image-lazy-loading)"
+    },
+    {
+      "id": "correct-hero-preload",
+      "title": "Which preload correctly declares a late-discovered WebP hero?",
+      "description": "The CSS eventually requests the exact URL `/images/hero.webp`.",
+      "type": "single-choice",
+      "options": [
+        { "text": "`<link rel=\"preload\" as=\"image\" href=\"/images/hero.webp\" type=\"image/webp\" fetchpriority=\"high\">`", "isCorrect": true },
+        { "text": "`<link rel=\"prefetch\" as=\"style\" href=\"/images/hero.webp\">`", "isCorrect": false },
+        { "text": "`<link rel=\"preload\" as=\"script\" href=\"/images/hero.webp\">`", "isCorrect": false },
+        { "text": "`<img loading=\"lazy\" src=\"/images/hero.webp\" fetchpriority=\"high\">`", "isCorrect": false }
+      ],
+      "explanation": "The preload matches the URL used by CSS and sets `as=\"image\"`. The MIME type lets a browser skip a format it does not support. `fetchpriority=\"high\"` marks this image as important.",
+      "references": "[web.dev: Optimize LCP, resource discovery](https://web.dev/articles/optimize-lcp#optimize_when_the_resource_is_discovered)"
+    },
+    {
+      "id": "lazy-loaded-hero",
+      "title": "What should you do when the above-the-fold LCP image has `loading=\"lazy\"`?",
+      "type": "single-choice",
+      "options": [
+        { "text": "Remove lazy loading and expose the image in the initial HTML", "isCorrect": true },
+        { "text": "Keep lazy loading and add a longer fade-in animation", "isCorrect": false },
+        { "text": "Move the image URL into JavaScript so it is discovered after hydration", "isCorrect": false },
+        { "text": "Lazy-load the page's critical CSS as well", "isCorrect": false }
+      ],
+      "explanation": "Lazy loading delays the request until layout confirms that the image is near the viewport. That delay is wasteful for a known LCP image. Load the hero eagerly and keep lazy loading for images farther down the page.",
+      "references": "[web.dev: Optimize LCP, resource priority](https://web.dev/articles/optimize-lcp#optimize_the_priority_the_resource_is_given)\n\n[web.dev: The performance effects of too much lazy loading](https://web.dev/articles/lcp-lazy-loading)"
+    },
+    {
+      "id": "preload-every-carousel-slide",
+      "title": "Why is preloading every image in a ten-slide hero carousel usually counterproductive?",
+      "type": "single-choice",
+      "options": [
+        { "text": "Non-visible slides compete with the initially visible LCP image for bandwidth", "isCorrect": true },
+        { "text": "Browsers refuse to preload more than one image", "isCorrect": false },
+        { "text": "Preloaded images can never enter the memory cache", "isCorrect": false },
+        { "text": "Only CSS files are eligible for preload", "isCorrect": false }
+      ],
+      "explanation": "The slides compete for bandwidth even though only one is visible. Preload and prioritize the initial slide. Giving every slide the same treatment leaves the browser with no useful priority signal.",
+      "references": "[web.dev: Optimize Largest Contentful Paint, resource priority](https://web.dev/articles/optimize-lcp#optimize_the_priority_the_resource_is_given)"
+    },
+    {
+      "id": "text-lcp-resource-delay",
+      "title": "What is the LCP resource load delay for a text LCP rendered immediately with a system font?",
+      "description": "Enter a number of milliseconds without units.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [0]
+      },
+      "explanation": "Text drawn with a system font needs no separate LCP resource, so resource load delay and resource load duration are both 0. TTFB, render-blocking CSS, and rendering work can still delay the text.",
+      "references": "[web.dev: Optimize Largest Contentful Paint, LCP breakdown](https://web.dev/articles/optimize-lcp#lcp-breakdown)"
+    },
+    {
+      "id": "font-preload-attributes",
+      "title": "Which markup is appropriate for preloading a critical WOFF2 font?",
+      "type": "single-choice",
+      "options": [
+        { "text": "`<link rel=\"preload\" href=\"/fonts/ui.woff2\" as=\"font\" type=\"font/woff2\" crossorigin>`", "isCorrect": true },
+        { "text": "`<link rel=\"preload\" href=\"/fonts/ui.woff2\" as=\"image\">`", "isCorrect": false },
+        { "text": "`<script defer src=\"/fonts/ui.woff2\"></script>`", "isCorrect": false },
+        { "text": "`<link rel=\"stylesheet\" href=\"/fonts/ui.woff2\">`", "isCorrect": false }
+      ],
+      "explanation": "A font preload uses `as=\"font\"`, the correct MIME type, and `crossorigin` to match the font request's CORS mode. If those attributes do not match the later request, the browser may download the font again.",
+      "references": "[web.dev: Preload critical assets, implementation](https://web.dev/articles/preload-critical-assets#how-to-implement-relpreload)"
+    },
+    {
+      "id": "default-stylesheet-blocking",
+      "title": "Why does `<link rel=\"stylesheet\" href=\"app.css\">` normally delay the initial render?",
+      "type": "single-choice",
+      "options": [
+        { "text": "The browser needs the CSSOM with the DOM to construct the render tree", "isCorrect": true },
+        { "text": "The stylesheet blocks the HTML parser while it downloads", "isCorrect": false },
+        { "text": "The browser must finish every image before it can build the CSSOM", "isCorrect": false },
+        { "text": "Stylesheet requests cannot run in parallel with script requests", "isCorrect": false }
+      ],
+      "explanation": "The browser combines the DOM and CSSOM to build the render tree. A stylesheet that applies to the current media must be ready before the browser can paint the page correctly.",
+      "references": "[web.dev: Render-blocking CSS](https://web.dev/articles/critical-rendering-path/render-blocking-css)"
+    },
+    {
+      "id": "print-css-behavior",
+      "title": "What happens to `<link rel=\"stylesheet\" href=\"print.css\" media=\"print\">` during a normal screen load?",
+      "type": "single-choice",
+      "options": [
+        { "text": "It is downloaded, usually at lower priority, but does not block the screen's initial render", "isCorrect": true },
+        { "text": "It blocks rendering exactly like a matching screen stylesheet", "isCorrect": false },
+        { "text": "It is never downloaded unless the user opens the print dialog", "isCorrect": false },
+        { "text": "It is treated as deferred JavaScript", "isCorrect": false }
+      ],
+      "explanation": "The `print` media query does not match the screen, so the stylesheet does not block the initial screen render. The browser still downloads it, usually at a lower priority.",
+      "references": "[web.dev: Render-blocking CSS, media queries](https://web.dev/articles/critical-rendering-path/render-blocking-css#media_types_and_media_queries)"
+    },
+    {
+      "id": "defer-semantics",
+      "title": "Which statements describe classic external scripts with `defer`?",
+      "type": "multiple-choice",
+      "options": [
+        { "text": "They download while HTML parsing continues", "isCorrect": true },
+        { "text": "They execute after the document has been parsed", "isCorrect": true },
+        { "text": "They preserve document order among deferred classic scripts", "isCorrect": true },
+        { "text": "They finish evaluating before `DOMContentLoaded` fires", "isCorrect": true },
+        { "text": "They execute immediately whenever each download completes, regardless of order", "isCorrect": false }
+      ],
+      "explanation": "Deferred classic scripts download while parsing continues. After parsing, they run in document order. `DOMContentLoaded` waits for them to finish. Scripts marked `async` follow completion order instead.",
+      "references": "[WHATWG HTML Standard: `defer`](https://html.spec.whatwg.org/multipage/scripting.html#attr-script-defer)"
+    },
+    {
+      "id": "async-independent-script",
+      "title": "When is `async` a better fit than `defer` for a classic script?",
+      "type": "single-choice",
+      "options": [
+        { "text": "When the script is independent and may run as soon as its download finishes", "isCorrect": true },
+        { "text": "When several scripts must execute in document order after parsing", "isCorrect": false },
+        { "text": "When execution must wait for `DOMContentLoaded`", "isCorrect": false },
+        { "text": "When the script's evaluation must never occupy the main thread", "isCorrect": false }
+      ],
+      "explanation": "An async script downloads while parsing continues, then runs as soon as it is ready. Async scripts do not preserve document order. Their code still runs on the main thread, so `async` removes the fetch delay from parsing but does not remove execution cost.",
+      "references": "[WHATWG HTML Standard: `async`](https://html.spec.whatwg.org/multipage/scripting.html#attr-script-async)"
+    },
+    {
+      "id": "module-script-default",
+      "title": "What is true of `<script type=\"module\" src=\"app.js\"></script>` without `async`?",
+      "type": "single-choice",
+      "options": [
+        { "text": "Module scripts defer by default", "isCorrect": true },
+        { "text": "It blocks parsing exactly like a classic script with no attributes", "isCorrect": false },
+        { "text": "It executes in a Web Worker", "isCorrect": false },
+        { "text": "It cannot import other modules", "isCorrect": false }
+      ],
+      "explanation": "Module scripts defer by default. They download while HTML parsing continues and run after the document has been parsed. The module graph still takes main-thread time to parse, compile, and execute.",
+      "references": "[WHATWG HTML Standard: module scripts](https://html.spec.whatwg.org/multipage/scripting.html#attr-script-type)"
+    },
+    {
+      "id": "why-inp-replaced-fid",
+      "title": "Why did INP replace FID as a Core Web Vital?",
+      "type": "single-choice",
+      "options": [
+        { "text": "INP measures full interaction latency across the visit; FID measured only the first interaction's input delay", "isCorrect": true },
+        { "text": "FID measured layout stability, while INP measures image compression", "isCorrect": false },
+        { "text": "INP is a lab-only metric, while FID was field-only", "isCorrect": false },
+        { "text": "FID included every interaction but was too expensive to store", "isCorrect": false }
+      ],
+      "explanation": "FID measured only how long the first interaction waited before its handlers began. It missed slow handler work and slow interactions later in the visit. INP measures input delay, processing, and the wait for the next frame across the visit. It replaced FID in March 2024.",
+      "references": "[web.dev: How INP differs from FID](https://web.dev/articles/inp#how_is_inp_different_from_first_input_delay_fid)\n\n[web.dev: INP became a Core Web Vital](https://web.dev/blog/inp-cwv-launch)"
+    },
+    {
+      "id": "inp-three-phases",
+      "title": "Which phases contribute to an interaction's INP latency?",
+      "type": "multiple-choice",
+      "options": [
+        { "text": "Input delay before event callbacks begin", "isCorrect": true },
+        { "text": "Processing duration of the interaction's event callbacks", "isCorrect": true },
+        { "text": "Presentation delay until the next frame is shown", "isCorrect": true },
+        { "text": "Every later network request initiated by the interaction until it settles", "isCorrect": false },
+        { "text": "All time from page navigation until the interaction begins", "isCorrect": false }
+      ],
+      "explanation": "INP starts when the input arrives and ends when the browser presents the next frame. It includes the wait for handlers, the handlers themselves, and presentation delay. It does not wait for later asynchronous work such as a network response.",
+      "references": "[web.dev: The lifecycle of an INP interaction](https://web.dev/articles/inp#whats_in_an_interaction)"
+    },
+    {
+      "id": "inp-observed-interactions",
+      "title": "Which user actions are observed for INP?",
+      "type": "multiple-choice",
+      "options": [
+        { "text": "Clicking with a mouse", "isCorrect": true },
+        { "text": "Tapping a touchscreen", "isCorrect": true },
+        { "text": "Pressing a physical or onscreen keyboard key", "isCorrect": true },
+        { "text": "Hovering without clicking", "isCorrect": false },
+        { "text": "Scrolling the page", "isCorrect": false }
+      ],
+      "explanation": "INP observes mouse clicks, touchscreen taps, and key presses. It does not include hovering or scrolling, even though those actions can still feel slow.",
+      "references": "[web.dev: What INP measures](https://web.dev/articles/inp#what_is_inp)"
+    },
+    {
+      "id": "no-interaction-no-inp",
+      "title": "What INP should a visit report if the user only reads and scrolls?",
+      "type": "single-choice",
+      "options": [
+        { "text": "No INP value for that visit", "isCorrect": true },
+        { "text": "0 milliseconds", "isCorrect": false },
+        { "text": "The page's Total Blocking Time", "isCorrect": false },
+        { "text": "The latency of the longest scroll event", "isCorrect": false }
+      ],
+      "explanation": "INP requires at least one click, tap, or key press. Scrolling alone produces no INP value. That is different from an interaction measured at 0 ms.",
+      "references": "[web.dev: When INP is not reported](https://web.dev/articles/inp#what_if_no_inp_value_is_reported)"
+    },
+    {
+      "id": "inp-outlier-rule",
+      "title": "Which interaction usually becomes INP during a visit with 60 measured interactions?",
+      "description": "Assume all latencies are distinct.",
+      "type": "single-choice",
+      "options": [
+        { "text": "The second-slowest interaction", "isCorrect": true },
+        { "text": "The median interaction", "isCorrect": false },
+        { "text": "The first interaction", "isCorrect": false },
+        { "text": "The arithmetic mean of all interactions", "isCorrect": false }
+      ],
+      "explanation": "INP usually uses the slowest interaction. For every 50 interactions, the calculation ignores one slowest result as an outlier. With 60 distinct results, it ignores one and uses the second-slowest.",
+      "references": "[web.dev: How INP is calculated](https://web.dev/articles/inp#details-on-how-inp-is-calculated)"
+    },
+    {
+      "id": "good-inp-boundary",
+      "title": "Which INP is still in the good range?",
+      "type": "single-choice",
+      "options": [
+        { "text": "200 milliseconds", "isCorrect": true },
+        { "text": "250 milliseconds", "isCorrect": false },
+        { "text": "500 milliseconds", "isCorrect": false },
+        { "text": "800 milliseconds", "isCorrect": false }
+      ],
+      "explanation": "An INP of 200 ms or less is good. Values over 200 ms and up to 500 ms need improvement. Anything over 500 ms is poor. The field assessment uses the 75th percentile of visits.",
+      "references": "[web.dev: Good INP thresholds](https://web.dev/articles/inp#what_is_a_good_inp_score)"
+    },
+    {
+      "id": "long-task-threshold",
+      "title": "What duration marks the long-task threshold?",
+      "description": "Enter the boundary in milliseconds without units.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [50]
+      },
+      "explanation": "The boundary is 50 ms; tasks longer than that are long tasks. A long task holds the UI thread and can delay input or rendering. The threshold is only a diagnostic boundary. A page can still feel slow when it runs many shorter tasks.",
+      "references": "[W3C: Long Tasks API](https://www.w3.org/TR/longtasks-1/)\n\n[web.dev: Optimize long tasks](https://web.dev/articles/optimize-long-tasks)"
+    },
+    {
+      "id": "long-task-before-tap",
+      "title": "Which INP phase grows when a 300 ms analytics task is running as the user taps \"Add to cart\"?",
+      "type": "single-choice",
+      "options": [
+        { "text": "Input delay", "isCorrect": true },
+        { "text": "Processing duration", "isCorrect": false },
+        { "text": "Presentation delay", "isCorrect": false },
+        { "text": "Element render delay", "isCorrect": false }
+      ],
+      "explanation": "The tap must wait for the analytics task to release the main thread. That wait is input delay, even though the analytics code is unrelated to the tap.",
+      "references": "[web.dev: What is in an INP interaction](https://web.dev/articles/inp#whats_in_an_interaction)\n\n[web.dev: Optimize long tasks](https://web.dev/articles/optimize-long-tasks)"
+    },
+    {
+      "id": "yield-for-visual-feedback",
+      "title": "How should a click handler show a spinner before starting 400 ms of non-urgent CPU work?",
+      "type": "single-choice",
+      "options": [
+        { "text": "Update the spinner, yield so the browser can paint, then continue in later tasks", "isCorrect": true },
+        { "text": "Update the spinner and immediately run all 400 ms synchronously in the same task", "isCorrect": false },
+        { "text": "Hide the spinner until the CPU work has finished", "isCorrect": false },
+        { "text": "Wrap the synchronous work in `Promise.resolve().then(...)` to guarantee a paint first", "isCorrect": false }
+      ],
+      "explanation": "Changing the DOM does not paint the spinner immediately. If the same task keeps running for 400 ms, the spinner waits too. Yield after the update, then split the remaining work into smaller tasks. A resolved Promise queues a microtask and does not guarantee a paint first.",
+      "references": "[web.dev: Optimize INP, yield to the main thread](https://web.dev/articles/optimize-inp#yield_to_the_main_thread_often)"
+    },
+    {
+      "id": "worker-for-cpu-work",
+      "title": "When should you consider a Web Worker to improve INP?",
+      "type": "single-choice",
+      "options": [
+        { "text": "When a large calculation that does not need the DOM blocks the main thread", "isCorrect": true },
+        { "text": "When code must synchronously read and mutate DOM nodes", "isCorrect": false },
+        { "text": "When an image lacks width and height attributes", "isCorrect": false },
+        { "text": "When the server's TTFB is high", "isCorrect": false }
+      ],
+      "explanation": "A worker can run suitable calculations away from the UI thread, which leaves that thread free for input and rendering. Workers cannot access the DOM directly, so the main thread still has to apply any UI changes.",
+      "references": "[web.dev: Run JavaScript off the main thread with Web Workers](https://web.dev/articles/off-main-thread#why_web_workers)"
+    },
+    {
+      "id": "hydration-interactivity-gap",
+      "title": "Why can server-rendered controls look ready while still producing poor responsiveness?",
+      "type": "single-choice",
+      "options": [
+        { "text": "The HTML is visible before client JavaScript has loaded, run, and attached the behavior", "isCorrect": true },
+        { "text": "Server-rendered HTML cannot contain buttons", "isCorrect": false },
+        { "text": "Hydration always blocks image downloads at the network layer", "isCorrect": false },
+        { "text": "INP ignores interactions with server-rendered content", "isCorrect": false }
+      ],
+      "explanation": "Hydration makes server-rendered HTML interactive. Before the client code is ready, a control may look usable but ignore input. A large hydration job can also block the main thread and increase input delay.",
+      "references": "[web.dev: Rendering on the Web, rehydration](https://web.dev/articles/rendering-on-the-web#rehydration)"
+    },
+    {
+      "id": "islands-reduce-hydration-cost",
+      "title": "How can an islands architecture reduce hydration cost on a mostly static article page?",
+      "type": "single-choice",
+      "options": [
+        { "text": "Send JavaScript only for the interactive components and leave static content as HTML", "isCorrect": true },
+        { "text": "Hydrate the entire document several times in parallel", "isCorrect": false },
+        { "text": "Convert every image into a JavaScript component", "isCorrect": false },
+        { "text": "Delay all HTML until JavaScript has executed", "isCorrect": false }
+      ],
+      "explanation": "With islands, most of the article stays as static HTML. Only the interactive parts receive client JavaScript. The browser downloads and runs less code, which leaves more main-thread time for user input.",
+      "references": "[Astro Docs: Islands architecture](https://docs.astro.build/en/concepts/islands/)"
+    },
+    {
+      "id": "visible-buy-button-hydration",
+      "title": "How should you hydrate an immediately visible \"Buy now\" button?",
+      "type": "single-choice",
+      "options": [
+        { "text": "Hydrate it at high priority on page load", "isCorrect": true },
+        { "text": "Wait until the footer becomes visible", "isCorrect": false },
+        { "text": "Wait for an arbitrary 30-second timer", "isCorrect": false },
+        { "text": "Do not hydrate it, even though it needs a click handler", "isCorrect": false }
+      ],
+      "explanation": "An immediately visible primary control needs to work quickly. In Astro, `client:load` fits this case. `client:visible` is better for lower-priority components farther down the page.",
+      "references": "[Astro Docs: Client directives](https://docs.astro.build/en/reference/directives-reference/#client-directives)"
+    },
+    {
+      "id": "image-dimensions-prevent-cls",
+      "title": "Why do accurate `width` and `height` attributes reduce CLS for responsive images?",
+      "type": "single-choice",
+      "options": [
+        { "text": "They give the browser an aspect ratio so it can reserve space before the image loads", "isCorrect": true },
+        { "text": "They force the image file to download before CSS", "isCorrect": false },
+        { "text": "They disable responsive CSS sizing", "isCorrect": false },
+        { "text": "They remove the image from LCP eligibility", "isCorrect": false }
+      ],
+      "explanation": "The attributes give the browser the image's aspect ratio while it parses the HTML. CSS can still size the image responsively with `width: 100%; height: auto`. The browser reserves the right height before the image loads, so nearby content does not jump.",
+      "references": "[web.dev: Optimize CLS, image dimensions](https://web.dev/articles/optimize-cls#images_without_dimensions)"
+    },
+    {
+      "id": "responsive-image-markup",
+      "title": "Which responsive image keeps its 16:9 space reserved before loading?",
+      "type": "single-choice",
+      "options": [
+        { "text": "`<img src=\"hero.jpg\" width=\"1600\" height=\"900\" style=\"width:100%;height:auto\" alt=\"\">`", "isCorrect": true },
+        { "text": "`<img src=\"hero.jpg\" style=\"width:100%;height:auto\" alt=\"\">`", "isCorrect": false },
+        { "text": "`<img src=\"hero.jpg\" width=\"1600\" height=\"0\" alt=\"\">`", "isCorrect": false },
+        { "text": "`<div data-image=\"hero.jpg\"></div>` with JavaScript injection after load", "isCorrect": false }
+      ],
+      "explanation": "The `width` and `height` attributes provide a 1600:900 ratio before the image loads. The CSS then scales that reserved box to the container. Responsive CSS alone does not provide the missing ratio.",
+      "references": "[web.dev: Optimize CLS, image dimensions](https://web.dev/articles/optimize-cls#modern_best_practice_for_setting_image_dimensions)"
+    },
+    {
+      "id": "late-banner-fix",
+      "title": "Which change prevents CLS from a consent banner inserted above the article?",
+      "description": "The banner appears two seconds after page load and pushes the article down.",
+      "type": "single-choice",
+      "options": [
+        { "text": "Reserve space from the start, or use an overlay that does not move the article", "isCorrect": true },
+        { "text": "Animate the article downward more slowly", "isCorrect": false },
+        { "text": "Add `loading=\"lazy\"` to the banner", "isCorrect": false },
+        { "text": "Increase the banner's `z-index` while still inserting it in normal flow", "isCorrect": false }
+      ],
+      "explanation": "Slowing the movement does not prevent a layout shift. Reserve the banner's space in the initial layout, or show it as an overlay that leaves the article in place. An overlay still needs to keep important controls visible and accessible.",
+      "references": "[web.dev: Optimize CLS, avoid unprompted content insertion](https://web.dev/articles/optimize-cls#avoid_inserting_new_content_without_a_user_interaction)"
+    },
+    {
+      "id": "delayed-user-response-shift",
+      "title": "Why can a panel expansion 800 ms after a click still add to CLS?",
+      "type": "single-choice",
+      "options": [
+        { "text": "The 500 ms recent-input window has ended", "isCorrect": true },
+        { "text": "Every shift caused by a click is excluded for the rest of the visit", "isCorrect": false },
+        { "text": "The shift is excluded whenever its score is 0.1 or less", "isCorrect": false },
+        { "text": "A delayed shift counts only when it uses a CSS animation", "isCorrect": false }
+      ],
+      "explanation": "A shift within 500 ms of a discrete input can be excluded as expected. At 800 ms, that window has passed. Reserve the space or add a placeholder as soon as the user clicks.",
+      "references": "[web.dev: CLS, expected and unexpected shifts](https://web.dev/articles/cls#expected_versus_unexpected_layout_shifts)"
+    },
+    {
+      "id": "scroll-does-not-exempt-shift",
+      "title": "Does a layout shift triggered shortly after scrolling automatically receive the recent-input exclusion?",
+      "type": "single-choice",
+      "options": [
+        { "text": "No. Scrolling is not a discrete input for this exclusion", "isCorrect": true },
+        { "text": "Yes. Every scroll creates a permanent CLS exemption", "isCorrect": false },
+        { "text": "Yes, but only on desktop", "isCorrect": false },
+        { "text": "No, because scrolling resets CLS to zero instead", "isCorrect": false }
+      ],
+      "explanation": "The `hadRecentInput` flag covers discrete input such as a click, tap, or key press. It does not cover scrolling. Lazy content that appears during a scroll can add to CLS if it moves visible content.",
+      "references": "[web.dev: CLS, user-initiated shifts](https://web.dev/articles/cls#user-initiated_layout_shifts)"
+    },
+    {
+      "id": "calculate-layout-shift",
+      "title": "What is the layout-shift score when impact fraction is 0.6 and distance fraction is 0.3?",
+      "description": "Enter the exact decimal number.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [0.18]
+      },
+      "explanation": "Multiply the two fractions: `0.6 × 0.3 = 0.18`. A layout-shift score is unitless.",
+      "references": "[web.dev: CLS layout-shift score](https://web.dev/articles/cls#layout_shift_score)"
+    },
+    {
+      "id": "cls-session-window",
+      "title": "What is CLS when two separate session windows score 0.12 and 0.08?",
+      "description": "Assume each burst forms its own session window and no other shifts occur.",
+      "type": "single-choice",
+      "options": [
+        { "text": "0.12", "isCorrect": true },
+        { "text": "0.20", "isCorrect": false },
+        { "text": "0.08", "isCorrect": false },
+        { "text": "1.20", "isCorrect": false }
+      ],
+      "explanation": "CLS takes the highest session-window score, so the answer is 0.12. A session window groups shifts less than one second apart and lasts no more than five seconds. Scores from separate windows are not added together.",
+      "references": "[web.dev: How CLS groups layout shifts](https://web.dev/articles/cls#what_is_cls)"
+    },
+    {
+      "id": "transform-animation-cls",
+      "title": "Which animation strategy is least likely to create layout shifts?",
+      "type": "single-choice",
+      "options": [
+        { "text": "Animate `transform` while keeping the element's layout box stable", "isCorrect": true },
+        { "text": "Animate `top` on an in-flow element so siblings move every frame", "isCorrect": false },
+        { "text": "Repeatedly change an in-flow banner's height", "isCorrect": false },
+        { "text": "Insert new content above the focused control during the animation", "isCorrect": false }
+      ],
+      "explanation": "A transform changes how an element is drawn without changing its normal-flow layout box. Properties such as `top` or `height` can move other content and create layout shifts. You should still respect `prefers-reduced-motion`.",
+      "references": "[web.dev: Optimize CLS, animations](https://web.dev/articles/optimize-cls#animations)"
+    },
+    {
+      "id": "font-display-swap-tradeoff",
+      "title": "What tradeoff does `font-display: swap` make?",
+      "type": "single-choice",
+      "options": [
+        { "text": "It shows fallback text quickly, but a later web-font swap can shift layout", "isCorrect": true },
+        { "text": "It keeps text invisible forever if the font is slow", "isCorrect": false },
+        { "text": "It guarantees the fallback and web font have identical metrics", "isCorrect": false },
+        { "text": "It prevents the font request from starting", "isCorrect": false }
+      ],
+      "explanation": "`swap` shows fallback text almost immediately and allows the web font to replace it later. If the two fonts have different metrics, the swap can change line breaks and add to CLS.",
+      "references": "[web.dev: Choose a `font-display` strategy](https://web.dev/articles/font-best-practices#choose_an_appropriate_font-display_strategy)"
+    },
+    {
+      "id": "font-display-optional-tradeoff",
+      "title": "Why can `font-display: optional` improve layout stability?",
+      "type": "single-choice",
+      "options": [
+        { "text": "If the font is not ready after a short block period, the browser keeps the fallback for that visit", "isCorrect": true },
+        { "text": "It downloads every font before parsing HTML", "isCorrect": false },
+        { "text": "It converts text into an image with fixed dimensions", "isCorrect": false },
+        { "text": "It forces all browsers to use the web font immediately", "isCorrect": false }
+      ],
+      "explanation": "`optional` has a short block period and no later swap period. If the web font is not ready in time, the page keeps the fallback for that visit. This avoids a late font swap, but the user may not see the brand font.",
+      "references": "[web.dev: Best practices for `font-display`](https://web.dev/articles/font-best-practices#choose_an_appropriate_font-display_strategy)"
+    },
+    {
+      "id": "font-metric-overrides",
+      "title": "Which techniques can reduce layout movement when a fallback font is replaced?",
+      "type": "multiple-choice",
+      "options": [
+        { "text": "Choose a fallback font with similar metrics", "isCorrect": true },
+        { "text": "Use `size-adjust` and other metric overrides to tune the fallback", "isCorrect": true },
+        { "text": "Load a critical font early enough for the first paint", "isCorrect": true },
+        { "text": "Intentionally choose a much wider fallback font", "isCorrect": false },
+        { "text": "Remove all line-height constraints after the swap", "isCorrect": false }
+      ],
+      "explanation": "A well-matched fallback changes less when the web font arrives. CSS metric descriptors can tune its size and vertical metrics. If the web font is ready for the first paint, there is no visible swap.",
+      "references": "[web.dev: Optimize CLS, web fonts](https://web.dev/articles/optimize-cls#web_fonts)\n\n[web.dev: Best practices for fonts](https://web.dev/articles/font-best-practices)"
+    },
+    {
+      "id": "lab-versus-field-purpose",
+      "title": "How should a team interpret lab and field performance data?",
+      "type": "single-choice",
+      "options": [
+        { "text": "Use field data to measure real visits and lab data to reproduce and diagnose problems", "isCorrect": true },
+        { "text": "Discard field data whenever one Lighthouse run is faster", "isCorrect": false },
+        { "text": "Average a Lighthouse score and a CrUX percentile into a new Core Web Vital", "isCorrect": false },
+        { "text": "Treat lab and field values as invalid unless they are identical", "isCorrect": false }
+      ],
+      "explanation": "Lab tests use controlled conditions, which makes them repeatable and useful for debugging. Field data records real visits across many conditions. When the numbers differ, check the tested device, network, cache state, page scope, and user behavior.",
+      "references": "[web.dev: Core Web Vitals workflows with Google tools](https://web.dev/articles/vitals-tools)\n\n[web.dev: Why lab and field data can be different](https://web.dev/articles/lab-and-field-data-differences)"
+    },
+    {
+      "id": "post-load-cls-field-worse",
+      "title": "Why might field CLS be poor while a default Lighthouse load reports almost no CLS?",
+      "type": "single-choice",
+      "options": [
+        { "text": "Real visits trigger post-load shifts that the basic lab run never sees", "isCorrect": true },
+        { "text": "Field CLS adds network latency directly to the unitless score", "isCorrect": false },
+        { "text": "Lighthouse measures INP and labels it CLS", "isCorrect": false },
+        { "text": "CrUX counts only shifts before the initial HTML arrives", "isCorrect": false }
+      ],
+      "explanation": "A basic Lighthouse run mainly covers the initial load. Field CLS covers the full page visit, including delayed content and single-page app transitions. Reproduce the real flow in DevTools or a Lighthouse user flow, and use RUM attribution to find the elements that moved.",
+      "references": "[web.dev: CLS in lab tools and the field](https://web.dev/articles/optimize-cls#cls_in_lab_tools_versus_field)"
+    },
+    {
+      "id": "field-faster-than-cold-lab",
+      "title": "Why can field LCP be better than a throttled cold-cache lab result?",
+      "type": "multiple-choice",
+      "options": [
+        { "text": "Some real visitors have relevant assets cached", "isCorrect": true },
+        { "text": "Some visitors use faster devices or networks than the lab profile", "isCorrect": true },
+        { "text": "Repeat navigations can differ from a lab's fresh navigation", "isCorrect": true },
+        { "text": "Field LCP excludes TTFB by definition", "isCorrect": false },
+        { "text": "Lab tools always add exactly two seconds to LCP", "isCorrect": false }
+      ],
+      "explanation": "A lab run uses one device and network profile, often with a cold cache. Field data includes many devices, connections, cache states, and navigation histories. LCP still includes TTFB-related delays in the field.",
+      "references": "[web.dev: Why lab and field data differ](https://web.dev/articles/lab-and-field-data-differences#lab_data_versus_field_data)"
+    },
+    {
+      "id": "crux-change-lag",
+      "title": "Why might CrUX still show the old performance pattern several days after a successful release?",
+      "type": "single-choice",
+      "options": [
+        { "text": "CrUX reports a rolling 28-day field-data window, so older visits remain in the distribution", "isCorrect": true },
+        { "text": "CrUX permanently freezes data on the first day a URL is seen", "isCorrect": false },
+        { "text": "Core Web Vitals can only be recalculated once per year", "isCorrect": false },
+        { "text": "A release cannot affect field data unless Lighthouse also changes its source code", "isCorrect": false }
+      ],
+      "explanation": "CrUX uses a rolling 28-day window. For a while, the distribution still includes visits from before the release. Lab tests and your own RUM can show the change sooner.",
+      "references": "[web.dev: When not to use CrUX](https://web.dev/articles/vitals-tools#when_not_to_use_crux)"
+    },
+    {
+      "id": "different-lcp-elements",
+      "title": "Why can the LCP element in one lab trace differ from LCP elements seen in field RUM?",
+      "type": "multiple-choice",
+      "options": [
+        { "text": "Viewport sizes can change which content is visible and largest", "isCorrect": true },
+        { "text": "Personalization or experiments can render different content", "isCorrect": true },
+        { "text": "Cookie banners or logged-in state can alter the page", "isCorrect": true },
+        { "text": "LCP is required to use the same DOM node for every visit", "isCorrect": false },
+        { "text": "The field always chooses the earliest text node regardless of size", "isCorrect": false }
+      ],
+      "explanation": "LCP is calculated for each visit from the content visible in that viewport. Responsive layouts, personalized content, experiments, consent UI, and signed-in state can produce a different LCP element. RUM element attribution can show which element won for each visit.",
+      "references": "[web.dev: Why lab and field data can have different LCP elements](https://web.dev/articles/lab-and-field-data-differences#different_lcp_elements)"
+    },
+    {
+      "id": "inp-lab-field-gap",
+      "title": "Why can a single page-load lab audit miss poor field INP?",
+      "type": "single-choice",
+      "options": [
+        { "text": "INP depends on real interactions across the visit, many of which a basic load audit never performs", "isCorrect": true },
+        { "text": "INP can only be measured before HTML parsing begins", "isCorrect": false },
+        { "text": "Field INP is calculated from image dimensions", "isCorrect": false },
+        { "text": "Lab tools cannot record main-thread work", "isCorrect": false }
+      ],
+      "explanation": "A default navigation audit can expose blocking work during startup, but it may perform no interactions at all. Field attribution shows which real interaction was slow. You can then reproduce that interaction in a targeted lab trace.",
+      "references": "[web.dev: Find slow interactions in the field](https://web.dev/articles/find-slow-interactions-in-the-field)\n\n[web.dev: Core Web Vitals workflows](https://web.dev/articles/vitals-tools)"
+    },
+    {
+      "id": "performance-investigation-order",
+      "title": "What should you do when field INP is poor but the homepage lab run looks fast?",
+      "type": "single-choice",
+      "options": [
+        { "text": "Use field attribution to find the slow interaction, then reproduce it in a controlled trace", "isCorrect": true },
+        { "text": "Optimize the homepage hero image without checking which interaction is slow", "isCorrect": false },
+        { "text": "Delete field measurements because the lab run is reproducible", "isCorrect": false },
+        { "text": "Run the identical no-interaction audit repeatedly and average its INP", "isCorrect": false }
+      ],
+      "explanation": "Field data shows that users have a problem, but aggregated CrUX data may not show its cause. Use RUM attribution to find the affected route, device group, and interaction. Then reproduce that path in DevTools and inspect the main-thread trace.",
+      "references": "[web.dev: Find slow interactions in the field](https://web.dev/articles/find-slow-interactions-in-the-field)\n\n[web.dev: Core Web Vitals workflows with Google tools](https://web.dev/articles/vitals-tools)"
+    }
+  ]
+}
