@@ -1,0 +1,818 @@
+{
+  "schemaVersion": 1,
+  "id": "react-when-does-this-rerender",
+  "title": "React: When Does This Re-render?",
+  "description": "Thirty-two code-driven questions about render snapshots, Effect synchronization, identity, memoization, refs, React 19 Server and Client Components, `use()`, and Suspense. Assume React 19.2 semantics and the environment stated in each Question.",
+  "language": "en",
+  "tags": ["react", "react-19", "rendering", "effects", "suspense", "server-components"],
+  "questions": [
+    {
+      "id": "strict-root-mount-sequence",
+      "title": "What gets logged when this component first mounts in root-level Strict Mode?",
+      "description": "Assume a development build, no Fast Refresh, and `<StrictMode>` at the root.\n\n```tsx\nfunction Probe() {\n  console.log('render');\n  useEffect(() => {\n    console.log('setup');\n    return () => console.log('cleanup');\n  }, []);\n  return null;\n}\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`render → setup`",
+          "isCorrect": false
+        },
+        {
+          "text": "`render → render → setup → cleanup → setup`",
+          "isCorrect": true
+        },
+        {
+          "text": "`render → setup → render → cleanup`",
+          "isCorrect": false
+        },
+        {
+          "text": "`render → render → setup → setup`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "In development, root-level Strict Mode calls the component body twice to catch impure render logic. It then checks the Effect by running `setup`, `cleanup`, and `setup` again. Neither check runs in production.",
+      "references": "[React: `<StrictMode>`](https://react.dev/reference/react/StrictMode)"
+    },
+    {
+      "id": "nested-strict-mode-effect",
+      "title": "What changes when Strict Mode wraps only part of the app?",
+      "description": "The root is not wrapped in `<StrictMode>`, but `<Probe />` is inside a nested `<StrictMode>`. `Probe` logs from its component body and from a `useEffect(..., [])` setup and cleanup. Assume a development build.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "React calls the component body an extra time, but skips the Effect's extra initial setup-cleanup-setup cycle.",
+          "isCorrect": true
+        },
+        {
+          "text": "React runs no Strict Mode checks unless `<StrictMode>` is at the root.",
+          "isCorrect": false
+        },
+        {
+          "text": "The Effect receives the extra initial cycle, but the component body renders only once.",
+          "isCorrect": false
+        },
+        {
+          "text": "The subtree gets every check that root-level Strict Mode would run.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The nested boundary still checks render purity by calling the component body twice. It skips the extra Effect cycle on initial mount. Otherwise, child Effects would run twice while parent Effects ran once, an order that cannot happen in production.",
+      "references": "[React: Enabling Strict Mode for a part of the app](https://react.dev/reference/react/StrictMode#enabling-strict-mode-for-a-part-of-the-app)"
+    },
+    {
+      "id": "strict-updater-function",
+      "title": "After one click, what count is committed, and how many times can the updater log?",
+      "description": "Assume development Strict Mode and an initial `count` of `0`.\n\n```tsx\n<button onClick={() => {\n  setCount(c => {\n    console.log('updater', c);\n    return c + 1;\n  });\n}}>Increment</button>\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The committed count is `2`, because both updater calls are applied.",
+          "isCorrect": false
+        },
+        {
+          "text": "The committed count is `1`. React may call the updater twice to check purity, then ignore one result.",
+          "isCorrect": true
+        },
+        {
+          "text": "The committed count remains `0`, because updater functions cannot run in Strict Mode.",
+          "isCorrect": false
+        },
+        {
+          "text": "The committed count is `1`, and React guarantees exactly one updater call in development.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "In development Strict Mode, React may call an updater twice to check whether it is pure. It ignores one result, so `c => c + 1` still changes `0` to `1`. Keep side effects out of updater functions.",
+      "references": "[React: `useState` caveats](https://react.dev/reference/react/useState#caveats)"
+    },
+    {
+      "id": "stale-interval-closure",
+      "title": "After `increment` changes to `5`, what values does the interval keep using?",
+      "description": "The lint warning is suppressed. Initially, `count` is `0` and `increment` is `1`. After the interval starts, the user changes `increment` to `5`.\n\n```tsx\nuseEffect(() => {\n  const id = setInterval(() => {\n    setCount(count + increment);\n  }, 1000);\n  return () => clearInterval(id);\n}, []);\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Each tick uses the latest `count` and latest `increment`, so the count grows by `5`.",
+          "isCorrect": false
+        },
+        {
+          "text": "It keeps `count = 0` and `increment = 1` from the first render, so every tick requests `setCount(1)`.",
+          "isCorrect": true
+        },
+        {
+          "text": "Changing `increment` automatically recreates the interval even though the dependency list is empty.",
+          "isCorrect": false
+        },
+        {
+          "text": "The interval callback cannot capture state variables, so React throws before the first tick.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Because the dependency list is empty, the Effect keeps the callback from the first render. That callback captured `count = 0` and `increment = 1`, so it keeps requesting `1`. Suppressing the lint warning hid the stale closure instead of fixing it.",
+      "references": "[React: Removing Effect Dependencies, stale interval example](https://react.dev/learn/removing-effect-dependencies)"
+    },
+    {
+      "id": "effect-resynchronization-order",
+      "title": "When `roomId` changes, what runs first?",
+      "description": "Assume a production build. The component was committed with `roomId = 'general'`, then re-renders and commits with `roomId = 'travel'`.\n\n```tsx\nuseEffect(() => {\n  connect(roomId);\n  return () => disconnect(roomId);\n}, [roomId]);\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`connect('travel')`, then `disconnect('general')`",
+          "isCorrect": false
+        },
+        {
+          "text": "`disconnect('general')`, then `connect('travel')`",
+          "isCorrect": true
+        },
+        {
+          "text": "Only `connect('travel')`; cleanup runs only on unmount.",
+          "isCorrect": false
+        },
+        {
+          "text": "Only `disconnect('travel')`; the closure reads the new prop during cleanup.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "React first runs the cleanup from the previous Effect. That cleanup captured `roomId = 'general'`, so it disconnects `general`. React then runs the new setup with `roomId = 'travel'`.",
+      "references": "[React: Lifecycle of Reactive Effects](https://react.dev/learn/lifecycle-of-reactive-effects)"
+    },
+    {
+      "id": "redundant-derived-state",
+      "title": "How many times does this component render during its initial production mount?",
+      "description": "Assume `firstName = 'Ada'`, `lastName = 'Lovelace'`, and no other updates.\n\n```tsx\nconst [fullName, setFullName] = useState('');\nuseEffect(() => {\n  setFullName(firstName + ' ' + lastName);\n}, [firstName, lastName]);\nreturn <p>{fullName}</p>;\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "One render, because Effects run before React calculates JSX.",
+          "isCorrect": false
+        },
+        {
+          "text": "Two: one with `fullName = ''`, then another after the Effect updates it.",
+          "isCorrect": true
+        },
+        {
+          "text": "Three renders, because every Effect always causes two updates.",
+          "isCorrect": false
+        },
+        {
+          "text": "An infinite loop, because every Effect necessarily re-runs after its own state update.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The first render uses the empty string. After React commits it, the Effect sets `fullName` and causes a second render. Since `fullName` comes entirely from current props or state, calculate it during render instead.",
+      "references": "[React: You Might Not Need an Effect, updating state based on props or state](https://react.dev/learn/you-might-not-need-an-effect#updating-state-based-on-props-or-state)"
+    },
+    {
+      "id": "derive-during-render",
+      "title": "What is the simplest way to remove the extra render?",
+      "description": "Replace redundant `fullName` state that is always `firstName + ' ' + lastName`.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`const fullName = firstName + ' ' + lastName;` in the component body",
+          "isCorrect": true
+        },
+        {
+          "text": "A second Effect that copies `fullName` into another state variable",
+          "isCorrect": false
+        },
+        {
+          "text": "A ref updated after every commit and read during rendering",
+          "isCorrect": false
+        },
+        {
+          "text": "A changing `key` on the `<p>` that displays the name",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Calculate values from current props or state during render. React already renders again when `firstName` or `lastName` changes, so the plain expression stays current without extra state or an Effect.",
+      "references": "[React: You Might Not Need an Effect](https://react.dev/learn/you-might-not-need-an-effect)"
+    },
+    {
+      "id": "timeout-state-snapshot",
+      "title": "After one click, what does the timeout log?",
+      "description": "The current render has `number = 0`.\n\n```tsx\nfunction handleClick() {\n  setNumber(number + 5);\n  setTimeout(() => console.log(number), 1000);\n}\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`0`, because the handler and its timeout close over that render's state snapshot",
+          "isCorrect": true
+        },
+        {
+          "text": "`5`, because state variables mutate immediately when their setter is called",
+          "isCorrect": false
+        },
+        {
+          "text": "`undefined`, because state cannot be read asynchronously",
+          "isCorrect": false
+        },
+        {
+          "text": "Either `0` or `5`; React intentionally leaves this race unspecified",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Each render gets its own state snapshot. `setNumber(5)` schedules another render but does not change `number` inside this handler. The timeout captured the render where `number` was `0`, so it logs `0` even after the UI updates.",
+      "references": "[React: State as a Snapshot](https://react.dev/learn/state-as-a-snapshot)"
+    },
+    {
+      "id": "batched-replacement-updates",
+      "title": "Starting from `number = 0`, what appears after this click?",
+      "description": "```tsx\nsetNumber(number + 1);\nsetNumber(number + 1);\nsetNumber(number + 1);\n```",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [1]
+      },
+      "explanation": "All three calls read the same snapshot, where `number` is `0`. Each call therefore queues a replacement with `1`. React batches them, and the final state is `1`. Use updater functions when one queued update must build on another.",
+      "references": "[React: Queueing a Series of State Updates](https://react.dev/learn/queueing-a-series-of-state-updates)"
+    },
+    {
+      "id": "mixed-state-update-queue",
+      "title": "Starting from `number = 0`, what value does this update queue produce?",
+      "description": "```tsx\nsetNumber(number + 5);\nsetNumber(n => n + 1);\nsetNumber(42);\n```",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [42]
+      },
+      "explanation": "The first call replaces the state with `5`. The updater turns `5` into `6`, and the last call replaces that result with `42`. A direct value replaces the queued result; an updater receives the result calculated so far.",
+      "references": "[React: Queueing a Series of State Updates, replacing state after updating it](https://react.dev/learn/queueing-a-series-of-state-updates#what-happens-if-you-replace-state-after-updating-it)"
+    },
+    {
+      "id": "same-state-object-is",
+      "title": "What happens when state is set to the same primitive value?",
+      "description": "The committed state is already `'ready'`. An event calls `setStatus('ready')` and schedules no other updates.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "React can skip rendering the component and its children because `Object.is('ready', 'ready')` is true.",
+          "isCorrect": true
+        },
+        {
+          "text": "React must commit a new DOM tree because every setter call represents a distinct state version.",
+          "isCorrect": false
+        },
+        {
+          "text": "React throws because setting state to its current value is forbidden.",
+          "isCorrect": false
+        },
+        {
+          "text": "React skips the component but always re-renders all of its children.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "React compares the new value with the current one using `Object.is`. If they match, React can skip the component and its children. React may still call the component and discard its output, so render code must stay pure and must not depend on an exact call count.",
+      "references": "[React: `useState` set-function caveats](https://react.dev/reference/react/useState#setstate-caveats)"
+    },
+    {
+      "id": "parent-renders-child",
+      "title": "Does the child render when only the parent's local state changes?",
+      "description": "Assume React Compiler is off. `Child` is an ordinary function component, not wrapped in `memo`. The parent increments `parentCount`, while `label` stays `'Save'`.\n\n```tsx\nfunction Parent() {\n  const [parentCount, setParentCount] = useState(0);\n  return <Child label=\"Save\" />;\n}\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Yes. Without memoization, React renders child components when their parent renders.",
+          "isCorrect": true
+        },
+        {
+          "text": "No. React automatically skips every child whose prop values are unchanged.",
+          "isCorrect": false
+        },
+        {
+          "text": "Only if `Child` has its own state.",
+          "isCorrect": false
+        },
+        {
+          "text": "Only in production; development builds cache all child output.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Without React Compiler or `memo`, a parent render also renders its child components. Unchanged props do not create an automatic bailout. `memo` can skip `Child` when its props stay the same, but it is a performance optimization.",
+      "references": "[React: `memo`, skipping re-rendering when props are unchanged](https://react.dev/reference/react/memo#skipping-re-rendering-when-props-are-unchanged)"
+    },
+    {
+      "id": "memo-inline-object",
+      "title": "Why does this memoized child still render after every parent update?",
+      "description": "Assume React Compiler is off.\n\n```tsx\nconst Chart = memo(function Chart({ options }) {\n  // expensive render\n});\n\nfunction Dashboard({ theme }) {\n  const [tick, setTick] = useState(0);\n  return <Chart options={{ theme }} />;\n}\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The object literal creates a new `options` reference on every parent render, so the shallow prop comparison sees a change.",
+          "isCorrect": true
+        },
+        {
+          "text": "`memo` only works for class components.",
+          "isCorrect": false
+        },
+        {
+          "text": "A memoized component must always render when any ancestor has state.",
+          "isCorrect": false
+        },
+        {
+          "text": "React compares object props by recursively comparing every nested property, and `theme` is considered unstable.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`memo` compares each prop with `Object.is`; it does not compare nested values. Every `{ theme }` expression creates a new object, so the old and new `options` props differ even when `theme` is unchanged. Stabilize the prop only if profiling shows that skipping `Chart` helps.",
+      "references": "[React: Minimizing props changes for `memo`](https://react.dev/reference/react/memo#minimizing-props-changes)"
+    },
+    {
+      "id": "cheap-usememo-default",
+      "title": "What is the clearest default for this unmeasured `useMemo`?",
+      "description": "No memoized child consumes `total`, and profiling has found no expensive calculation.\n\n```tsx\nconst total = useMemo(() => price + tax, [price, tax]);\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Use `const total = price + tax;` unless profiling shows that caching helps.",
+          "isCorrect": true
+        },
+        {
+          "text": "Keep `useMemo`; every arithmetic expression causes a separate React render without it.",
+          "isCorrect": false
+        },
+        {
+          "text": "Move `total` into state and synchronize it in an Effect.",
+          "isCorrect": false
+        },
+        {
+          "text": "Replace it with a ref so changes to `price` and `tax` update the UI without rendering.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`useMemo` still has work to do: React tracks the Hook and compares its dependencies. A simple addition is clearer to calculate directly. Use `useMemo` as a performance optimization when profiling shows that an expensive calculation or stable reference matters.",
+      "references": "[React: `useMemo`, skipping expensive recalculations](https://react.dev/reference/react/useMemo#skipping-expensive-recalculations)"
+    },
+    {
+      "id": "usememo-not-semantic-guarantee",
+      "title": "Which `useMemo` assumptions are unsafe?",
+      "description": "Select every unsafe assumption.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "My component may rely on React keeping the cached value forever.",
+          "isCorrect": true
+        },
+        {
+          "text": "The cache must survive if the component suspends during its initial mount.",
+          "isCorrect": true
+        },
+        {
+          "text": "The calculation function should be pure.",
+          "isCorrect": false
+        },
+        {
+          "text": "React compares dependencies with `Object.is`.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`useMemo` is a performance optimization, not storage. React may drop the cached value, including when the component suspends during its initial mount. Your code must still work if React recalculates it. The calculation should be pure, and React does compare dependencies with `Object.is`.",
+      "references": "[React: `useMemo` reference and caveats](https://react.dev/reference/react/useMemo#reference)"
+    },
+    {
+      "id": "strict-usememo-impurity",
+      "title": "What problem does Strict Mode make easier to spot here?",
+      "description": "Assume `todos` is a prop owned by the parent.\n\n```tsx\nconst visible = useMemo(() => {\n  todos.push({ id: 'temp', text: 'Inspect' });\n  return todos.filter(todo => !todo.done);\n}, [todos]);\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The calculation mutates a prop. Development Strict Mode may call it twice, making the duplicate mutation obvious.",
+          "isCorrect": true
+        },
+        {
+          "text": "`useMemo` makes mutating props safe because the result is cached.",
+          "isCorrect": false
+        },
+        {
+          "text": "Strict Mode freezes all arrays, so `push` is silently ignored.",
+          "isCorrect": false
+        },
+        {
+          "text": "The only bug is that `filter` cannot be used inside `useMemo`.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A `useMemo` calculation must be pure. This one changes the `todos` array owned by the parent. In development Strict Mode, React calls the calculation twice and ignores one result, so the duplicate temporary item exposes the mutation. Mutating a new local array would be safe.",
+      "references": "[React: `useMemo` troubleshooting, calculation runs twice](https://react.dev/reference/react/useMemo#my-calculation-runs-twice-on-every-re-render)"
+    },
+    {
+      "id": "interval-id-ref-or-state",
+      "title": "Where should an interval ID usually live?",
+      "description": "The ID is needed only to call `clearInterval`; it is never displayed and does not affect rendered output.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "In a ref, because changing the ID should not request a render",
+          "isCorrect": true
+        },
+        {
+          "text": "In state, because every mutable value must trigger a render",
+          "isCorrect": false
+        },
+        {
+          "text": "In a new local variable recreated on every render",
+          "isCorrect": false
+        },
+        {
+          "text": "In `useMemo`, because it is the only API that can retain values",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A ref keeps the same object across renders, and changing `ref.current` does not trigger a render. That fits an interval ID, which is needed by event or cleanup code but never shown. Use state for values that affect the JSX.",
+      "references": "[React: `useRef`, referencing a value with a ref](https://react.dev/reference/react/useRef#referencing-a-value-with-a-ref)"
+    },
+    {
+      "id": "ref-counter-display",
+      "title": "Why is this ref-backed counter broken?",
+      "description": "```tsx\nfunction Counter() {\n  const countRef = useRef(0);\n  return (\n    <button onClick={() => countRef.current++}>\n      {countRef.current}\n    </button>\n  );\n}\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The ref changes, but ref writes do not request a render. Reading it for rendered output is also unsupported; use state instead.",
+          "isCorrect": true
+        },
+        {
+          "text": "It is correct as written because every change to `.current` is reactive.",
+          "isCorrect": false
+        },
+        {
+          "text": "Refs may store DOM nodes only, so `useRef(0)` throws.",
+          "isCorrect": false
+        },
+        {
+          "text": "Wrapping `{countRef.current}` in `useMemo` would make the ref reactive.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Writing to `countRef.current` does not tell React to render again. React also warns against reading or writing refs during render, except for initialization. Since the count appears in the JSX, it belongs in state.",
+      "references": "[React: Differences between refs and state](https://react.dev/learn/referencing-values-with-refs#differences-between-refs-and-state)\n\n[React: `useRef` caveats](https://react.dev/reference/react/useRef#caveats)"
+    },
+    {
+      "id": "index-key-filter-bug",
+      "title": "After row `A` is deleted, where can `hello` appear?",
+      "description": "Rows `A`, `B`, and `C` render uncontrolled inputs with `key={index}`. The learner types `hello` in row `B`, then row `A` is deleted. The remaining data order is `B`, `C`.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "In row `C`, because the input identity stays with index `1` instead of item `B`",
+          "isCorrect": true
+        },
+        {
+          "text": "The draft must stay with row `B`, because React deep-compares each row's data.",
+          "isCorrect": false
+        },
+        {
+          "text": "Both remaining rows receive the draft because index keys duplicate state.",
+          "isCorrect": false
+        },
+        {
+          "text": "All input state is always reset whenever any list item is removed, regardless of keys.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Before deletion, `B` has key `1`. After `A` is removed, `C` gets key `1`, so React can reuse `B`'s input for `C`. The draft follows the index and appears on the wrong row. Use a stable data ID such as `key={row.id}`.",
+      "references": "[React: Rendering Lists, why keys are needed](https://react.dev/learn/rendering-lists#why-does-react-need-keys)"
+    },
+    {
+      "id": "random-key-remount",
+      "title": "Why can `key={Math.random()}` erase an input after every parent render?",
+      "description": "Each list row contains local state and an input.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The new key makes React unmount the old row and mount a different one.",
+          "isCorrect": true
+        },
+        {
+          "text": "Random numbers are not valid JavaScript values for keys.",
+          "isCorrect": false
+        },
+        {
+          "text": "Keys are passed into the input's `value` prop automatically.",
+          "isCorrect": false
+        },
+        {
+          "text": "React sorts rows numerically by key before every render.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A random key never matches the previous render. React therefore recreates the component and its DOM instead of updating the existing row. That loses local state and uncontrolled input. Use a stable key from the data.",
+      "references": "[React: Rendering Lists, key pitfalls](https://react.dev/learn/rendering-lists#rules-of-keys)"
+    },
+    {
+      "id": "key-resets-form",
+      "title": "What happens to `ProfileForm` state when `userId` changes?",
+      "description": "```tsx\n<ProfileForm key={userId} userId={userId} />\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "React treats the new key as a new identity, discards the old form state, and mounts a fresh form.",
+          "isCorrect": true
+        },
+        {
+          "text": "React preserves all local state because the component type and JSX position are unchanged.",
+          "isCorrect": false
+        },
+        {
+          "text": "Only Effect state resets; `useState` values are preserved.",
+          "isCorrect": false
+        },
+        {
+          "text": "The key changes the `userId` prop but has no relationship to state identity.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "React usually ties state to a component's position in its parent. A key becomes part of that identity. When `userId` changes, React removes the old keyed form and creates a new one with fresh local state.",
+      "references": "[React: Preserving and Resetting State, resetting state with a key](https://react.dev/learn/preserving-and-resetting-state#option-2-resetting-state-with-a-key)"
+    },
+    {
+      "id": "key-is-not-prop",
+      "title": "What does `Row` receive as `props.key`?",
+      "description": "```tsx\n<Row key={item.id} name={item.name} />\n```\n\n`Row` tries to log `props.key`.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`undefined`; `key` is a React hint and must be passed separately if the component needs the ID.",
+          "isCorrect": true
+        },
+        {
+          "text": "The value of `item.id`, because every JSX attribute becomes a prop.",
+          "isCorrect": false
+        },
+        {
+          "text": "The row's current array index, regardless of `item.id`.",
+          "isCorrect": false
+        },
+        {
+          "text": "A generated globally unique React identifier.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "React uses `key` to match siblings and does not pass it to the component. If `Row` needs the ID, pass it as a normal prop: `<Row key={item.id} rowId={item.id} />`.",
+      "references": "[React: Rendering Lists, `key` is not a prop](https://react.dev/learn/rendering-lists#rules-of-keys)"
+    },
+    {
+      "id": "server-component-interactivity",
+      "title": "How should a Server Component add an interactive toggle?",
+      "description": "`ProductPage` is a React 19 Server Component that reads from a database. It now needs a button with local `useState` for expanded state.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Keep the database read in the Server Component and render a Client Component marked with `'use client'` for the toggle.",
+          "isCorrect": true
+        },
+        {
+          "text": "Call `useState` directly in the Server Component; Hooks are automatically serialized to the browser.",
+          "isCorrect": false
+        },
+        {
+          "text": "Add `'use server'` to the component so browser event handlers become available.",
+          "isCorrect": false
+        },
+        {
+          "text": "Server Components cannot render Client Components anywhere below them.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Server Components are not sent to the browser, so they cannot use interactive APIs such as `useState`. Keep the database work in `ProductPage` and move the button and local state into a Client Component.",
+      "references": "[React: Server Components, adding interactivity](https://react.dev/reference/rsc/server-components#adding-interactivity-to-server-components)"
+    },
+    {
+      "id": "use-server-meaning",
+      "title": "What does the `'use server'` directive mark?",
+      "description": "Use React 19's definition, not a framework-specific shortcut.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Server Functions that client code may call",
+          "isCorrect": true
+        },
+        {
+          "text": "Every Server Component; Server Components require this directive",
+          "isCorrect": false
+        },
+        {
+          "text": "A component that must render only during static site generation",
+          "isCorrect": false
+        },
+        {
+          "text": "A Client Component whose Effects execute on the server",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`'use server'` marks async Server Functions that client code may call through the framework. It does not mark Server Components; React has no Server Component directive. A file does not become a callable Server Function merely because it lacks `'use client'`.",
+      "references": "[React: Server Components, there is no directive for Server Components](https://react.dev/reference/rsc/server-components#adding-interactivity-to-server-components)\n\n[React: `'use server'`](https://react.dev/reference/rsc/use-server)"
+    },
+    {
+      "id": "client-boundary-serializable-props",
+      "title": "Which props can cross from a Server Component to a Client Component?",
+      "description": "Select every value React lists as serializable across the boundary.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "A `Date` instance",
+          "isCorrect": true
+        },
+        {
+          "text": "A Promise that resolves to a serializable value",
+          "isCorrect": true
+        },
+        {
+          "text": "A React element passed as a slot such as `children`",
+          "isCorrect": true
+        },
+        {
+          "text": "An ordinary event-handler closure created in the Server Component",
+          "isCorrect": false
+        },
+        {
+          "text": "An instance of a custom class",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "React supports more than JSON at this boundary. `Date`, Promises, and Client or Server Component elements can cross it. A regular function cannot cross unless it is a Server Function, and custom class instances are unsupported. That rules out an inline server-created `onClick` handler.",
+      "references": "[React: `'use client'`, serializable types](https://react.dev/reference/rsc/use-client#serializable-types)"
+    },
+    {
+      "id": "use-client-boundary",
+      "title": "Does every file in a client-side subtree need `'use client'`?",
+      "description": "A module exporting `SearchBox` begins with `'use client'` and imports `SearchInput` from another module.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "No. The directive starts a client module subtree, so imported dependencies are client code too.",
+          "isCorrect": true
+        },
+        {
+          "text": "Yes. Every transitive module must repeat the directive before any import.",
+          "isCorrect": false
+        },
+        {
+          "text": "No, because the directive affects only event handlers and never module dependencies.",
+          "isCorrect": false
+        },
+        {
+          "text": "Yes, but only modules that render host elements such as `<input>`.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`'use client'` starts a client subtree in the module dependency graph. The marked module and its transitive dependencies run on the client, so imported files do not need to repeat the directive.",
+      "references": "[React: `'use client'`, how it marks client code](https://react.dev/reference/rsc/use-client#how-use-client-marks-client-code)"
+    },
+    {
+      "id": "use-promise-outcomes",
+      "title": "What happens when a component calls `use(resourcePromise)`?",
+      "description": "The component is inside a Suspense boundary and an Error Boundary. Select every correct outcome.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "While the Promise is pending, the component suspends and the nearest Suspense boundary can show its fallback.",
+          "isCorrect": true
+        },
+        {
+          "text": "When the Promise fulfills, `use` returns its resolved value and React can render the content.",
+          "isCorrect": true
+        },
+        {
+          "text": "When the Promise rejects, the nearest Error Boundary can display its fallback.",
+          "isCorrect": true
+        },
+        {
+          "text": "A pending Promise is represented as `undefined`, so the component must poll it in an Effect.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A pending Promise suspends the component, a fulfilled Promise supplies its value, and a rejected Promise reaches the nearest Error Boundary. Suspense handles the waiting UI; it does not turn a rejection into a value.",
+      "references": "[React: `use(promise)`](https://react.dev/reference/react/use#use-promise)"
+    },
+    {
+      "id": "conditional-use-and-try-catch",
+      "title": "Where may React's `use` API be called?",
+      "description": "Assume each call occurs inside a component.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Inside a conditional branch, as long as it is not wrapped in `try`/`catch`",
+          "isCorrect": true
+        },
+        {
+          "text": "Inside `try`/`catch`, because catching its internal suspension is the recommended error-boundary replacement",
+          "isCorrect": false
+        },
+        {
+          "text": "Only unconditionally at the top level, because `use` follows every Rule of Hooks exactly like `useState`",
+          "isCorrect": false
+        },
+        {
+          "text": "Outside a component at module scope, as long as the Promise is cached",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Despite its name, `use` is not a Hook, so it may appear in loops and conditions. It must still run inside a Component or Hook. Do not wrap it in `try`/`catch`; use an Error Boundary for rejected Promises.",
+      "references": "[React: `use` reference and caveats](https://react.dev/reference/react/use#reference)"
+    },
+    {
+      "id": "uncached-promise-in-render",
+      "title": "Why is creating this Promise during every Client Component render a bug?",
+      "description": "```tsx\nfunction Albums() {\n  const response = use(fetch('/api/albums'));\n  // ...\n}\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Each render creates a new Promise, so React cannot reuse it. Use a cache, a framework data source, or a Promise passed from the server.",
+          "isCorrect": true
+        },
+        {
+          "text": "`use` accepts contexts only; passing any Promise is a type error.",
+          "isCorrect": false
+        },
+        {
+          "text": "`fetch` resolves synchronously during render, blocking the main thread until JSON arrives.",
+          "isCorrect": false
+        },
+        {
+          "text": "The browser automatically deduplicates Promise identity, so no caching layer is needed.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`use` needs the same Promise instance across renders. Calling `fetch` here creates a new one each time, which can trigger an uncached-Promise warning and repeated suspension. Get the Promise from a Suspense-aware cache or framework, or pass it from a Server Component.",
+      "references": "[React: `use`, Promises passed to `use` must be cached](https://react.dev/reference/react/use#caveats)"
+    },
+    {
+      "id": "effect-fetch-does-not-suspend",
+      "title": "Will this Effect activate the surrounding Suspense fallback?",
+      "description": "```tsx\nfunction Results() {\n  const [data, setData] = useState(null);\n  useEffect(() => {\n    fetch('/api/results').then(r => r.json()).then(setData);\n  }, []);\n  return data ? <List data={data} /> : null;\n}\n```\n\n`Results` is inside `<Suspense fallback={<Spinner />}>`.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "No. Suspense does not detect a request started in an Effect; this component returns `null` until state updates.",
+          "isCorrect": true
+        },
+        {
+          "text": "Yes. Any pending `fetch` anywhere below a Suspense boundary activates its fallback.",
+          "isCorrect": false
+        },
+        {
+          "text": "Yes, but only in production builds.",
+          "isCorrect": false
+        },
+        {
+          "text": "No, because Suspense works only with lazy-loaded component code and never with data.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Suspense responds when rendering suspends, such as through `lazy`, `use` with a cached Promise, or a Suspense-enabled framework. This request starts after commit inside an Effect, so the boundary never sees it. The `data ? ... : null` branch controls the loading output.",
+      "references": "[React: `<Suspense>` caveats and activation](https://react.dev/reference/react/Suspense#caveats)"
+    },
+    {
+      "id": "suspended-initial-mount-state",
+      "title": "Does React keep state from a render that suspends before its first mount?",
+      "description": "A new subtree starts rendering, creates Hook state, and then suspends before its first mount commits. Its Promise later resolves.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "No. React retries the tree from scratch because the suspended render never mounted.",
+          "isCorrect": true
+        },
+        {
+          "text": "Yes. Every state value created during any attempted render is permanently retained.",
+          "isCorrect": false
+        },
+        {
+          "text": "Only ref state is preserved; `useState` and `useReducer` state are discarded.",
+          "isCorrect": false
+        },
+        {
+          "text": "Only production preserves it; development always discards it because of Strict Mode.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A render that suspends before its first commit never mounted. When the resource is ready, React retries the subtree from scratch and does not preserve state from the failed attempt. The same rule is one reason a `useMemo` cache is not reliable storage.",
+      "references": "[React: `<Suspense>` caveats](https://react.dev/reference/react/Suspense#caveats)"
+    },
+    {
+      "id": "transition-prevents-fallback-flash",
+      "title": "How can navigation keep visible content from flashing back to a Suspense fallback?",
+      "description": "The current page is visible. A navigation state update renders a new page that suspends, and replacing the visible layout with a large fallback would be jarring.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Wrap the navigation update in `startTransition` so React can keep the revealed content visible while the new page loads.",
+          "isCorrect": true
+        },
+        {
+          "text": "Move the navigation into `useEffect`; Effects can never activate Suspense.",
+          "isCorrect": false
+        },
+        {
+          "text": "Give the Suspense boundary a random key on every navigation.",
+          "isCorrect": false
+        },
+        {
+          "text": "Store the fallback element in a ref so React cannot render it.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "An urgent update that suspends may replace visible content with the nearest fallback. `startTransition` marks the navigation as non-urgent, so React can keep the current page visible while the next one becomes ready. New nested boundaries may still show their own fallbacks.",
+      "references": "[React: `<Suspense>`, preventing already revealed content from hiding](https://react.dev/reference/react/Suspense#preventing-already-revealed-content-from-hiding)"
+    }
+  ]
+}

@@ -1,0 +1,746 @@
+{
+  "schemaVersion": 1,
+  "id": "time-zones-will-ruin-your-day",
+  "title": "Time Zones Will Ruin Your Day",
+  "description": "Dates the way production hits them. Local times that never happen, offsets that are not time zones, instants versus wall clocks, leap seconds, ISO 8601 traps, meetings that drift across a DST boundary, and why `new Date(\"2026-01-15\")` is not the day you meant. Every answer is checked against a spec, a database, or a runnable snippet.",
+  "language": "en",
+  "tags": ["dates", "timezones", "i18n", "gotchas"],
+  "questions": [
+    {
+      "id": "date-only-string-parsed-as-utc",
+      "title": "What does `getDate()` return here on a server running in `America/New_York`?",
+      "description": "```js\nconst d = new Date(\"2026-01-15\");\nconsole.log(d.getDate());\n```",
+      "type": "single-choice",
+      "options": [
+        { "text": "`14`", "isCorrect": true },
+        { "text": "`15`", "isCorrect": false },
+        { "text": "`0`, because `getDate()` is zero-based like `getMonth()`", "isCorrect": false },
+        { "text": "`NaN`, because the string has no time component", "isCorrect": false }
+      ],
+      "explanation": "ECMAScript reads the bare `YYYY-MM-DD` form as UTC. The instant is therefore `2026-01-15T00:00:00.000Z`, which in New York (UTC-5 in January) falls on January 14 at 19:00. `getDate()` reports the local day, so you get `14`.\n\n```bash\nTZ=America/New_York node -e 'console.log(new Date(\"2026-01-15\").getDate())'\n# 14\n```\n\nThis is probably the most common date bug in web apps. A date picker sends `\"2026-01-15\"`, the server turns it into an instant, and every user west of Greenwich sees the day before.\n\nThe fix is to stop routing calendar dates through instants at all. Keep the value in a type that has no time and no zone, such as `Temporal.PlainDate`, `java.time.LocalDate`, or a Postgres `date` column. If you are stuck with `Date`, at least read it back with `getUTCDate()` so the two ends agree.",
+      "references": "[MDN: Date.parse()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date/parse)\n\n[ECMAScript spec: Date Time String Format](https://tc39.es/ecma262/#sec-date-time-string-format)"
+    },
+    {
+      "id": "date-only-vs-datetime-parse-inconsistency",
+      "title": "Why do `new Date(\"2026-01-15\")` and `new Date(\"2026-01-15T00:00:00\")` produce different instants?",
+      "description": "Both run in `America/New_York`. The first yields `2026-01-15T00:00:00.000Z`; the second yields `2026-01-15T05:00:00.000Z`.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The spec treats date-only forms as UTC but date-time forms with no offset as local time",
+          "isCorrect": true
+        },
+        {
+          "text": "The second string is invalid ISO 8601, so the engine falls back to implementation-defined parsing",
+          "isCorrect": false
+        },
+        {
+          "text": "Both are UTC; the difference comes from the engine applying a DST correction",
+          "isCorrect": false
+        },
+        {
+          "text": "The first is UTC only when the day is in winter; in summer both are local",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The asymmetry is written into the language. Where the UTC offset is missing, the spec says date-only forms mean UTC and date-time forms mean local time. Typing `T00:00:00`, which looks like it adds nothing, quietly moves the instant by your entire offset.\n\nThat is a deliberate decision rather than a bug, and it is the reason linters flag `new Date(string)` at all. Include an explicit `Z` or `+05:30` whenever you mean a specific instant.",
+      "references": "[ECMAScript spec: Date Time String Format](https://tc39.es/ecma262/#sec-date-time-string-format)\n\n[MDN: Date.parse() and non-standard formats](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date/parse)"
+    },
+    {
+      "id": "gettimezoneoffset-sign",
+      "title": "What integer does `new Date(\"2026-01-15T12:00:00Z\").getTimezoneOffset()` return with `TZ=America/New_York`?",
+      "description": "Answer with the number only, including a minus sign if the result is negative.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [300]
+      },
+      "explanation": "`300`. New York is UTC-5 in January, but the method returns UTC minus local time in minutes, so zones behind UTC come back positive. The sign is inverted compared to the `-05:00` you would write in a timestamp.\n\n```bash\nTZ=America/New_York node -e 'const d=new Date(\"2026-01-15T12:00:00Z\"); console.log(d.getTimezoneOffset())'\n# 300\n```\n\nCall it again in July and you get `240`, because the offset is now UTC-4. One number describes an instant in a zone, never the zone by itself.\n\nGetting the sign backwards is how `+` and `-` end up swapped in hand-rolled offset formatters.",
+      "references": "[MDN: Date.prototype.getTimezoneOffset()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date/getTimezoneOffset)"
+    },
+    {
+      "id": "date-object-has-no-timezone",
+      "title": "What time zone does a JavaScript `Date` instance store internally?",
+      "type": "single-choice",
+      "options": [
+        { "text": "None. It holds only a count of milliseconds since the Unix epoch", "isCorrect": true },
+        { "text": "The zone that was active when the object was constructed", "isCorrect": false },
+        { "text": "UTC, plus the offset it was parsed with", "isCorrect": false },
+        { "text": "The zone named in the string it was parsed from, defaulting to the host zone", "isCorrect": false }
+      ],
+      "explanation": "A `Date` is one number: `[[DateValue]]`, milliseconds since `1970-01-01T00:00:00Z`. No zone field, no memory of how it was built.\n\nThe zone comes in at call time, from the accessor you pick. `getHours()` uses the host zone, `getUTCHours()` uses UTC, `toString()` renders in the host zone. That is why the same object prints differently on two machines, and why `toISOString()` always ends in `Z`: UTC is the only zone the value actually knows.\n\nSo you cannot put \"3pm in Tokyo\" into a `Date`. You can only store the instant that happened to be 3pm in Tokyo, and the label is gone. Carrying an instant and a zone together is what `Temporal.ZonedDateTime` is for.",
+      "references": "[MDN: Date](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date)\n\n[MDN: Temporal.ZonedDateTime](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Temporal/ZonedDateTime)"
+    },
+    {
+      "id": "offset-is-not-a-timezone",
+      "title": "A client sends `2026-07-04T12:00:00-04:00`. What can you conclude about the sender's time zone?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Almost nothing. Many zones sit at UTC-4 in July, and the offset carries no rules",
+          "isCorrect": true
+        },
+        { "text": "It is US Eastern Time, since `-04:00` in July means EDT", "isCorrect": false },
+        { "text": "It is a zone that observes DST, since `-04:00` is a summer offset", "isCorrect": false },
+        { "text": "It is `America/New_York` or `America/Toronto`, which are the only UTC-4 zones", "isCorrect": false }
+      ],
+      "explanation": "On that instant, UTC-4 covers `America/New_York` (on DST), `America/Halifax` (on standard time), `America/Santo_Domingo` (which has no DST at all), `America/Manaus`, and `America/Puerto_Rico`, among others. An offset is the answer a zone gives for one moment. The zone is the whole rulebook.\n\nWhich matters because of the question you will eventually need to ask: what will this person's clock read three months from now? Only an IANA identifier can answer that, since only it carries the transitions and their history.\n\nSo offsets are fine for recording when something happened. Once you need to predict a clock reading, store `America/New_York` instead. \"We store UTC everywhere\" throws away the second capability without telling you.",
+      "references": "[Jon Skeet: Storing UTC is not a silver bullet](https://codeblog.jonskeet.uk/2019/03/27/storing-utc-is-not-a-silver-bullet/)\n\n[IANA: Time Zone Database](https://www.iana.org/time-zones)"
+    },
+    {
+      "id": "etc-gmt-sign-inversion",
+      "title": "What UTC offset does the IANA zone `Etc/GMT+5` actually have?",
+      "type": "single-choice",
+      "options": [
+        { "text": "UTC-05:00", "isCorrect": true },
+        { "text": "UTC+05:00", "isCorrect": false },
+        { "text": "UTC+00:00, because `Etc/*` zones are all aliases of GMT", "isCorrect": false },
+        { "text": "UTC-05:00 in winter and UTC-04:00 in summer", "isCorrect": false }
+      ],
+      "explanation": "The signs are inverted. `Etc/GMT+5` sits five hours behind UTC, because these zones follow the POSIX `TZ` convention where positive numbers count westward. That is the opposite of ISO 8601 and of how anyone speaks.\n\n```bash\nnode -e 'console.log(new Intl.DateTimeFormat(\"en\",{timeZone:\"Etc/GMT+5\",timeStyle:\"long\",hour12:false}).format(new Date(\"2026-01-15T12:00:00Z\")))'\n# 07:00:00 GMT-5\n```\n\nThe tz database's own `etcetera` file warns about this. Reach for `Etc/GMT±N` only when legacy data forces you to, and never assemble one by concatenating a user's offset into a string.",
+      "references": "[IANA tzdb: the `etcetera` source file](https://github.com/eggert/tz/blob/main/etcetera)\n\n[IANA tzdb: `theory.html` on POSIX compatibility](https://github.com/eggert/tz/blob/main/theory.html)"
+    },
+    {
+      "id": "est-zone-versus-america-new-york",
+      "title": "How does the time zone identifier `EST` behave differently from `America/New_York`?",
+      "type": "single-choice",
+      "options": [
+        { "text": "`EST` is permanently UTC-5 and never observes DST", "isCorrect": true },
+        { "text": "They are aliases; `EST` is the short form of `America/New_York`", "isCorrect": false },
+        { "text": "`EST` is UTC-5 in winter and UTC-4 in summer, same as `America/New_York`", "isCorrect": false },
+        { "text": "`EST` is not a valid identifier and will throw a `RangeError`", "isCorrect": false }
+      ],
+      "explanation": "`EST` resolves, and it resolves to a fixed UTC-5 with no transitions:\n\n```bash\nnode -e 'const f=z=>new Intl.DateTimeFormat(\"en\",{timeZone:z,timeStyle:\"long\",hour12:false});\nconst t=new Date(\"2026-07-15T12:00:00Z\");\nconsole.log(f(\"EST\").format(t), f(\"America/New_York\").format(t))'\n# 07:00:00 EST   08:00:00 EDT\n```\n\nAn hour off from every real person in New York, all summer, with no error to tell you. The tz database keeps `Zone EST -5:00 - EST` in `backzone` purely for compatibility, and ICU takes a further step: ask it what `EST` canonicalizes to and it answers `America/Panama`, a zone that happens to be fixed at UTC-5. Either path gives you the wrong answer for New York.\n\n`MST` and `HST` behave the same way, as do the hybrid `EST5EDT` and `MST7MDT` forms. If an identifier looks like something a weather forecaster would say, it is a compatibility shim. Prefer the `Area/Location` names.",
+      "references": "[IANA tzdb: `backzone`, where `EST`, `MST`, and `HST` are defined](https://github.com/eggert/tz/blob/main/backzone)\n\n[IANA tzdb: `theory.html` on naming conventions](https://github.com/eggert/tz/blob/main/theory.html)"
+    },
+    {
+      "id": "dst-gap-nonexistent-local-time",
+      "title": "How many instants correspond to `2026-03-08T02:30:00` in `America/New_York`?",
+      "description": "US DST begins on the second Sunday in March, which in 2026 is March 8.",
+      "type": "single-choice",
+      "options": [
+        { "text": "Zero. That local time never occurs", "isCorrect": true },
+        { "text": "One, the same as any other local time", "isCorrect": false },
+        { "text": "Two, one in EST and one in EDT", "isCorrect": false },
+        { "text": "One, but only if the year is not a leap year", "isCorrect": false }
+      ],
+      "explanation": "At 02:00:00 EST the clocks jump to 03:00:00 EDT. The whole wall-clock hour from 02:00 up to 03:00 is missing from that date, so nothing at all maps to 02:30.\n\n```bash\nnode -e 'const f=d=>new Intl.DateTimeFormat(\"en-US\",{timeZone:\"America/New_York\",dateStyle:\"short\",timeStyle:\"long\",hour12:false}).format(d);\nconsole.log(f(new Date(\"2026-03-08T06:59:00Z\")), \"->\", f(new Date(\"2026-03-08T07:00:00Z\")))'\n# 3/8/26, 01:59:00 EST -> 3/8/26, 03:00:00 EDT\n```\n\nGoing from a local time to an instant is thus a partial function. Feed a naive parser a value in the gap and it will throw, shift silently, or make something up, and the people who scheduled a 02:30 daily job are the ones who find out. Every serious date library makes you choose a policy for this rather than guessing on your behalf.",
+      "references": "[Temporal proposal: time zones and resolving ambiguity](https://tc39.es/proposal-temporal/docs/timezone.html)\n\n[timeanddate.com: clock changes in the USA](https://www.timeanddate.com/time/change/usa)"
+    },
+    {
+      "id": "temporal-compatible-disambiguation",
+      "title": "With Temporal's default disambiguation, what instant does `2026-03-08T02:30` in New York resolve to?",
+      "description": "```js\nTemporal.PlainDateTime.from(\"2026-03-08T02:30\")\n  .toZonedDateTime(\"America/New_York\");\n```",
+      "type": "single-choice",
+      "options": [
+        { "text": "`2026-03-08T03:30:00-04:00`, one hour later", "isCorrect": true },
+        { "text": "`2026-03-08T01:30:00-05:00`, one hour earlier", "isCorrect": false },
+        { "text": "It throws, because the local time does not exist", "isCorrect": false },
+        { "text": "`2026-03-08T02:30:00-05:00`, keeping the requested wall time", "isCorrect": false }
+      ],
+      "explanation": "The default is `disambiguation: \"compatible\"`, picked to match what `java.time` and other mature libraries already did. In a gap it acts like `\"later\"` and pushes the time forward by the size of the gap, so you land on 03:30. In the repeated hour after a fall-back it acts like `\"earlier\"` instead.\n\nYour other choices are `\"earlier\"`, `\"later\"`, and `\"reject\"`, and choosing on purpose is the whole exercise. A scheduler usually wants `\"later\"` so the alarm still fires. An importer reconciling someone else's data usually wants `\"reject\"`, because a guess there is indistinguishable from a fact.",
+      "references": "[MDN: Temporal.PlainDateTime.prototype.toZonedDateTime()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Temporal/PlainDateTime/toZonedDateTime)\n\n[Temporal proposal: time zones and resolving ambiguity](https://tc39.es/proposal-temporal/docs/timezone.html)"
+    },
+    {
+      "id": "temporal-reject-option",
+      "title": "Which Temporal `disambiguation` value makes an impossible or ambiguous local time throw instead of resolve?",
+      "description": "Answer with the option string only, lower case, without quotes.",
+      "type": "input",
+      "validation": {
+        "mode": "text",
+        "acceptedAnswers": ["reject"]
+      },
+      "explanation": "`reject`. Of the four values, `\"compatible\"` (the default), `\"earlier\"`, `\"later\"`, and `\"reject\"`, only the last raises a `RangeError` instead of choosing an instant for you.\n\nUse it wherever a wrong guess costs more than a failed request: importing a third-party feed, validating an appointment somebody typed in, reconciling financial records. A guess converts a loud error into a silent one-hour offset that nobody notices for months.",
+      "references": "[MDN: Temporal.PlainDateTime.prototype.toZonedDateTime()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Temporal/PlainDateTime/toZonedDateTime)"
+    },
+    {
+      "id": "fall-back-ambiguous-hour-logs",
+      "title": "Why can two log lines timestamped `2026-11-01 01:15` and `2026-11-01 01:45` in New York be 90 minutes apart?",
+      "description": "US DST ends on the first Sunday in November, which in 2026 is November 1.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The 01:00 hour repeats, so the earlier line can be EDT and the later one EST",
+          "isCorrect": true
+        },
+        { "text": "The logger writes UTC but labels it as local, so the gap is a rendering artifact", "isCorrect": false },
+        { "text": "A leap second was inserted between them, stretching the interval", "isCorrect": false },
+        { "text": "It cannot happen; wall-clock ordering always matches instant ordering", "isCorrect": false }
+      ],
+      "explanation": "At 02:00 EDT the clocks fall back to 01:00 EST, so everything from 01:00 to 01:59 happens twice, once at UTC-4 and again at UTC-5.\n\n```bash\nnode -e 'const f=d=>new Intl.DateTimeFormat(\"en-US\",{timeZone:\"America/New_York\",dateStyle:\"short\",timeStyle:\"long\",hour12:false}).format(d);\nconsole.log(f(new Date(\"2026-11-01T05:30:00Z\")), \"|\", f(new Date(\"2026-11-01T06:30:00Z\")))'\n# 11/1/26, 01:30:00 EDT | 11/1/26, 01:30:00 EST\n```\n\n01:15 EDT is 05:15Z and 01:45 EST is 06:45Z, ninety minutes apart. The nastier version of this is ordering: 01:45 EDT (05:45Z) sorts after 01:15 EST (06:15Z) but happened before it, so sorting by the local string can reverse cause and effect.\n\nLog in UTC, or in a format that keeps the offset attached. A bare local wall time is not a total order.",
+      "references": "[Temporal proposal: time zones and resolving ambiguity](https://tc39.es/proposal-temporal/docs/timezone.html)\n\n[timeanddate.com: clock changes in the USA](https://www.timeanddate.com/time/change/usa)"
+    },
+    {
+      "id": "rfc9557-offset-plus-zone",
+      "title": "Why does `2026-11-01T01:30:00-04:00[America/New_York]` carry both an offset and a zone name?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The offset pins which of the two repeated 01:30s is meant; the zone name preserves the rules",
+          "isCorrect": true
+        },
+        { "text": "The offset is redundant and exists only for parsers that cannot read the bracket suffix", "isCorrect": false },
+        { "text": "The bracket suffix is a comment that parsers must ignore", "isCorrect": false },
+        {
+          "text": "The offset applies to the date and the zone name applies to the time, which can differ",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "This format is RFC 9557, the standard behind `Temporal.ZonedDateTime`'s string form, and each half does a job the other cannot.\n\nThe offset fixes the instant. On 2026-11-01 the local time 01:30 happens twice in New York, and `-04:00` says which one. The zone name keeps the rules around, so that later arithmetic (\"plus one day\", \"same time next week\") lands on the intended wall clock.\n\nDrop the zone and calendar math becomes impossible. Drop the offset and one hour a year is unrecoverable. When the two contradict each other, which happens if tzdata changed after the value was written, Temporal's `offset` option decides the winner and defaults to refusing the value outright.",
+      "references": "[RFC 9557: timestamps with additional information](https://datatracker.ietf.org/doc/html/rfc9557)\n\n[MDN: Temporal.ZonedDateTime](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Temporal/ZonedDateTime)"
+    },
+    {
+      "id": "add-24h-across-spring-forward",
+      "title": "What wall-clock time results from adding 86,400,000 ms to midnight on 2026-03-08 in New York?",
+      "description": "```js\nconst start = new Date(\"2026-03-08T05:00:00Z\"); // 00:00 EST in New York\nconst next = new Date(start.getTime() + 86_400_000);\n```",
+      "type": "single-choice",
+      "options": [
+        { "text": "2026-03-09 at 01:00 local time", "isCorrect": true },
+        { "text": "2026-03-09 at 00:00 local time", "isCorrect": false },
+        { "text": "2026-03-09 at 23:00 local time", "isCorrect": false },
+        { "text": "2026-03-08 at 23:00 local time", "isCorrect": false }
+      ],
+      "explanation": "March 8 runs for only 23 hours in New York, so 24 elapsed hours overshoot the next midnight by one:\n\n```bash\nnode -e 'const f=d=>new Intl.DateTimeFormat(\"en-US\",{timeZone:\"America/New_York\",dateStyle:\"short\",timeStyle:\"long\",hour12:false}).format(d);\nconst s=new Date(\"2026-03-08T05:00:00Z\"); console.log(f(s),\"->\",f(new Date(s.getTime()+86400000)))'\n# 3/8/26, 00:00:00 EST -> 3/9/26, 01:00:00 EDT\n```\n\n\"Plus one day\" and \"plus 24 hours\" are simply different operations. Exact-time arithmetic, whether that is `+86400000` or a `Temporal.Duration` counted in hours, is what a timeout or a rate limit wants. Calendar arithmetic like `add({ days: 1 })` on a `ZonedDateTime` is what \"tomorrow\" wants, and it lands back on 00:00.\n\nAny `addDays` helper built out of `n * 86400000` is a bug waiting for the next transition.",
+      "references": "[MDN: Temporal.ZonedDateTime.prototype.add()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Temporal/ZonedDateTime/add)\n\n[Temporal proposal: balancing and duration arithmetic](https://tc39.es/proposal-temporal/docs/balancing.html)"
+    },
+    {
+      "id": "recurring-meeting-interval-hours",
+      "title": "How many hours pass between a 09:00 New York meeting on 2026-03-07 and the next one on 2026-03-08?",
+      "description": "The meeting recurs daily at 09:00 local time. DST begins on March 8. Answer with the number of hours.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [23]
+      },
+      "explanation": "`23`. On March 7 the meeting is at 14:00Z; on March 8, now on EDT, it is at 13:00Z.\n\n```bash\nnode -e 'console.log((Date.parse(\"2026-03-08T13:00:00Z\")-Date.parse(\"2026-03-07T14:00:00Z\"))/3600000)'\n# 23\n```\n\nRun the same meeting from October 31 to November 1 and the gap is 25 hours instead.\n\nSo a recurrence cannot be expanded by adding a fixed number of milliseconds. Keep the rule in local terms, something like `DTSTART;TZID=America/New_York:20260307T090000` plus an `RRULE`, expand it in that zone, and convert to instants only at the last moment.",
+      "references": "[RFC 5545: iCalendar recurrence rule](https://datatracker.ietf.org/doc/html/rfc5545#section-3.8.5.3)\n\n[RFC 5545: iCalendar time zone identifier](https://datatracker.ietf.org/doc/html/rfc5545#section-3.2.19)"
+    },
+    {
+      "id": "instants-versus-wall-time-storage",
+      "title": "Which values should be stored as wall time plus an IANA zone rather than as a UTC instant?",
+      "type": "multiple-choice",
+      "options": [
+        { "text": "A recurring 09:00 standup for a team in Berlin", "isCorrect": true },
+        { "text": "A one-off dentist appointment eighteen months from now", "isCorrect": true },
+        { "text": "A store's \"opens at 08:00\" schedule", "isCorrect": true },
+        { "text": "The moment a payment was authorized", "isCorrect": false },
+        { "text": "An audit log entry for a failed login", "isCorrect": false }
+      ],
+      "explanation": "One question sorts these: would the value change if a government changed the rules?\n\nThe past is settled. A payment or a log line happened at exactly one instant, so store UTC and render it in whatever zone the reader happens to want.\n\nThe future is a promise about a clock. The standup means \"whenever Berliners call it 09:00\", and the shop still opens at 08:00 if the EU abolishes DST next year. Store `09:00` alongside `Europe/Berlin` and work out the instant when you need it.\n\nFlatten a future commitment into UTC and you have baked today's tzdata into your rows. When the rules move, and they move several times a year, those rows are quietly wrong and there is nothing left to recompute them from.",
+      "references": "[Jon Skeet: Storing UTC is not a silver bullet](https://codeblog.jonskeet.uk/2019/03/27/storing-utc-is-not-a-silver-bullet/)\n\n[Django docs: time zones](https://docs.djangoproject.com/en/stable/topics/i18n/timezones/)"
+    },
+    {
+      "id": "future-meeting-rules-change",
+      "title": "A 2023 meeting stored as a UTC instant fired an hour late for Mexican attendees. Why?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Mexico abolished DST for most of the country in late 2022, so the offset assumed at write time no longer applied",
+          "isCorrect": true
+        },
+        { "text": "Mexico moved its whole territory one zone west, changing standard time", "isCorrect": false },
+        { "text": "A leap second was inserted between the write and the meeting", "isCorrect": false },
+        { "text": "UTC instants cannot be off by an hour; the client's clock had drifted", "isCorrect": false }
+      ],
+      "explanation": "In October 2022 Mexico ended DST across most of the country, keeping it only in a strip along the US border. A 2023 appointment written before that law and converted to UTC under the old rules encoded an offset that had stopped existing, and drifted by exactly an hour.\n\nNone of this is unusual. Iran abolished DST in 2022, Egypt brought it back in 2023, Lebanon postponed its 2023 change with roughly two days' notice, and Morocco moves its transitions every year to follow Ramadan.\n\nConverting more carefully does not help, because the information you need was thrown away at write time. Keep the wall time and the zone, and a routine tzdata update repairs your data for free.",
+      "references": "[IANA tz-announce mailing list archive](https://mm.icann.org/pipermail/tz-announce/)\n\n[timeanddate.com: time zone news](https://www.timeanddate.com/news/time/)"
+    },
+    {
+      "id": "date-of-birth-plain-date",
+      "title": "Why is a date of birth the wrong thing to store in a timestamp column?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "It has no instant attached, so any zone conversion can shift it to the wrong calendar day",
+          "isCorrect": true
+        },
+        { "text": "Timestamps cannot represent dates before 1970", "isCorrect": false },
+        { "text": "Timestamp columns lose precision for values more than fifty years old", "isCorrect": false },
+        {
+          "text": "Timestamps store no year, only an offset from the current year",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Nobody was born at `1990-05-14T00:00:00Z`. They were born on May 14, and it stays May 14 everywhere on Earth. A birthday is a calendar fact with no moment attached.\n\nPut it in a timestamp and you have invented a midnight that never happened. One conversion later, from a client rendering in `America/Los_Angeles`, a JSON round-trip, or a report run in another region, the row says May 13. Age checks then flip on the wrong day, and nothing looks broken until somebody near a boundary complains.\n\nUse a type that matches the concept: a Postgres `date`, `java.time.LocalDate`, `Temporal.PlainDate`. A value with no zone in it cannot be moved by one.",
+      "references": "[PostgreSQL docs: date/time types](https://www.postgresql.org/docs/current/datatype-datetime.html)\n\n[MDN: Temporal.PlainDate](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Temporal/PlainDate)"
+    },
+    {
+      "id": "temporal-type-for-recurring-anniversary",
+      "title": "Which Temporal type models \"May 14\" as a recurring anniversary with no year attached?",
+      "type": "single-choice",
+      "options": [
+        { "text": "`Temporal.PlainMonthDay`", "isCorrect": true },
+        { "text": "`Temporal.PlainDate` with the year set to 1970 by convention", "isCorrect": false },
+        { "text": "`Temporal.PlainYearMonth`", "isCorrect": false },
+        { "text": "`Temporal.Duration` measured from January 1", "isCorrect": false }
+      ],
+      "explanation": "`Temporal.PlainMonthDay` is a month and a day with no year, which is exactly what \"whose birthday is today\" needs. No sentinel year, no special case for February 29. Its mirror image, `Temporal.PlainYearMonth`, covers a billing month such as `2026-03` with no particular day in it.\n\nThe pattern runs through the whole API: the type says what you know. `Instant` is an exact time with no calendar. `PlainDate` is a calendar date with no time or zone. `PlainDateTime` is a wall clock reading, which is why it cannot name an instant on its own. `ZonedDateTime` has all three. Reaching for the narrowest type turns the conversions that make no sense into code that will not compile, rather than code that runs and is wrong.",
+      "references": "[MDN: Temporal.PlainMonthDay](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Temporal/PlainMonthDay)\n\n[MDN: Temporal](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Temporal)"
+    },
+    {
+      "id": "start-of-day-not-always-midnight",
+      "title": "Why does Temporal provide `startOfDay()` instead of letting you set the time to 00:00?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "In some zones a DST transition happens at midnight, so 00:00 does not exist on that date",
+          "isCorrect": true
+        },
+        { "text": "It is a convenience alias that always returns 00:00, just more readable", "isCorrect": false },
+        { "text": "It rounds to the nearest hour to avoid sub-second precision loss", "isCorrect": false },
+        { "text": "It returns 00:00 UTC rather than 00:00 local, which is what most callers want", "isCorrect": false }
+      ],
+      "explanation": "A few zones move their clocks at midnight, which deletes the beginning of the day. Cuba starts DST at 00:00 local, so in Havana the earliest local time that exists on 2026-03-08 is 01:00:\n\n```bash\nnode -e 'const f=d=>new Intl.DateTimeFormat(\"en\",{timeZone:\"America/Havana\",dateStyle:\"short\",timeStyle:\"long\",hour12:false}).format(d);\nconsole.log(f(new Date(\"2026-03-08T04:30:00Z\")),\"->\",f(new Date(\"2026-03-08T05:30:00Z\")))'\n# 3/7/26, 23:30:00 GMT-5 -> 3/8/26, 01:30:00 GMT-4\n```\n\nChile does the same thing. `startOfDay()` therefore returns the first instant that genuinely exists on that date in that zone, which is what a \"today\" query boundary actually needs. Hardcode `T00:00:00` and on those dates you have handed your library a time that never happened.",
+      "references": "[MDN: Temporal.ZonedDateTime.prototype.startOfDay()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Temporal/ZonedDateTime/startOfDay)\n\n[IANA tzdb: the `southamerica` source file](https://github.com/eggert/tz/blob/main/southamerica)"
+    },
+    {
+      "id": "hours-in-day-property",
+      "title": "What does `hoursInDay` return for a New York `ZonedDateTime` on 2026-03-08?",
+      "type": "single-choice",
+      "options": [
+        { "text": "`23`", "isCorrect": true },
+        { "text": "`24`, since a day is 24 hours by definition", "isCorrect": false },
+        { "text": "`25`", "isCorrect": false },
+        { "text": "`23.5`, because the transition is measured from the previous midnight", "isCorrect": false }
+      ],
+      "explanation": "`23`. Temporal puts `hoursInDay` on `ZonedDateTime` because \"a day is 24 hours\" is false about twice a year in most inhabited zones. March 8, 2026 loses an hour in New York, and November 1 gains one and reports `25`.\n\nIt is not even always a whole number. Lord Howe Island shifts by half an hour, so its transition days run 23.5 and 24.5 hours.\n\nProgress bars, billing periods, and any \"percent of the day elapsed\" figure computed by dividing by 24 will be wrong on those dates. Ask the calendar what the day was worth.",
+      "references": "[MDN: Temporal.ZonedDateTime.prototype.hoursInDay](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Temporal/ZonedDateTime/hoursInDay)\n\n[timeanddate.com: Lord Howe Island time zone](https://www.timeanddate.com/time/zone/australia/lord-howe-island)"
+    },
+    {
+      "id": "lord-howe-dst-minutes",
+      "title": "By how many minutes does Lord Howe Island shift its clocks for daylight saving?",
+      "description": "Answer with the number of minutes.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [30]
+      },
+      "explanation": "`30`. `Australia/Lord_Howe` runs at UTC+10:30 on standard time and UTC+11:00 on daylight time, the only half-hour DST shift in the tz database.\n\n```bash\nnode -e 'const f=d=>new Intl.DateTimeFormat(\"en\",{timeZone:\"Australia/Lord_Howe\",timeStyle:\"long\"}).format(d);\nconsole.log(f(new Date(\"2026-01-15T12:00:00Z\")), f(new Date(\"2026-07-15T12:00:00Z\")))'\n# 11:00:00 PM GMT+11   10:30:00 PM GMT+10:30\n```\n\nSo much for `dstOffset === 3600`. The base offsets are not whole hours either: `Pacific/Chatham` sits at UTC+12:45 and UTC+13:45, `Australia/Eucla` at UTC+08:45, `Asia/Kathmandu` at UTC+05:45. Store offsets in minutes or seconds, never in hours.",
+      "references": "[timeanddate.com: Lord Howe Island time zone](https://www.timeanddate.com/time/zone/australia/lord-howe-island)\n\n[IANA tzdb: the `australasia` source file](https://github.com/eggert/tz/blob/main/australasia)"
+    },
+    {
+      "id": "kathmandu-offset-minutes",
+      "title": "How many minutes ahead of UTC is `Asia/Kathmandu`?",
+      "description": "Answer with the total number of minutes.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [345]
+      },
+      "explanation": "`345`. Nepal is at UTC+05:45, so five hours of 60 minutes plus 45.\n\n```bash\nnode -e 'console.log(new Intl.DateTimeFormat(\"en\",{timeZone:\"Asia/Kathmandu\",timeStyle:\"long\"}).format(new Date(\"2026-01-15T12:00:00Z\")))'\n# 5:45:00 PM GMT+5:45\n```\n\nNepal chose to sit fifteen minutes ahead of India, which is itself at UTC+05:30. A zone picker built out of whole hours, or a schema with an `offset_hours INT` column, cannot represent Nepal, India, the Marquesas at UTC-09:30, or Chatham at UTC+12:45.",
+      "references": "[timeanddate.com: time in Nepal](https://www.timeanddate.com/time/zone/nepal/kathmandu)\n\n[IANA tzdb: the `asia` source file](https://github.com/eggert/tz/blob/main/asia)"
+    },
+    {
+      "id": "three-calendar-dates-simultaneously",
+      "title": "How many different calendar dates can be in use around the world at the same moment?",
+      "description": "Count only zones that are actually inhabited and in regular use.",
+      "type": "single-choice",
+      "options": [
+        { "text": "Three, for about one hour each day", "isCorrect": true },
+        { "text": "Two, always", "isCorrect": false },
+        { "text": "Two normally, and three only when DST is active somewhere", "isCorrect": false },
+        { "text": "Four, once the International Date Line is crossed", "isCorrect": false }
+      ],
+      "explanation": "Inhabited offsets span 25 hours, from `Pacific/Kiritimati` at UTC+14 down to `Pacific/Niue` and `Pacific/Pago_Pago` at UTC-11. Anything wider than 24 hours means two dates are not enough to describe the world:\n\n```bash\nnode -e 'const at=\"2026-06-15T10:30:00Z\", f=z=>new Intl.DateTimeFormat(\"en\",{timeZone:z,dateStyle:\"short\"}).format(new Date(at));\nconsole.log(f(\"Pacific/Kiritimati\"), f(\"UTC\"), f(\"Pacific/Niue\"))'\n# 6/16/26 6/15/26 6/14/26\n```\n\nThree dates at once, every day, for the hour between 10:00Z and 11:00Z. Counting the uninhabited UTC-12 islands stretches the span to 26 hours.\n\nWhich means \"what day is it\" has no server-side answer. A query like `WHERE created_at::date = CURRENT_DATE` quietly means \"the date where the database happens to be\", and that is nobody's date in particular.",
+      "references": "[timeanddate.com: time in Kiritimati, Kiribati](https://www.timeanddate.com/time/zone/kiribati/kiritimati)\n\n[Your Calendrical Fallacy Is](https://yourcalendricalfallacyis.com/)"
+    },
+    {
+      "id": "max-offset-ahead-of-utc",
+      "title": "How many hours ahead of UTC is the furthest-forward time zone in regular use?",
+      "description": "Answer with the number of hours.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [14]
+      },
+      "explanation": "`14`. `Pacific/Kiritimati`, in Kiribati's Line Islands, has been UTC+14 since 1995, when the country moved its eastern islands across the date line so that the whole of Kiribati shared one calendar day.\n\nThat is why validating offsets against a `-12:00` to `+12:00` range is wrong, and why \"two places can't be more than a day apart\" fails. Add the UTC-12 islands at the other end and the span reaches 26 hours, so New Year's Day exists somewhere on Earth for a full 50 hours.\n\nRFC 3339 allows offsets all the way to plus or minus 23:59, so the format never has to guess where politics will stop.",
+      "references": "[timeanddate.com: time in Kiritimati, Kiribati](https://www.timeanddate.com/time/zone/kiribati/kiritimati)\n\n[RFC 3339: internet date/time format](https://datatracker.ietf.org/doc/html/rfc3339#section-5.6)"
+    },
+    {
+      "id": "iso-week-numbering-year",
+      "title": "Which ISO 8601 week date does the calendar date 2025-12-29 have?",
+      "type": "single-choice",
+      "options": [
+        { "text": "`2026-W01-1`", "isCorrect": true },
+        { "text": "`2025-W53-1`", "isCorrect": false },
+        { "text": "`2025-W52-1`", "isCorrect": false },
+        { "text": "`2026-W00-1`, since the year has not started yet", "isCorrect": false }
+      ],
+      "explanation": "ISO weeks start on Monday, and week 1 is the one containing the year's first Thursday. January 1, 2026 is a Thursday, so week 1 of 2026 runs from Monday December 29, 2025 to Sunday January 4, 2026. December 29 is the first day of that week.\n\n```bash\nnode -e 'console.log(new Date(Date.UTC(2026,0,1)).getUTCDay(), new Date(Date.UTC(2025,11,29)).getUTCDay())'\n# 4 1   (Thursday, Monday)\n```\n\nThe week-numbering year is a separate field from the calendar year, and the two disagree for a few days in most years. Group weekly metrics by `YEAR(date)` and `WEEK(date)` and you split one week across two buckets. There is also no `W00`, and some years run to `W53`.",
+      "references": "[Wikipedia: ISO week date](https://en.wikipedia.org/wiki/ISO_week_date)\n\n[Unicode TR35: date field symbol table](https://unicode.org/reports/tr35/tr35-dates.html#Date_Field_Symbol_Table)"
+    },
+    {
+      "id": "iso-duration-month-versus-minute",
+      "title": "What is the difference between the ISO 8601 durations `P1M` and `PT1M`?",
+      "type": "single-choice",
+      "options": [
+        { "text": "`P1M` is one month; `PT1M` is one minute", "isCorrect": true },
+        { "text": "`P1M` is one minute; `PT1M` is one month", "isCorrect": false },
+        { "text": "They are equivalent; `T` only marks the start of the time part for readability", "isCorrect": false },
+        { "text": "`P1M` is one month; `PT1M` is invalid because minutes need `Min`", "isCorrect": false }
+      ],
+      "explanation": "`M` means months before the `T` and minutes after it. That single letter is doing all the work, and dropping it turns a one-minute retry delay into a one-month one.\n\nISO 8601 hands `Y M D` to the date part and `H M S` to the time part, and leans entirely on `T` to sort out the shared `M`. No other letter collides.\n\nThere is a subtler issue underneath. `P1M` has no fixed length, since a month is anywhere from 28 to 31 days, and even `P1D` is 23, 24, or 25 hours depending on the zone and date. Only the components after `T` are exact, which is why Temporal will not convert between calendar units and exact units unless you give it a reference point to measure from.",
+      "references": "[Wikipedia: ISO 8601 durations](https://en.wikipedia.org/wiki/ISO_8601#Durations)\n\n[MDN: Temporal.Duration](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Temporal/Duration)"
+    },
+    {
+      "id": "iso8601-versus-rfc3339-strictness",
+      "title": "Which timestamps are valid ISO 8601 but rejected by RFC 3339?",
+      "type": "multiple-choice",
+      "options": [
+        { "text": "`2026-01-15T24:00:00Z`", "isCorrect": true },
+        { "text": "`20260115T120000Z`", "isCorrect": true },
+        { "text": "`2026-W03-4T12:00:00Z`", "isCorrect": true },
+        { "text": "`2026-01-15T12:00:00Z`", "isCorrect": false },
+        { "text": "`2026-01-15T12:00:00.123456+05:30`", "isCorrect": false }
+      ],
+      "explanation": "RFC 3339 is a narrow profile of ISO 8601 rather than another name for it. Its grammar accepts only the extended calendar-date form with a mandatory offset, which rules out three things here:\n\n- `24:00`, the ISO spelling for the midnight that ends a date. RFC 3339's `time-hour` runs from `00` to `23`.\n- Basic format with the separators stripped out.\n- Week dates, and ordinal dates like `2026-032`. Incidentally `2026-W03-4` is Thursday January 15, 2026, the same day as the other examples.\n\nWhat it does accept is any number of fractional-second digits and any offset within plus or minus 23:59.\n\nSo \"we accept ISO 8601\" promises far more than most parsers deliver. If your API claims ISO 8601 and your parser is `Date.parse`, then `-00:00`, week dates, and durations are all going to surprise somebody. Say RFC 3339 and mean it.",
+      "references": "[RFC 3339: internet date/time format](https://datatracker.ietf.org/doc/html/rfc3339#section-5.6)\n\n[Wikipedia: ISO 8601](https://en.wikipedia.org/wiki/ISO_8601)"
+    },
+    {
+      "id": "rfc3339-negative-zero-offset",
+      "title": "In RFC 3339, how does the offset `-00:00` differ from `+00:00`?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`+00:00` asserts UTC, while `-00:00` means the local offset is unknown",
+          "isCorrect": true
+        },
+        { "text": "They are identical; the sign on zero is not significant", "isCorrect": false },
+        { "text": "`-00:00` means UTC and `+00:00` means an unspecified zone", "isCorrect": false },
+        { "text": "`-00:00` is invalid and must be written as `Z`", "isCorrect": false }
+      ],
+      "explanation": "RFC 3339 gives `-00:00` its own meaning: the instant is known, but the offset the sender's own clock was using is not. Both `Z` and `+00:00` assert UTC positively.\n\nIt is an unusual piece of semantics to hang on a minus sign, and nearly every parser flattens it to zero on the way in, so the distinction disappears without anyone noticing. If you genuinely need to record \"instant known, zone unknown\", put it in a field of its own instead of trusting a convention your libraries will discard.",
+      "references": "[RFC 3339: unknown local offset convention](https://datatracker.ietf.org/doc/html/rfc3339#section-4.3)\n\n[RFC 9557: timestamps with additional information](https://datatracker.ietf.org/doc/html/rfc9557)"
+    },
+    {
+      "id": "lexicographic-sort-of-timestamps",
+      "title": "When is sorting ISO 8601 timestamp strings lexicographically the same as sorting by instant?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Only when every value uses the same offset, the same field widths, and the same fractional precision",
+          "isCorrect": true
+        },
+        { "text": "Always. Chronological ordering is the point of ISO 8601", "isCorrect": false },
+        { "text": "Whenever every value carries an explicit offset, whatever that offset is", "isCorrect": false },
+        { "text": "Only for dates after 1970, since earlier years sort as negative numbers", "isCorrect": false }
+      ],
+      "explanation": "The big-endian field order does make byte order match time order, but only inside one fixed shape. Mix shapes and it falls apart.\n\nMixed offsets are the obvious case. `2026-01-15T09:00:00+05:30` sorts *after* `2026-01-15T08:00:00Z` because `09` beats `08` as text, yet it happens four and a half hours earlier.\n\nMixed precision is the sneaky one, because the culprit is the character before the digits:\n\n```bash\nnode -e 'const a=\"2026-01-15T12:00:00Z\", b=\"2026-01-15T12:00:00.500Z\";\nconsole.log(a<b ? \"a sorts first\" : \"b sorts first\", \"| b is\", Date.parse(b)-Date.parse(a), \"ms later\")'\n# b sorts first | b is 500 ms later\n```\n\n`.` is byte 0x2E and `Z` is 0x5A, so a value carrying a fractional part sorts before the same second without one, while actually happening later. Expanded years such as `+012026` break the field widths outright.\n\nNormalize to UTC with a fixed number of fractional digits before letting a string comparator near a timeline. Sorting the epoch integer instead sidesteps the whole question.",
+      "references": "[RFC 3339: ordering](https://datatracker.ietf.org/doc/html/rfc3339#section-5.1)\n\n[Wikipedia: ISO 8601 general principles](https://en.wikipedia.org/wiki/ISO_8601#General_principles)"
+    },
+    {
+      "id": "unix-time-and-leap-seconds",
+      "title": "How does POSIX \"seconds since the Epoch\" handle a leap second?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "It cannot represent one. The formula assumes every day has exactly 86400 seconds",
+          "isCorrect": true
+        },
+        { "text": "It inserts value 61 in the seconds field, matching UTC's 23:59:60", "isCorrect": false },
+        { "text": "It adds one to the epoch count, so Unix time runs 27 seconds behind UTC", "isCorrect": false },
+        { "text": "It pauses the counter for one second, so two instants share a value", "isCorrect": false }
+      ],
+      "explanation": "POSIX defines the count with an arithmetic formula over the broken-down date, roughly `tm_sec + tm_min*60 + tm_hour*3600 + tm_yday*86400` plus year terms, and there is no leap-second term anywhere in it. Every day is 86400 seconds by construction, so `23:59:60` has nowhere to go.\n\nWhat a system does with the real leap second is left to the implementation, which is the actual problem. Some repeat a value. Google-style leap smearing spreads the extra second over several hours so that NTP clients never see a repeat at all.\n\nEither way the count is not the true number of elapsed SI seconds since 1970. It is 27 short, and it makes a poor stopwatch for anything that cares about physics.",
+      "references": "[POSIX: seconds since the Epoch](https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap04.html#tag_04_16)\n\n[Wikipedia: leap second workarounds](https://en.wikipedia.org/wiki/Leap_second)"
+    },
+    {
+      "id": "tai-minus-utc-seconds",
+      "title": "By how many seconds does TAI lead UTC as of 2026?",
+      "description": "Answer with the number of seconds.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [37]
+      },
+      "explanation": "`37`. UTC took its modern form in 1972 already 10 seconds behind TAI, and 27 leap seconds have been added since, the last of them at the end of December 31, 2016. The difference has been 37 seconds since January 1, 2017.\n\nEvery leap second so far has been positive. A negative one, which would skip 23:59:59, has never happened, though it is now the more likely direction because Earth's rotation has recently sped up.\n\nUTC is therefore not a uniform timescale, and any code assuming 86400 seconds per day is assuming something UTC never offered. TAI and GPS time are uniform; UTC gives that up in exchange for staying within 0.9 seconds of solar time.",
+      "references": "[NIST: leap seconds](https://www.nist.gov/pml/time-and-frequency-division/time-realization/leap-seconds)\n\n[Wikipedia: leap second](https://en.wikipedia.org/wiki/Leap_second)"
+    },
+    {
+      "id": "leap-seconds-being-abolished",
+      "title": "What did the 2022 General Conference on Weights and Measures decide about leap seconds?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "To stop inserting them, by widening the allowed gap between UTC and UT1 no later than 2035",
+          "isCorrect": true
+        },
+        { "text": "To insert them on a fixed schedule every four years, like leap days", "isCorrect": false },
+        { "text": "To replace UTC with TAI as the world's civil timescale in 2035", "isCorrect": false },
+        { "text": "To move responsibility for announcing them from the IERS to the ITU", "isCorrect": false }
+      ],
+      "explanation": "Resolution 4 of the 27th CGPM, in November 2022, resolved to increase the tolerated difference between UTC and UT1 by 2035 at the latest, which in practice ends leap-second insertion. That tolerance had been 0.9 seconds since 1972.\n\nThe reasoning was operational rather than scientific. Leap seconds have broken production systems repeatedly, and a negative leap second, which has never been attempted, looked considerably riskier than letting civil time drift slowly away from solar time.\n\nNothing about the past changes. The historical leap seconds stay in the record, TAI stays 37 seconds ahead of UTC, and Unix time still does not count real elapsed seconds across the years from 1972 to 2016.",
+      "references": "[BIPM: Resolution 4 of the 27th CGPM (2022)](https://www.bipm.org/en/cgpm-2022/resolution-4)\n\n[Wikipedia: the future of the leap second](https://en.wikipedia.org/wiki/Leap_second)"
+    },
+    {
+      "id": "monotonic-clock-for-durations",
+      "title": "Why should elapsed-time measurements not use the wall clock?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The wall clock can be stepped backwards by NTP or an operator, producing negative durations",
+          "isCorrect": true
+        },
+        { "text": "The wall clock has only second resolution on most platforms", "isCorrect": false },
+        { "text": "The wall clock stops while the process is descheduled", "isCorrect": false },
+        {
+          "text": "The wall clock is stored as a 32-bit value and overflows during long measurements",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`CLOCK_REALTIME` and `Date.now()` follow civil time, and civil time is adjustable. NTP can slew or step it, an administrator can set it by hand, and a suspended VM can resume with a corrected clock. Subtract two readings across any of that and your elapsed value comes out negative or absurdly large, which shows up as a timeout that fires instantly or never fires at all.\n\nUse a clock that promises only one thing, that it never runs backwards: `CLOCK_MONOTONIC`, `performance.now()`, `System.nanoTime()`, Rust's `Instant`. None of them has a meaningful epoch and none can be formatted as a date, which is the point.\n\nWhen did this happen and how long did this take are separate questions, and they want separate clocks.",
+      "references": "[MDN: performance.now()](https://developer.mozilla.org/en-US/docs/Web/API/Performance/now)\n\n[POSIX: clock_gettime() and CLOCK_MONOTONIC](https://pubs.opengroup.org/onlinepubs/9699919799/functions/clock_getres.html)"
+    },
+    {
+      "id": "timezone-abbreviations-ambiguous",
+      "title": "How many distinct UTC offsets does the abbreviation `CST` refer to in common use?",
+      "type": "single-choice",
+      "options": [
+        { "text": "Three: UTC-6, UTC-5, and UTC+8", "isCorrect": true },
+        { "text": "One: UTC-6, US Central Standard Time", "isCorrect": false },
+        { "text": "Two: UTC-6 in winter and UTC-5 in summer", "isCorrect": false },
+        { "text": "One. Abbreviations are registered with IANA and are unique", "isCorrect": false }
+      ],
+      "explanation": "`CST` is Central Standard Time at UTC-6, China Standard Time at UTC+8, and Cuba Standard Time at UTC-5. `IST` is worse still, covering India at UTC+05:30, Israel at UTC+02:00, and Irish Standard Time at UTC+01:00.\n\nWhat makes this dangerous rather than merely untidy is that the abbreviations often resolve to *something*, silently. Ask ICU to interpret a few and watch where they land:\n\n```bash\nnode -e 'for (const z of [\"BST\",\"PST\",\"IST\"]) {\n  const o=new Intl.DateTimeFormat(\"en\",{timeZone:z,timeZoneName:\"longOffset\"}).formatToParts(new Date(\"2026-06-15T12:00:00Z\")).find(p=>p.type===\"timeZoneName\").value;\n  console.log(z, \"->\", Intl.DateTimeFormat(\"en\",{timeZone:z}).resolvedOptions().timeZone, o);\n}'\n# BST -> Asia/Dhaka GMT+06:00\n# PST -> America/Los_Angeles GMT-07:00\n# IST -> Asia/Calcutta GMT+05:30\n```\n\nSo `BST` gets you Bangladesh rather than British Summer Time, and `PST` in June gets you Pacific *Daylight* Time at UTC-7, despite the S for Standard.\n\nAbbreviations are not registered, not unique, not stable, and in many locales not even English. The tz database treats them as display strings and has replaced various invented ones with numeric forms like `+07`. Format with them when a human is reading. Never parse them and never store them.",
+      "references": "[Wikipedia: list of time zone abbreviations](https://en.wikipedia.org/wiki/List_of_time_zone_abbreviations)\n\n[IANA tzdb: `theory.html` on time zone abbreviations](https://github.com/eggert/tz/blob/main/theory.html)"
+    },
+    {
+      "id": "postgres-timestamptz-stores-what",
+      "title": "What does PostgreSQL physically store in a `timestamptz` column?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "A UTC instant only. The input's offset is used to convert, then discarded",
+          "isCorrect": true
+        },
+        { "text": "The local time plus the offset it was supplied with", "isCorrect": false },
+        { "text": "The local time plus the IANA zone name from the session's `TimeZone` setting", "isCorrect": false },
+        { "text": "The literal text as supplied, parsed only on retrieval", "isCorrect": false }
+      ],
+      "explanation": "The name lies a little: `timestamp with time zone` stores no time zone. It is an eight-byte microsecond count measured from 2000-01-01 UTC. On the way in, the offset you supplied (or the session `TimeZone` if you supplied none) converts the literal to UTC and is then discarded. On the way out, the value is rendered in the session's `TimeZone`.\n\nTwo clients inserting the same instant from Tokyo and Berlin therefore produce byte-identical rows, and one row displays differently to two sessions. For recording when something happened, that is exactly right.\n\nWhat you cannot get back is which zone the user meant. When that matters, for a future appointment or a shop's opening hour, add a `text` column holding the IANA identifier next to it. A `timestamptz` on its own answers only half the question.",
+      "references": "[PostgreSQL docs: date/time types](https://www.postgresql.org/docs/current/datatype-datetime.html)\n\n[PostgreSQL wiki: Don't Do This](https://wiki.postgresql.org/wiki/Don%27t_Do_This)"
+    },
+    {
+      "id": "postgres-at-time-zone-direction",
+      "title": "What type and value does `timestamptz '2026-01-15 12:00:00+00' AT TIME ZONE 'America/New_York'` produce?",
+      "type": "single-choice",
+      "options": [
+        { "text": "`timestamp without time zone`, `2026-01-15 07:00:00`", "isCorrect": true },
+        { "text": "`timestamp with time zone`, `2026-01-15 12:00:00+00`", "isCorrect": false },
+        { "text": "`timestamp with time zone`, `2026-01-15 17:00:00+00`", "isCorrect": false },
+        { "text": "`timestamp without time zone`, `2026-01-15 12:00:00`", "isCorrect": false }
+      ],
+      "explanation": "`AT TIME ZONE` converts between the two timestamp types, and which direction it goes depends on what you hand it:\n\n```sql\n-- timestamptz -> timestamp: \"render this instant as a wall clock there\"\nSELECT timestamptz '2026-01-15 12:00:00+00' AT TIME ZONE 'America/New_York';\n-- 2026-01-15 07:00:00\n\n-- timestamp -> timestamptz: \"this wall clock was there; give me the instant\"\nSELECT timestamp '2026-01-15 12:00:00' AT TIME ZONE 'America/New_York';\n-- 2026-01-15 17:00:00+00\n```\n\nOne operator, two opposite meanings. Read it as \"convert to this zone\" and you will get one of the two cases backwards every time, and what comes back is a plausible-looking timestamp rather than an error.\n\nThe way to remember it: the clause supplies whichever zone the value was missing, and hands you the other type.",
+      "references": "[PostgreSQL docs: AT TIME ZONE](https://www.postgresql.org/docs/current/functions-datetime.html#FUNCTIONS-DATETIME-ZONECONVERT)\n\n[PostgreSQL docs: date/time types](https://www.postgresql.org/docs/current/datatype-datetime.html)"
+    },
+    {
+      "id": "half-open-day-range-query",
+      "title": "Why is `BETWEEN '2026-01-15 00:00' AND '2026-01-15 23:59:59.999'` the wrong way to select one day?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "It silently drops the final sub-millisecond slice; a half-open `>= day AND < next day` cannot",
+          "isCorrect": true
+        },
+        { "text": "`BETWEEN` is exclusive at both ends, so it also drops midnight", "isCorrect": false },
+        { "text": "`BETWEEN` cannot be used with timestamp types at all", "isCorrect": false },
+        { "text": "It works correctly but prevents the planner from using an index", "isCorrect": false }
+      ],
+      "explanation": "`BETWEEN` includes both ends, which forces you to name the last representable instant of the day, and you will get its precision wrong. PostgreSQL timestamps hold microseconds, so `23:59:59.999` quietly excludes everything from `23:59:59.999001` onwards. On a nanosecond store the hole is a thousand times wider.\n\nA half-open range has no such edge to get wrong:\n\n```sql\nWHERE created_at >= '2026-01-15' AND created_at < '2026-01-16'\n```\n\nIt does not care about the column's precision, it tiles consecutive days with no gaps or overlaps, and an index can still serve it.\n\nOne more thing for a `timestamptz` column: those boundaries are instants, so compute them with `AT TIME ZONE` for the zone the user means. January 15 starts at a different instant in Auckland than in Los Angeles.",
+      "references": "[PostgreSQL docs: BETWEEN](https://www.postgresql.org/docs/current/functions-comparison.html)\n\n[PostgreSQL docs: date/time types](https://www.postgresql.org/docs/current/datatype-datetime.html)"
+    },
+    {
+      "id": "mysql-timestamp-versus-datetime",
+      "title": "How does MySQL's `TIMESTAMP` type differ from `DATETIME` in its handling of zones?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`TIMESTAMP` converts from the session zone to UTC on write and back on read; `DATETIME` stores the literal unchanged",
+          "isCorrect": true
+        },
+        { "text": "`DATETIME` converts to UTC on write; `TIMESTAMP` stores the literal unchanged", "isCorrect": false },
+        { "text": "Both convert to UTC, but `DATETIME` also stores the original offset", "isCorrect": false },
+        { "text": "Neither converts; `TIMESTAMP` merely has a narrower supported range", "isCorrect": false }
+      ],
+      "explanation": "`TIMESTAMP` is zone-aware across the round trip. MySQL converts the value from the session's `time_zone` to UTC when writing and converts it back when reading. `DATETIME` is inert, and the characters you put in are the characters you get out regardless of session zone.\n\nThe trap is that a `TIMESTAMP` column's displayed value depends on who is reading it, so the same untouched rows produce different times in a report run under a different `time_zone`. `TIMESTAMP` also only spans 1970 to 2038, which you will discover from a range error at an inconvenient moment.\n\nThe choice comes down to the same split as everywhere else: `TIMESTAMP` for when something happened, `DATETIME` for what the clock said, plus a column naming the zone if you will need to resolve it later.",
+      "references": "[MySQL docs: the DATE, DATETIME, and TIMESTAMP types](https://dev.mysql.com/doc/refman/8.4/en/datetime.html)\n\n[MySQL docs: server time zone support](https://dev.mysql.com/doc/refman/8.4/en/time-zone-support.html)"
+    },
+    {
+      "id": "epoch-seconds-versus-milliseconds",
+      "title": "An API sends `\"createdAt\": 1767225600` and the UI renders January 1970. What went wrong?",
+      "description": "```js\nnew Date(payload.createdAt).toISOString();\n// \"1970-01-21T10:53:45.600Z\"\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The value is epoch seconds but the `Date` constructor takes milliseconds",
+          "isCorrect": true
+        },
+        { "text": "The value overflowed 32 bits and wrapped to near the epoch", "isCorrect": false },
+        { "text": "The value is negative, and `Date` clamps negatives to 1970", "isCorrect": false },
+        { "text": "`Date` needs a string; passing a number always yields the epoch", "isCorrect": false }
+      ],
+      "explanation": "`1767225600` is seconds, Unix time for `2026-01-01T00:00:00Z`. Read as milliseconds it comes to about 20.5 days, which lands in January 1970.\n\n```bash\nnode -e 'console.log(new Date(1767225600).toISOString(), new Date(1767225600*1000).toISOString())'\n# 1970-01-21T10:53:45.600Z 2026-01-01T00:00:00.000Z\n```\n\nSeconds are the POSIX and JWT convention, used by `exp`, `iat`, and `nbf`. Milliseconds are the JavaScript and Java convention. Both arrive as bare integers, so nothing objects, and the failure is a believable date in 1970. Multiply by a thousand twice and you land in the year 57971 instead.\n\nGuard it at the boundary. Name the field for its unit, as in `createdAtEpochSeconds`, or send an RFC 3339 string, which cannot be misread by a factor of a thousand.",
+      "references": "[MDN: Date() constructor](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date/Date)\n\n[RFC 7519: the JWT `exp` claim](https://datatracker.ietf.org/doc/html/rfc7519#section-4.1.4)"
+    },
+    {
+      "id": "year-2038-overflow-instant",
+      "title": "What is the largest value a signed 32-bit `time_t` can hold?",
+      "description": "Answer with the number of seconds.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [2147483647]
+      },
+      "explanation": "`2147483647`, which is `2**31 - 1`, or `2038-01-19T03:14:07Z`. A second later the value wraps to -2147483648 and the clock reads December 1901.\n\n```bash\nnode -e 'console.log(new Date(2147483647000).toISOString())'\n# 2038-01-19T03:14:07.000Z\n```\n\nMost 64-bit systems widened `time_t` years ago, but the value still leaks through fixed-width wire formats, MySQL `TIMESTAMP` columns, embedded firmware, and any schema keeping epoch seconds in an `INT`. Thirty-year mortgages and long-dated bonds already cross it.\n\nJavaScript's own ceiling is elsewhere. `Date` tops out at plus or minus 8.64e15 milliseconds, roughly 273,790 years either side of the epoch, and anything past that is an invalid date.",
+      "references": "[Wikipedia: year 2038 problem](https://en.wikipedia.org/wiki/Year_2038_problem)\n\n[MDN: the epoch, timestamps, and invalid date](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date#the_epoch_timestamps_and_invalid_date)"
+    },
+    {
+      "id": "invalid-date-tojson-null",
+      "title": "What does `JSON.stringify({ at: new Date(NaN) })` produce?",
+      "type": "single-choice",
+      "options": [
+        { "text": "`{\"at\":null}`", "isCorrect": true },
+        { "text": "It throws a `RangeError` for an invalid time value", "isCorrect": false },
+        { "text": "`{\"at\":\"Invalid Date\"}`", "isCorrect": false },
+        { "text": "`{\"at\":NaN}`", "isCorrect": false }
+      ],
+      "explanation": "`Date.prototype.toJSON` checks whether the value is finite and returns `null` when it is not, so an invalid date serializes quietly instead of throwing.\n\n```bash\nnode -e 'console.log(JSON.stringify({at:new Date(NaN)})); try{new Date(NaN).toISOString()}catch(e){console.log(e.name)}'\n# {\"at\":null}\n# RangeError\n```\n\nCall `toISOString()` yourself and the same value does throw, so one bad date is loud on one path and silent on the other. Through the serializer it becomes a `null` column with no stack trace pointing anywhere useful.\n\nCheck it where you parse, with `Number.isNaN(d.getTime())`, or use a parser that rejects bad input rather than handing back a sentinel.",
+      "references": "[MDN: Date.prototype.toJSON()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date/toJSON)\n\n[MDN: Date.prototype.toISOString()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date/toISOString)"
+    },
+    {
+      "id": "month-addition-not-commutative",
+      "title": "Does `2026-01-30` plus one month plus one day equal the same date as plus one day plus one month?",
+      "description": "Assume the default `overflow: \"constrain\"` behaviour, which clamps an invalid day to the end of the month. February 2026 has 28 days.",
+      "type": "single-choice",
+      "options": [
+        { "text": "No. One order gives 2026-03-01 and the other gives 2026-02-28", "isCorrect": true },
+        { "text": "Yes, both give 2026-03-01", "isCorrect": false },
+        { "text": "Yes, both give 2026-02-28", "isCorrect": false },
+        { "text": "No, but only in leap years, where February has 29 days", "isCorrect": false }
+      ],
+      "explanation": "Take the month first: January 30 plus a month wants February 30, which does not exist, so it clamps to February 28. Add a day and you get March 1.\n\nTake the day first: January 30 plus a day is January 31. Add a month, which wants February 31, and it clamps to February 28.\n\nMarch 1 against February 28, from the same two additions. Calendar arithmetic is neither commutative nor associative, because clamping throws away the information you would need to undo it, and `constrain`, `reject`, and rolling over to March 2 are all defensible policies, so libraries disagree.\n\nTwo things follow. Adding a month has no inverse, since January 31 goes to February 28 and comes back as January 28. And monthly billing needs an explicit anchor day rather than repeated addition. Temporal's answer is to add larger units before smaller ones within a single `add()` call, and to let you pick the `overflow` behaviour.",
+      "references": "[MDN: Temporal.PlainDate.prototype.add()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Temporal/PlainDate/add)\n\n[Temporal proposal: balancing and duration arithmetic](https://tc39.es/proposal-temporal/docs/balancing.html)"
+    },
+    {
+      "id": "dublin-negative-dst",
+      "title": "Why does the tz database model `Europe/Dublin` as having negative daylight saving in winter?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Irish law defines UTC+1 as standard time, so winter is a departure from it rather than the baseline",
+          "isCorrect": true
+        },
+        { "text": "It is a long-standing bug in the tzdb, kept for backward compatibility", "isCorrect": false },
+        { "text": "Ireland observes DST year-round on a two-step schedule", "isCorrect": false },
+        { "text": "The rules track the UK's, and Dublin is only a compatibility link to London", "isCorrect": false }
+      ],
+      "explanation": "Irish statute names Irish Standard Time as the summer time at UTC+1 and treats the winter period as the deviation. Since tzdata 2018a the `europe` source models that literally, applying a negative saving in October rather than a positive one in March:\n\n```text\nRule\tEire\t1981\tmax\t-\tMar\tlastSun\t 1:00u\t0\t-\nRule\tEire\t1996\tmax\t-\tOct\tlastSun\t 1:00u\t-1:00\t-\n```\n\nThe clock readings come out identical to `Europe/London`. Only the bookkeeping differs, and that bookkeeping does not travel well: whether a platform actually reports `tm_isdst = 1` in January depends on how its `TZif` files were compiled and which library reads them, so two machines can disagree about whether Dublin is \"on DST\" right now.\n\nTreat `isDST` accordingly. It tells you which of a zone's rule sets is active, its sign is an artifact of legal drafting, and it should not be driving application logic. To ask whether summer time is in effect, compare the current offset against the zone's own winter offset. To show a user something, ask the formatter for the zone name.",
+      "references": "[Wikipedia: time in Ireland](https://en.wikipedia.org/wiki/Time_in_Ireland)\n\n[IANA tzdb: the `europe` source file](https://github.com/eggert/tz/blob/main/europe)"
+    },
+    {
+      "id": "samoa-skipped-a-calendar-day",
+      "title": "What happened to Friday, 30 December 2011 in Samoa?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "It never existed. Samoa jumped the date line, going from Thursday the 29th to Saturday the 31st",
+          "isCorrect": true
+        },
+        { "text": "It occurred twice, as Samoa moved east across the date line", "isCorrect": false },
+        { "text": "It was shortened to 23 hours by an unusually large DST transition", "isCorrect": false },
+        { "text": "Nothing; the change took effect at the start of 2012 instead", "isCorrect": false }
+      ],
+      "explanation": "Samoa moved from UTC-11 to UTC+13 so that its working week lined up with Australia and New Zealand instead of trailing them by a day. Clocks went from 23:59:59 on Thursday December 29 straight to 00:00:00 on Saturday December 31. The 30th did not happen, and nor did anybody's birthday.\n\nThe tz database records it as a single offset change of a full day:\n\n```text\nZone Pacific/Apia\t...\n\t\t\t-11:00\tWS\t%z\t2011 Dec 29 24:00\n\t\t\t 13:00\tWS\t%z\n```\n\nSo a zone's offset can move by 24 hours, and a calendar date can be missing from a zone's history altogether. That breaks any loop that steps day by day and formats each one, and any `daysBetween` computed from calendar arithmetic rather than from the zone's own rules.\n\nKiribati did much the same in 1995, and Kwajalein in 1993. Offsets are political.",
+      "references": "[Wikipedia: time in Samoa](https://en.wikipedia.org/wiki/Time_in_Samoa)\n\n[IANA tzdb: the `australasia` source file](https://github.com/eggert/tz/blob/main/australasia)"
+    },
+    {
+      "id": "local-mean-time-before-standardization",
+      "title": "What offset does the tz database record for Brussels before standard time was adopted?",
+      "type": "single-choice",
+      "options": [
+        { "text": "UTC+00:17:30, the city's local mean solar time", "isCorrect": true },
+        { "text": "UTC+00:00, since standard offsets are defined back to 1847", "isCorrect": false },
+        { "text": "UTC+01:00, extrapolating today's rules backwards", "isCorrect": false },
+        { "text": "No offset at all; tzdata's history begins in 1970", "isCorrect": false }
+      ],
+      "explanation": "The `europe` source file opens the zone on Brussels' local mean time:\n\n```text\nZone Europe/Brussels\t0:17:30 -\tLMT\t1880\n```\n\nKolkata's is `5:53:28`, Kyiv's `2:02:04`, Berlin's `0:53:28`.\n\nHistorical offsets therefore need second precision, which an `offset_minutes` column cannot round-trip and `Date.prototype.getTimezoneOffset()` cannot represent at all, since it returns whole minutes. And tzdata only guarantees correctness from 1970 onwards; earlier values are best-effort.\n\nThat pre-1970 record is also shrinking. Zones whose clocks have agreed since 1970 get merged, so `Europe/Amsterdam` is now just a `Link` to `Europe/Brussels` in the `backward` file. It still resolves, but Amsterdam's own historical offset of `0:19:32` has moved out of the main data into `backzone`. Genealogy and legal history are poor fits for a general-purpose zone library.",
+      "references": "[IANA tzdb: the `europe` source file](https://github.com/eggert/tz/blob/main/europe)\n\n[IANA tzdb: `theory.html` on scope and accuracy](https://github.com/eggert/tz/blob/main/theory.html)\n\n[IANA tzdb: `backzone`, pre-1970 data for merged zones](https://github.com/eggert/tz/blob/main/backzone)"
+    },
+    {
+      "id": "morocco-ramadan-transitions",
+      "title": "Why do Morocco's clock changes fall on different dates each year?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "It leaves UTC+1 for UTC+0 during Ramadan, which moves earlier by about 11 days a year",
+          "isCorrect": true
+        },
+        { "text": "It follows the EU schedule but with a one-week delay that shifts annually", "isCorrect": false },
+        { "text": "Its transitions are tied to the equinoxes rather than to fixed dates", "isCorrect": false },
+        { "text": "It sets them by decree each year with no underlying rule", "isCorrect": false }
+      ],
+      "explanation": "`Africa/Casablanca` stays at UTC+1 year-round and drops to UTC+0 for Ramadan. The Islamic calendar is lunar, so Ramadan arrives roughly 11 days earlier in the Gregorian year each time, and the transition dates move with it. tzdata carries computed rules for years ahead.\n\nTwo assumptions die here at once: that transitions happen in spring and autumn, and that a zone has at most two of them on a stable schedule.\n\nIt is also why no zone's behaviour fits in a sentence like \"UTC+1, DST from March to October\". Ask the tz database about a specific instant, and never reimplement a country's rules in application code.",
+      "references": "[Wikipedia: daylight saving time in Morocco](https://en.wikipedia.org/wiki/Daylight_saving_time_in_Morocco)\n\n[IANA tzdb: the `africa` source file](https://github.com/eggert/tz/blob/main/africa)"
+    },
+    {
+      "id": "recurring-event-storage-icalendar",
+      "title": "How does iCalendar keep a weekly meeting on the same wall clock across a DST change?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`DTSTART` carries a `TZID`, and the `RRULE` is expanded in that zone's local time",
+          "isCorrect": true
+        },
+        { "text": "`DTSTART` is stored in UTC and the `RRULE` adds a DST correction per occurrence", "isCorrect": false },
+        { "text": "Each occurrence is materialized as its own UTC instant when the event is created", "isCorrect": false },
+        { "text": "An `RDATE` override must be added manually for every transition", "isCorrect": false }
+      ],
+      "explanation": "RFC 5545 keeps the rule in local terms and expands it in the named zone:\n\n```text\nDTSTART;TZID=America/New_York:20260302T090000\nRRULE:FREQ=WEEKLY;BYDAY=MO\n```\n\nEvery occurrence is 09:00 in New York. The instants they resolve to sit 23 or 25 hours apart across a transition, which is the correct answer rather than a rounding error.\n\nStore the same event as pre-expanded UTC instants and it drifts by an hour twice a year. Worse, it cannot be repaired when a government rewrites the rules, because the intent behind the instants is gone.\n\nThis works outside calendars too. Persist the rule, meaning local time plus zone plus recurrence, and derive instants when you read. Materialize them only as a cache you are willing to throw away and rebuild.",
+      "references": "[RFC 5545: iCalendar recurrence rule](https://datatracker.ietf.org/doc/html/rfc5545#section-3.8.5.3)\n\n[RFC 5545: iCalendar time zone component](https://datatracker.ietf.org/doc/html/rfc5545#section-3.6.5)"
+    },
+    {
+      "id": "night-shift-hours-across-fall-back",
+      "title": "How many hours does a New York night shift from 22:00 on 2026-10-31 to 06:00 on 2026-11-01 last?",
+      "description": "DST ends on November 1, 2026. Answer with the number of hours.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [9]
+      },
+      "explanation": "`9`. Clocking on at 22:00 EDT is 02:00Z, and clocking off at 06:00 EST is 11:00Z.\n\n```bash\nnode -e 'console.log((Date.parse(\"2026-11-01T11:00:00Z\")-Date.parse(\"2026-11-01T02:00:00Z\"))/3600000)'\n# 9\n```\n\nThe wall clocks claim eight hours. The worker was there for nine and, in most jurisdictions, is owed nine. Run the same shift in March and it is seven.\n\nPayroll, SLA timers, and any \"time spent\" figure therefore have to subtract instants rather than local clock readings. Convert to UTC or `Temporal.Instant` first, then take the difference. Users who see the duration printed next to two local times will think the arithmetic is broken, and it is worth explaining rather than hiding.",
+      "references": "[MDN: Temporal.Instant.prototype.until()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Temporal/Instant/until)\n\n[timeanddate.com: clock changes in the USA](https://www.timeanddate.com/time/change/usa)"
+    },
+    {
+      "id": "detecting-the-host-timezone",
+      "title": "How should a browser determine the user's IANA time zone?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`Intl.DateTimeFormat().resolvedOptions().timeZone`",
+          "isCorrect": true
+        },
+        { "text": "Derive it from `new Date().getTimezoneOffset()`", "isCorrect": false },
+        { "text": "Parse the abbreviation out of `new Date().toString()`", "isCorrect": false },
+        { "text": "Look it up from the `Accept-Language` header's region subtag", "isCorrect": false }
+      ],
+      "explanation": "`Intl.DateTimeFormat().resolvedOptions().timeZone` returns the host's IANA identifier, something like `\"Europe/Berlin\"`. It is the only one of these that produces a zone at all.\n\nAn offset is a single sample of a function, so UTC+1 in January cannot tell Berlin apart from Lagos, which never changes. The abbreviation in `toString()` is locale-dependent display text and ambiguous besides. And locale is not geography: `en-US` says nothing about which of the American zones, and plenty of people run a locale from a country they left years ago.\n\nRead it on the client and send it, rather than guessing on the server. That call and `Temporal.Now.timeZoneId()` both report the operating system setting, which is the closest thing to the user's own answer.",
+      "references": "[MDN: Intl.DateTimeFormat.prototype.resolvedOptions()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl/DateTimeFormat/resolvedOptions)\n\n[MDN: Temporal.Now.timeZoneId()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Temporal/Now/timeZoneId)"
+    },
+    {
+      "id": "us-dst-rule-change-2007",
+      "title": "Why did calendar software show wrong times in March 2007 in the United States?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The Energy Policy Act of 2005 moved the DST start earlier, so systems with hardcoded pre-2007 rules were an hour off",
+          "isCorrect": true
+        },
+        { "text": "A leap second was inserted in March 2007, shifting stored instants", "isCorrect": false },
+        { "text": "The United States switched from UTC to TAI as its civil time basis", "isCorrect": false },
+        { "text": "Several states adopted permanent DST, changing their standard offsets", "isCorrect": false }
+      ],
+      "explanation": "From 2007, US DST began on the second Sunday in March and ended on the first Sunday in November, replacing a rule that had started it in April. Anything that had not taken a tzdata update, whether an embedded device, an unpatched server, or code with the rules written into it, was an hour wrong for the three weeks in between. People called it a mini-Y2K at the time.\n\nWhich is the case for treating zone rules as data you update rather than logic you compile. IANA publishes several releases a year, and a container image or a phone that stopped receiving updates will drift away from everyone else.\n\nWorth checking what your own stack actually reads: the OS tzdata, a copy bundled with your language runtime, or a vendored library. A single process can be running more than one version of the answer.",
+      "references": "[IANA: Time Zone Database](https://www.iana.org/time-zones)\n\n[timeanddate.com: clock changes in the USA](https://www.timeanddate.com/time/change/usa)"
+    }
+  ]
+}

@@ -1,0 +1,1115 @@
+{
+  "schemaVersion": 1,
+  "id": "cors-why-is-the-browser-blocking-me",
+  "title": "CORS: Why Is the Browser Blocking Me?",
+  "description": "Work through how browsers handle origins, CORS, preflights, credentials, opaque responses, SameSite cookies, CSP, CSRF, and the classic \"but it works in Postman\" trap.",
+  "language": "en",
+  "tags": ["cors", "browser-security", "cookies", "csp", "csrf", "fetch"],
+  "questions": [
+    {
+      "id": "same-host-different-port",
+      "title": "Are these two URLs same-origin?",
+      "description": "JavaScript on `https://app.example.test/` calls `https://app.example.test:8443/api`.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Yes, because scheme and host match",
+          "isCorrect": false
+        },
+        {
+          "text": "No, because the ports differ",
+          "isCorrect": true
+        },
+        {
+          "text": "Yes, because both connections use TLS",
+          "isCorrect": false
+        },
+        {
+          "text": "It depends on the URL paths",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "An origin is defined by its scheme, host, and port. The page uses the default HTTPS port, but the API uses port `8443`. Different ports mean different origins. The path does not matter.",
+      "references": "[WHATWG HTML: Origins](https://html.spec.whatwg.org/dev/browsers.html#origins)"
+    },
+    {
+      "id": "same-site-but-cross-origin",
+      "title": "How are `https://app.example.com` and `https://api.example.com` related?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "They are same-origin and same-site",
+          "isCorrect": false
+        },
+        {
+          "text": "They are cross-origin but same-site",
+          "isCorrect": true
+        },
+        {
+          "text": "They are cross-site because the subdomains differ",
+          "isCorrect": false
+        },
+        {
+          "text": "They become same-origin if both return CORS headers",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The URLs are cross-origin because their hosts differ. They are still same-site because they share the HTTPS scheme and the registrable domain `example.com`. CORS may let JavaScript read a cross-origin response, but it does not make the origins equal. Cookie rules and CORS can therefore reach different decisions.",
+      "references": "- [WHATWG HTML: Origins and sites](https://html.spec.whatwg.org/dev/browsers.html#origins)\n- [IETF HTTPbis: SameSite](https://datatracker.ietf.org/doc/html/draft-ietf-httpbis-rfc6265bis-22#section-4.1.2.7)"
+    },
+    {
+      "id": "what-cors-controls",
+      "title": "What does CORS control?",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "It lets a server say which origins may read a response through browser JavaScript",
+          "isCorrect": true
+        },
+        {
+          "text": "It lets a server approve methods and headers that ordinary HTML forms cannot send",
+          "isCorrect": true
+        },
+        {
+          "text": "It is a general server firewall that blocks non-browser HTTP clients",
+          "isCorrect": false
+        },
+        {
+          "text": "It guarantees that a rejected cross-origin request never reaches application code",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Browsers use CORS to decide whether JavaScript may read a cross-origin response. For requests with non-safelisted methods or headers, the browser first asks the server for permission with a preflight. CORS is not authentication or a firewall. Non-browser clients do not have to enforce it, and a safelisted request may reach the server even when JavaScript cannot read the response.",
+      "references": "[WHATWG Fetch: CORS protocol](https://fetch.spec.whatwg.org/#cors-protocol)"
+    },
+    {
+      "id": "simple-post-still-mutates",
+      "title": "A form-style cross-origin POST changes server state, but the response has no CORS headers. What happens?",
+      "description": "Assume the request uses `Content-Type: application/x-www-form-urlencoded` and no non-safelisted headers.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The browser must preflight, so the POST is never sent",
+          "isCorrect": false
+        },
+        {
+          "text": "The POST can be sent and mutate state, but JavaScript cannot read the response",
+          "isCorrect": true
+        },
+        {
+          "text": "The browser rewrites the POST to GET",
+          "isCorrect": false
+        },
+        {
+          "text": "The response becomes readable as an opaque JSON object",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "This POST is safelisted, so the browser can send it without a preflight. CORS controls whether JavaScript may read the response. It cannot undo work that the server has already performed. CORS alone therefore does not stop CSRF; an attacker may care only that the state changed.",
+      "references": "- [WHATWG Fetch: CORS protocol](https://fetch.spec.whatwg.org/#cors-protocol)\n- [OWASP: CSRF Prevention, disallowing simple requests](https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html#disallowing-simple-requests)"
+    },
+    {
+      "id": "preflight-trigger-set",
+      "title": "Which changes would trigger a CORS preflight?",
+      "description": "Start with a cross-origin `GET` that has no custom headers. Each correct change triggers a preflight on its own.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "Change the method to `PUT`",
+          "isCorrect": true
+        },
+        {
+          "text": "Add `Authorization: Bearer token`",
+          "isCorrect": true
+        },
+        {
+          "text": "Change it to a POST with `Content-Type: application/json`",
+          "isCorrect": true
+        },
+        {
+          "text": "Add `X-Trace-Id: 42`",
+          "isCorrect": true
+        },
+        {
+          "text": "Add an ordinary `Accept: application/json` header",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The safelisted methods are `GET`, `HEAD`, and `POST`. `Authorization` and custom `X-*` headers are not safelisted. A safelisted `Content-Type` must be `application/x-www-form-urlencoded`, `multipart/form-data`, or `text/plain`; `application/json` does not qualify. A normal `Accept: application/json` header is safelisted.",
+      "references": "- [WHATWG Fetch: Methods](https://fetch.spec.whatwg.org/#methods)\n- [WHATWG Fetch: CORS-safelisted request headers](https://fetch.spec.whatwg.org/#cors-safelisted-request-header)"
+    },
+    {
+      "id": "requests-without-preflight",
+      "title": "Which cross-origin requests can avoid a CORS preflight?",
+      "description": "Assume every header value meets the CORS safelist limits.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "`GET` with `Accept: application/json`",
+          "isCorrect": true
+        },
+        {
+          "text": "`POST` with `Content-Type: multipart/form-data` set by the browser for `FormData`",
+          "isCorrect": true
+        },
+        {
+          "text": "`DELETE` with no body",
+          "isCorrect": false
+        },
+        {
+          "text": "`POST` with `Content-Type: application/json` and an empty body",
+          "isCorrect": false
+        },
+        {
+          "text": "`GET` with `X-Requested-With: XMLHttpRequest`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The browser looks at the method and headers, not whether the body is empty. A `GET` with a safelisted `Accept` value qualifies. So does a `FormData` POST when the browser sets `Content-Type`. `DELETE`, `application/json`, and `X-Requested-With` each trigger a preflight.",
+      "references": "- [WHATWG Fetch: CORS-safelisted method](https://fetch.spec.whatwg.org/#cors-safelisted-method)\n- [WHATWG Fetch: CORS-safelisted request header](https://fetch.spec.whatwg.org/#cors-safelisted-request-header)"
+    },
+    {
+      "id": "preflight-wire-shape",
+      "title": "Which request matches the preflight for a `PATCH` with `Content-Type` and `X-Trace-Id`?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "An `OPTIONS` request with `Origin`, `Access-Control-Request-Method: PATCH`, and `Access-Control-Request-Headers` naming the non-safelisted headers",
+          "isCorrect": true
+        },
+        {
+          "text": "A `HEAD` request containing the future PATCH body",
+          "isCorrect": false
+        },
+        {
+          "text": "A `PATCH` request with `Access-Control-Allow-Origin` set by the browser",
+          "isCorrect": false
+        },
+        {
+          "text": "An `OPTIONS` request with `Access-Control-Allow-Methods: PATCH` supplied by the browser",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The browser sends an `OPTIONS` request with `Origin` and `Access-Control-Request-Method`. It also sends `Access-Control-Request-Headers` when the planned request has non-safelisted headers. The server puts the `Access-Control-Allow-*` headers on its response.",
+      "references": "[WHATWG Fetch: CORS-preflight fetch](https://fetch.spec.whatwg.org/#cors-preflight-fetch)"
+    },
+    {
+      "id": "preflight-has-no-session-cookie",
+      "title": "Will a CORS preflight include the user's session cookie?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Yes, whenever the future request uses `credentials: \"include\"`",
+          "isCorrect": false
+        },
+        {
+          "text": "No. A cross-origin CORS preflight excludes credentials",
+          "isCorrect": true
+        },
+        {
+          "text": "Only if `Access-Control-Allow-Credentials: true` was cached",
+          "isCorrect": false
+        },
+        {
+          "text": "Only for same-site cross-origin requests",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A preflight always uses credentials mode `same-origin`. On a cross-origin request, that excludes cookies and HTTP authentication. The actual request may carry credentials later if CORS, Fetch, cookie rules, and browser policy all allow it. Middleware that requires a session for `OPTIONS` often blocks valid preflights.",
+      "references": "[WHATWG Fetch: CORS protocol and credentials](https://fetch.spec.whatwg.org/#cors-protocol-and-credentials)"
+    },
+    {
+      "id": "successful-preflight-status",
+      "title": "Can `204 No Content` be a successful preflight response?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Yes. Any successful 2xx status works if the required CORS headers match",
+          "isCorrect": true
+        },
+        {
+          "text": "No, every preflight must return `200` with a JSON body",
+          "isCorrect": false
+        },
+        {
+          "text": "Only when the actual request is a `GET`",
+          "isCorrect": false
+        },
+        {
+          "text": "Only when `Access-Control-Max-Age` is zero",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A preflight needs a successful 2xx status and matching CORS headers. Both `200` and `204` work, and the browser does not require a response body. A `200` HTML login page still fails if its CORS headers are missing or wrong.",
+      "references": "[WHATWG Fetch: CORS HTTP responses](https://fetch.spec.whatwg.org/#http-responses)"
+    },
+    {
+      "id": "auth-middleware-blocks-options",
+      "title": "Your auth middleware returns `401` for every unauthenticated `OPTIONS` request. How should you fix it?",
+      "description": "The later credentialed API request is legitimate, but its browser preflight never succeeds.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Handle the preflight before session authentication, then authenticate the actual request",
+          "isCorrect": true
+        },
+        {
+          "text": "Copy the session token into JavaScript and add it as a query parameter to `OPTIONS`",
+          "isCorrect": false
+        },
+        {
+          "text": "Switch the actual request to `mode: \"no-cors\"`",
+          "isCorrect": false
+        },
+        {
+          "text": "Return `Access-Control-Allow-Origin: *` from the `401` response and keep requiring the session cookie",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A cross-origin preflight has no session credentials, so session middleware cannot authenticate it. Check the requested origin, method, and headers when handling `OPTIONS`. Then apply normal authentication and authorization to the actual state-changing request.",
+      "references": "[WHATWG Fetch: CORS-preflight fetch](https://fetch.spec.whatwg.org/#cors-preflight-fetch)"
+    },
+    {
+      "id": "actual-response-needs-cors-too",
+      "title": "A preflight succeeds, then the actual `PATCH` returns `500` without `Access-Control-Allow-Origin`. What can browser JavaScript observe?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The full `500` body, because the preflight already granted access",
+          "isCorrect": false
+        },
+        {
+          "text": "A CORS failure rather than the readable error response",
+          "isCorrect": true
+        },
+        {
+          "text": "A synthetic `204` generated from the cached preflight",
+          "isCorrect": false
+        },
+        {
+          "text": "The body is readable only if it is JSON",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A successful preflight allows the browser to send the `PATCH`. The actual response still has to pass its own CORS check. If browser code should read an error response, the server must add the right CORS headers to that response too.",
+      "references": "- [WHATWG Fetch: CORS check](https://fetch.spec.whatwg.org/#cors-check)\n- [WHATWG Fetch: CORS HTTP responses](https://fetch.spec.whatwg.org/#http-responses)"
+    },
+    {
+      "id": "preflight-cache-is-special",
+      "title": "Why might clearing the normal HTTP cache leave a preflight result cached?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The browser keeps preflight results in a separate CORS-preflight cache",
+          "isCorrect": true
+        },
+        {
+          "text": "Preflight responses are permanently stored in IndexedDB",
+          "isCorrect": false
+        },
+        {
+          "text": "Service workers are required to retain every `OPTIONS` response",
+          "isCorrect": false
+        },
+        {
+          "text": "`OPTIONS` responses are never cached anywhere",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The CORS-preflight cache is separate from the normal HTTP cache. Its entries depend on the network partition key, request origin, URL, credentials mode, method, and header name. `Access-Control-Max-Age` sets a lifetime, but browsers may cap it or remove an entry early.",
+      "references": "[WHATWG Fetch: CORS-preflight cache](https://fetch.spec.whatwg.org/#cors-preflight-cache)"
+    },
+    {
+      "id": "wildcard-with-credentials",
+      "title": "Why does `Access-Control-Allow-Origin: *` fail for `fetch(url, { credentials: \"include\" })`?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "A credentialed response must name the requesting origin explicitly",
+          "isCorrect": true
+        },
+        {
+          "text": "The wildcard is valid only for `POST` requests",
+          "isCorrect": false
+        },
+        {
+          "text": "The wildcard is a request header, not a response header",
+          "isCorrect": false
+        },
+        {
+          "text": "Credentials can never be used in cross-origin requests",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "When credentials mode is `include`, `Access-Control-Allow-Origin: *` fails the CORS check. The server must return the exact requesting origin and `Access-Control-Allow-Credentials: true`. A wildcard would otherwise expose user-specific responses to every origin.",
+      "references": "[WHATWG Fetch: CORS protocol and credentials](https://fetch.spec.whatwg.org/#cors-protocol-and-credentials)"
+    },
+    {
+      "id": "credentialed-cors-pair",
+      "title": "Which response header pair can share a credentialed response with a page at `https://app.example.com`?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`Access-Control-Allow-Origin: https://app.example.com` and `Access-Control-Allow-Credentials: true`",
+          "isCorrect": true
+        },
+        {
+          "text": "`Access-Control-Allow-Origin: *` and `Access-Control-Allow-Credentials: true`",
+          "isCorrect": false
+        },
+        {
+          "text": "`Access-Control-Allow-Origin: https://app.example.com/` and `Access-Control-Allow-Credentials: yes`",
+          "isCorrect": false
+        },
+        {
+          "text": "`Origin: https://app.example.com` and `Credentials: include`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The allowed origin must match the serialized origin, which has no trailing slash. `Access-Control-Allow-Credentials` requires the case-sensitive value `true`. The browser sends `Origin` as a request header. `credentials: \"include\"` is a Fetch option, not a response header.",
+      "references": "- [WHATWG Fetch: CORS header syntax](https://fetch.spec.whatwg.org/#http-new-header-syntax)\n- [WHATWG Fetch: Credential combinations](https://fetch.spec.whatwg.org/#cors-protocol-and-credentials)"
+    },
+    {
+      "id": "credentials-true-is-case-sensitive",
+      "title": "Will `Access-Control-Allow-Credentials: True` authorize a credentialed CORS response?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "No. The required value is the case-sensitive byte sequence `true`",
+          "isCorrect": true
+        },
+        {
+          "text": "Yes. All HTTP field values are case-insensitive",
+          "isCorrect": false
+        },
+        {
+          "text": "Yes, but only over HTTPS",
+          "isCorrect": false
+        },
+        {
+          "text": "No. The required value is `1`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The CORS grammar requires the exact value `true`. The Fetch Standard even lists `True` as a failing example. Header names are case-insensitive, but this header value is not.",
+      "references": "[WHATWG Fetch: CORS protocol and credentials](https://fetch.spec.whatwg.org/#cors-protocol-and-credentials)"
+    },
+    {
+      "id": "allow-origin-is-not-a-list",
+      "title": "Is `Access-Control-Allow-Origin: https://a.example, https://b.example` a valid two-origin allowlist?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "No. The field accepts one serialized origin, `null`, or `*`",
+          "isCorrect": true
+        },
+        {
+          "text": "Yes, because all HTTP response fields accept comma-separated lists",
+          "isCorrect": false
+        },
+        {
+          "text": "Yes, but only for requests without credentials",
+          "isCorrect": false
+        },
+        {
+          "text": "No. Only one origin may ever use an API deployment",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`Access-Control-Allow-Origin` accepts one origin, `null`, or `*`. To support several trusted origins, compare the request's `Origin` with an allowlist and return the one matching origin. Do not put the full allowlist in the header.",
+      "references": "[WHATWG Fetch: CORS new-header syntax](https://fetch.spec.whatwg.org/#http-new-header-syntax)"
+    },
+    {
+      "id": "dynamic-origin-needs-vary",
+      "title": "Which cache header should you send when `Access-Control-Allow-Origin` changes with the request's `Origin`?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`Vary: Origin`",
+          "isCorrect": true
+        },
+        {
+          "text": "`Cache-Control: cors`",
+          "isCorrect": false
+        },
+        {
+          "text": "`Access-Control-Max-Age: Origin`",
+          "isCorrect": false
+        },
+        {
+          "text": "`ETag: Origin`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`Vary: Origin` tells caches that the response depends on the incoming `Origin`. Without it, a cached response prepared for one origin may be reused for another. Fetch recommends `Vary` when the policy is more complex than an always-sent wildcard or one static origin.",
+      "references": "[WHATWG Fetch: CORS protocol and HTTP caches](https://fetch.spec.whatwg.org/#cors-protocol-and-http-caches)"
+    },
+    {
+      "id": "blind-origin-reflection",
+      "title": "Why is it dangerous to copy any request `Origin` into `Access-Control-Allow-Origin` when credentials are enabled?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "It lets any attacker-controlled origin read user-specific responses",
+          "isCorrect": true
+        },
+        {
+          "text": "It prevents the browser from sending the `Origin` header",
+          "isCorrect": false
+        },
+        {
+          "text": "It forces every request to use `mode: \"no-cors\"`",
+          "isCorrect": false
+        },
+        {
+          "text": "It changes the API server's own origin",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Only echo an origin after it passes an exact allowlist check. If credentials are allowed, blind reflection lets an attacker's site read responses sent with the victim's ambient credentials. This creates the confused-deputy risk described by Fetch.",
+      "references": "[WHATWG Fetch: CORS protocol and credentials](https://fetch.spec.whatwg.org/#cors-protocol-and-credentials)"
+    },
+    {
+      "id": "fetch-default-credentials",
+      "title": "What is the default `credentials` mode for `fetch(\"https://api.other.example/data\")`?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`same-origin`",
+          "isCorrect": true
+        },
+        {
+          "text": "`include`",
+          "isCorrect": false
+        },
+        {
+          "text": "`omit`",
+          "isCorrect": false
+        },
+        {
+          "text": "It is inherited from `Access-Control-Allow-Credentials`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A Fetch request created from a URL string defaults to `same-origin`. It includes credentials for same-origin URLs, but not for cross-origin URLs. A response header cannot change the mode after the request was sent. Client code must request cross-origin credentials, and the other security checks must still allow them.",
+      "references": "[WHATWG Fetch: `Request.credentials`](https://fetch.spec.whatwg.org/#dom-request-credentials)"
+    },
+    {
+      "id": "include-is-not-cookie-override",
+      "title": "What does `credentials: \"include\"` guarantee for a cross-site cookie?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "It allows credentials, but cookie matching, SameSite, Secure, expiry, and browser policy still apply",
+          "isCorrect": true
+        },
+        {
+          "text": "It sends every cookie in the browser, regardless of domain",
+          "isCorrect": false
+        },
+        {
+          "text": "It overrides `SameSite=Lax` and third-party cookie blocking",
+          "isCorrect": false
+        },
+        {
+          "text": "It converts an `HttpOnly` cookie into an `Authorization` header",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The Fetch setting allows credentials to be used. The browser still checks the cookie's host or domain, path, expiry, `Secure`, `SameSite`, and its own cookie policy. `include` does not override those checks.",
+      "references": "- [WHATWG Fetch: Credentials modes](https://fetch.spec.whatwg.org/#credentials)\n- [IETF HTTPbis: Cookie retrieval algorithm](https://datatracker.ietf.org/doc/html/draft-ietf-httpbis-rfc6265bis-22#section-5.8.3)"
+    },
+    {
+      "id": "set-cookie-after-cors-failure",
+      "title": "Can the browser accept `Set-Cookie` even when CORS prevents JavaScript from reading the response?",
+      "description": "Assume the request uses `credentials: \"include\"` and the cookie passes the SameSite, Secure, domain, and browser-policy checks.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Yes. The CORS check can fail while the browser still processes `Set-Cookie`",
+          "isCorrect": true
+        },
+        {
+          "text": "No. CORS failure rolls back all network and cookie effects",
+          "isCorrect": false
+        },
+        {
+          "text": "Only if JavaScript reads the `Set-Cookie` response header",
+          "isCorrect": false
+        },
+        {
+          "text": "Only if the server returns `Access-Control-Expose-Headers: Set-Cookie`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "CORS controls whether JavaScript may read the response. It does not roll back network or cookie effects. Fetch notes that `Set-Cookie` may still be honored when the response fails the CORS sharing check. The normal cookie rules and browser policy still apply.",
+      "references": "[WHATWG Fetch: Credentialed CORS example](https://fetch.spec.whatwg.org/#cors-protocol-and-credentials)"
+    },
+    {
+      "id": "authorization-needs-explicit-allow",
+      "title": "Does `Access-Control-Allow-Headers: *` allow an `Authorization` request header?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "No. The server must list `Authorization` explicitly",
+          "isCorrect": true
+        },
+        {
+          "text": "Yes. `*` always matches every request header in CORS",
+          "isCorrect": false
+        },
+        {
+          "text": "Yes, but only when the token begins with `Bearer`",
+          "isCorrect": false
+        },
+        {
+          "text": "No. Browsers forbid JavaScript from setting `Authorization` under all circumstances",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Fetch treats `Authorization` as a non-wildcard request header. The server must name it in `Access-Control-Allow-Headers`. That only lets the browser send the header; the server must still validate the token on the actual request.",
+      "references": "[WHATWG Fetch: CORS non-wildcard request-header name](https://fetch.spec.whatwg.org/#cors-non-wildcard-request-header-name)"
+    },
+    {
+      "id": "expose-custom-response-header",
+      "title": "The Network panel shows `X-Request-Id: abc`, but `response.headers.get(\"X-Request-Id\")` returns `null`. What is missing?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`Access-Control-Expose-Headers: X-Request-Id` on the response",
+          "isCorrect": true
+        },
+        {
+          "text": "`Access-Control-Allow-Headers: X-Request-Id` on the response",
+          "isCorrect": false
+        },
+        {
+          "text": "`Access-Control-Request-Headers: X-Request-Id` on the actual request",
+          "isCorrect": false
+        },
+        {
+          "text": "`Vary: X-Request-Id` on the request",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`Access-Control-Allow-Headers` approves non-safelisted request headers during preflight. `Access-Control-Expose-Headers` names extra response headers that JavaScript may read. DevTools can show network headers that page code cannot access.",
+      "references": "[WHATWG Fetch: `Access-Control-Expose-Headers` example](https://fetch.spec.whatwg.org/#cors-protocol-and-credentials)"
+    },
+    {
+      "id": "set-cookie-is-forbidden-to-script",
+      "title": "Can frontend JavaScript read `Set-Cookie` by asking the server to send `Access-Control-Expose-Headers: Set-Cookie`?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "No. `Set-Cookie` is a forbidden response header and stays hidden from frontend JavaScript",
+          "isCorrect": true
+        },
+        {
+          "text": "Yes, provided the request uses `credentials: \"include\"`",
+          "isCorrect": false
+        },
+        {
+          "text": "Yes, but only for a cookie without `HttpOnly`",
+          "isCorrect": false
+        },
+        {
+          "text": "Yes, if `Access-Control-Allow-Origin` names the exact origin",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Fetch marks `Set-Cookie` and `Set-Cookie2` as forbidden response headers. `Access-Control-Expose-Headers` cannot make them appear in `Response.headers`. The browser handles eligible cookies itself, so frontend code should not try to parse `Set-Cookie`.",
+      "references": "[WHATWG Fetch: Forbidden response-header name](https://fetch.spec.whatwg.org/#forbidden-response-header-name)"
+    },
+    {
+      "id": "opaque-response-status",
+      "title": "What numeric `status` does JavaScript observe on an opaque response?",
+      "description": "Enter the status number defined by Fetch.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [0]
+      },
+      "explanation": "JavaScript sees status `0`, an empty status message, no headers, and no readable body. The browser hides the internal response so thoroughly that an opaque response looks much like a network error to page code.",
+      "references": "[WHATWG Fetch: Opaque filtered response](https://fetch.spec.whatwg.org/#concept-filtered-response-opaque)"
+    },
+    {
+      "id": "no-cors-does-not-return-json",
+      "title": "What can JavaScript read from a successful cross-origin JSON response fetched with `mode: \"no-cors\"`?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "It returns an opaque response whose body and most metadata are unavailable to JavaScript",
+          "isCorrect": true
+        },
+        {
+          "text": "It disables CORS and exposes the JSON normally",
+          "isCorrect": false
+        },
+        {
+          "text": "It proxies the request through the page's own origin",
+          "isCorrect": false
+        },
+        {
+          "text": "It converts the response into a same-origin response",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "For a cross-origin fetch, `no-cors` produces an opaque response. Code cannot inspect its JSON, status, or headers. Use this mode only when the caller does not need to read the response, such as in some fire-and-forget or caching flows.",
+      "references": "- [WHATWG Fetch: Request mode](https://fetch.spec.whatwg.org/#concept-request-mode)\n- [WHATWG Fetch: Opaque filtered response](https://fetch.spec.whatwg.org/#concept-filtered-response-opaque)"
+    },
+    {
+      "id": "opaque-request-can-have-effects",
+      "title": "Can a `no-cors` request have server-side effects even though JavaScript receives an opaque response?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Yes. Opacity hides the response but does not stop the server from processing the request",
+          "isCorrect": true
+        },
+        {
+          "text": "No. Opaque means the browser never sent any bytes",
+          "isCorrect": false
+        },
+        {
+          "text": "Only if the opaque response reports `ok: true`",
+          "isCorrect": false
+        },
+        {
+          "text": "Only if the server also returns `Access-Control-Allow-Origin: *`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Opacity describes what JavaScript can see. The browser can still send the request, and the server can still perform work. Since the response exposes status `0` and no body, client code cannot use it to confirm success.",
+      "references": "[WHATWG Fetch: Filtered responses](https://fetch.spec.whatwg.org/#concept-filtered-response)"
+    },
+    {
+      "id": "cors-error-looks-like-network-error",
+      "title": "Why can't a rejected `fetch()` promise reliably distinguish a CORS failure from a network failure?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Fetch represents a failed CORS check as a network error and rejects with limited detail",
+          "isCorrect": true
+        },
+        {
+          "text": "JavaScript promises erase all Error objects",
+          "isCorrect": false
+        },
+        {
+          "text": "CORS failures always return HTTP `418`",
+          "isCorrect": false
+        },
+        {
+          "text": "DNS failures are converted into opaque responses",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Fetch turns a failed CORS check into a network error so it does not leak response details. Page code often gets only a generic error such as `TypeError: Failed to fetch`. Check the browser Console and Network panel, then compare the preflight, actual response, and server logs.",
+      "references": "- [WHATWG Fetch: CORS check](https://fetch.spec.whatwg.org/#cors-check)\n- [Chrome DevTools: Show CORS errors](https://developer.chrome.com/docs/devtools/console/reference#cors)"
+    },
+    {
+      "id": "postman-proves-little-about-cors",
+      "title": "What does \"it works in the Postman desktop app\" prove about a browser CORS failure?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Postman can reach the endpoint, but the browser may still block the page from sending the request or reading the response",
+          "isCorrect": true
+        },
+        {
+          "text": "It proves the server's CORS headers are correct",
+          "isCorrect": false
+        },
+        {
+          "text": "It proves the browser has a corrupted HTTP cache",
+          "isCorrect": false
+        },
+        {
+          "text": "It proves cookies and CSP behave identically in both clients",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The Postman desktop app is not running inside the page's browser security context. It can send requests without browser CORS limits. Success there proves that Postman reached the endpoint and received a response. It does not prove that a browser preflight, cookies, response exposure, or the page's CSP will behave as needed.",
+      "references": "[Postman Docs: About the Postman Agent](https://learning.postman.com/v11/docs/getting-started/basics/about-postman-agent/)"
+    },
+    {
+      "id": "lax-cookie-cross-site-fetch",
+      "title": "Will a `SameSite=Lax` session cookie accompany a cross-site `fetch()` POST from another site?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "No. The Lax exception covers certain top-level navigations with safe methods, not a cross-site fetch POST",
+          "isCorrect": true
+        },
+        {
+          "text": "Yes, whenever Fetch uses `credentials: \"include\"`",
+          "isCorrect": false
+        },
+        {
+          "text": "Yes, because POST is a safe HTTP method",
+          "isCorrect": false
+        },
+        {
+          "text": "Only when `Access-Control-Allow-Credentials: true` is on the request",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A cross-site fetch is not a top-level navigation, and POST is not a safe method. `credentials: \"include\"` does not override `SameSite`. The CORS setup may be correct while the API still sees an unauthenticated request because the browser left out the cookie.",
+      "references": "[IETF HTTPbis: SameSite Lax enforcement](https://datatracker.ietf.org/doc/html/draft-ietf-httpbis-rfc6265bis-22#section-5.6.7.1)"
+    },
+    {
+      "id": "lax-cookie-top-level-navigation",
+      "title": "When can a `SameSite=Lax` cookie be sent from a cross-site context?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "On a top-level navigation that uses a safe method, such as following a normal GET link",
+          "isCorrect": true
+        },
+        {
+          "text": "On every cross-site iframe request",
+          "isCorrect": false
+        },
+        {
+          "text": "On any cross-site POST if the response is JSON",
+          "isCorrect": false
+        },
+        {
+          "text": "Only after a successful CORS preflight",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Lax allows cookies on certain cross-site top-level navigations that use safe methods. A normal GET link can therefore keep the user signed in, while an embedded cross-site fetch does not receive the same cookie.",
+      "references": "[IETF HTTPbis: SameSite Lax enforcement](https://datatracker.ietf.org/doc/html/draft-ietf-httpbis-rfc6265bis-22#section-5.6.7.1)"
+    },
+    {
+      "id": "none-requires-secure",
+      "title": "What happens to `Set-Cookie: session=abc; SameSite=None` when the `Secure` attribute is absent?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The browser ignores it because `SameSite=None` requires `Secure`",
+          "isCorrect": true
+        },
+        {
+          "text": "The cookie is stored and treated as `SameSite=Lax`",
+          "isCorrect": false
+        },
+        {
+          "text": "The cookie is stored but becomes `HttpOnly` automatically",
+          "isCorrect": false
+        },
+        {
+          "text": "The cookie is accepted whenever CORS allows credentials",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The browser rejects a `SameSite=None` cookie unless it also has `Secure`. A cross-site session cookie therefore usually needs `SameSite=None; Secure`. Its domain and path must still match, and browser policy must allow the cookie.",
+      "references": "[IETF HTTPbis: Cookie storage algorithm](https://datatracker.ietf.org/doc/html/draft-ietf-httpbis-rfc6265bis-22#section-5.7)"
+    },
+    {
+      "id": "same-site-cookie-cors-still-applies",
+      "title": "A page on `https://app.example.com` fetches `https://api.example.com`. Which statements are true?",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "A SameSite cookie can be eligible because the request is same-site",
+          "isCorrect": true
+        },
+        {
+          "text": "CORS can still be required because the request is cross-origin",
+          "isCorrect": true
+        },
+        {
+          "text": "Same-site status makes the hosts same-origin",
+          "isCorrect": false
+        },
+        {
+          "text": "Successful CORS automatically makes every domain cookie eligible",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Same-site and same-origin are different checks. These HTTPS subdomains are same-site, so a matching cookie may be eligible. Their hosts differ, which makes them cross-origin. JavaScript still needs CORS permission to read the response.",
+      "references": "- [WHATWG HTML: Origins and sites](https://html.spec.whatwg.org/dev/browsers.html#origins)\n- [IETF HTTPbis: SameSite](https://datatracker.ietf.org/doc/html/draft-ietf-httpbis-rfc6265bis-22#section-4.1.2.7)"
+    },
+    {
+      "id": "third-party-cookie-policy-wins",
+      "title": "Can a browser withhold a cross-site cookie even when Fetch, SameSite, Secure, and CORS are configured correctly?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Yes. The browser's third-party cookie policy can add more restrictions",
+          "isCorrect": true
+        },
+        {
+          "text": "No. Those settings force every conforming browser to send it",
+          "isCorrect": false
+        },
+        {
+          "text": "Only if the preflight status is `204`",
+          "isCorrect": false
+        },
+        {
+          "text": "Only if the response omits `Content-Type`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The cookie specification allows browsers to restrict third-party cookies. Fetch and CORS settings do not override privacy controls, user settings, cookie partitioning, or blocking policies. Sites cannot assume every browser treats third-party cookies the same way.",
+      "references": "[IETF HTTPbis: Cookie policy](https://datatracker.ietf.org/doc/html/draft-ietf-httpbis-rfc6265bis-22#section-7.2)"
+    },
+    {
+      "id": "httponly-does-not-stop-sending",
+      "title": "What protection does `HttpOnly` provide for a session cookie?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "It hides the cookie from APIs such as `document.cookie`, but eligible HTTP requests can still send it",
+          "isCorrect": true
+        },
+        {
+          "text": "It prevents the browser from ever sending the cookie cross-origin",
+          "isCorrect": false
+        },
+        {
+          "text": "It makes the cookie same-origin instead of same-site",
+          "isCorrect": false
+        },
+        {
+          "text": "It replaces the need for `Secure` and `SameSite`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`HttpOnly` blocks access through non-HTTP APIs such as `document.cookie`. It does not stop the browser from sending the cookie on an eligible HTTP request. Domain, path, `Secure`, `SameSite`, credentials mode, and browser policy still apply. These attributes solve different problems and can be combined.",
+      "references": "[IETF HTTPbis: The HttpOnly attribute](https://datatracker.ietf.org/doc/html/draft-ietf-httpbis-rfc6265bis-22#section-4.1.2.6)"
+    },
+    {
+      "id": "cors-is-not-csrf-defense",
+      "title": "Why do cookie-authenticated endpoints still need CSRF protection when their CORS policy is strict?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Cross-site requests can sometimes be sent without preflight, and an attacker may need only the side effect rather than the response",
+          "isCorrect": true
+        },
+        {
+          "text": "CORS applies only to GET and never to POST",
+          "isCorrect": false
+        },
+        {
+          "text": "CSRF is possible only when JavaScript can read `Set-Cookie`",
+          "isCorrect": false
+        },
+        {
+          "text": "A CSRF token is a replacement for server-side authorization",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Browsers can send form-compatible cross-site requests with ambient cookies. The attacker may not be able to read the response, but a vulnerable endpoint can still change state. Use CSRF tokens or Origin and Referer checks where appropriate. Keep safe methods free of side effects, and treat SameSite as another layer of protection.",
+      "references": "- [IETF HTTPbis: Cookies and ambient authority](https://datatracker.ietf.org/doc/html/draft-ietf-httpbis-rfc6265bis-22#section-8.2)\n- [OWASP: CSRF Prevention Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html)"
+    },
+    {
+      "id": "csp-self-blocks-inline-script",
+      "title": "Why does the page's inline script fail under `Content-Security-Policy: script-src 'self'`?",
+      "description": "```html\n<script>startApp()</script>\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`'self'` allows script files from the page's origin, but not arbitrary inline scripts",
+          "isCorrect": true
+        },
+        {
+          "text": "CSP treats `startApp` as a cross-origin host name",
+          "isCorrect": false
+        },
+        {
+          "text": "Inline scripts are allowed only when CORS preflight succeeds",
+          "isCorrect": false
+        },
+        {
+          "text": "The script would run if the function returned JSON",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`'self'` allows matching script files from the page's origin. It does not allow inline code. An inline script needs a matching nonce or hash, or the much broader `'unsafe-inline'` permission. This block comes from CSP, not CORS.",
+      "references": "[W3C CSP Level 3: `script-src`](https://www.w3.org/TR/CSP3/#directive-script-src)"
+    },
+    {
+      "id": "matching-csp-nonce",
+      "title": "Which change allows this inline bootstrap script under CSP?",
+      "description": "The response policy contains `script-src 'nonce-r4nd0m'`, and the document contains `<script>startApp()</script>`.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Add `nonce=\"r4nd0m\"` to that `script` element",
+          "isCorrect": true
+        },
+        {
+          "text": "Add `crossorigin=\"anonymous\"` to that `script` element",
+          "isCorrect": false
+        },
+        {
+          "text": "Return `Access-Control-Allow-Nonce: r4nd0m` from every API",
+          "isCorrect": false
+        },
+        {
+          "text": "Add `SameSite=None` to the page's cookies",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The nonce in the `script` element must match the nonce in the policy. In production, the server should generate an unpredictable value for each response and put it in both the CSP header and every trusted inline script.",
+      "references": "[W3C CSP Level 3: Nonce sources and nonce reuse](https://www.w3.org/TR/CSP3/#security-nonce-reuse)"
+    },
+    {
+      "id": "do-not-reuse-csp-nonces",
+      "title": "Why should a CSP nonce not be a constant copied into every response?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "An attacker who learns or predicts the nonce can run an injected script",
+          "isCorrect": true
+        },
+        {
+          "text": "Browsers permit a nonce to contain each character only once",
+          "isCorrect": false
+        },
+        {
+          "text": "A repeated nonce automatically changes the page's origin",
+          "isCorrect": false
+        },
+        {
+          "text": "CORS preflight caches reject repeated nonce strings",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A matching nonce allows the script despite the directive's other source restrictions. If an attacker can predict the nonce, it no longer proves that the script is trusted. CSP requires a new value for each policy and recommends at least 128 random bits from a cryptographically secure source.",
+      "references": "[W3C CSP Level 3: Nonce reuse](https://www.w3.org/TR/CSP3/#security-nonce-reuse)"
+    },
+    {
+      "id": "csp-hash-whitespace",
+      "title": "Why can one extra space break a CSP hash for an inline script?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The hash covers the script text, so changed whitespace produces a different digest",
+          "isCorrect": true
+        },
+        {
+          "text": "CSP forbids all whitespace inside inline scripts",
+          "isCorrect": false
+        },
+        {
+          "text": "Spaces cause the request to require a CORS preflight",
+          "isCorrect": false
+        },
+        {
+          "text": "The browser interprets any space as `'unsafe-inline'`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A CSP hash matches the exact encoded script text. Even harmless whitespace changes the digest. If a build tool reformats inline code, it must also update the policy hash. Another option is to move the code out of the HTML.",
+      "references": "[W3C CSP Level 3: Element matching and hash sources](https://www.w3.org/TR/CSP3/#match-element-to-source-list)"
+    },
+    {
+      "id": "csp-connect-src-before-cors",
+      "title": "The API returns correct CORS headers, but the page has `Content-Security-Policy: connect-src 'self'`. Why does the fetch still fail?",
+      "description": "The page calls `fetch(\"https://api.vendor.example/data\")`.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The page's CSP blocks the connection before the API's CORS permission can help",
+          "isCorrect": true
+        },
+        {
+          "text": "`connect-src` changes the API response to `text/plain`",
+          "isCorrect": false
+        },
+        {
+          "text": "CORS headers are valid only when CSP is absent",
+          "isCorrect": false
+        },
+        {
+          "text": "`'self'` includes every HTTPS origin",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "CSP and CORS are separate checks. The page's `connect-src` limits destinations for Fetch, XHR, WebSocket, EventSource, Beacon, and similar connections. If CSP blocks the destination, the API's CORS headers cannot make the request succeed.",
+      "references": "[W3C CSP Level 3: `connect-src`](https://www.w3.org/TR/CSP3/#directive-connect-src)"
+    },
+    {
+      "id": "default-src-fallback",
+      "title": "What does `Content-Security-Policy: default-src 'self'` imply for a cross-origin `fetch()` when no `connect-src` is present?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`default-src` supplies the fallback source list, so the cross-origin connection is blocked",
+          "isCorrect": true
+        },
+        {
+          "text": "Nothing. `default-src` affects images only",
+          "isCorrect": false
+        },
+        {
+          "text": "The browser sends a CSP preflight to ask the API",
+          "isCorrect": false
+        },
+        {
+          "text": "The fetch is allowed if the API returns `Access-Control-Allow-Origin: *`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "When `connect-src` is missing, it falls back to `default-src`. Here that fallback is `'self'`, so CSP blocks the external API regardless of its CORS headers. An explicit `connect-src` would replace the fallback for these connections.",
+      "references": "[W3C CSP Level 3: `default-src`](https://www.w3.org/TR/CSP3/#directive-default-src)"
+    },
+    {
+      "id": "csp-report-only",
+      "title": "How can you test a proposed CSP without enforcing it?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Send it as `Content-Security-Policy-Report-Only` and monitor violations",
+          "isCorrect": true
+        },
+        {
+          "text": "Set `Access-Control-Allow-Origin: *` temporarily",
+          "isCorrect": false
+        },
+        {
+          "text": "Put `'unsafe-inline'` in every directive permanently",
+          "isCorrect": false
+        },
+        {
+          "text": "Test only with Postman because it evaluates page CSP",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A report-only policy records violations without blocking resources. You can use those reports to fix the policy before enforcing it. Reports can be noisy and may contain sensitive context, so store and review them carefully.",
+      "references": "[W3C CSP Level 3: `Content-Security-Policy-Report-Only`](https://www.w3.org/TR/CSP3/#cspro-header)"
+    },
+    {
+      "id": "csp-meta-limitations",
+      "title": "Which limits apply when CSP is delivered through a `<meta>` element?",
+      "description": "The element uses `http-equiv=\"Content-Security-Policy\"`.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "The policy does not apply to content that appears before the meta element",
+          "isCorrect": true
+        },
+        {
+          "text": "`Content-Security-Policy-Report-Only` is not supported through the meta mechanism",
+          "isCorrect": true
+        },
+        {
+          "text": "`frame-ancestors` and `sandbox` are not supported there",
+          "isCorrect": true
+        },
+        {
+          "text": "A meta policy can relax a stricter CSP response header",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A meta policy starts only after the browser processes the element. It cannot provide report-only mode, `report-uri`, `frame-ancestors`, or `sandbox`. If the response also has a CSP header, both policies apply. A meta policy cannot loosen the header policy.",
+      "references": "- [W3C CSP Level 3: The meta element](https://www.w3.org/TR/CSP3/#meta-element)\n- [W3C CSP Level 3: Multiple policies](https://www.w3.org/TR/CSP3/#multiple-policies)"
+    }
+  ]
+}
