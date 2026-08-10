@@ -5,6 +5,7 @@ import {
   clampPage,
   hasActiveListFilters,
   parseListUrlState,
+  QUIZZES_PER_PAGE,
   stringifyListUrlState,
   withBase,
 } from "@/shared/lib/routing";
@@ -26,8 +27,6 @@ interface QuizzesCatalogProps {
   initialPage?: number;
   syncTagsToUrl?: boolean;
 }
-
-const QUIZZES_PER_PAGE = 12;
 
 /**
  * The Catalog browser, shared by `/quizzes/` and the static `/quizzes/page/{n}/`

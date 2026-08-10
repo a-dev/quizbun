@@ -3,6 +3,7 @@ export {
   clampPage,
   hasActiveListFilters,
   parseListUrlState,
+  QUIZZES_PER_PAGE,
   stringifyListUrlState,
 } from "./list-url-state";
 export type { ListTagMatchMode, ListUrlState } from "./list-url-state";

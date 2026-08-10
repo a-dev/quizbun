@@ -14,6 +14,8 @@ const PAGE_PARAM = "page";
 
 const DEFAULT_TAG_MATCH_MODE: ListTagMatchMode = "and";
 
+export const QUIZZES_PER_PAGE = 12;
+
 export function parseListUrlState(
   search: string,
   availableTags: readonly string[],

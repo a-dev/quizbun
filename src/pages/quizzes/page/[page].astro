@@ -3,6 +3,7 @@ import type { GetStaticPaths } from "astro";
 import Layout from "@/app/layout.astro";
 import { loadPublicQuizzes } from "@/shared/lib/content";
 import type { PublicQuizSummary, TagCount } from "@/shared/lib/content";
+import { QUIZZES_PER_PAGE } from "@/shared/lib/routing";
 import { QuizzesCatalog } from "@/_pages/quizzes";
 import { layout } from "#styles";
 
@@ -10,7 +11,7 @@ export const getStaticPaths = (({ paginate }) => {
   const { summaries, tags } = loadPublicQuizzes();
 
   return paginate(summaries, {
-    pageSize: 12,
+    pageSize: QUIZZES_PER_PAGE,
     props: { summaries, tags },
   });
 }) satisfies GetStaticPaths;
