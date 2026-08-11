@@ -23,6 +23,13 @@ const {
 <!doctype html>
 <html lang="en" data-theme="light" data-theme-preference="system">
   <head>
+    {/* Must stay the first stylesheet in the document, and inline. A layer's
+        cascade position is fixed the first time the browser sees its name, so
+        the identical statement in #styles/index.css cannot do this job: Astro
+        inlines some component styles above the <link> to the bundle, and
+        Lightning CSS strips the statement from the chunk when minifying. Both
+        together sank `ui` below `layout` on /import/ and /quizzes/. */}
+    <style is:inline>@layer reset, base, layout, typography, utils, ui;</style>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="icon" type="image/svg+xml" href={withBase("favicon.svg")} />
