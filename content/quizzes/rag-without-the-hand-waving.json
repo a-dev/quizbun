@@ -1,0 +1,581 @@
+{
+  "schemaVersion": 1,
+  "id": "rag-without-the-hand-waving",
+  "title": "RAG Without the Hand-Waving",
+  "description": "A practical quiz about how RAG systems split, retrieve, rank, cite, and evaluate information, and how they fail. Every explanation links to supporting research or technical documentation.",
+  "language": "en",
+  "tags": ["rag", "retrieval", "embeddings", "evaluation", "llm"],
+  "questions": [
+    {
+      "id": "original-rag-two-memories",
+      "title": "What two kinds of memory did the original RAG model combine?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "A pretrained sequence-to-sequence model and a dense Wikipedia index queried by a neural retriever",
+          "isCorrect": true
+        },
+        {
+          "text": "Two independently prompted generators whose answers were decided by majority vote",
+          "isCorrect": false
+        },
+        {
+          "text": "A keyword index and a rules engine, with no learned generator",
+          "isCorrect": false
+        },
+        {
+          "text": "A larger context window and a lower sampling temperature, with no external memory",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Lewis et al. describe the sequence-to-sequence model as parametric memory and the dense Wikipedia index as non-parametric memory. A neural retriever searches the index, and the generator uses the retrieved passages. A larger context window or different decoding settings alone do not make a system RAG.",
+      "references": "[Lewis et al.: Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks](https://arxiv.org/abs/2005.11401)"
+    },
+    {
+      "id": "rag-architecture-claims",
+      "title": "Which statements describe the original RAG design?",
+      "description": "Select all that apply. Your answer must include every correct choice.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "The generator conditions on passages fetched from an external index.",
+          "isCorrect": true
+        },
+        {
+          "text": "The external index acts as non-parametric memory.",
+          "isCorrect": true
+        },
+        {
+          "text": "All source documents must be memorized in the generator's weights before inference.",
+          "isCorrect": false
+        },
+        {
+          "text": "Adding retrieval makes every generated claim factually correct.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The model retrieves passages from a dense index and passes them to the generator. The index is non-parametric memory, so the source corpus does not have to be stored in the generator's weights. Retrieval still does not guarantee a correct answer. RAGTruth documents unsupported and contradictory claims in RAG output.",
+      "references": "[Lewis et al.: Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks](https://arxiv.org/abs/2005.11401) · [Niu et al.: RAGTruth](https://arxiv.org/abs/2401.00396)"
+    },
+    {
+      "id": "chunk-boundary-negation",
+      "title": "A chunk splits a refund rule from its exception. What should you fix first?",
+      "description": "The policy says: \"Refunds are allowed within 30 days, unless the license key has been activated.\" Retrieval returns only the permissive clause.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Change the chunking so the rule and its exception stay in one self-contained retrieval unit, then retest retrieval.",
+          "isCorrect": true
+        },
+        {
+          "text": "Leave the chunks unchanged and raise the generation temperature.",
+          "isCorrect": false
+        },
+        {
+          "text": "Leave the chunks unchanged and increase the embedding dimension.",
+          "isCorrect": false
+        },
+        {
+          "text": "Retrieve more unrelated policy chunks to supply extra context.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The chunk no longer contains the full rule. Fix that loss before tuning the generator. The Dense X Retrieval study found that the retrieval unit affects both retrieval and downstream QA. It defines propositions as short, self-contained fact units. Here, the rule and its exception need to stay together.",
+      "references": "[Chen et al.: Dense X Retrieval](https://arxiv.org/abs/2312.06648)"
+    },
+    {
+      "id": "retrieval-unit-granularity",
+      "title": "Why can whole-document chunks work poorly for clause-level questions?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "One vector has to represent many topics, which can make a narrow clause harder to match.",
+          "isCorrect": true
+        },
+        {
+          "text": "Embedding APIs accept sentences but reject documents by definition.",
+          "isCorrect": false
+        },
+        {
+          "text": "Whole documents cannot be assigned source metadata.",
+          "isCorrect": false
+        },
+        {
+          "text": "Dense retrieval works only when every indexed unit has exactly one sentence.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A whole manual may cover many unrelated topics, so one embedding can be too broad for a narrow query. Chen et al. compared documents, passages, sentences, and propositions. The choice of retrieval unit changed both retrieval and downstream performance. Their result supports testing smaller, self-contained units, but it does not make one-sentence chunks a universal rule.",
+      "references": "[Chen et al.: Dense X Retrieval](https://arxiv.org/abs/2312.06648)"
+    },
+    {
+      "id": "chunk-overlap-tradeoffs",
+      "title": "What can fixed-window chunk overlap change?",
+      "description": "Select all that apply. Your answer must include every correct choice.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "A fact near a boundary can appear in both adjacent chunks.",
+          "isCorrect": true
+        },
+        {
+          "text": "The index contains repeated text, and retrieval can return near-duplicate chunks.",
+          "isCorrect": true
+        },
+        {
+          "text": "It guarantees that every chunk follows a semantic boundary.",
+          "isCorrect": false
+        },
+        {
+          "text": "It changes the embedding model's vector dimensionality.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "With overlap, each new chunk starts with text copied from the end of the previous chunk. This can preserve context around a boundary, but it also repeats text in the index and sometimes in the prompt. Overlap does not find semantic boundaries or change the embedding model's output dimension.",
+      "references": "[Microsoft Learn: Text Split skill](https://learn.microsoft.com/en-us/azure/search/cognitive-search-skill-textsplit) · [Chen et al.: Dense X Retrieval](https://arxiv.org/abs/2312.06648) · [Google AI for Developers: Understand and count tokens](https://ai.google.dev/gemini-api/docs/tokens)"
+    },
+    {
+      "id": "dual-encoder-indexing",
+      "title": "Why are dual encoders useful for first-stage retrieval over a large corpus?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Documents can be encoded ahead of time, while a query is encoded at request time and compared with stored vectors.",
+          "isCorrect": true
+        },
+        {
+          "text": "It jointly processes every query-document pair before any document can be indexed.",
+          "isCorrect": false
+        },
+        {
+          "text": "It proves that the nearest document contains a factually correct answer.",
+          "isCorrect": false
+        },
+        {
+          "text": "It eliminates the need for an index by storing the corpus in the query vector.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "DPR uses separate encoders for queries and passages. The system can encode corpus passages before any live query arrives and store their vectors in an index. At request time, it encodes the query and searches those vectors. A model that jointly scores every query-document pair is better suited to the smaller reranking stage.",
+      "references": "[Karpukhin et al.: Dense Passage Retrieval for Open-Domain Question Answering](https://arxiv.org/abs/2004.04906) · [Reimers and Gurevych: Sentence-BERT](https://arxiv.org/abs/1908.10084)"
+    },
+    {
+      "id": "cosine-normalized-dot-product",
+      "title": "For L2-normalized vectors, which score gives the same ranking as cosine similarity?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Dot product",
+          "isCorrect": true
+        },
+        {
+          "text": "Vector dimensionality",
+          "isCorrect": false
+        },
+        {
+          "text": "The sum of the vector's coordinates",
+          "isCorrect": false
+        },
+        {
+          "text": "Document token count",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Cosine similarity is `x·y / (||x|| ||y||)`. L2 normalization makes both norms equal to `1`, so the expression becomes `x·y`. Under this condition, dot product and cosine similarity give the same scores and the same ranking.",
+      "references": "[scikit-learn: cosine_similarity](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.pairwise.cosine_similarity.html)"
+    },
+    {
+      "id": "exact-identifier-hybrid-retrieval",
+      "title": "Dense retrieval misses an exact error code. What should you add?",
+      "description": "Dense search finds conceptually related troubleshooting pages but misses the runbook that contains the exact code.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Add a lexical retrieval branch and fuse it with vector results.",
+          "isCorrect": true
+        },
+        {
+          "text": "Remove the error code from the query before embedding it.",
+          "isCorrect": false
+        },
+        {
+          "text": "Increase generation temperature until the model guesses the matching runbook.",
+          "isCorrect": false
+        },
+        {
+          "text": "Replace every identifier in the corpus with a generic word such as `error`.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Vector search is good at semantic matches, while keyword search is good at exact strings. Azure AI Search lists product codes, names, dates, and specialized terms as cases where keyword search can work better. A hybrid query keeps both strengths and merges their rankings.",
+      "references": "[Microsoft Learn: Hybrid Search in Azure AI Search](https://learn.microsoft.com/en-us/azure/search/hybrid-search-overview)"
+    },
+    {
+      "id": "approximate-neighbor-risk",
+      "title": "What can go wrong with approximate nearest-neighbor search?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "It can search efficiently but miss an exact nearest neighbor for some queries.",
+          "isCorrect": true
+        },
+        {
+          "text": "The stored embeddings are converted back into approximate source sentences.",
+          "isCorrect": false
+        },
+        {
+          "text": "Every returned document has approximately the same relevance.",
+          "isCorrect": false
+        },
+        {
+          "text": "Similarity scores become factual-confidence probabilities.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "HNSW searches a hierarchical proximity graph instead of comparing the query with every vector. This makes search efficient, but an approximate method can miss an exact nearest neighbor. Similarity measures geometric proximity, not confidence that a passage is factually correct.",
+      "references": "[Malkov and Yashunin: Efficient and Robust Approximate Nearest Neighbor Search Using HNSW](https://arxiv.org/abs/1603.09320)"
+    },
+    {
+      "id": "recall-at-five-calculation",
+      "title": "Three of four relevant chunks appear in the top five results. What is recall@5?",
+      "description": "Enter a number from `0` to `1`.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [0.75]
+      },
+      "explanation": "Recall is the number of relevant items retrieved divided by the total number of relevant items. Here that is `3 / 4 = 0.75`. The other two results lower precision, not recall.",
+      "references": "[NIST TREC: Evaluation of Ranked Lists](https://trec.nist.gov/presentations/TREC9/overview/tsld014.htm)"
+    },
+    {
+      "id": "more-top-k-not-guaranteed-better",
+      "title": "Why might increasing retrieval `k` from 5 to 50 make an answer worse?",
+      "description": "The system sends every retrieved passage to the generator.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "It may improve recall, but the extra passages can distract the generator and use more context.",
+          "isCorrect": true
+        },
+        {
+          "text": "A generator is mathematically unable to read more than five retrieved passages.",
+          "isCorrect": false
+        },
+        {
+          "text": "Recall always decreases whenever `k` increases.",
+          "isCorrect": false
+        },
+        {
+          "text": "All vector indexes return exactly the same documents for every value of `k`.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A larger candidate set may include more supporting evidence, but it can also add hard distractors and use scarce prompt tokens. The cited ACL study reports cases where irrelevant retrieved passages caused the answer model to respond incorrectly. Test `k` against retrieval and end-to-end metrics instead of assuming that more passages always help.",
+      "references": "[Amiraz et al.: The Distracting Effect](https://aclanthology.org/2025.acl-long.892/) · [Google AI for Developers: Understand and count tokens](https://ai.google.dev/gemini-api/docs/tokens)"
+    },
+    {
+      "id": "rrf-score-calculation",
+      "title": "With a rank constant of 60, what RRF score do ranks 1 and 4 produce?",
+      "description": "Use `score = 1 / (60 + rank1) + 1 / (60 + rank2)`. Enter a decimal rounded to five places.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [0.03202],
+        "tolerance": 0.000005
+      },
+      "explanation": "Substitute the ranks into the formula: `1/61 + 1/64 = 0.01639344 + 0.015625 = 0.03201844`. Rounded to five decimal places, the score is `0.03202`. RRF adds a reciprocal contribution from each result list that contains the document.",
+      "references": "[Elasticsearch Reference: Reciprocal Rank Fusion](https://www.elastic.co/docs/reference/elasticsearch/rest-apis/reciprocal-rank-fusion)"
+    },
+    {
+      "id": "rrf-uses-ranks",
+      "title": "Why can RRF combine BM25 and vector rankings without normalizing their raw scores?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "It uses each document's rank in each result list rather than treating unlike raw scores as comparable.",
+          "isCorrect": true
+        },
+        {
+          "text": "It converts every raw score into a calibrated probability of truth.",
+          "isCorrect": false
+        },
+        {
+          "text": "It discards documents that appear in more than one result list.",
+          "isCorrect": false
+        },
+        {
+          "text": "It requires BM25 and vector search to use the same scoring equation.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "BM25 and vector search produce scores with different meanings and scales. RRF does not compare those raw scores. For each result list, it adds `1 / (k + rank)` for the document. A document that ranks well in one or more branches gets a larger fused score.",
+      "references": "[Elasticsearch Reference: Reciprocal Rank Fusion](https://www.elastic.co/docs/reference/elasticsearch/rest-apis/reciprocal-rank-fusion) · [Cormack, Clarke, and Büttcher: Reciprocal Rank Fusion](https://cormack.uwaterloo.ca/cormacksigir09-rrf.pdf)"
+    },
+    {
+      "id": "reranking-pipeline-design",
+      "title": "Where should an expensive query-passage reranker run?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "After a fast retriever has produced a smaller candidate set.",
+          "isCorrect": true
+        },
+        {
+          "text": "Against every document in the corpus for every query.",
+          "isCorrect": false
+        },
+        {
+          "text": "After generation, to reorder the words in the completed answer.",
+          "isCorrect": false
+        },
+        {
+          "text": "At ingestion time, using only document timestamps and no query.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A reranker scores a query and passage together, which costs more than comparing precomputed vectors. The usual pipeline first retrieves a broad candidate set with a cheaper method, then applies the reranker to that smaller set. Nogueira and Cho use BERT in this second-stage role.",
+      "references": "[Nogueira and Cho: Passage Re-ranking with BERT](https://arxiv.org/abs/1901.04085) · [Reimers and Gurevych: Sentence-BERT](https://arxiv.org/abs/1908.10084)"
+    },
+    {
+      "id": "reranker-candidate-ceiling",
+      "title": "The retriever drops the only supporting passage. Can the reranker recover it?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "No. A reranker can only score the candidates it receives unless another retrieval step adds the missing passage.",
+          "isCorrect": true
+        },
+        {
+          "text": "Yes. A reranker reconstructs all missing corpus passages from the query.",
+          "isCorrect": false
+        },
+        {
+          "text": "Yes. Every reranker automatically performs exhaustive corpus search before scoring.",
+          "isCorrect": false
+        },
+        {
+          "text": "No, because rerankers can process only irrelevant passages.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Reranking changes the order of a candidate list. It does not add missing passages by itself. If the retriever omits the only supporting passage, the reranker never sees it. Measure first-stage recall separately from reranking quality.",
+      "references": "[Nogueira and Cho: Passage Re-ranking with BERT](https://arxiv.org/abs/1901.04085) · [NIST TREC: Evaluation of Ranked Lists](https://trec.nist.gov/presentations/TREC9/overview/tsld014.htm)"
+    },
+    {
+      "id": "lost-in-the-middle",
+      "title": "What did the \"Lost in the Middle\" experiments find?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Relevant information can be used less reliably when placed in the middle than near the beginning or end, even when the input fits the context window.",
+          "isCorrect": true
+        },
+        {
+          "text": "Any information inside the declared context window is used equally well at every position.",
+          "isCorrect": false
+        },
+        {
+          "text": "Only retrieved information at the exact center can influence generation.",
+          "isCorrect": false
+        },
+        {
+          "text": "Long-context models cannot process more than one document.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Liu et al. changed the position of relevant information in multi-document QA and key-value retrieval tasks. Performance was often better when the evidence appeared near the beginning or end and worse when it appeared in the middle. Fitting text into the context window does not guarantee that the model will use every part equally well.",
+      "references": "[Liu et al.: Lost in the Middle](https://arxiv.org/abs/2307.03172)"
+    },
+    {
+      "id": "context-budget-arithmetic",
+      "title": "How many tokens remain in this context budget?",
+      "description": "The combined input-output limit is `8,192` tokens. Instructions and the query use `2,100`; five chunks use `900` each; and the answer reserves `1,200`. Enter the maximum number of additional tokens that fit.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [392]
+      },
+      "explanation": "Five chunks use `5 × 900 = 4,500` tokens. The reserved total is `2,100 + 4,500 + 1,200 = 7,800`. That leaves `8,192 - 7,800 = 392` tokens. Real limits depend on the model, so check the documentation for the model you use.",
+      "references": "[Google AI for Developers: Understand and count tokens](https://ai.google.dev/gemini-api/docs/tokens)"
+    },
+    {
+      "id": "citation-correctness-completeness",
+      "title": "What must a citation evaluator check?",
+      "description": "Select all that apply. Your answer must include every correct choice.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "Whether each attached citation actually supports the claim it follows",
+          "isCorrect": true
+        },
+        {
+          "text": "Whether claims that require evidence have citation support rather than leaving major claims uncited",
+          "isCorrect": true
+        },
+        {
+          "text": "Whether every cited page shares at least one keyword with the user's query, regardless of entailment",
+          "isCorrect": false
+        },
+        {
+          "text": "Whether the answer contains many links, even if none support its claims",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Citation correctness asks whether each citation supports its claim. Citation completeness asks whether the claims that need evidence are covered. An answer can fail either test: it may cite an irrelevant source, or support one sentence while leaving other factual claims uncited. ALCE evaluates both properties; link count and keyword overlap are not enough.",
+      "references": "[Gao et al.: Enabling Large Language Models to Generate Text with Citations](https://arxiv.org/abs/2305.14627)"
+    },
+    {
+      "id": "provenance-separate-from-answer",
+      "title": "Why score provenance separately from answer accuracy?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "A system can output a correct answer while retrieving or citing the wrong evidence, so answer quality alone does not establish grounding.",
+          "isCorrect": true
+        },
+        {
+          "text": "Provenance is another name for generation latency.",
+          "isCorrect": false
+        },
+        {
+          "text": "Any correct answer proves that every retrieved passage was relevant.",
+          "isCorrect": false
+        },
+        {
+          "text": "Provenance matters only when the answer itself is false.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A correct answer can still have the wrong evidence. The model might know the answer from its parameters or guess correctly while citing an irrelevant passage. KILT evaluates downstream task performance and provenance separately, which exposes answers whose retrieval trail does not support them.",
+      "references": "[Petroni et al.: KILT](https://arxiv.org/abs/2009.02252)"
+    },
+    {
+      "id": "retrieval-does-not-eliminate-hallucination",
+      "title": "The right passage was retrieved. What can still go wrong?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The generator can add a claim that is unsupported by, or contradictory to, the retrieved passage.",
+          "isCorrect": true
+        },
+        {
+          "text": "The generator becomes physically unable to emit any token not copied from the passage.",
+          "isCorrect": false
+        },
+        {
+          "text": "The retrieval index automatically rewrites the source to match the answer.",
+          "isCorrect": false
+        },
+        {
+          "text": "Correct retrieval mathematically forces citation completeness to equal one.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Retrieval supplies evidence, but a general generator can still write claims that the evidence does not support. RAGTruth documents RAG outputs with unsupported or contradictory claims. When the right passage was retrieved, this is a failure of context use or generation faithfulness, not retrieval recall.",
+      "references": "[Niu et al.: RAGTruth](https://arxiv.org/abs/2401.00396)"
+    },
+    {
+      "id": "evaluate-rag-components",
+      "title": "Which parts of a RAG pipeline should be evaluated separately?",
+      "description": "Select all that apply. Your answer must include every correct choice.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "Whether retrieval finds relevant, focused context",
+          "isCorrect": true
+        },
+        {
+          "text": "Whether generation uses the retrieved context faithfully",
+          "isCorrect": true
+        },
+        {
+          "text": "The quality of the generated answer itself",
+          "isCorrect": true
+        },
+        {
+          "text": "Only the visual appearance of the chat interface",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "RAG has several stages, so one end-to-end score cannot show where a failure began. RAGAS separates the relevance and focus of retrieved passages, faithful use of those passages, and answer quality. Separate scores help distinguish a retrieval failure from a generation failure.",
+      "references": "[Es et al.: RAGAS](https://arxiv.org/abs/2309.15217)"
+    },
+    {
+      "id": "embedding-benchmark-generalization",
+      "title": "Why is one embedding leaderboard score not enough to choose a model?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Embedding performance varies across tasks and domains, so the target retrieval workload still needs representative evaluation.",
+          "isCorrect": true
+        },
+        {
+          "text": "Leaderboard models cannot produce numeric vectors.",
+          "isCorrect": false
+        },
+        {
+          "text": "A model that wins one benchmark is guaranteed to lose every other benchmark.",
+          "isCorrect": false
+        },
+        {
+          "text": "Retrieval benchmarks measure only generation temperature.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "MTEB covers several embedding tasks and found that no single method was best at all of them. BEIR tests retrieval on varied datasets and out-of-distribution settings, where methods show different quality and cost tradeoffs. Use a leaderboard to shortlist models, then test them on representative queries, languages, documents, and relevance judgments from your own workload.",
+      "references": "[Muennighoff et al.: MTEB](https://arxiv.org/abs/2210.07316) · [Thakur et al.: BEIR](https://arxiv.org/abs/2104.08663)"
+    },
+    {
+      "id": "stale-index-failure",
+      "title": "Retrieval returns an outdated policy after the source changes. What should you fix?",
+      "description": "The source document was updated, but the old chunk and embedding are still in the index.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Fix ingestion and index freshness: delete or replace the stale chunks, then index the current version.",
+          "isCorrect": true
+        },
+        {
+          "text": "Increase generation temperature so the model invents a newer policy.",
+          "isCorrect": false
+        },
+        {
+          "text": "Keep both versions without timestamps and ask the model to choose randomly.",
+          "isCorrect": false
+        },
+        {
+          "text": "Retrain the generator while deliberately leaving the stale retrieval index unchanged.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The source changed, but the index did not. Update or delete the stale chunks and index the current document. RAG keeps this external knowledge separate from the generator's parameters, but the system still needs an ingestion process that applies source updates and deletions. Generation settings cannot make an old passage current.",
+      "references": "[Lewis et al.: Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks](https://arxiv.org/abs/2005.11401) · [Petroni et al.: KILT](https://arxiv.org/abs/2009.02252)"
+    },
+    {
+      "id": "rag-security-failure-modes",
+      "title": "Which RAG security risks have been demonstrated?",
+      "description": "Select all that apply. Your answer must include every correct choice.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "An attacker who can inject malicious text into the knowledge base may steer answers for targeted queries.",
+          "isCorrect": true
+        },
+        {
+          "text": "Instructions embedded in retrieved websites or files can act as indirect prompt injection.",
+          "isCorrect": true
+        },
+        {
+          "text": "Using RAG fully eliminates prompt-injection risk.",
+          "isCorrect": false
+        },
+        {
+          "text": "High vector similarity proves that retrieved content is trustworthy and non-malicious.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "PoisonedRAG shows that malicious text added to a knowledge base can steer answers to targeted questions. OWASP describes indirect prompt injection through external sources such as websites and files, and notes that RAG does not remove this risk. Similarity measures relevance, not trust. Treat retrieved content as untrusted input and apply suitable controls.",
+      "references": "[Zou et al.: PoisonedRAG](https://arxiv.org/abs/2402.07867) · [OWASP GenAI: Prompt Injection](https://genai.owasp.org/llmrisk/llm01-prompt-injection/)"
+    }
+  ]
+}

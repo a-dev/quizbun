@@ -1,0 +1,934 @@
+{
+  "schemaVersion": 1,
+  "id": "llm-mechanics-tokens-context-and-cost",
+  "title": "LLM Mechanics: Tokens, Context, and Cost",
+  "description": "A practical quiz about how LLM APIs handle tokens, context, sampling, caching, streaming, structured output, and knowledge cutoffs. It includes production scenarios and cost calculations.",
+  "language": "en",
+  "tags": ["llm", "tokens", "context-windows", "prompt-caching", "latency", "structured-output"],
+  "questions": [
+    {
+      "id": "tokens-are-model-units",
+      "title": "What does a text LLM receive after tokenization?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "A sequence of token IDs produced by a tokenizer",
+          "isCorrect": true
+        },
+        {
+          "text": "One floating-point number for each sentence",
+          "isCorrect": false
+        },
+        {
+          "text": "A parse tree whose nodes are always English words",
+          "isCorrect": false
+        },
+        {
+          "text": "Raw Unicode characters with no preprocessing",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A tokenizer turns text into token IDs before the model processes it. A token may represent a common word, part of a word, punctuation, or a byte-based piece. That is why counting words or characters does not give an exact token count.",
+      "references": "[Hugging Face Transformers: Tokenization algorithms](https://huggingface.co/docs/transformers/tokenizer_summary)"
+    },
+    {
+      "id": "letter-counting-trap",
+      "title": "Why can an LLM miscount the letter `r` in a word it can use correctly?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "It usually processes subword or byte-based tokens, so exact letter counting is an indirect task",
+          "isCorrect": true
+        },
+        {
+          "text": "The letter `r` is removed from all tokenizer vocabularies",
+          "isCorrect": false
+        },
+        {
+          "text": "Transformers cannot represent repeated symbols under any circumstances",
+          "isCorrect": false
+        },
+        {
+          "text": "The model sees only the word's dictionary definition",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The model may receive a whole word or a few fragments instead of a neat list of letters. It then has to reconstruct the spelling while predicting tokens, which makes exact counting harder. Spelling out the word or using a counting tool can make the result reliable.",
+      "references": "[Hugging Face Transformers: Why subword tokenization is used](https://huggingface.co/docs/transformers/tokenizer_summary)"
+    },
+    {
+      "id": "tokenization-surprises",
+      "title": "Which tokenization behaviors are possible?",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "A leading space can change the token ID used for the same visible word",
+          "isCorrect": true
+        },
+        {
+          "text": "Capitalization can change tokenization or token IDs",
+          "isCorrect": true
+        },
+        {
+          "text": "A rare word can split into several subword tokens",
+          "isCorrect": true
+        },
+        {
+          "text": "Every Unicode code point is guaranteed to map to exactly one token in every tokenizer",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A tokenizer uses pieces from its own vocabulary, not a universal one-character-per-token rule. Spaces and capitalization can change which vocabulary entry matches. Common text may stay in larger pieces, while rare text may split into smaller ones.",
+      "references": "[Hugging Face Transformers: Subword tokenization](https://huggingface.co/docs/transformers/tokenizer_summary)"
+    },
+    {
+      "id": "subword-tokenizer-tradeoffs",
+      "title": "Why are subword tokenizers useful?",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "Frequent words or fragments can remain compact",
+          "isCorrect": true
+        },
+        {
+          "text": "Unseen or rare words can be assembled from smaller known pieces",
+          "isCorrect": true
+        },
+        {
+          "text": "The vocabulary can stay smaller than a vocabulary containing every possible full word",
+          "isCorrect": true
+        },
+        {
+          "text": "All languages are guaranteed to use the same number of tokens for equivalent sentences",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Subword tokenization balances vocabulary size with the ability to represent unfamiliar text. Common words or fragments can stay compact, while rare words can be built from smaller pieces. Efficiency still depends on the tokenizer's training data, so equivalent sentences in different languages may use different numbers of tokens.",
+      "references": "[Hugging Face Transformers: Tokenization algorithms and tradeoffs](https://huggingface.co/docs/transformers/tokenizer_summary)"
+    },
+    {
+      "id": "count-a-toy-tokenization",
+      "title": "How many input tokens does this toy tokenizer produce?",
+      "description": "For the text `Ada Lovelace!`, the tokenizer reports `[\"Ada\", \" Lov\", \"elace\", \"!\"]`. Enter an integer.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [4]
+      },
+      "explanation": "The tokenizer returned four pieces, so the answer is 4. The original text has 13 visible characters, including the space, and two words. Characters, words, and tokens are different units.",
+      "references": "[Hugging Face Transformers: Tokenization algorithms](https://huggingface.co/docs/transformers/tokenizer_summary)"
+    },
+    {
+      "id": "budget-with-model-tokenizer",
+      "title": "How should you count billable input tokens for a known model?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Use that model's tokenizer or the provider's token-counting endpoint, including message and tool overhead",
+          "isCorrect": true
+        },
+        {
+          "text": "Count spaces and add one",
+          "isCorrect": false
+        },
+        {
+          "text": "Multiply the number of English words by exactly 0.75",
+          "isCorrect": false
+        },
+        {
+          "text": "Use the character count because every character is one token",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Rules such as \"one token is about four English characters\" are only rough estimates. Exact counts depend on the model's encoding and can include messages, tools, images, files, and formatting. When cost or limits matter, count the complete request with model-aware tooling.",
+      "references": "[OpenAI API: Counting tokens](https://developers.openai.com/api/docs/guides/token-counting)"
+    },
+    {
+      "id": "emoji-token-count",
+      "title": "Can one visible emoji consume more than one token?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Yes. Visible graphemes, Unicode code points, bytes, and model tokens are different units",
+          "isCorrect": true
+        },
+        {
+          "text": "No. Every rendered glyph is exactly one token by definition",
+          "isCorrect": false
+        },
+        {
+          "text": "Only if the emoji appears at the start of a sentence",
+          "isCorrect": false
+        },
+        {
+          "text": "Only character-level tokenizers can encode emoji",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "One displayed emoji can contain several Unicode code points joined into a single grapheme. A byte-level tokenizer may then split the encoded bytes into several tokens. Visual length does not determine token length.",
+      "references": "[Hugging Face Transformers: Byte-level BPE](https://huggingface.co/docs/transformers/tokenizer_summary)\n\n[Unicode Standard Annex #29: Grapheme cluster boundaries](https://www.unicode.org/reports/tr29/)"
+    },
+    {
+      "id": "context-versus-output-limit",
+      "title": "What is the difference between a context window and a maximum output limit?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The context window bounds the tokens available to a request, while the output limit separately caps how many tokens may be generated",
+          "isCorrect": true
+        },
+        {
+          "text": "They are two names for the exact same number on every model",
+          "isCorrect": false
+        },
+        {
+          "text": "The context window counts characters, while the output limit counts words",
+          "isCorrect": false
+        },
+        {
+          "text": "The output limit controls only network packet size",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Providers list these limits separately because a model may accept far more context than it can generate in one response. The output limit caps generation. If the context window covers both input and output, the remaining context space can impose a lower cap.",
+      "references": "[OpenAI API: Model catalog with separate context-window and max-output fields](https://developers.openai.com/api/docs/models)"
+    },
+    {
+      "id": "remaining-context-arithmetic",
+      "title": "What is the largest possible output in this request?",
+      "description": "A hypothetical API states `input tokens + output tokens ≤ 128,000` and also has a `16,000`-token maximum output. The complete input uses `119,500` tokens. Enter the number of output tokens.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [8500]
+      },
+      "explanation": "The remaining context capacity is `128,000 - 119,500 = 8,500` tokens. The effective output ceiling is `min(16,000, 8,500) = 8,500`. The separate 16,000-token output cap cannot create more room in the combined budget.",
+      "references": "[OpenAI API: Models expose context and maximum-output limits separately](https://developers.openai.com/api/docs/models)"
+    },
+    {
+      "id": "maximum-output-semantics",
+      "title": "What can happen when an API request sets a maximum output of 2,000 tokens?",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "The model can stop before 2,000 tokens when it completes the answer or emits a stop condition",
+          "isCorrect": true
+        },
+        {
+          "text": "Generation can be cut off at the limit, leaving an incomplete answer",
+          "isCorrect": true
+        },
+        {
+          "text": "The setting is a ceiling, not a request to produce exactly 2,000 tokens",
+          "isCorrect": true
+        },
+        {
+          "text": "The setting guarantees a semantically complete answer of exactly 2,000 tokens",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A maximum-output setting is a ceiling, not a target. The model can stop earlier, or it can reach the limit and leave the answer incomplete. Applications should inspect the completion status before treating a response as complete.",
+      "references": "[OpenAI API: Structured Outputs edge cases include max-token truncation](https://developers.openai.com/api/docs/guides/structured-outputs)"
+    },
+    {
+      "id": "long-context-not-perfect-recall",
+      "title": "Does fitting a document inside the context window guarantee that every detail will be used reliably?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "No. Capacity only means the tokens can be supplied; use of details can still depend on relevance and position",
+          "isCorrect": true
+        },
+        {
+          "text": "Yes. Attention guarantees lossless recall of every supplied token",
+          "isCorrect": false
+        },
+        {
+          "text": "Yes, but only when temperature is above 1",
+          "isCorrect": false
+        },
+        {
+          "text": "No, because models can read only the final 512 tokens of any context",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A context window tells you how much input fits, not how reliably every detail will be used. In the *Lost in the Middle* experiments, performance often fell when relevant information appeared in the middle of long inputs. Long-context systems still need careful retrieval, ordering, and evaluation.",
+      "references": "[Liu et al.: Lost in the Middle: How Language Models Use Long Contexts](https://arxiv.org/abs/2307.03172)"
+    },
+    {
+      "id": "what-consumes-context",
+      "title": "Which data can use a request's context budget?",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "System, developer, and user instructions included in the request",
+          "isCorrect": true
+        },
+        {
+          "text": "Conversation history supplied or carried into the request",
+          "isCorrect": true
+        },
+        {
+          "text": "Tool definitions and tool results supplied to the model",
+          "isCorrect": true
+        },
+        {
+          "text": "Only the latest visible user sentence; all other request data uses no context",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The latest user message is only one part of a request. Instructions, conversation history, tool definitions, tool results, and multimodal inputs can all use tokens or equivalent units. This is why a short visible message can belong to a large model input.",
+      "references": "[OpenAI API: Counting tokens, including tools and other input types](https://developers.openai.com/api/docs/guides/token-counting)\n\n[OpenAI API: Conversation state](https://developers.openai.com/api/docs/guides/conversation-state)"
+    },
+    {
+      "id": "automatic-truncation-risk",
+      "title": "What is the main risk of removing the oldest items from an overlong conversation?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Foundational instructions or facts may disappear while the request still appears to succeed",
+          "isCorrect": true
+        },
+        {
+          "text": "The tokenizer permanently deletes those messages from the user's database",
+          "isCorrect": false
+        },
+        {
+          "text": "The model automatically retrains itself on the omitted messages",
+          "isCorrect": false
+        },
+        {
+          "text": "Output tokens become free after truncation",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Removing old items changes the information available to the model. If those items contain important instructions or evidence, the model's behavior may change even though the request succeeds. Applications should manage or summarize long histories deliberately.",
+      "references": "[OpenAI Responses API reference: `auto` truncation drops items from the beginning](https://developers.openai.com/api/reference/resources/responses/methods/create)"
+    },
+    {
+      "id": "autoregressive-generation",
+      "title": "What does an autoregressive text model repeatedly do during ordinary generation?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Compute a distribution for the next token, select one, append it, and repeat",
+          "isCorrect": true
+        },
+        {
+          "text": "Retrieve a completed answer verbatim from a database for every prompt",
+          "isCorrect": false
+        },
+        {
+          "text": "Generate all future tokens independently with no dependence on earlier output",
+          "isCorrect": false
+        },
+        {
+          "text": "Convert the prompt into a single immutable sentence template",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "An autoregressive model predicts one token from the tokens that came before it. The selected token is appended to the sequence and affects the next prediction. A small difference early in generation can lead to a very different answer.",
+      "references": "[Brown et al.: Language Models are Few-Shot Learners](https://arxiv.org/abs/2005.14165)\n\n[Hugging Face Transformers: Text generation strategies](https://huggingface.co/docs/transformers/generation_strategies)"
+    },
+    {
+      "id": "temperature-effect",
+      "title": "What does lowering sampling temperature usually do to the next-token distribution?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "It sharpens the distribution, favoring already-likely tokens more strongly",
+          "isCorrect": true
+        },
+        {
+          "text": "It makes every vocabulary token equally likely",
+          "isCorrect": false
+        },
+        {
+          "text": "It expands the model's knowledge cutoff",
+          "isCorrect": false
+        },
+        {
+          "text": "It increases the context window",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Temperature rescales the values used to compute sampling probabilities. A value below 1 widens the gaps, so already likely tokens receive more probability. This changes sampling behavior, not the model's knowledge or context window.",
+      "references": "[Hugging Face Transformers: Generation parameters](https://huggingface.co/docs/transformers/main_classes/text_generation)\n\n[OpenAI API reference: Temperature controls randomness](https://developers.openai.com/api/reference/resources/responses/methods/create)"
+    },
+    {
+      "id": "top-p-definition",
+      "title": "What does `top_p: 0.9` mean in nucleus sampling?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Keep the smallest set of most-probable next tokens whose cumulative probability reaches at least 0.9, then sample from it",
+          "isCorrect": true
+        },
+        {
+          "text": "Keep exactly 90% of the vocabulary by token count",
+          "isCorrect": false
+        },
+        {
+          "text": "Always choose the token whose individual probability is exactly 0.9",
+          "isCorrect": false
+        },
+        {
+          "text": "Discard the most probable 10% of tokens",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Nucleus sampling uses cumulative probability, not a fixed percentage of the vocabulary. A confident prediction may need only a few candidates to reach 0.9. A flatter distribution may need many more.",
+      "references": "[Holtzman et al.: The Curious Case of Neural Text Degeneration](https://arxiv.org/abs/1904.09751)\n\n[Hugging Face Transformers: `top_p` generation parameter](https://huggingface.co/docs/transformers/main_classes/text_generation)"
+    },
+    {
+      "id": "nucleus-size-calculation",
+      "title": "How many candidates are retained by this top-p filter?",
+      "description": "The sorted next-token probabilities are `[0.45, 0.30, 0.15, 0.10]`, and `top_p` is `0.70`. Retain the smallest prefix whose cumulative mass is at least `0.70`. Enter an integer.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [2]
+      },
+      "explanation": "The first candidate contributes `0.45`, which is below `0.70`. Adding the second gives `0.45 + 0.30 = 0.75`, so the threshold has been reached with 2 candidates. The total can exceed `top_p` because the filter keeps whole candidates.",
+      "references": "[Holtzman et al.: Nucleus sampling](https://arxiv.org/abs/1904.09751)"
+    },
+    {
+      "id": "same-prompt-different-output",
+      "title": "Why can the same visible prompt produce different answers?",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "Random sampling among plausible next tokens",
+          "isCorrect": true
+        },
+        {
+          "text": "A moving model alias or changed backend configuration",
+          "isCorrect": true
+        },
+        {
+          "text": "Different instructions, conversation history, tools, or request parameters",
+          "isCorrect": true
+        },
+        {
+          "text": "A mathematical law requiring every repeated prompt to produce byte-identical text",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Sampling can vary, but the visible prompt is not always the full request. Model version, instructions, earlier turns, tool results, and decoding settings can also differ. To investigate a change, record the complete request and the exact model version.",
+      "references": "[OpenAI API: Model-version behavior can vary](https://developers.openai.com/api/reference/overview#backwards-compatibility)\n\n[Hugging Face Transformers: Text generation strategies](https://huggingface.co/docs/transformers/generation_strategies)"
+    },
+    {
+      "id": "temperature-zero-truth",
+      "title": "When a model supports temperature 0, does that make its answer factually correct?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "No. It can reduce sampling variation, but the preferred continuation can still be wrong",
+          "isCorrect": true
+        },
+        {
+          "text": "Yes. Zero temperature activates a fact database",
+          "isCorrect": false
+        },
+        {
+          "text": "Yes. Zero temperature moves the knowledge cutoff to the current date",
+          "isCorrect": false
+        },
+        {
+          "text": "No. Zero temperature always selects a uniformly random token",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Temperature changes how a model selects among possible continuations. A low setting can make answers more repeatable, but the most likely continuation can still contain a mistake. Factual claims still need evidence and validation.",
+      "references": "[Hugging Face Transformers: Temperature controls next-token sampling](https://huggingface.co/docs/transformers/main_classes/text_generation)"
+    },
+    {
+      "id": "reproducibility-controls",
+      "title": "Which practices help reproduce or diagnose changes across repeated API runs?",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "Keep the model snapshot, request parameters, input, and seed fixed when the API supports a seed",
+          "isCorrect": true
+        },
+        {
+          "text": "Record the backend or system fingerprint when the provider exposes one",
+          "isCorrect": true
+        },
+        {
+          "text": "Pin a model snapshot instead of relying on an alias that can move",
+          "isCorrect": true
+        },
+        {
+          "text": "Assume a seed guarantees correctness and byte-identical output forever",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Some APIs offer a seed as a best-effort reproducibility control, not a permanent guarantee. Keeping the full request and model snapshot fixed removes other common sources of variation. Record any backend fingerprint the provider exposes, and use evals to catch changes.",
+      "references": "[OpenAI API: Seed is a best-effort reproducibility control](https://developers.openai.com/api/reference/resources/chat)\n\n[OpenAI API: Pin model versions and use evals](https://developers.openai.com/api/reference/overview#backwards-compatibility)"
+    },
+    {
+      "id": "temperature-and-top-p-tuning",
+      "title": "Why might an API recommend tuning either temperature or top-p rather than both at once?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Both reshape the candidate distribution, so changing both makes the effect harder to reason about and evaluate",
+          "isCorrect": true
+        },
+        {
+          "text": "The two parameters are aliases and always have identical numeric ranges",
+          "isCorrect": false
+        },
+        {
+          "text": "Using either parameter disables tokenization",
+          "isCorrect": false
+        },
+        {
+          "text": "Top-p controls only price, while temperature controls only latency",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Temperature reshapes the probability distribution, while top-p limits sampling to a cumulative-probability set. Changing both at once makes it harder to tell which setting caused an effect. Holding one steady makes experiments easier to interpret.",
+      "references": "[OpenAI Responses API reference: Recommendation to alter temperature or top-p, not both](https://developers.openai.com/api/reference/resources/responses/methods/create)\n\n[Hugging Face Transformers: Generation configuration](https://huggingface.co/docs/transformers/main_classes/text_generation)"
+    },
+    {
+      "id": "cache-friendly-prompt-layout",
+      "title": "Which prompt layout is most likely to maximize prefix-cache reuse across many requests?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Stable instructions and examples first, followed by request-specific data near the end",
+          "isCorrect": true
+        },
+        {
+          "text": "A changing timestamp first, followed by stable instructions",
+          "isCorrect": false
+        },
+        {
+          "text": "Randomize the order of tool definitions on every call",
+          "isCorrect": false
+        },
+        {
+          "text": "Insert a unique request ID at the beginning of every prompt",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Prompt caching matches the beginning of a request. Put shared instructions and examples first, then add variable user data. A changing timestamp or request ID near the start makes the requests diverge early and reduces cache reuse.",
+      "references": "[OpenAI API: Prompt caching works on exact prompt prefixes](https://developers.openai.com/api/docs/guides/prompt-caching)"
+    },
+    {
+      "id": "openai-cache-threshold",
+      "title": "At what prompt length is OpenAI's automatic prompt caching enabled by default?",
+      "description": "Use the current OpenAI prompt-caching guide. Enter the minimum number of tokens.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [1024]
+      },
+      "explanation": "OpenAI documents a minimum of 1,024 prompt tokens for automatic caching. Repeating a shorter prompt does not make it eligible. This threshold belongs to OpenAI's service and is not a universal transformer rule.",
+      "references": "[OpenAI API: How prompt caching works](https://developers.openai.com/api/docs/guides/prompt-caching)"
+    },
+    {
+      "id": "prompt-cache-facts",
+      "title": "Which statements about OpenAI prompt caching are correct?",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "A cache hit requires a matching prompt prefix; similar meaning is not enough",
+          "isCorrect": true
+        },
+        {
+          "text": "The response usage data can report how many input tokens were served from cache",
+          "isCorrect": true
+        },
+        {
+          "text": "Cached-input pricing and retention policies can vary by model or provider",
+          "isCorrect": true
+        },
+        {
+          "text": "A prompt-cache hit makes all generated output tokens free",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "OpenAI caching reuses work for a matching prompt prefix and reports cached input in the usage data. Eligible cached input can cost less and process faster, but generated output is still billed. Prices, write costs, and retention rules can vary by model and service.",
+      "references": "[OpenAI API: Prompt caching behavior and usage accounting](https://developers.openai.com/api/docs/guides/prompt-caching)\n\n[OpenAI API: Model-specific prices](https://developers.openai.com/api/docs/models)"
+    },
+    {
+      "id": "cache-cost-calculation",
+      "title": "What is the total token cost for this ten-request workload?",
+      "description": "Each request has `10,000` input tokens and `1,000` output tokens. The initial request is an uncached miss; the next nine have all input tokens cached. Rates are `$2.00 / 1M` uncached input tokens, `$0.20 / 1M` cached input tokens, and `$8.00 / 1M` output tokens. Ignore all other fees. Enter dollars.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [0.118],
+        "tolerance": 0.0001
+      },
+      "explanation": "Uncached input costs `10,000 / 1,000,000 * $2 = $0.020`. The nine cached requests cost `90,000 / 1,000,000 * $0.20 = $0.018`. All outputs cost `10,000 / 1,000,000 * $8 = $0.080`, giving a total of `$0.118`.",
+      "references": "[OpenAI API: Prompt caching distinguishes uncached, cached, and output-token accounting](https://developers.openai.com/api/docs/guides/prompt-caching)"
+    },
+    {
+      "id": "cache-busting-edit-location",
+      "title": "Which one-character edit is likely to destroy more prefix-cache reuse?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Changing a character near the beginning of the reusable prompt",
+          "isCorrect": true
+        },
+        {
+          "text": "Changing a character after the entire reusable prefix",
+          "isCorrect": false
+        },
+        {
+          "text": "Both edits must preserve exactly the same cached prefix length",
+          "isCorrect": false
+        },
+        {
+          "text": "Neither edit matters because caches match prompts by topic",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "An exact prefix stops matching at the first changed token. An early edit leaves less shared content before that point, so less work can be reused. A change after the stable section can preserve the earlier cached prefix.",
+      "references": "[OpenAI API: Exact-prefix prompt caching](https://developers.openai.com/api/docs/guides/prompt-caching)"
+    },
+    {
+      "id": "cache-is-not-learning",
+      "title": "What does a prompt-cache hit *not* mean?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "That the model's weights were updated to remember the user permanently",
+          "isCorrect": true
+        },
+        {
+          "text": "That some repeated input computation may be reused",
+          "isCorrect": false
+        },
+        {
+          "text": "That eligible cached input may be billed at a different rate",
+          "isCorrect": false
+        },
+        {
+          "text": "That request latency may decrease",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Prompt caching reuses work for a matching input prefix. It does not fine-tune the model, change its weights, or create permanent personal memory. Cache reuse and model learning are separate mechanisms.",
+      "references": "[OpenAI API: Prompt caching reuses exact prompt prefixes](https://developers.openai.com/api/docs/guides/prompt-caching)"
+    },
+    {
+      "id": "ttft-versus-total-latency",
+      "title": "Which metric tells you how quickly a streamed response starts?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Time to first token (TTFT)",
+          "isCorrect": true
+        },
+        {
+          "text": "Total time until the final token only",
+          "isCorrect": false
+        },
+        {
+          "text": "The model's knowledge-cutoff date",
+          "isCorrect": false
+        },
+        {
+          "text": "The number of tokenizer vocabulary entries",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Time to first token measures the wait before the first generated content arrives. Total latency measures the wait for the complete response. Streaming can improve when users first see output even if the final token arrives at nearly the same time.",
+      "references": "[OpenAI API: Streaming responses](https://developers.openai.com/api/docs/guides/streaming-responses)\n\n[OpenAI API: Latency optimization](https://developers.openai.com/api/docs/guides/latency-optimization)"
+    },
+    {
+      "id": "stream-throughput-calculation",
+      "title": "What is the approximate post-start generation throughput in this trace?",
+      "description": "The initial token arrives at `t = 1.0 s`, and token number 101 arrives at `t = 6.0 s`. Use the 100 inter-token intervals after the initial token. Enter tokens per second.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [20],
+        "tolerance": 0.01
+      },
+      "explanation": "The 100 intervals after the first token take `6.0 - 1.0 = 5.0` seconds. Throughput is `100 / 5.0 = 20` tokens per second. The separate time to first token is still 1 second.",
+      "references": "[OpenAI API: Latency optimization](https://developers.openai.com/api/docs/guides/latency-optimization)"
+    },
+    {
+      "id": "streaming-benefits-and-tradeoffs",
+      "title": "Which statements about streaming a text response are correct?",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "The client can display or process early chunks before the response is complete",
+          "isCorrect": true
+        },
+        {
+          "text": "Streaming can reduce perceived waiting even when generation finishes at nearly the same time",
+          "isCorrect": true
+        },
+        {
+          "text": "Partial output can complicate moderation, parsing, and rollback",
+          "isCorrect": true
+        },
+        {
+          "text": "Enabling streaming guarantees fewer generated tokens and a lower token bill",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Streaming sends incremental events while generation continues. Users can see or process early output sooner, but the model may still generate and bill the same tokens. Applications also need a plan for moderating, parsing, or withdrawing partial output.",
+      "references": "[OpenAI API: Streaming responses with server-sent events](https://developers.openai.com/api/docs/guides/streaming-responses)"
+    },
+    {
+      "id": "sse-delta-handling",
+      "title": "How should a client handle text deltas from an HTTP server-sent event stream?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "As incremental pieces to assemble while also handling completion and error events",
+          "isCorrect": true
+        },
+        {
+          "text": "As independent, complete answers that should overwrite one another",
+          "isCorrect": false
+        },
+        {
+          "text": "As proof that the final response has already passed every validation step",
+          "isCorrect": false
+        },
+        {
+          "text": "As model-training updates sent to the browser",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A streamed response is a sequence of events. Text deltas add fragments, while other events can signal completion, refusal, or an error. Clients should follow event types and never assume that a chunk ends at a word, JSON value, or complete answer.",
+      "references": "[OpenAI API: Streaming response events](https://developers.openai.com/api/docs/guides/streaming-responses)\n\n[OpenAI API reference: Responses streaming events](https://developers.openai.com/api/reference/resources/responses/streaming-events)"
+    },
+    {
+      "id": "output-length-latency",
+      "title": "Which change usually reduces total generation latency most directly?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Generate a substantially shorter output that still satisfies the task",
+          "isCorrect": true
+        },
+        {
+          "text": "Rename a JSON field from `x` to `result` while generating the same number of tokens",
+          "isCorrect": false
+        },
+        {
+          "text": "Raise temperature solely to make decoding parallel",
+          "isCorrect": false
+        },
+        {
+          "text": "Move the knowledge cutoff forward in the request body",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Generating output is sequential and often takes most of the request time. OpenAI's guide notes that cutting output length by about half may cut latency by about half, although results vary. Shorter answers can be faster when they still contain everything the task requires.",
+      "references": "[OpenAI API: Generate fewer tokens to reduce latency](https://developers.openai.com/api/docs/guides/latency-optimization)"
+    },
+    {
+      "id": "streaming-does-not-discount",
+      "title": "If streamed and non-streamed requests generate the same tokens, how does streaming alone affect token cost?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "It does not. Streaming changes delivery timing, not the number of billable tokens",
+          "isCorrect": true
+        },
+        {
+          "text": "The streamed request's output tokens are always free",
+          "isCorrect": false
+        },
+        {
+          "text": "The non-streamed request is billed once per HTTP packet",
+          "isCorrect": false
+        },
+        {
+          "text": "The streamed request automatically uses prompt-cache pricing for output",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Sending the same output in chunks does not change its token count. Streaming changes when content arrives, not how many input or output tokens the model uses. Other provider charges may exist, but streaming alone does not create a token discount.",
+      "references": "[OpenAI API: Streaming changes when output becomes available](https://developers.openai.com/api/docs/guides/streaming-responses)\n\n[OpenAI API: Pricing is based on token usage and model-specific metrics](https://developers.openai.com/api/docs/models)"
+    },
+    {
+      "id": "json-mode-versus-structured",
+      "title": "What does strict mode for Structured Outputs add beyond basic JSON mode?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Conformance to a supported developer-supplied schema as well as syntactically valid JSON",
+          "isCorrect": true
+        },
+        {
+          "text": "A guarantee that every value in the JSON is factually true",
+          "isCorrect": false
+        },
+        {
+          "text": "Unlimited output length for JSON responses",
+          "isCorrect": false
+        },
+        {
+          "text": "Automatic execution of every function named in the schema",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "JSON mode aims to produce text that parses as JSON. Strict Structured Outputs also constrain the result to a supported JSON Schema, including required keys and allowed value shapes. A schema-valid value can still be factually wrong.",
+      "references": "[OpenAI API: Structured Outputs versus JSON mode](https://developers.openai.com/api/docs/guides/structured-outputs)"
+    },
+    {
+      "id": "structured-output-boundaries",
+      "title": "What must an application still handle when using strict Structured Outputs?",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "A schema-valid value can still be factually wrong",
+          "isCorrect": true
+        },
+        {
+          "text": "Safety refusals may arrive through a refusal path rather than the requested schema",
+          "isCorrect": true
+        },
+        {
+          "text": "Reaching the output limit can leave the response incomplete",
+          "isCorrect": true
+        },
+        {
+          "text": "Every keyword from every JSON Schema draft is necessarily supported",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Constrained decoding controls the shape of a response, not whether its claims are true. OpenAI also documents refusal and incomplete-output cases and supports only part of JSON Schema. Production code should inspect response status, handle refusals, and validate the meaning of parsed values.",
+      "references": "[OpenAI API: Structured Outputs edge cases and supported schemas](https://developers.openai.com/api/docs/guides/structured-outputs)"
+    },
+    {
+      "id": "openai-strict-schema-rules",
+      "title": "Which schema rules does OpenAI document for strict Structured Outputs?",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "Object fields must be listed as required",
+          "isCorrect": true
+        },
+        {
+          "text": "An optional value can be modeled with a required field whose type also allows `null`",
+          "isCorrect": true
+        },
+        {
+          "text": "Objects must set `additionalProperties: false`",
+          "isCorrect": true
+        },
+        {
+          "text": "A root-level `anyOf` is always accepted",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "OpenAI requires every object field to be listed as required and every object to set `additionalProperties: false`. A required field can allow `null` when the value is optional in the application. The root schema must be an object and cannot be an `anyOf` union.",
+      "references": "[OpenAI API: Supported schemas for Structured Outputs](https://developers.openai.com/api/docs/guides/structured-outputs#supported-schemas)"
+    },
+    {
+      "id": "new-schema-latency",
+      "title": "Why can the first request with a new Structured Outputs schema be slower?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The service may need to process the schema before constrained generation, and that preprocessing can be reused",
+          "isCorrect": true
+        },
+        {
+          "text": "The model permanently retrains all of its weights on the schema",
+          "isCorrect": false
+        },
+        {
+          "text": "JSON requires a slower network protocol than text",
+          "isCorrect": false
+        },
+        {
+          "text": "The initial response must always contain every possible schema-valid object",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "OpenAI notes that a new schema can add latency while the API processes it for constrained generation. Later requests with the same schema can avoid that extra step. This processing does not train the model or change its weights.",
+      "references": "[OpenAI API: Initial schema-processing latency](https://developers.openai.com/api/docs/guides/structured-outputs)"
+    },
+    {
+      "id": "knowledge-cutoff-meaning",
+      "title": "What does a model's knowledge cutoff mean?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The latest date covered by the model's built-in knowledge, as defined by the provider",
+          "isCorrect": true
+        },
+        {
+          "text": "The date when every fact before it was verified as true",
+          "isCorrect": false
+        },
+        {
+          "text": "The date after which the model refuses to process user-provided text",
+          "isCorrect": false
+        },
+        {
+          "text": "The expiration date of the API key",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A knowledge cutoff marks the latest date covered by a model's built-in knowledge, according to the provider. It does not guarantee that every older fact is present or correct. The model can still analyze newer information supplied in the prompt or fetched with tools.",
+      "references": "[OpenAI API: Model catalog lists knowledge cutoffs](https://developers.openai.com/api/docs/models)"
+    },
+    {
+      "id": "knowledge-cutoff-myths",
+      "title": "Which statements about knowledge cutoffs are correct?",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "Different model versions can have different cutoff dates",
+          "isCorrect": true
+        },
+        {
+          "text": "A model can reason over post-cutoff material supplied through retrieval or tools",
+          "isCorrect": true
+        },
+        {
+          "text": "A confident answer about a post-cutoff event is not proof that the model has current knowledge",
+          "isCorrect": true
+        },
+        {
+          "text": "Every fact before the cutoff is guaranteed to be present and accurate",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Cutoff dates can differ between models and versions. Search tools and retrieved documents can add newer information to a request without changing the model's built-in cutoff. A confident tone is not proof of freshness, so current claims still need dated sources.",
+      "references": "[OpenAI API: Models have distinct knowledge-cutoff metadata](https://developers.openai.com/api/docs/models)\n\n[OpenAI API: Web search supplies up-to-date information](https://developers.openai.com/api/docs/guides/tools-web-search)"
+    },
+    {
+      "id": "freshness-production-strategy",
+      "title": "Which practices make answers about fast-changing facts more reliable?",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "Retrieve current information from authoritative sources and preserve source timestamps",
+          "isCorrect": true
+        },
+        {
+          "text": "Record the model ID or snapshot and its documented knowledge cutoff",
+          "isCorrect": true
+        },
+        {
+          "text": "Evaluate citation support, freshness, and abstention behavior on representative cases",
+          "isCorrect": true
+        },
+        {
+          "text": "Raise temperature until the answer sounds confident",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Reliable current answers need more than a model's built-in knowledge. Use dated, authoritative sources, record the model version and cutoff, and test whether the application cites or abstains when evidence is weak. Raising temperature adds variation; it does not update the facts.",
+      "references": "[OpenAI API: Web search tool](https://developers.openai.com/api/docs/guides/tools-web-search)\n\n[OpenAI API: Model snapshots, context limits, and knowledge cutoffs](https://developers.openai.com/api/docs/models)\n\n[OpenAI API: Evaluation best practices](https://developers.openai.com/api/docs/guides/evaluation-best-practices)"
+    }
+  ]
+}
