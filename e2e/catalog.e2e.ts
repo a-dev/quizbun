@@ -30,6 +30,12 @@ async function selectMostCommonTag(page: Page): Promise<{ tag: string; count: nu
   await page.getByTestId("combobox-trigger").click();
 
   const options = page.getByRole("option");
+
+  // The popup mounts before its list does, and `allInnerTexts()` is one of the
+  // few Locator calls that doesn't auto-wait — without this it can read an
+  // empty list and report "no tag options" on a slow run.
+  await expect(options.first()).toBeVisible();
+
   const labels = await options.allInnerTexts();
   const parsed = labels.map((label, index) => {
     const match = /^(?<tag>.+) \((?<count>\d+)\)$/.exec(label.trim());

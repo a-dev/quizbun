@@ -7,6 +7,7 @@ export {
 export type {
   FilterableQuizItem,
   PreparedFilterItem,
+  PreparedFilterItems,
   QuizFilterState,
   TagFilterMode,
 } from "./model/tag-filter";

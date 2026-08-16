@@ -3,7 +3,7 @@
  * Highlights matching text in the dropdown items.
  */
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 import { Combobox as ComboboxBaseUI } from "@base-ui/react/combobox";
 import fuzzysort from "fuzzysort";
@@ -35,19 +35,16 @@ export function Combobox<T extends ComboboxOptionValue>({
   const isControlled = Object.hasOwn(rest, "value");
   const { value } = rest;
 
-  const preparedItems = options.map((option) => {
-    return {
-      ...option,
-      prepared: fuzzysort.prepare(option.label),
-    };
-  });
+  // An immutable snapshot indexes the labels once per option list, instead of
+  // re-running `fuzzysort.prepare()` for every option on every render.
+  const labelIndex = useMemo(() => fuzzysort.snapshot(options, { key: "label" }), [options]);
 
   const normalizedControlledValue = isControlled
     ? (Array.isArray(value) ? value : [])
         .map((selectedOption) => {
-          return preparedItems.find((option) => option.value === selectedOption.value);
+          return options.find((option) => option.value === selectedOption.value);
         })
-        .filter((option): option is (typeof preparedItems)[number] => Boolean(option))
+        .filter((option): option is (typeof options)[number] => Boolean(option))
     : undefined;
 
   const normalizedValue = isControlled ? toRootValue(normalizedControlledValue) : undefined;
@@ -58,28 +55,24 @@ export function Combobox<T extends ComboboxOptionValue>({
   const [inputValue, setInputValue] = useState("");
 
   const filteredItems = (() => {
-    if (!preparedItems.length || !inputValue) {
-      return preparedItems;
+    if (!options.length || !inputValue) {
+      return options;
     }
 
-    return fuzzysort
-      .go(inputValue, preparedItems, {
-        key: "prepared",
-      })
-      .map((result) => ({
-        ...result.obj,
-        displayLabel: result.highlight((match, index) => (
-          <mark key={index} className={styles.mark}>
-            {match}
-          </mark>
-        )),
-      }));
+    return fuzzysort.go(inputValue, labelIndex, { limit: 0, threshold: 0 }).map((result) => ({
+      ...result.obj,
+      displayLabel: result.highlight((match, index) => (
+        <mark key={index} className={styles.mark}>
+          {match}
+        </mark>
+      )),
+    }));
   })();
 
   return (
     <Root
       multiple
-      items={preparedItems}
+      items={options}
       value={normalizedValue}
       defaultValue={normalizedDefaultValue}
       onValueChange={(nextValueRaw) => {

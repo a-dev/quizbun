@@ -71,6 +71,32 @@ describe("filterQuizItems", () => {
     ).toEqual(["react-performance"]);
   });
 
+  test("returns every title match, past fuzzysort's default result limit", () => {
+    const manyItems = Array.from({ length: 25 }, (_, index) => ({
+      id: `react-${index}`,
+      title: `React Quiz ${index}`,
+      tags: ["react"],
+    }));
+
+    expect(
+      filterQuizItems(prepareFilterItems(manyItems), {
+        selectedTags: [],
+        tagMatchMode: "and",
+        titleQuery: "react",
+      }),
+    ).toHaveLength(25);
+  });
+
+  test("keeps sparse fuzzy matches", () => {
+    expect(
+      filterQuizItems(prepareFilterItems(items), {
+        selectedTags: [],
+        tagMatchMode: "and",
+        titleQuery: "rct",
+      }).map((item) => item.id),
+    ).toEqual(["react-hooks", "react-performance"]);
+  });
+
   test("combines title and OR tag filters", () => {
     expect(
       filterQuizItems(prepareFilterItems(items), {
