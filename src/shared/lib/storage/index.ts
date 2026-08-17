@@ -9,6 +9,14 @@ export {
 export type { PageSize } from "./preferences";
 
 export {
+  isStorageApiAvailable,
+  isStoragePersisted,
+  requestStoragePersistence,
+} from "./persistence";
+
+export { hasStoredData } from "./local-data";
+
+export {
   deleteQuiz,
   getQuiz,
   listQuizzes,

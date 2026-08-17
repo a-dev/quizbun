@@ -29,6 +29,7 @@ import {
   prepareFilterItems,
   TagFilter,
 } from "@/features/filter-by-tags";
+import { StorageDurability } from "@/features/storage-durability";
 
 import { layout } from "#styles";
 import styles from "./library-list.module.css";
@@ -219,6 +220,10 @@ export function LibraryList() {
           lost if you clear cookies but will be lost if you clear site data or use private browsing.
         </div>
       </div>
+
+      {/* `showWhenEmpty`: arriving here is intent to store quizzes, so the
+          install advice should land before there is anything to strand. */}
+      <StorageDurability showWhenEmpty />
 
       {state.quizzes.length !== 0 && (
         <TagFilter
