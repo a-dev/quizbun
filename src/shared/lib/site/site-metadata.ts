@@ -17,6 +17,8 @@ export const SITE_THEME_COLOR = "#4d84a7";
  * Light-theme `--color-main-bg` (`--color-gray-10`,
  * `oklch(98.1% 0.005 234.97deg)`) as an sRGB hex literal. Manifest colors are
  * baked outside CSS, where custom properties can't reach, and hex is the safe
- * interop choice. The maskable icon's plate should match this by eye.
+ * interop choice. Note the install icons in `public/icons/` are plated in
+ * SITE_THEME_COLOR, not this — this is the Android splash-screen background
+ * behind them.
  */
 export const SITE_BACKGROUND_COLOR = "#f6f9fc";

@@ -26,7 +26,7 @@ const featuredQuizzes = selectFeaturedQuizzes(summaries, featuredQuizIds);
 const recentQuizzes = selectRecentQuizzes(summaries, 10);
 // A quiz can appear in both sections, but only one card per id may carry the
 // view-transition morph names — duplicates make the browser skip the whole
-// transition. Featured wins; its recent twin renders as a plain card.
+// transition.
 const featuredIds = new Set(featuredQuizzes.map((summary) => summary.id));
 ---
 
@@ -42,11 +42,7 @@ const featuredIds = new Set(featuredQuizzes.map((summary) => summary.id));
   </div>
   <QuizbunHowTo quizCount={quizCount} />
   <ContinueRuns client:idle catalogSummaries={summaries} />
-  {/* Progress on Catalog quizzes lands in the same IndexedDB as Library imports
-      and is just as evictable, and a user who only takes public quizzes never
-      opens the Library — so the durability notice has to reach them here.
-      Renders nothing until something is actually stored. */}
-  <StorageDurability client:idle />
+  <StorageDurability client:idle needInlineMargin={true} />
 
   {
     featuredQuizzes.length > 0 && (

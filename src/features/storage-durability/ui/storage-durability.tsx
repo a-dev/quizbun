@@ -21,10 +21,12 @@ import {
   resolveInstallPath,
 } from "../model/install-environment";
 
+import { cx } from "#styles";
 import styles from "./storage-durability.module.css";
 
 type Props = {
   showWhenEmpty?: boolean;
+  needInlineMargin?: boolean;
 };
 
 /**
@@ -33,7 +35,7 @@ type Props = {
  */
 type PersistenceRequest = "idle" | "pending" | "granted" | "declined";
 
-export function StorageDurability({ showWhenEmpty = false }: Props) {
+export function StorageDurability({ showWhenEmpty = false, needInlineMargin = false }: Props) {
   const [storageAvailable] = useState(isStorageApiAvailable);
   const [persisted, setPersisted] = useState<boolean | null>(null);
   const [hasData, setHasData] = useState<boolean | null>(null);
@@ -63,13 +65,8 @@ export function StorageDurability({ showWhenEmpty = false }: Props) {
     };
   }, [storageAvailable]);
 
-  // The one place `persist()` fires without a click, and the only place it
-  // reliably succeeds. T3's "never call persist() on page load" rule exists
-  // because Firefox raises a permission prompt — and Firefox has no standalone
-  // display mode, so it can never reach this branch. Chromium and WebKit decide
-  // by heuristic with no prompt at all, and being installed is the criterion
-  // they weigh most, so asking here is asking at the only moment it works.
   useEffect(() => {
+    // Only Firefox prompts, other browsers grant persistence automatically when installed. If the user has already granted persistence, don't ask again.
     if (!standalone || persisted !== false) return;
 
     let cancelled = false;
@@ -106,23 +103,9 @@ export function StorageDurability({ showWhenEmpty = false }: Props) {
 
   if (!storageAvailable || persisted === null || hasData === null) return null;
   if (!hasData && !showWhenEmpty) return null;
-  // Protected is the quiet state: there is nothing left to ask of the user and
-  // nothing worth a permanent line of text, so the whole thing disappears. The
-  // one exception is the moment right after an explicit request — vanishing
-  // silently would leave the click with no visible outcome, which is the bug the
-  // refusal copy exists to avoid. It is session-only: the next visit shows
-  // nothing, and a grant the user never asked for (standalone) says nothing.
+
   if (persisted && request !== "granted") return null;
 
-  // Plain language on purpose. The spec's own words for these states are
-  // "persistent" and "best-effort" storage, and a byte figure from `estimate()`
-  // used to sit here — all of it unreadable to anyone who hadn't read the
-  // Storage Standard, and the byte figure covered the whole origin so it never
-  // meant "your quizzes" either.
-  const status =
-    request === "granted"
-      ? "Saved — this browser won't delete your quizzes and progress automatically."
-      : "Your quizzes and progress are saved only in this browser, which may delete them to free up space.";
   const dismissed = isDurabilityNoticeDismissed(dismissal, hasData);
   const showNotice = !persisted && !dismissed && !standalone;
   const installPath = resolveInstallPath(installPrompt !== null);
@@ -133,10 +116,6 @@ export function StorageDurability({ showWhenEmpty = false }: Props) {
 
     const granted = await requestStoragePersistence();
     setPersisted(granted);
-    // A refusal is the ordinary outcome, not an error state — but it has to be
-    // visible, or the click looks like it did nothing at all. Only Firefox turns
-    // this into a question the user can answer; Chromium and WebKit decide by
-    // heuristic, which is why the copy points at installing instead of retrying.
     setRequest(granted ? "granted" : "declined");
   }
 
@@ -145,10 +124,7 @@ export function StorageDurability({ showWhenEmpty = false }: Props) {
 
     try {
       await installPrompt.prompt();
-    } catch {
-      // `prompt()` is single-use and throws once spent. Nothing to recover: the
-      // browser's own install path stays available either way.
-    }
+    } catch {}
 
     setInstallPrompt(null);
   }
@@ -161,22 +137,13 @@ export function StorageDurability({ showWhenEmpty = false }: Props) {
   }
 
   return (
-    <div className={styles.root}>
-      <p className={styles.status} aria-live="polite">
-        {status}
-      </p>
-
+    <div className={cx(styles.root, needInlineMargin && styles.rootInlineMargin)}>
       {showNotice && (
-        // `role="status"` overrides Note's assertive default for warnings. This
-        // is standing advice rendered on load rather than a response to an
-        // action, so it must not interrupt a screen reader on every Library
-        // visit; it stays a live region so the outcome of "Protect storage" is
-        // still announced.
         <Note type="warning" role="status">
           <div className={styles.noticeContent}>
             <p className={styles.copy}>
               {hasData
-                ? "Don't lose your quizzes and progress. "
+                ? "Don't lose your quizzes and progress "
                 : "Before you start, one thing worth knowing. "}
               Browsers delete stored data to free up space, and Safari deletes it after seven days
               without a visit.{" "}
@@ -193,20 +160,20 @@ export function StorageDurability({ showWhenEmpty = false }: Props) {
                 Open Safari's Share menu, then choose <strong>Add to Home Screen</strong>. The
                 installed app gets its own separate storage,{" "}
                 {hasData
-                  ? "so what you've saved in Safari won't appear there — you'd add it again in the app."
-                  : "so installing before you save anything saves you doing it twice."}
+                  ? "so what you've saved in Safari won't appear there — you'd add it again in the app"
+                  : "so installing before you save anything saves you doing it twice"}
               </p>
             )}
 
             {installPath === "browser-menu" && (
-              <p className={styles.copy}>Install Quizbun from your browser's app or page menu.</p>
+              <p className={styles.copy}>Install Quizbun from your browser's app or page menu</p>
             )}
 
             {request === "declined" && (
               <p className={styles.copy}>
                 {installPath === "none"
-                  ? "The browser turned that down, so this data stays deletable."
-                  : "The browser turned that down. Installing Quizbun is the reliable way to get it — browsers grant this to installed apps."}
+                  ? "The browser turned that down, so this data stays deletable"
+                  : "The browser turned that down. Installing Quizbun is the reliable way to get it — browsers grant this to installed apps"}
               </p>
             )}
 
@@ -218,8 +185,7 @@ export function StorageDurability({ showWhenEmpty = false }: Props) {
             <div className={styles.actions}>
               {installPrompt === null ? (
                 <Button
-                  size="s"
-                  variant="secondary"
+                  size="m"
                   onClick={() => void protectStorage()}
                   disabled={pending}
                   aria-busy={pending || undefined}
@@ -227,11 +193,11 @@ export function StorageDurability({ showWhenEmpty = false }: Props) {
                   Ask browser to keep this data
                 </Button>
               ) : (
-                <Button size="s" onClick={() => void install()}>
+                <Button size="m" onClick={() => void install()}>
                   Install Quizbun
                 </Button>
               )}
-              <Button size="s" variant="ghost" onClick={dismiss}>
+              <Button size="s" variant="outline" onClick={dismiss}>
                 Dismiss
               </Button>
             </div>
