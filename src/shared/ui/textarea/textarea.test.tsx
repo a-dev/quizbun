@@ -78,9 +78,8 @@ describe("CodeTextarea", () => {
     await userEvent.fill(textarea, '{ "count": 1 }');
 
     await expect.element(textarea).toHaveValue('{ "count": 1 }');
-    await expect
-      .element(screen.container.querySelector<HTMLSpanElement>(".token.number")!)
-      .toHaveTextContent("1");
+    // Highlighting uses a deferred value, so keep this locator live while React catches up.
+    await expect.element(screen.getByText("1", { exact: true })).toHaveClass("token", "number");
   });
 
   it("keeps the native selection glyphs transparent", async () => {
