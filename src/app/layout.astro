@@ -5,6 +5,7 @@ import { SEO } from "astro-seo";
 import "#styles/index.css";
 
 import { withBase } from "@/shared/lib/routing";
+import { SITE_DESCRIPTION, SITE_THEME_COLOR } from "@/shared/lib/site";
 
 import Header from "./ui/header.astro";
 import Footer from "./ui/footer.astro";
@@ -16,7 +17,7 @@ const themeBootstrapScript = createThemeBootstrapScript();
 
 const {
   title = "Quizbun: quizzes for learning",
-  description = "Quizbun: explanation-first quizzes, bundled public catalog, and a library for your own quiz collection. All static, all open source, and all for learning.",
+  description = SITE_DESCRIPTION,
 } = Astro.props;
 ---
 
@@ -33,10 +34,12 @@ const {
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="icon" type="image/svg+xml" href={withBase("favicon.svg")} />
+    <link rel="manifest" href={withBase("manifest.webmanifest")} />
+    <link rel="apple-touch-icon" href={withBase("icons/apple-touch-icon.png")} />
     <link rel="sitemap" href={withBase("sitemap-index.xml")} />
     <link rel="icon" href={withBase("favicon.ico")} />
     <meta name="generator" content={Astro.generator} />
-    <meta name="theme-color" content="#4d84a7" />
+    <meta name="theme-color" content={SITE_THEME_COLOR} />
     <Font cssVariable="--font-noto-sans" preload />
     <Font cssVariable="--font-noto-mono" preload />
     <meta name="description" content={description} />
@@ -110,7 +113,7 @@ const {
     width: 100%;
     max-width: var(--max-content-width);
     min-height: 100%;
-    margin: 0 auto;
+    margin: 0 auto 1.5rem;
   }
 
   /* Keyboard skip link: visually hidden until focused (T7 keyboard pass). */

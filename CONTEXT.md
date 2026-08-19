@@ -56,6 +56,10 @@ _Avoid_: store, gallery, public library
 A user's locally stored quizzes on one device, separate from the Catalog. Private by construction — nothing leaves the device.
 _Avoid_: my quizzes, collection, private catalog
 
+**Persistent storage**:
+A browser storage mode that protects everything stored for the current origin from automatic deletion — the Library and **every** Run, Catalog Runs included. It is not a backup and does not survive clearing site data, another browser, or another device. User-facing copy says what it does rather than naming the mode; the term is for us, not the UI.
+_Avoid_: permanent storage, backup, PWA, best-effort storage (in UI copy)
+
 **Import**:
 Bringing quiz JSON into the Library via the import page (paste or file fill the same textarea). Validation happens here; the import page is the final authority on validity.
 _Avoid_: upload, load, add

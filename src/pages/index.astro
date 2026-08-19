@@ -9,6 +9,7 @@ import {
 } from "@/shared/lib/content";
 import { withBase } from "@/shared/lib/routing";
 import { ContinueRuns } from "@/features/continue-runs";
+import { StorageDurability } from "@/features/storage-durability";
 import { LinkAsButton } from "@/shared/ui/button";
 import { SectionTitle } from "@/shared/ui/section-title";
 
@@ -25,7 +26,7 @@ const featuredQuizzes = selectFeaturedQuizzes(summaries, featuredQuizIds);
 const recentQuizzes = selectRecentQuizzes(summaries, 10);
 // A quiz can appear in both sections, but only one card per id may carry the
 // view-transition morph names — duplicates make the browser skip the whole
-// transition. Featured wins; its recent twin renders as a plain card.
+// transition.
 const featuredIds = new Set(featuredQuizzes.map((summary) => summary.id));
 ---
 
@@ -41,6 +42,7 @@ const featuredIds = new Set(featuredQuizzes.map((summary) => summary.id));
   </div>
   <QuizbunHowTo quizCount={quizCount} />
   <ContinueRuns client:idle catalogSummaries={summaries} />
+  <StorageDurability client:idle needInlineMargin={true} />
 
   {
     featuredQuizzes.length > 0 && (

@@ -237,7 +237,6 @@ Explicit cuts, each with the reason, to keep the next planning round honest:
 - **Partial-credit scoring**: exam machinery; contradicts learning-first. An optional `scoring` field would be additive later.
 - **Raw HTML in content**: every real use case is covered by Markdown; allowing HTML now and restricting it later would be a breaking change.
 - **Per-quiz license / structured author metadata**: repo license plus an optional `author` string is enough.
-- **PWA / offline support**: its own project; "no servers" stays true regardless.
 - **UI internationalization**: the site chrome ships in English; quiz _content_ can be in any language via the `language` field.
 - **Option-level ids, presentation hints, additional taxonomy**: all additive if ever genuinely needed. Adding fields later is cheap; removing them is a breaking change.
 

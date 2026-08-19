@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, test } from "vitest";
 import type { Question, Quiz } from "../quiz";
 import { computeContentHash } from "../quiz/content-hash";
 import { closeDatabaseForTests, requestToPromise, RUNS_STORE, withTransaction } from "./db";
+import { hasStoredData } from "./local-data";
 import {
   deleteQuiz,
   getQuiz,
@@ -373,5 +374,26 @@ describe("replaceQuiz progress reconciliation", () => {
       answered: 2,
       total: 2,
     });
+  });
+});
+
+describe("local data presence", () => {
+  test("reports nothing stored on a fresh browser", async () => {
+    expect(await hasStoredData()).toBe(false);
+  });
+
+  test("an imported Quiz counts", async () => {
+    await saveQuiz(sampleQuiz);
+
+    expect(await hasStoredData()).toBe(true);
+  });
+
+  // The case the Library-only check used to miss: Progress on a public Catalog
+  // Quiz is stored locally and just as evictable, with no Library import at all.
+  test("Progress on a Catalog Quiz counts with an empty Library", async () => {
+    await saveAnswer("catalog", sampleQuiz, "q-one", await progressFor(sampleQuiz.questions[0]!));
+
+    expect(await listQuizzes()).toEqual([]);
+    expect(await hasStoredData()).toBe(true);
   });
 });
