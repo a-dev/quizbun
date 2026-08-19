@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 
+import { MonitorDown, LayoutGrid } from "lucide-react";
+
 import {
   hasStoredData,
   isStorageApiAvailable,
@@ -143,10 +145,10 @@ export function StorageDurability({ showWhenEmpty = false, needInlineMargin = fa
           <div className={styles.noticeContent}>
             <p className={styles.copy}>
               {hasData
-                ? "Don't lose your quizzes and progress "
+                ? "Don't lose your quizzes and progress. "
                 : "Before you start, one thing worth knowing. "}
-              Browsers delete stored data to free up space, and Safari deletes it after seven days
-              without a visit.{" "}
+              Browsers delete stored data to free up space (e.g., Safari deletes it after seven days
+              without a visit).{" "}
               {installPath === "none"
                 ? "Allowing persistent storage reduces that risk."
                 : "Installing Quizbun and allowing persistent storage both reduce that risk."}
@@ -166,28 +168,26 @@ export function StorageDurability({ showWhenEmpty = false, needInlineMargin = fa
             )}
 
             {installPath === "browser-menu" && (
-              <p className={styles.copy}>Install Quizbun from your browser's app or page menu</p>
-            )}
-
-            {request === "declined" && (
               <p className={styles.copy}>
-                {installPath === "none"
-                  ? "The browser turned that down, so this data stays deletable"
-                  : "The browser turned that down. Installing Quizbun is the reliable way to get it — browsers grant this to installed apps"}
+                <LayoutGrid size="20" className={styles.copyIcon} /> Install Quizbun from your
+                browser's app or page menu.
               </p>
             )}
 
-            {/* One main action at a time. Installing is what actually works, and
-                it makes the request unnecessary: once the app runs installed, the
-                effect above asks for persistence with no clicks at all. The
-                request button therefore only appears when there is no install
-                button to offer. */}
+            {request === "declined" && (
+              <p className={styles.declinedCopy}>
+                {installPath === "none"
+                  ? "Sorry, this browser turned that down, so your data stays deletable"
+                  : "Sorry, this browser turned that down. Installing Quizbun as an web app is the only reliable way to get it."}
+              </p>
+            )}
+
             <div className={styles.actions}>
               {installPrompt === null ? (
                 <Button
                   size="m"
                   onClick={() => void protectStorage()}
-                  disabled={pending}
+                  disabled={pending || request === "declined"}
                   aria-busy={pending || undefined}
                 >
                   Ask browser to keep this data
@@ -197,7 +197,7 @@ export function StorageDurability({ showWhenEmpty = false, needInlineMargin = fa
                   Install Quizbun
                 </Button>
               )}
-              <Button size="s" variant="outline" onClick={dismiss}>
+              <Button size="s" variant="destructive" onClick={dismiss}>
                 Dismiss
               </Button>
             </div>

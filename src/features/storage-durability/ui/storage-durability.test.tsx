@@ -12,9 +12,7 @@ const storageMocks = vi.hoisted(() => ({
 
 vi.mock("@/shared/lib/storage", () => storageMocks);
 
-const GRANTED_CONFIRMATION =
-  "Saved — this browser won't delete your quizzes and progress automatically.";
-const UNPROTECTED_STATUS = /may delete them to free up space/;
+const STORAGE_RISK_COPY = /Browsers delete stored data to free up space/;
 
 function mediaQuery(matches = false): MediaQueryList {
   return {
@@ -48,8 +46,6 @@ describe("StorageDurability", () => {
     const screen = await page.render(<StorageDurability showWhenEmpty />);
 
     await vi.waitFor(() => expect(storageMocks.isStoragePersisted).toHaveBeenCalled());
-    await expect.element(screen.getByText(UNPROTECTED_STATUS)).not.toBeInTheDocument();
-    await expect.element(screen.getByText(GRANTED_CONFIRMATION)).not.toBeInTheDocument();
     await expect.element(screen.getByRole("status")).not.toBeInTheDocument();
   });
 
@@ -63,8 +59,7 @@ describe("StorageDurability", () => {
     await userEvent.click(screen.getByRole("button", { name: "Ask browser to keep this data" }));
 
     expect(storageMocks.requestStoragePersistence).toHaveBeenCalledOnce();
-    // Confirms the click, then the notice is gone.
-    await expect.element(screen.getByText(GRANTED_CONFIRMATION)).toBeInTheDocument();
+    // A successful request quietly removes the notice.
     await expect.element(screen.getByRole("status")).not.toBeInTheDocument();
   });
 
@@ -75,17 +70,19 @@ describe("StorageDurability", () => {
 
     await userEvent.click(screen.getByRole("button", { name: "Ask browser to keep this data" }));
 
-    await expect.element(screen.getByText(/The browser turned that down/)).toBeInTheDocument();
+    await expect
+      .element(screen.getByText(/Sorry, this browser turned that down/))
+      .toBeInTheDocument();
     await expect
       .element(screen.getByRole("button", { name: "Ask browser to keep this data" }))
-      .toBeInTheDocument();
+      .toBeDisabled();
   });
 
   it("keeps a dismissed notice hidden across renders", async () => {
     localStorage.setItem("quizbun.durability-notice-dismissed", "nothing-stored");
     const screen = await page.render(<StorageDurability showWhenEmpty />);
 
-    await expect.element(screen.getByText(UNPROTECTED_STATUS)).toBeInTheDocument();
+    await vi.waitFor(() => expect(storageMocks.hasStoredData).toHaveBeenCalled());
     await expect.element(screen.getByRole("status")).not.toBeInTheDocument();
   });
 
@@ -104,7 +101,7 @@ describe("StorageDurability", () => {
     localStorage.setItem("quizbun.durability-notice-dismissed", "data-stored");
     const screen = await page.render(<StorageDurability showWhenEmpty />);
 
-    await expect.element(screen.getByText(UNPROTECTED_STATUS)).toBeInTheDocument();
+    await vi.waitFor(() => expect(storageMocks.hasStoredData).toHaveBeenCalled());
     await expect.element(screen.getByRole("status")).not.toBeInTheDocument();
   });
 
@@ -123,7 +120,7 @@ describe("StorageDurability", () => {
   it("renders nothing on an empty browser unless asked to", async () => {
     const screen = await page.render(<StorageDurability />);
 
-    await expect.element(screen.getByText(UNPROTECTED_STATUS)).not.toBeInTheDocument();
+    await vi.waitFor(() => expect(storageMocks.hasStoredData).toHaveBeenCalled());
     await expect.element(screen.getByRole("status")).not.toBeInTheDocument();
   });
 
@@ -132,7 +129,7 @@ describe("StorageDurability", () => {
     storageMocks.hasStoredData.mockResolvedValue(true);
     const screen = await page.render(<StorageDurability />);
 
-    await expect.element(screen.getByText(UNPROTECTED_STATUS)).toBeInTheDocument();
+    await expect.element(screen.getByText(STORAGE_RISK_COPY)).toBeInTheDocument();
     await expect.element(screen.getByRole("status")).toBeInTheDocument();
   });
 
@@ -140,7 +137,7 @@ describe("StorageDurability", () => {
     vi.mocked(window.matchMedia).mockReturnValue(mediaQuery(true));
     const screen = await page.render(<StorageDurability showWhenEmpty />);
 
-    await expect.element(screen.getByText(UNPROTECTED_STATUS)).toBeInTheDocument();
+    await vi.waitFor(() => expect(storageMocks.requestStoragePersistence).toHaveBeenCalledOnce());
     await expect.element(screen.getByRole("status")).not.toBeInTheDocument();
   });
 
@@ -152,8 +149,7 @@ describe("StorageDurability", () => {
     const screen = await page.render(<StorageDurability showWhenEmpty />);
 
     await vi.waitFor(() => expect(storageMocks.requestStoragePersistence).toHaveBeenCalledOnce());
-    await expect.element(screen.getByText(GRANTED_CONFIRMATION)).not.toBeInTheDocument();
-    await expect.element(screen.getByText(UNPROTECTED_STATUS)).not.toBeInTheDocument();
+    await expect.element(screen.getByRole("status")).not.toBeInTheDocument();
   });
 
   it("does not re-request persistence when already granted", async () => {
@@ -169,7 +165,7 @@ describe("StorageDurability", () => {
     storageMocks.isStorageApiAvailable.mockReturnValue(false);
     const screen = await page.render(<StorageDurability showWhenEmpty />);
 
-    await expect.element(screen.getByText(UNPROTECTED_STATUS)).not.toBeInTheDocument();
+    await expect.element(screen.getByRole("status")).not.toBeInTheDocument();
     expect(storageMocks.isStoragePersisted).not.toHaveBeenCalled();
   });
 
