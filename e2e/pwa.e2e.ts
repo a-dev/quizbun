@@ -78,7 +78,7 @@ test("the Library durability notice stays dismissed after reload", async ({ page
 
   await page.reload();
 
-  await expect(page.getByText(/may delete them to free up space/)).toBeVisible();
+  await expect(page.getByRole("region", { name: "Your quizzes" })).toBeVisible();
   await expect(notice).toBeHidden();
   // Scoped to what was stored when it was taken: nothing, so the notice returns
   // once there is data (covered in the component lane).

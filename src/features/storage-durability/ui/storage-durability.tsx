@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-import { MonitorDown, LayoutGrid } from "lucide-react";
+import { LayoutGrid } from "lucide-react";
 
 import {
   hasStoredData,
