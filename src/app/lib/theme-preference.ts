@@ -3,10 +3,11 @@ export const THEME_ATTRIBUTE = "data-theme";
 export const THEME_PREFERENCE_ATTRIBUTE = "data-theme-preference";
 export const THEME_MEDIA_QUERY = "(prefers-color-scheme: dark)";
 
-export const THEME_PREFERENCES = ["light", "dark", "system"] as const;
+export const RESOLVED_THEMES = ["light", "dark"] as const;
+export const THEME_PREFERENCES = [...RESOLVED_THEMES, "system"] as const;
 
+export type ResolvedTheme = (typeof RESOLVED_THEMES)[number];
 export type ThemePreference = (typeof THEME_PREFERENCES)[number];
-export type ResolvedTheme = Exclude<ThemePreference, "system">;
 
 function canUseDOM() {
   return typeof document !== "undefined";
@@ -24,11 +25,24 @@ export function normalizeThemePreference(value: unknown): ThemePreference {
   return isThemePreference(value) ? value : "system";
 }
 
-export function getNextThemePreference(preference: ThemePreference): ThemePreference {
-  const currentIndex = THEME_PREFERENCES.indexOf(preference);
-  const nextIndex = (currentIndex + 1) % THEME_PREFERENCES.length;
+/**
+ * The two-state toggle over the three-state model: flip whatever is on screen,
+ * and fall back to "system" whenever the target already matches the system
+ * theme. That way an explicit preference equal to the system theme is never
+ * stored -- which would silently turn a temporary adjustment into a permanent
+ * pin -- and every toggle stays reversible in one click.
+ *
+ * Takes `systemTheme` rather than reading `matchMedia` so the rule stays pure:
+ * a stored preference is only ever re-evaluated when the user clicks.
+ */
+export function getToggledThemePreference(
+  preference: ThemePreference,
+  systemTheme: ResolvedTheme,
+): ThemePreference {
+  const visibleTheme = preference === "system" ? systemTheme : preference;
+  const nextTheme: ResolvedTheme = visibleTheme === "dark" ? "light" : "dark";
 
-  return THEME_PREFERENCES[nextIndex];
+  return nextTheme === systemTheme ? "system" : nextTheme;
 }
 
 export function resolveSystemTheme(): ResolvedTheme {
@@ -65,7 +79,12 @@ export function writeStoredThemePreference(preference: ThemePreference) {
   }
 
   try {
-    window.localStorage.setItem(THEME_STORAGE_KEY, preference);
+    // "system" is the absence of a stored value, not a value of its own.
+    if (preference === "system") {
+      window.localStorage.removeItem(THEME_STORAGE_KEY);
+    } else {
+      window.localStorage.setItem(THEME_STORAGE_KEY, preference);
+    }
   } catch {
     // Ignore storage failures and keep the current document theme.
   }
