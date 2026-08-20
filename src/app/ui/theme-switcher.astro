@@ -1,32 +1,27 @@
 ---
-import { THEME_PREFERENCES } from "../lib/theme-preference";
+import { RESOLVED_THEMES } from "../lib/theme-preference";
 
-import { Laptop, Moon, Sun } from "@lucide/astro";
+import { Moon, Sun } from "@lucide/astro";
 import { Button } from "@/shared/ui/button";
 
 const options = [
   {
     label: "Light",
-    value: THEME_PREFERENCES[0],
+    value: RESOLVED_THEMES[0],
     icon: Sun,
   },
   {
     label: "Dark",
-    value: THEME_PREFERENCES[1],
+    value: RESOLVED_THEMES[1],
     icon: Moon,
-  },
-  {
-    label: "System",
-    value: THEME_PREFERENCES[2],
-    icon: Laptop,
   },
 ];
 ---
 
 <Button
   data-theme-switcher
-  aria-label="Switch theme. Current preference: System"
-  title="Switch theme. Current preference: System"
+  aria-label="Switch to dark theme"
+  title="Switch to dark theme"
   variant="ghost"
   size="icon-s"
   className="button"
@@ -49,35 +44,56 @@ const options = [
 <script>
   import {
     applyThemePreference,
-    getNextThemePreference,
+    getToggledThemePreference,
     normalizeThemePreference,
     readStoredThemePreference,
     THEME_MEDIA_QUERY,
     THEME_PREFERENCE_ATTRIBUTE,
     writeStoredThemePreference,
+    type ResolvedTheme,
     type ThemePreference,
   } from "../lib/theme-preference";
 
   const labels = {
-    light: "Light",
-    dark: "Dark",
-    system: "System",
-  } satisfies Record<ThemePreference, string>;
+    light: "light",
+    dark: "dark",
+  } satisfies Record<ResolvedTheme, string>;
 
   const switchers = Array.from(
     document.querySelectorAll<HTMLButtonElement>("[data-theme-switcher]"),
   );
   const mediaQuery = window.matchMedia(THEME_MEDIA_QUERY);
 
+  function readPreference() {
+    return normalizeThemePreference(
+      document.documentElement.getAttribute(THEME_PREFERENCE_ATTRIBUTE),
+    );
+  }
+
+  function readSystemTheme(): ResolvedTheme {
+    return mediaQuery.matches ? "dark" : "light";
+  }
+
   function syncSwitcher(
     button: HTMLButtonElement,
     preference: ThemePreference,
   ) {
-    const readablePreference = labels[preference];
+    const nextPreference = getToggledThemePreference(
+      preference,
+      readSystemTheme(),
+    );
+    const targetTheme =
+      nextPreference === "system" ? readSystemTheme() : nextPreference;
+    const action = `Switch to ${labels[targetTheme]} theme`;
 
     button.dataset.themeCurrent = preference;
-    button.ariaLabel = `Switch theme. Current preference: ${readablePreference}`;
-    button.title = `Switch theme. Current preference: ${readablePreference}`;
+    button.ariaLabel = action;
+    // Only the tooltip mentions the third state, so the control stays
+    // two-state visually while the pin remains discoverable.
+    button.title =
+      nextPreference === "system"
+        ? `${action} (back to system default)`
+        : action;
   }
 
   function syncAll(
@@ -95,10 +111,10 @@ const options = [
 
   switchers.forEach((button) => {
     button.addEventListener("click", () => {
-      const currentPreference = normalizeThemePreference(
-        document.documentElement.getAttribute(THEME_PREFERENCE_ATTRIBUTE),
+      const nextPreference = getToggledThemePreference(
+        readPreference(),
+        readSystemTheme(),
       );
-      const nextPreference = getNextThemePreference(currentPreference);
 
       writeStoredThemePreference(nextPreference);
       syncAll(nextPreference);
@@ -108,12 +124,17 @@ const options = [
   syncAll();
 
   mediaQuery.addEventListener("change", () => {
-    const preference = normalizeThemePreference(
-      document.documentElement.getAttribute(THEME_PREFERENCE_ATTRIBUTE),
-    );
+    const preference = readPreference();
 
+    // An explicit preference is only ever re-evaluated on click: dropping a
+    // pin because the system theme changed would make pinning impossible for
+    // anyone on an OS-level light/dark schedule.
     if (preference === "system") {
       syncAll(preference);
+    } else {
+      switchers.forEach((switcher) => {
+        syncSwitcher(switcher, preference);
+      });
     }
   });
 </script>
@@ -145,15 +166,8 @@ const options = [
       transform 140ms ease;
   }
 
-  :global(html[data-theme-preference="light"])
-    .button
-    .icon[data-theme-icon="light"],
-  :global(html[data-theme-preference="dark"])
-    .button
-    .icon[data-theme-icon="dark"],
-  :global(html[data-theme-preference="system"])
-    .button
-    .icon[data-theme-icon="system"] {
+  :global(html[data-theme="light"]) .button .icon[data-theme-icon="light"],
+  :global(html[data-theme="dark"]) .button .icon[data-theme-icon="dark"] {
     opacity: 1;
   }
 </style>
