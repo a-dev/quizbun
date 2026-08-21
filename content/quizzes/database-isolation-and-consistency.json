@@ -1,0 +1,864 @@
+{
+  "schemaVersion": 1,
+  "id": "database-isolation-and-consistency",
+  "title": "What Your Database Actually Promises: Isolation & Consistency",
+  "description": "CAP, isolation levels, and locking strategies as the documentation actually defines them. Covers why partition tolerance is never optional, what PostgreSQL's default Read Committed really lets through, why snapshot isolation permits write skew, how linearizability and serializability differ, and when to reach for `SELECT ... FOR UPDATE`, an advisory lock, or an optimistic version column.",
+  "language": "en",
+  "tags": [
+    "databases",
+    "postgresql",
+    "transactions",
+    "isolation-levels",
+    "concurrency",
+    "distributed-systems",
+    "consistency",
+    "cap-theorem"
+  ],
+  "questions": [
+    {
+      "id": "cap-partition-not-a-choice",
+      "title": "In the Gilbert-Lynch formulation of CAP, why is \"just don't tolerate partitions\" not an available design option?",
+      "description": "CAP is usually recited as \"consistency, availability, partition tolerance, choose two.\" Practitioners routinely describe single-node PostgreSQL as \"a CA system.\"",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "A partition is a failure the network inflicts on you, not a property you select. The only real choice is how the system behaves once one happens.",
+          "isCorrect": true
+        },
+        {
+          "text": "Because the SQL standard requires partition tolerance from any system claiming ACID transactions.",
+          "isCorrect": false
+        },
+        {
+          "text": "Because giving up partition tolerance would also mean giving up durability, which no database is willing to do.",
+          "isCorrect": false
+        },
+        {
+          "text": "Because modern datacenter networks no longer partition, so P is satisfied for free and can be ignored.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "CAP gets taught as \"pick two of three,\" which makes CA sound like a coherent choice. It isn't.\n\nGilbert and Lynch's theorem assumes an asynchronous network in which messages can be lost, and the proof is a partition argument. Split the nodes into two halves that cannot talk to each other. Write on one side, read on the other. If both sides answer, which is what availability demands, the reader has to return a stale value, so the register is not linearizable.\n\nPartitions are an input to the system, not an output. A \"CA\" database is one that has not said what it does when the network breaks, and what it does in practice is stop serving requests, which is CP behaviour. Brewer made the same point in his twelve-years-later retrospective: the useful question is what you give up during a partition and how you recover afterwards.\n\nCAP's three words are also much narrower than they sound. C means linearizability specifically, not ACID consistency and not snapshot isolation. A means every request to every non-failed node returns a non-error response, which is a high enough bar that a system with a single leader already fails it even on a healthy network. Kleppmann's critique argues that these definitions are so restrictive that most real systems are neither CP nor AP.",
+      "references": "- [Gilbert & Lynch: Brewer's Conjecture and the Feasibility of Consistent, Available, Partition-Tolerant Web Services (2002)](https://users.ece.cmu.edu/~adrian/731-sp04/readings/GL-cap.pdf)\n- [Eric Brewer: CAP Twelve Years Later: How the \"Rules\" Have Changed (IEEE Computer, 2012)](https://www.infoq.com/articles/cap-twelve-years-later-how-the-rules-have-changed/)\n- [Martin Kleppmann: A Critique of the CAP Theorem (arXiv:1509.05393)](https://arxiv.org/abs/1509.05393)"
+    },
+    {
+      "id": "cap-c-versus-acid-c",
+      "title": "Does the C in CAP mean the same thing as the C in ACID?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "No. CAP's C is linearizability, a guarantee about how recent your reads are. ACID's C is the application's own invariants, which the database mostly just refuses to let you violate.",
+          "isCorrect": true
+        },
+        {
+          "text": "Yes. Both mean that a transaction moves the database from one valid state to another valid state.",
+          "isCorrect": false
+        },
+        {
+          "text": "Yes. Both are serializability, described from a distributed and a single-node perspective.",
+          "isCorrect": false
+        },
+        {
+          "text": "No. CAP's C means durability of committed writes, while ACID's C means isolation between concurrent transactions.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The collision is historical. ACID was chosen because it spells a word, and the C is the weakest member.\n\nACID consistency says a transaction takes the database from one valid state to another, where validity means your invariants: foreign keys, `CHECK` constraints, \"this balance never goes negative.\" The database enforces the constraints you declared and leaves the rest to you. Nothing about it is distributed.\n\nCAP's C is linearizability, a recency guarantee on individual objects. Every read sees the most recently completed write in real time, as if there were one copy of the data. It says nothing about invariants that span several objects.\n\nKleppmann puts it bluntly in *Designing Data-Intensive Applications*: the C in ACID does not belong in the acronym, and CAP borrowing the same letter for an unrelated property has confused architecture arguments for years.",
+      "references": "- [Martin Kleppmann: Designing Data-Intensive Applications, Ch. 7, \"Consistency in ACID\"](https://dataintensive.net/)\n- [Kleppmann: Please stop calling databases CP or AP](https://martin.kleppmann.com/2015/05/11/please-stop-calling-databases-cp-or-ap.html)"
+    },
+    {
+      "id": "pacelc-else-branch",
+      "title": "What does the ELC half of Abadi's PACELC add to the picture that CAP leaves out?",
+      "description": "CAP only describes behaviour during a partition. Daniel Abadi's 2012 extension addresses the ordinary case.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "That when the network is healthy, a replicated system still trades latency against consistency, because staying consistent costs round trips.",
+          "isCorrect": true
+        },
+        {
+          "text": "That when the network is healthy, a system must choose between elasticity and cost, the two economic axes of cloud deployment.",
+          "isCorrect": false
+        },
+        {
+          "text": "That outside of transactions, a system trades encryption against latency when replicating across regions.",
+          "isCorrect": false
+        },
+        {
+          "text": "That when a node is overloaded, a system chooses between shedding load and queueing it, which CAP treats as a partition.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "PACELC reads as: if there is a Partition, choose between Availability and Consistency; Else, choose between Latency and Consistency.\n\nAbadi's observation is that CAP describes an exceptional case and says nothing about the 99.99% of the time when the network is fine. The tradeoff does not go away then. Keeping replicas linearizable means coordinating with them before you acknowledge a write, and that coordination is a round trip you pay on every request. A quorum write across regions costs tens or hundreds of milliseconds whether or not anything is broken.\n\nThat makes the classification more informative than CAP's. DynamoDB and Cassandra are PA/EL, giving up consistency both during partitions and for latency. VoltDB and Spanner-style systems are PC/EC and pay the coordination cost always. MongoDB is usually described as PA/EC. The letters move the conversation from \"which two do we pick\" to \"what is a round trip worth to us.\"",
+      "references": "- [Daniel Abadi: Consistency Tradeoffs in Modern Distributed Database System Design (IEEE Computer, 2012)](https://www.cs.umd.edu/~abadi/papers/abadi-pacelc.pdf)\n- [Abadi's blog: Problems with CAP, and Yahoo's little known NoSQL system](http://dbmsmusings.blogspot.com/2010/04/problems-with-cap-and-yahoos-little.html)"
+    },
+    {
+      "id": "linearizability-versus-serializability",
+      "title": "How do linearizability and serializability differ as correctness properties?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Linearizability is a real-time recency guarantee on single operations over single objects. Serializability says a set of multi-object transactions is equivalent to some serial order, with no real-time requirement.",
+          "isCorrect": true
+        },
+        {
+          "text": "They are the same property. \"Linearizability\" is the distributed-systems name and \"serializability\" is the database name.",
+          "isCorrect": false
+        },
+        {
+          "text": "Linearizability applies to transactions and serializability applies to individual reads and writes, the opposite of how the terms sound.",
+          "isCorrect": false
+        },
+        {
+          "text": "Linearizability is strictly weaker than serializability: every linearizable system is serializable, but not the reverse.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "These are guarantees along two different axes, which is why neither implies the other.\n\nLinearizability (Herlihy and Wing, 1990) covers single objects and single operations, and it does care about wall-clock time. If operation A completes before operation B begins, every observer must order A before B. It makes a replicated register behave as though there were exactly one copy.\n\nSerializability (Papadimitriou, 1979) covers multi-object transactions and says only that the outcome equals some serial execution. Which serial order is unconstrained, so a serializable database may order a transaction that ran at 10:00 after one that ran at 11:00.\n\nThe consequences are concrete. A serializable but non-linearizable system can hand you a stale snapshot: your write commits, a later read-only transaction gets ordered before it, and it legitimately does not see your write. A linearizable but non-serializable store, such as a single-node key-value store with atomic per-key operations, gives you perfect recency per key and no protection at all against write skew across two keys.\n\nBailis compresses it well: linearizability is about time, serializability is about transaction order. The combination has its own name, strict serializability.",
+      "references": "- [Peter Bailis: Linearizability versus Serializability](http://www.bailis.org/blog/linearizability-versus-serializability/)\n- [Herlihy & Wing: Linearizability: A Correctness Condition for Concurrent Objects (TOPLAS, 1990)](https://cs.brown.edu/~mph/HerlihyW90/p463-herlihy.pdf)\n- [Jepsen: Consistency Models](https://jepsen.io/consistency)"
+    },
+    {
+      "id": "strong-consistency-marketing",
+      "title": "When a distributed database's marketing page promises \"strong consistency,\" which formal property does it almost always mean?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Linearizability. Reads observe the latest committed write in real time, as if there were a single copy of each object.",
+          "isCorrect": true
+        },
+        {
+          "text": "Serializability. Concurrent transactions are equivalent to some serial execution.",
+          "isCorrect": false
+        },
+        {
+          "text": "The C in ACID. Declared constraints such as foreign keys and `CHECK` are never violated.",
+          "isCorrect": false
+        },
+        {
+          "text": "Durability. An acknowledged write survives the loss of any single node.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "\"Strong consistency\" is not a defined term in the literature. It is a marketing compression of linearizability, which the Spanner and DynamoDB docs also call strong consistency. The claim is about recency: you will not read a stale value from a replica.\n\nNotice how much that leaves open. A store can be perfectly linearizable per key and still let two transactions read a shared invariant and both break it, because linearizability says nothing about multi-object transactions. DynamoDB's `ConsistentRead` is exactly this, strongly consistent per item with no transactional isolation implied.\n\nJepsen's consistency map is useful here because it draws linearizability and serializability as separate peaks that meet only at strict serializability. When a vendor says \"strongly consistent,\" the follow-up question is whether they mean per object or across transactions.",
+      "references": "- [Jepsen: Consistency Models](https://jepsen.io/consistency)\n- [AWS: DynamoDB read consistency](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/HowItWorks.ReadConsistency.html)\n- [Peter Bailis: Linearizability versus Serializability](http://www.bailis.org/blog/linearizability-versus-serializability/)"
+    },
+    {
+      "id": "strict-serializability",
+      "title": "What does strict serializability guarantee that plain serializability does not?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "That the equivalent serial order also respects real time, so a transaction that committed before another began is ordered before it.",
+          "isCorrect": true
+        },
+        {
+          "text": "That transactions never abort, because the system picks the serial order in advance.",
+          "isCorrect": false
+        },
+        {
+          "text": "That every transaction executes literally one at a time, with no concurrency in the implementation.",
+          "isCorrect": false
+        },
+        {
+          "text": "That reads never block writes, which plain serializability achieves only under two-phase locking.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Strict serializability is serializability plus linearizability. Serializability alone fixes that some serial order exists. Strict serializability pins that order to wall-clock time.\n\nThe difference shows up in the \"my write vanished\" bug. Under plain serializability this trace is legal: T1 writes `x = 1` and commits at 10:00:00, then read-only T2 starts at 10:00:05 and returns `x = 0`. The system claims the serial order was T2 then T1. Fully serializable, and useless to a user who just watched their save succeed.\n\nStrict serializability forbids it, which is why Spanner (via TrueTime) and FoundationDB advertise it, and why it matches what most people assume \"serializable\" means. Single-node PostgreSQL at `SERIALIZABLE` is effectively strict for committed transactions, since there is one commit order and one clock. Add a read replica and route reads to it and the strictness is gone, even though every transaction is still serializable.",
+      "references": "- [Jepsen: Strict Serializability](https://jepsen.io/consistency/models/strict-serializable)\n- [Google: Spanner, TrueTime and the CAP Theorem](https://static.googleusercontent.com/media/research.google.com/en//pubs/archive/45855.pdf)"
+    },
+    {
+      "id": "linearizability-is-local",
+      "title": "Herlihy and Wing proved that linearizability is a local (composable) property. What does that buy you, and does serializability share it?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Compose linearizable objects and the whole system is linearizable, so each object can be implemented independently. Serializability is not local: two individually serializable stores combined are not serializable.",
+          "isCorrect": true
+        },
+        {
+          "text": "Both properties compose, which is why sharding a serializable database across independent nodes preserves serializability for free.",
+          "isCorrect": false
+        },
+        {
+          "text": "Neither composes. Both require a global coordinator, which is why every linearizable system has a single leader.",
+          "isCorrect": false
+        },
+        {
+          "text": "Locality means linearizable objects must live on the same machine, so it argues against distributing them.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Locality is why linearizability turns up everywhere in distributed-systems design. Herlihy and Wing's theorem says a system is linearizable if and only if each of its objects is linearizable. Build a linearizable register, a linearizable queue and a linearizable counter separately, bolt them together, and the result holds without re-verifying anything.\n\nSerializability has no such property, and the counterexample is small. Take two independently serializable stores, X and Y, and two transactions:\n\n```text\nT1: write X=1, read Y   -> sees Y=0\nT2: write Y=1, read X   -> sees X=0\n```\n\nStore X alone can order T1 then T2. Store Y alone can order T2 then T1. Each store is serializable in isolation. Together there is no serial order at all, because each transaction has to precede the other. This is why sharding a database does not give you global serializability for free: you need cross-shard machinery such as two-phase commit, a global sequencer, or distributed SSI to get it back.\n\nSo the two properties trade off. Linearizability composes but only covers one object. Serializability spans objects but does not compose.",
+      "references": "- [Herlihy & Wing: Linearizability: A Correctness Condition for Concurrent Objects (TOPLAS, 1990)](https://cs.brown.edu/~mph/HerlihyW90/p463-herlihy.pdf)\n- [Jepsen: Consistency Models](https://jepsen.io/consistency)"
+    },
+    {
+      "id": "serializable-allows-stale-reads",
+      "title": "A read-only transaction at `SERIALIZABLE` returns data you know is out of date. Has the database violated serializability?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Not necessarily. Serializability requires only that some equivalent serial order exists, and the system may place your read-only transaction early in that order.",
+          "isCorrect": true
+        },
+        {
+          "text": "Yes. `SERIALIZABLE` is the strongest level defined by the SQL standard, so a stale read is by definition a bug.",
+          "isCorrect": false
+        },
+        {
+          "text": "Yes, but only for read-only transactions. Read-write transactions may observe stale snapshots.",
+          "isCorrect": false
+        },
+        {
+          "text": "No, because `SERIALIZABLE` promises snapshot isolation rather than any real-time guarantee.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Serializability is an equivalence claim, not a recency claim. The outcome has to match some serial schedule, and nothing requires that schedule to agree with the clock on the wall.\n\nA database that ordered every read-only transaction before every write would be trivially serializable and trivially useless. Real systems don't go that far, but they do use the freedom in ways you meet in production.\n\nA hot standby serving `SERIALIZABLE` reads sits behind the primary by whatever the replication lag is. Every transaction is still serializable. The serial order simply lags real time.\n\nPostgreSQL's `SERIALIZABLE READ ONLY DEFERRABLE` goes further and waits for a snapshot it can prove is anomaly-free, then reads it without predicate-lock bookkeeping and without ever aborting. The docs note this is the only case where a serializable transaction blocks and a repeatable read one doesn't. You trade recency for a clean read that never needs retrying.\n\nIf you need the read to reflect real time, ask for strict serializability, or linearizability on the object in question, which usually means reading from the primary.",
+      "references": "- [PostgreSQL: Serializable Isolation Level](https://www.postgresql.org/docs/current/transaction-iso.html#XACT-SERIALIZABLE)\n- [PostgreSQL: SET TRANSACTION, READ ONLY DEFERRABLE](https://www.postgresql.org/docs/current/sql-set-transaction.html)\n- [Peter Bailis: Linearizability versus Serializability](http://www.bailis.org/blog/linearizability-versus-serializability/)"
+    },
+    {
+      "id": "hat-available-isolation",
+      "title": "Bailis et al. asked which isolation levels a system can provide while remaining available during a partition. Which of these made the cut?",
+      "description": "A *Highly Available Transaction* system is one whose replicas answer every request without coordinating, so it stays up under arbitrary partitions.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Read Committed.",
+          "isCorrect": true
+        },
+        {
+          "text": "Snapshot Isolation.",
+          "isCorrect": false
+        },
+        {
+          "text": "Repeatable Read.",
+          "isCorrect": false
+        },
+        {
+          "text": "One-copy serializability.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The *Highly Available Transactions* paper draws the line precisely. A HAT system is one where every replica answers every request without contacting anyone else, so it never blocks even when fully partitioned. That splits the isolation hierarchy in two.\n\nAchievable while highly available: Read Uncommitted, Read Committed, Monotonic Atomic View, item and predicate cut isolation, and the session guarantees (monotonic reads, monotonic writes, and read-your-writes, the last of which needs sticky routing).\n\nNot achievable: Cursor Stability, Snapshot Isolation, Repeatable Read, one-copy serializability, and anything linearizable.\n\nEach unavailable level fails for the same reason. It has to prevent a conflicting transaction somewhere else, and detecting one requires communication that a partition denies you. Snapshot Isolation is the interesting case, since what it needs to detect is write-write conflicts for first-committer-wins, and that check is itself coordination.\n\nRead Committed being HAT-achievable is a large part of why it is the default in so many systems, and why \"we'll just turn on Serializable everywhere\" is a much bigger commitment in a geo-replicated deployment than on one box.",
+      "references": "- [Bailis, Davidson, Fekete, Ghodsi, Hellerstein, Stoica: Highly Available Transactions: Virtues and Limitations (VLDB 2014)](https://www.vldb.org/pvldb/vol7/p181-bailis.pdf)\n- [Bailis et al.: Coordination Avoidance in Database Systems (VLDB 2015)](https://www.vldb.org/pvldb/vol8/p185-bailis.pdf)"
+    },
+    {
+      "id": "causal-consistency-ceiling",
+      "title": "For a system that must stay available under arbitrary partitions and converge, what is the strongest consistency model it can offer?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Causal consistency. Operations related by happens-before are seen in that order by everyone, while concurrent operations may be seen in different orders.",
+          "isCorrect": true
+        },
+        {
+          "text": "Sequential consistency. Everyone observes the same total order of operations, just not necessarily the real-time one.",
+          "isCorrect": false
+        },
+        {
+          "text": "Snapshot isolation. Every transaction reads a consistent snapshot, with write-write conflicts rejected.",
+          "isCorrect": false
+        },
+        {
+          "text": "Eventual consistency is the only achievable model, because causal consistency already requires coordination.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "This result is more useful than CAP, because it names the ceiling instead of only proving an impossibility. Mahajan, Alvisi and Dahlin showed that real-time causal consistency is the strongest model achievable in an always-available, one-way convergent system. Attiya, Ellen and Morrison later sharpened the picture for eventually-consistent stores, showing observable causal consistency is optimal for a natural class of data types.\n\nThe boundary sits there because causal consistency only asks you to track and respect happens-before, and that is metadata which travels with the writes. A partitioned replica can keep accepting writes, stamp each with its causal dependencies, and reconcile later. Sequential consistency needs a single agreed total order, and agreeing on an order across a partition is exactly the coordination you don't have.\n\nThis is the theoretical case for causal+ systems such as COPS, Antidote and MongoDB's causally consistent sessions, and for CRDTs. They sit at the strongest point on the availability frontier rather than settling for bare eventual consistency.",
+      "references": "- [Mahajan, Alvisi, Dahlin: Consistency, Availability, and Convergence (UTCS TR-11-22)](https://www.cs.cornell.edu/lorenzo/papers/cac-tr.pdf)\n- [Attiya, Ellen, Morrison: Limitations of Highly-Available Eventually-Consistent Data Stores (PODC 2015)](https://arxiv.org/abs/1506.02275)\n- [Jepsen: Causal Consistency](https://jepsen.io/consistency/models/causal)"
+    },
+    {
+      "id": "pg-default-isolation-level",
+      "title": "Which transaction isolation level does a stock PostgreSQL server use when you `BEGIN` without specifying one?",
+      "description": "Answer with the level's name, for example `read uncommitted`.",
+      "type": "input",
+      "validation": {
+        "mode": "text",
+        "acceptedAnswers": [
+          "read committed",
+          "readcommitted",
+          "read-committed"
+        ]
+      },
+      "explanation": "PostgreSQL ships with `default_transaction_isolation = 'read committed'`, and most production databases never change it. Every ORM connection, every `BEGIN` in a migration and every `psql` session starts there unless you opt out.\n\nThat matters more than it sounds. A lot of folklore (\"the database handles concurrency,\" \"transactions are isolated\") quietly assumes serializability, while the level actually in force permits non-repeatable reads, phantoms, lost updates in read-modify-write code, and write skew. Read Committed promises one thing about other transactions: you will never see uncommitted data.\n\nYou can check and change it per session or globally:\n\n```sql\nSHOW default_transaction_isolation;   -- read committed\n\nBEGIN ISOLATION LEVEL SERIALIZABLE;\n-- ...\nCOMMIT;\n```\n\nRaising the default to `repeatable read` or `serializable` is a legitimate choice, but it breaks application code: transactions can now fail with SQLSTATE `40001` at any statement, so every transaction needs a retry loop before you flip the switch.",
+      "references": "- [PostgreSQL: Transaction Isolation](https://www.postgresql.org/docs/current/transaction-iso.html)\n- [PostgreSQL: default_transaction_isolation](https://www.postgresql.org/docs/current/runtime-config-client.html#GUC-DEFAULT-TRANSACTION-ISOLATION)"
+    },
+    {
+      "id": "pg-distinct-isolation-levels",
+      "title": "PostgreSQL accepts all four SQL-standard isolation level names, but how many behaviourally distinct levels does it actually implement?",
+      "description": "Enter a single digit.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [
+          3
+        ]
+      },
+      "explanation": "Three: Read Committed, Repeatable Read and Serializable. `READ UNCOMMITTED` is accepted for standards compatibility and behaves as Read Committed.\n\nThe reason is architectural rather than a policy decision. PostgreSQL's MVCC never exposes an uncommitted row version to another transaction, since a tuple becomes visible only once its inserting transaction has committed. There is no code path that would show you a dirty row. Dirty reads aren't forbidden so much as unrepresentable, so the standard's weakest level has nothing to map onto except the next one up.\n\nThe standard allows this. It defines levels by which anomalies they must prevent, not which they must allow, so an implementation is free to be stricter. PostgreSQL uses that freedom twice: Repeatable Read is also stricter than required, because it is full snapshot isolation and therefore prevents phantom reads too.\n\n```sql\nBEGIN ISOLATION LEVEL READ UNCOMMITTED;\nSHOW transaction_isolation;   -- read uncommitted (the name is remembered)\n-- ...but no dirty read can ever occur\n```",
+      "references": "- [PostgreSQL: Transaction Isolation, table of levels and anomalies](https://www.postgresql.org/docs/current/transaction-iso.html)"
+    },
+    {
+      "id": "read-committed-snapshot-granularity",
+      "title": "At `READ COMMITTED`, when is the snapshot that a query sees actually taken?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "At the start of each individual statement, so two identical `SELECT`s in one transaction can legitimately return different rows.",
+          "isCorrect": true
+        },
+        {
+          "text": "At `BEGIN`, so every statement in the transaction sees the same consistent snapshot.",
+          "isCorrect": false
+        },
+        {
+          "text": "At the first statement that acquires a row lock. Statements before it read the live state directly.",
+          "isCorrect": false
+        },
+        {
+          "text": "At `COMMIT` time, retroactively, which is how PostgreSQL detects conflicts without locking readers.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "One sentence from the PostgreSQL docs explains most Read Committed surprises: a `SELECT` query sees \"a snapshot of the database as of the instant the query begins to run.\" The snapshot is per statement, not per transaction.\n\nSo this is well-behaved at Read Committed, and it is the non-repeatable read anomaly:\n\n```sql\nBEGIN;                                   -- isolation level: read committed\nSELECT balance FROM accounts WHERE id = 1;   -- 100\n\n--    meanwhile, another session:\n--    UPDATE accounts SET balance = 50 WHERE id = 1; COMMIT;\n\nSELECT balance FROM accounts WHERE id = 1;   -- 50   (!)\nCOMMIT;\n```\n\nFor application code this means any invariant you check with one query and act on in another is unprotected. Arbitrary committed changes can land between the two statements. Reports built from several `SELECT`s can disagree with themselves, because the totals query and the detail query may see different worlds.\n\n`REPEATABLE READ` takes the snapshot once, at the first statement of the transaction, and holds it for the transaction's lifetime.",
+      "references": "- [PostgreSQL: Read Committed Isolation Level](https://www.postgresql.org/docs/current/transaction-iso.html#XACT-READ-COMMITTED)\n- [PostgreSQL: MVCC Introduction](https://www.postgresql.org/docs/current/mvcc-intro.html)"
+    },
+    {
+      "id": "pg-docs-website-hits-delete",
+      "title": "What does the concurrent `DELETE` do, and why?",
+      "description": "`website` is a two-row table whose `hits` column holds 9 and 10. One session runs:\n\n```sql\nBEGIN;\nUPDATE website SET hits = hits + 1;\n-- another session now runs, concurrently:\n--   DELETE FROM website WHERE hits = 10;\nCOMMIT;\n```\n\nBoth sessions are at the default isolation level.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Nothing at all. It skips the row that was 9, because its snapshot saw 9 rather than 10, and by the time it locks the row that was 10, that row has become 11 and no longer matches.",
+          "isCorrect": true
+        },
+        {
+          "text": "It deletes exactly one row, the one whose value was 10 when the `DELETE` began, because Read Committed uses the statement's original snapshot throughout.",
+          "isCorrect": false
+        },
+        {
+          "text": "It deletes both rows, because after the `UPDATE` commits the re-check sees values 10 and 11 and re-evaluates the predicate against the whole table.",
+          "isCorrect": false
+        },
+        {
+          "text": "It fails with a serialization error, because the rows it selected were concurrently modified.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "This is the PostgreSQL documentation's own cautionary example, and it is worth knowing because Read Committed produces a result here that matches no snapshot at all.\n\nTake the two rows separately.\n\nThe row with `hits = 9`: the `DELETE`'s snapshot sees 9, which does not match `hits = 10`, so the row is never considered. That the `UPDATE` is about to make it 10 is invisible.\n\nThe row with `hits = 10`: the snapshot matches, so `DELETE` tries to lock it and blocks, because the `UPDATE` holds it. When the `UPDATE` commits, Read Committed re-evaluates the condition against the new version, a step the source calls EvalPlanQual. The value is now 11, so it doesn't match and gets skipped.\n\nNothing is deleted, even though a row with `hits = 10` existed both before and after the `UPDATE`. The docs' own summary: \"it is possible for an updating command to see an inconsistent snapshot: it can see the effects of concurrent updating commands on the same rows it is trying to update, but it does not see effects of those commands on other rows in the database.\" Read Committed is fine for `WHERE id = ?` point updates and unreliable for complex search conditions.",
+      "references": "- [PostgreSQL: Read Committed Isolation Level, the `website`/`hits` example](https://www.postgresql.org/docs/current/transaction-iso.html#XACT-READ-COMMITTED)"
+    },
+    {
+      "id": "read-committed-arithmetic-update-safe",
+      "title": "Two sessions concurrently run `UPDATE accounts SET balance = balance - 100 WHERE id = 1` at `READ COMMITTED`. Is one of the deductions lost?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "No. The second `UPDATE` blocks on the row lock, then re-reads the newly committed version and subtracts from that, so both deductions apply.",
+          "isCorrect": true
+        },
+        {
+          "text": "Yes. Both statements read `balance` from their own snapshot, so the second write overwrites the first and one deduction disappears.",
+          "isCorrect": false
+        },
+        {
+          "text": "No. PostgreSQL detects the write-write conflict and aborts the second transaction with SQLSTATE `40001`.",
+          "isCorrect": false
+        },
+        {
+          "text": "It depends on timing. If the statements overlap, one deduction is lost; if they don't, both apply.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "This is the case Read Committed handles well, and understanding why makes the neighbouring failures make sense.\n\nWhen the second `UPDATE` reaches a row that a concurrent uncommitted transaction has modified, it blocks on the row lock. Once the first transaction commits, the second doesn't carry on with its stale snapshot. It re-reads the latest committed version of that row, re-checks the `WHERE` clause against it, and re-evaluates the `SET` expression. So `balance - 100` is computed against the post-first-update balance. Start at 500 and you reliably end at 300.\n\nThe docs single this out as the reason Read Committed is \"just right for simpler cases\": \"Because each command is affecting only a predetermined row, letting it see the updated version of the row does not create any troublesome inconsistency.\"\n\nThe qualifier that matters is *inside a single statement*. Split the same logic across two statements, reading the balance into the application, computing in your language and writing the result back, and none of this protection applies. That version does lose updates. The atomicity comes from the arithmetic happening inside the `UPDATE`, not from the isolation level.",
+      "references": "- [PostgreSQL: Read Committed Isolation Level](https://www.postgresql.org/docs/current/transaction-iso.html#XACT-READ-COMMITTED)"
+    },
+    {
+      "id": "lost-update-read-modify-write",
+      "title": "Both transactions commit successfully. What is the final `balance`, and what is this anomaly called?",
+      "description": "Both transactions run at `READ COMMITTED`, and `accounts.balance` starts at `100`.\n\n```sql\n-- T1                                  -- T2\nBEGIN;                                 BEGIN;\nSELECT balance FROM accounts           SELECT balance FROM accounts\n  WHERE id = 1;      -- 100              WHERE id = 1;      -- 100\n                                       -- (application computes 100 - 20)\n-- (application computes 100 - 10)\nUPDATE accounts SET balance = 90\n  WHERE id = 1;\nCOMMIT;\n                                       UPDATE accounts SET balance = 80\n                                         WHERE id = 1;\n                                       COMMIT;\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`80`. T1's deduction is silently overwritten. This is a lost update, and Read Committed does not prevent it.",
+          "isCorrect": true
+        },
+        {
+          "text": "`70`. Both deductions apply, because the second `UPDATE` re-reads the committed row before writing.",
+          "isCorrect": false
+        },
+        {
+          "text": "`80`, but the anomaly is a write skew, since two transactions read the same value and wrote conflicting results.",
+          "isCorrect": false
+        },
+        {
+          "text": "T2 aborts with a serialization failure, so the final balance is `90`.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "T1 writes 90 and commits. T2, still holding the 100 it read before T1 committed, writes 80. Both succeed and T1's work is gone. The database followed its own rules. It just doesn't defend this pattern at Read Committed.\n\nCompare it with `SET balance = balance - 100`. There the read and the write are one statement, so the re-check on unblocking recomputes the arithmetic. Here the read happened in a separate statement, the value travelled into application memory, and the later `UPDATE` writes a literal. Nothing about `SET balance = 80` tells the database it depends on an earlier read, so nothing can detect the conflict.\n\nLost update is not one of ANSI SQL-92's named anomalies. Berenson et al. added it as P4 in their 1995 critique, precisely because the standard's phenomena missed real and common failures. Four ways to fix it:\n\n1. Do the arithmetic in SQL: `SET balance = balance - 10`.\n2. `SELECT ... FOR UPDATE` to lock the row before reading it.\n3. An optimistic version column: `WHERE id = 1 AND version = 7`.\n4. Raise to `REPEATABLE READ`, where T2's `UPDATE` raises SQLSTATE `40001` instead.",
+      "references": "- [Berenson, Bernstein, Gray, Melton, O'Neil, O'Neil: A Critique of ANSI SQL Isolation Levels (SIGMOD 1995)](https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/tr-95-51.pdf)\n- [PostgreSQL: Repeatable Read Isolation Level](https://www.postgresql.org/docs/current/transaction-iso.html#XACT-REPEATABLE-READ)"
+    },
+    {
+      "id": "pg-repeatable-read-prevents",
+      "title": "Which of these anomalies does PostgreSQL's `REPEATABLE READ` prevent?",
+      "description": "Select every anomaly that this level rules out, as PostgreSQL implements it.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "Dirty reads.",
+          "isCorrect": true
+        },
+        {
+          "text": "Non-repeatable reads.",
+          "isCorrect": true
+        },
+        {
+          "text": "Phantom reads.",
+          "isCorrect": true
+        },
+        {
+          "text": "Lost updates, by silently serialising the conflicting writes.",
+          "isCorrect": false
+        },
+        {
+          "text": "Write skew.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "PostgreSQL's `REPEATABLE READ` is snapshot isolation, which is stricter than the SQL standard's Repeatable Read. The transaction takes one snapshot at its first statement and reads it for its whole lifetime, so dirty reads, non-repeatable reads and phantom reads are all impossible. The standard permits phantoms at this level, but a snapshot cannot grow new rows.\n\nWhat snapshot isolation does not prevent is write skew: two transactions read an overlapping set of rows, check an invariant, and write to different rows. No write-write conflict occurs, both commit, and the invariant breaks. That gap is what motivated Fekete et al.'s work and eventually PostgreSQL's SSI.\n\nLost updates are the subtle entry. Snapshot isolation does stop the read-modify-write lost update, but not by serialising anything silently. The second transaction's `UPDATE` aborts:\n\n```text\nERROR:  could not serialize access due to concurrent update\n```\n\nThat is SQLSTATE `40001`, and your application has to catch it and retry the whole transaction. \"Prevented by turning it into an error you must handle\" is a different contract from \"prevented transparently,\" which is why the option as phrased is wrong. Raise the isolation level without adding retry logic and you have traded a silent data-corruption bug for a visible availability bug.",
+      "references": "- [PostgreSQL: Repeatable Read Isolation Level](https://www.postgresql.org/docs/current/transaction-iso.html#XACT-REPEATABLE-READ)\n- [Berenson et al.: A Critique of ANSI SQL Isolation Levels (SIGMOD 1995)](https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/tr-95-51.pdf)"
+    },
+    {
+      "id": "serialization-failure-sqlstate",
+      "title": "Which five-character SQLSTATE code does PostgreSQL return when a transaction must be rolled back and retried because of a serialization failure?",
+      "description": "Enter the five characters exactly, for example `23505`.",
+      "type": "input",
+      "validation": {
+        "mode": "text",
+        "acceptedAnswers": [
+          "40001"
+        ]
+      },
+      "explanation": "SQLSTATE `40001`, `serialization_failure`. It is the most important error code to handle in any application running above Read Committed, and it arrives with different message text depending on what detected it:\n\n```text\nERROR:  could not serialize access due to concurrent update\nERROR:  could not serialize access due to read/write dependencies among transactions\nHINT:   The transaction might succeed if retried.\n```\n\nThe first comes from Repeatable Read or Serializable hitting a write-write conflict. The second is SSI detecting a dangerous read-write dependency structure. Both mean the same thing operationally: nothing is wrong with your data, retry the whole transaction from `BEGIN`.\n\nTwo things trip people up. Retrying only the failed statement is wrong, because the transaction's snapshot is poisoned, so you must replay from the beginning, which means your application has to be able to re-run the whole unit of work. And `40001` is a sibling of `40P01` (`deadlock_detected`). Both sit in class 40, transaction rollback, and both are safely retryable, so a good retry helper usually catches the class rather than one code, with exponential backoff to avoid livelock.",
+      "references": "- [PostgreSQL: Appendix A, PostgreSQL Error Codes](https://www.postgresql.org/docs/current/errcodes-appendix.html)\n- [PostgreSQL: Serializable Isolation Level, handling failures](https://www.postgresql.org/docs/current/transaction-iso.html#XACT-SERIALIZABLE)"
+    },
+    {
+      "id": "retry-40p01-deadlock",
+      "title": "PostgreSQL aborts your transaction with SQLSTATE `40P01`. What happened, and what should the client do?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "A deadlock was detected and PostgreSQL broke the cycle by killing your transaction. Retry the whole transaction, and ideally make lock acquisition order consistent.",
+          "isCorrect": true
+        },
+        {
+          "text": "SSI detected a serialization anomaly. Retrying is pointless until the conflicting transaction finishes, so the client should back off for at least a second.",
+          "isCorrect": false
+        },
+        {
+          "text": "The connection was lost mid-transaction, so the client must reconnect before it can retry.",
+          "isCorrect": false
+        },
+        {
+          "text": "A lock wait exceeded `lock_timeout`. Raise the timeout, since retrying will hit the same wait.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`40P01` is `deadlock_detected`. PostgreSQL runs a deadlock detector after `deadlock_timeout` (default 1s) of waiting, and if it finds a cycle in the wait-for graph it aborts one transaction to break it:\n\n```text\nERROR:  deadlock detected\nDETAIL: Process 4711 waits for ShareLock on transaction 1234; blocked by process 4712.\n        Process 4712 waits for ShareLock on transaction 1235; blocked by process 4711.\n```\n\nRetrying is correct and usually works, because the other transaction has finished by then. But unlike `40001`, a deadlock is often a fixable design problem rather than concurrency noise. The usual cause is two code paths locking the same rows in opposite orders, one updating account 1 then 2 and the other 2 then 1. Sort the rows before locking, with `ORDER BY id` in the `SELECT ... FOR UPDATE` or simply always touching ids in ascending order, and the cycle becomes impossible.\n\nDeadlocks have nothing to do with isolation level. They happen at Read Committed too, wherever explicit or implicit row locks are taken. `40001` and `40P01` are siblings in SQLSTATE class 40 and belong in the same retry handler. The difference is that a rising `40P01` rate is a signal to go and fix your lock ordering.",
+      "references": "- [PostgreSQL: Deadlocks](https://www.postgresql.org/docs/current/explicit-locking.html#LOCKING-DEADLOCKS)\n- [PostgreSQL: Error Codes, Class 40](https://www.postgresql.org/docs/current/errcodes-appendix.html)"
+    },
+    {
+      "id": "write-skew-oncall",
+      "title": "Both transactions commit and nobody is left on call. Why did snapshot isolation allow it?",
+      "description": "Alice and Bob are both on call. The rule is that at least one doctor must remain on call at all times. Both feel unwell and try to go off call simultaneously, at `REPEATABLE READ` (snapshot isolation):\n\n```sql\n-- Alice                                    -- Bob\nBEGIN;                                      BEGIN;\nSELECT count(*) FROM doctors                SELECT count(*) FROM doctors\n WHERE on_call = true                        WHERE on_call = true\n   AND shift_id = 1234;   -- 2                  AND shift_id = 1234;   -- 2\n-- 2 >= 2, safe to leave                    -- 2 >= 2, safe to leave\nUPDATE doctors SET on_call = false          UPDATE doctors SET on_call = false\n WHERE name = 'Alice'                        WHERE name = 'Bob'\n   AND shift_id = 1234;                        AND shift_id = 1234;\nCOMMIT;                                     COMMIT;\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Because the two transactions wrote to different rows, so there is no write-write conflict for first-committer-wins to detect, yet each one's write invalidated the premise the other read.",
+          "isCorrect": true
+        },
+        {
+          "text": "Because the `SELECT count(*)` ran before the snapshot was taken, so both transactions read pre-transaction data.",
+          "isCorrect": false
+        },
+        {
+          "text": "Because `count(*)` is an aggregate, and PostgreSQL does not track aggregates for conflict detection at any isolation level.",
+          "isCorrect": false
+        },
+        {
+          "text": "Because snapshot isolation only checks invariants declared as `CHECK` constraints, and this one was enforced in application code.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "This is write skew, catalogued by Berenson et al. as anomaly A5B, and it is the defining gap in snapshot isolation.\n\nThe shape is always the same. Two transactions read an overlapping set of rows, each makes a decision based on what it read, and each writes to a row the other did not write. Snapshot isolation's only conflict detector is first-committer-wins, which fires when two concurrent transactions modify the same row. Alice modified Alice's row, Bob modified Bob's row, and the two sets are disjoint, so both commit.\n\nWhat makes it hard to catch in review is that neither transaction is wrong on its own. Each read a valid state, applied a valid rule, and produced a valid row. The invariant, \"at least one doctor on call,\" spans rows, and snapshot isolation has no concept of it. The anomaly is a read-write dependency: Alice's write invalidated a predicate Bob had read, and Bob's did the same to Alice. Two such edges in a cycle and no serial order exists.\n\nThe same shape turns up all over once you can see it: double-spending against a balance check, two users claiming the last seat, a uniqueness rule enforced by `SELECT` before `INSERT`, meeting rooms double-booked. Fixes are `SERIALIZABLE`, which detects exactly this, materialising the conflict onto a shared row you lock, or a real constraint such as `EXCLUDE` or a unique index that the database enforces itself.",
+      "references": "- [Berenson et al.: A Critique of ANSI SQL Isolation Levels, anomaly A5B (SIGMOD 1995)](https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/tr-95-51.pdf)\n- [Fekete, Liarokapis, O'Neil, O'Neil, Shasha: Making Snapshot Isolation Serializable (TODS 2005)](https://www.cse.iitb.ac.in/infolab/Data/Courses/CS632/2009/Papers/p492-fekete.pdf)\n- [Martin Kleppmann: Designing Data-Intensive Applications, Ch. 7, Write Skew and Phantoms](https://dataintensive.net/)"
+    },
+    {
+      "id": "first-committer-wins-blind-spot",
+      "title": "Snapshot isolation's first-committer-wins rule is described as its conflict detector. What class of conflict is it structurally unable to see?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Read-write conflicts, where one transaction writes a row that another transaction read and based a decision on.",
+          "isCorrect": true
+        },
+        {
+          "text": "Write-write conflicts on the same row, which is why lost updates survive at snapshot isolation.",
+          "isCorrect": false
+        },
+        {
+          "text": "Conflicts involving rows inserted after the snapshot was taken, which are visible only to `SERIALIZABLE`.",
+          "isCorrect": false
+        },
+        {
+          "text": "Conflicts between transactions that started at different times, since the rule compares only concurrent snapshots.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "First-committer-wins is a write-write detector and nothing else. When two concurrent transactions modify the same row, the second to commit is rejected. PostgreSQL implements the equivalent first-updater-wins variant using row locks, so the loser usually finds out at `UPDATE` time rather than at `COMMIT`. That is enough to eliminate dirty writes and read-modify-write lost updates.\n\nWhat it cannot see is a read-write dependency, also written rw-antidependency: T2 writes a row that T1 read, so T1's view of the world is retroactively false. Nothing in that pattern involves two writes to one row. Reads leave no trace at all in a pure MVCC snapshot scheme, because they take no locks and modify no tuples, so there is no record that T1 ever looked.\n\nThis is why serializability needs something extra. PostgreSQL's SSI adds SIREAD locks, whose whole job is to leave a trace of what each transaction read so the rw edges become visible and cycles can be detected. Everything about SSI follows from snapshot isolation being blind to reads.",
+      "references": "- [Berenson et al.: A Critique of ANSI SQL Isolation Levels (SIGMOD 1995)](https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/tr-95-51.pdf)\n- [Adya: Weak Consistency: A Generalized Theory and Optimistic Implementations for Distributed Transactions (MIT PhD thesis, 1999)](https://hdl.handle.net/1721.1/149899)"
+    },
+    {
+      "id": "ssi-dangerous-structure",
+      "title": "PostgreSQL's Serializable Snapshot Isolation aborts a transaction when it spots a \"dangerous structure.\" What is that structure?",
+      "description": "SSI arrived in PostgreSQL 9.1 and is what makes `SERIALIZABLE` truly serializable rather than snapshot isolation with a stricter name.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "A transaction with both an inbound and an outbound read-write dependency, called a pivot, since every cycle in the dependency graph under snapshot isolation must contain two such consecutive edges.",
+          "isCorrect": true
+        },
+        {
+          "text": "Any cycle at all in the wait-for graph, which is the same condition the deadlock detector uses.",
+          "isCorrect": false
+        },
+        {
+          "text": "Two transactions that have written to the same row within the same snapshot window.",
+          "isCorrect": false
+        },
+        {
+          "text": "A transaction that has held predicate locks for longer than `deadlock_timeout` without committing.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The theorem that makes SSI practical is Fekete et al.'s: under snapshot isolation, every cycle in the serialization dependency graph contains at least two consecutive rw-antidependency edges. That is a strong structural constraint, and it means you never have to build and search the whole graph for cycles. You only watch for one local pattern:\n\n```text\n     rw            rw\nTin ----> Tpivot ----> Tout\n```\n\nA transaction with an incoming rw edge and an outgoing rw edge is a pivot, and a pivot is a necessary condition for a cycle. PostgreSQL tracks these edges with SIREAD locks, lightweight non-blocking markers recording what each transaction read, at tuple, page or relation granularity. It aborts a transaction when the pattern completes, with the refinement that `Tout` must commit first for a real cycle to exist.\n\nTwo consequences follow. Because the condition is necessary but not sufficient, SSI produces false positives and will sometimes abort a transaction that would have been fine. And because SIREAD locks escalate to coarser granularity under memory pressure, false positives get more frequent as read sets grow. That is why the docs recommend keeping serializable transactions short and well indexed, and why `max_pred_locks_per_transaction` exists.",
+      "references": "- [Cahill, Röhm, Fekete: Serializable Isolation for Snapshot Databases (SIGMOD 2008)](https://courses.cs.washington.edu/courses/cse444/08au/544M/READING-LIST/fekete-sigmod2008.pdf)\n- [PostgreSQL source: README-SSI](https://github.com/postgres/postgres/blob/master/src/backend/storage/lmgr/README-SSI)\n- [PostgreSQL: Serializable Isolation Level](https://www.postgresql.org/docs/current/transaction-iso.html#XACT-SERIALIZABLE)"
+    },
+    {
+      "id": "ssi-requires-all-serializable",
+      "title": "Your reporting job runs at `SERIALIZABLE`, but the writer that updates the same rows runs at the default level. Is the reporting job still protected from serialization anomalies?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "No. SSI's guarantee covers a set of concurrent serializable transactions, and a Read Committed writer is not tracked, so it can produce anomalies the serializable reader cannot detect.",
+          "isCorrect": true
+        },
+        {
+          "text": "Yes. SSI tracks read-write dependencies for every transaction regardless of its level, so one serializable participant is enough.",
+          "isCorrect": false
+        },
+        {
+          "text": "Yes, provided the Read Committed writer touches only rows the serializable transaction has read, since those carry SIREAD locks.",
+          "isCorrect": false
+        },
+        {
+          "text": "No, but only because Read Committed takes no row locks. Adding `SELECT ... FOR UPDATE` to the writer would restore the guarantee.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The docs scope the promise carefully. Demonstrate that a single transaction is correct when run alone, and \"you can have confidence that it will do the right thing in any mix of Serializable transactions, even without any information about what those other transactions might do, or it will not successfully commit.\" The guarantee covers a mix of *serializable* transactions. Isolation is a collective property, not something one transaction buys for itself.\n\nThe mechanism explains why. SSI has participating transactions register SIREAD locks for what they read, then checks for dangerous structures among tracked transactions. A Read Committed transaction registers nothing and is checked against nothing. It is invisible to the algorithm, so it can write straight through a predicate your serializable transaction depends on, and no pivot is ever detected because half the graph was never recorded.\n\nThis is one of the most common ways a \"we're serializable\" claim turns out to be false in production, and it usually fails at the edges: a migration script, an admin `psql` session, a background worker on a different connection pool, or an ORM whose per-connection isolation setting reverted after a pool reset. If serializability is your correctness argument, set it server-wide:\n\n```sql\nALTER DATABASE mydb SET default_transaction_isolation = 'serializable';\n```\n\nThen make sure every code path has a `40001` retry loop, because now every one of them can fail.",
+      "references": "- [PostgreSQL: Serializable Isolation Level](https://www.postgresql.org/docs/current/transaction-iso.html#XACT-SERIALIZABLE)\n- [PostgreSQL source: README-SSI](https://github.com/postgres/postgres/blob/master/src/backend/storage/lmgr/README-SSI)"
+    },
+    {
+      "id": "ssi-versus-two-phase-locking",
+      "title": "How does SSI's approach to serializability differ from classic two-phase locking?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "2PL is pessimistic: readers take locks and block writers, so conflicting transactions wait. SSI is optimistic: reads never block anything, and conflicts are resolved by aborting a transaction after the fact.",
+          "isCorrect": true
+        },
+        {
+          "text": "SSI is pessimistic and 2PL is optimistic. SSI acquires predicate locks upfront while 2PL validates only at commit time.",
+          "isCorrect": false
+        },
+        {
+          "text": "They are implementation variants of the same algorithm. SSI is 2PL with the lock table stored in shared memory.",
+          "isCorrect": false
+        },
+        {
+          "text": "2PL guarantees serializability only for read-write transactions, while SSI extends the guarantee to read-only transactions.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The two families sit at opposite ends of the concurrency-control spectrum. Both deliver true serializability, so the tradeoff is throughput shape rather than correctness.\n\nTwo-phase locking, with a growing phase that acquires locks and a shrinking phase that releases them, enforces serializability by making conflicting transactions wait. Its defining cost is that readers block writers and writers block readers. Long-running read queries stall the write path, tail latency gets unpredictable, and deadlocks are routine. It was the standard approach for decades and is what MySQL/InnoDB still uses at `SERIALIZABLE`.\n\nSSI keeps MVCC's central promise, that readers never block writers and writers never block readers, and instead records what was read via SIREAD locks while watching for the pivot pattern. Conflicting transactions run to completion at full speed, and the loser is aborted with `40001`.\n\nWhen that is a good trade: low to moderate contention, where most transactions don't actually conflict and serializability comes nearly free. When it isn't: heavy contention on a hot row or predicate, where SSI degenerates into an abort-retry storm that burns the same work repeatedly. Under heavy contention, explicit pessimistic locking with `SELECT ... FOR UPDATE` at Read Committed often beats `SERIALIZABLE` on throughput, because waiting is cheaper than redoing.",
+      "references": "- [Cahill, Röhm, Fekete: Serializable Isolation for Snapshot Databases (SIGMOD 2008)](https://courses.cs.washington.edu/courses/cse444/08au/544M/READING-LIST/fekete-sigmod2008.pdf)\n- [PostgreSQL: Serializable Isolation Level, performance notes](https://www.postgresql.org/docs/current/transaction-iso.html#XACT-SERIALIZABLE)"
+    },
+    {
+      "id": "for-update-read-committed-recheck",
+      "title": "At `READ COMMITTED`, a `SELECT ... FOR UPDATE` blocks on a row another transaction is updating. When that transaction commits, what does your query return?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The new committed version of the row, re-checked against your `WHERE` clause and skipped entirely if it no longer matches, even though that version is newer than your statement's snapshot.",
+          "isCorrect": true
+        },
+        {
+          "text": "The version of the row as of your statement's snapshot, since a locking read must be consistent with the rest of the query.",
+          "isCorrect": false
+        },
+        {
+          "text": "Nothing. The row is dropped from the result set whenever a concurrent transaction modified it, to avoid returning inconsistent data.",
+          "isCorrect": false
+        },
+        {
+          "text": "An error, because a locking read cannot proceed once the row it targeted has changed underneath it.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "This is documented behaviour and the most surprising thing about locking reads at Read Committed: the row you get back may be newer than everything else in your result.\n\nYour `SELECT ... FOR UPDATE` finds a candidate row in its snapshot, discovers it is locked by an uncommitted transaction, and waits. On commit, PostgreSQL re-reads the latest version and re-evaluates the `WHERE` clause against it. If it still matches you get the new version and lock it. If it no longer matches, the row is skipped and never appears in your results.\n\nThe silent skip is the dangerous half. `SELECT * FROM jobs WHERE status = 'pending' LIMIT 1 FOR UPDATE` can return zero rows in a table full of pending jobs, because the one it picked was grabbed and re-statused by a competing worker. `FOR UPDATE SKIP LOCKED` makes that behaviour explicit and is the right tool for queue workers.\n\nSo Read Committed does not give you a consistent view even within one statement once locking is involved. The locked rows come from the present and the unlocked rows from your snapshot. At `REPEATABLE READ` PostgreSQL refuses to paper over this and raises SQLSTATE `40001` instead, which is a better contract: you get the inconsistency as an error rather than as a wrong answer.",
+      "references": "- [PostgreSQL: Read Committed Isolation Level, locking reads](https://www.postgresql.org/docs/current/transaction-iso.html#XACT-READ-COMMITTED)\n- [PostgreSQL: SELECT, The Locking Clause](https://www.postgresql.org/docs/current/sql-select.html#SQL-FOR-UPDATE-SHARE)"
+    },
+    {
+      "id": "for-update-cannot-lock-phantoms",
+      "title": "Why does `SELECT ... FOR UPDATE` fail to prevent this double booking?",
+      "description": "A booking service checks for a conflicting reservation before inserting one. Two requests for the same room and overlapping times arrive at the same moment, both at `READ COMMITTED`:\n\n```sql\nBEGIN;\nSELECT * FROM bookings\n WHERE room_id = 7\n   AND during && tstzrange('2026-09-01 10:00', '2026-09-01 11:00')\n FOR UPDATE;          -- returns 0 rows in both sessions\n\n-- both conclude the slot is free\nINSERT INTO bookings (room_id, during) VALUES (7, ...);\nCOMMIT;\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Because there are no rows to lock. The conflicting booking does not exist yet, and a row lock cannot be taken on a row that has not been inserted.",
+          "isCorrect": true
+        },
+        {
+          "text": "Because `FOR UPDATE` releases its locks as soon as the `SELECT` completes, rather than holding them until commit.",
+          "isCorrect": false
+        },
+        {
+          "text": "Because `FOR UPDATE` takes a shared lock, so two transactions can hold it on the same rows simultaneously.",
+          "isCorrect": false
+        },
+        {
+          "text": "Because range predicates like `tstzrange` overlap comparisons cannot be used with the locking clause.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "This is write skew on a phantom. `SELECT ... FOR UPDATE` locks the rows the query returned. Here it returns zero rows, so it locks nothing, and nothing offers no protection against another transaction inserting a row that would have matched.\n\nThat is the general limit of row-level locking: it cannot lock the absence of data. Any invariant of the form \"no row exists such that P\" is unprotectable by `FOR UPDATE`, whether that is no overlapping booking, no duplicate username, or no second claim on a coupon. The thing you need to reserve is a gap in the key space, not a row.\n\nFour real fixes, in rough order of preference:\n\n1. A real constraint. PostgreSQL's exclusion constraint expresses this invariant natively and enforces it at any isolation level:\n   ```sql\n   ALTER TABLE bookings ADD CONSTRAINT no_overlap\n     EXCLUDE USING gist (room_id WITH =, during WITH &&);\n   ```\n2. `SERIALIZABLE`. SSI's predicate locks cover the gap, and one transaction gets `40001`.\n3. Materialise the conflict. Lock a `rooms` row with `FOR UPDATE` first, so the range has something concrete to serialise on.\n4. A transactional advisory lock keyed on `room_id`, the cheap index-free version of the previous fix.\n\nMySQL's InnoDB takes a different route. At `REPEATABLE READ` its locking reads take next-key locks covering the row and the gap before it, so it does lock gaps. Different engine, different defaults, different failure modes.",
+      "references": "- [PostgreSQL: Constraints, Exclusion Constraints](https://www.postgresql.org/docs/current/ddl-constraints.html#DDL-CONSTRAINTS-EXCLUSION)\n- [PostgreSQL: Serializable Isolation Level, predicate locking](https://www.postgresql.org/docs/current/transaction-iso.html#XACT-SERIALIZABLE)\n- [MySQL: InnoDB Locking, gap and next-key locks](https://dev.mysql.com/doc/refman/8.0/en/innodb-locking.html)"
+    },
+    {
+      "id": "advisory-lock-session-versus-xact",
+      "title": "What is the practical difference between `pg_advisory_lock(key)` and `pg_advisory_xact_lock(key)`?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The session-scoped lock is held until you explicitly unlock it or the connection ends, surviving both `COMMIT` and `ROLLBACK`. The transaction-scoped one is released automatically at the end of the transaction and cannot be released early.",
+          "isCorrect": true
+        },
+        {
+          "text": "The session-scoped lock is advisory only, while the transaction-scoped one is enforced by the storage engine against all statements.",
+          "isCorrect": false
+        },
+        {
+          "text": "They are identical apart from lock strength. The session-scoped one is exclusive and the transaction-scoped one is shared.",
+          "isCorrect": false
+        },
+        {
+          "text": "The transaction-scoped lock is released at the end of the current statement, while the session-scoped one lasts for the transaction.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Advisory locks are locks with no rows attached. You pick a 64-bit key, or a pair of 32-bit ints, the database gives you mutual exclusion on it, and the meaning of the key is entirely your convention. That makes them the natural tool when the thing you need to serialise on isn't a row: a gap in a range, a cron job that must run on one instance, a per-tenant import.\n\nThe scoping difference causes most advisory-lock incidents:\n\n```sql\n-- transaction-scoped: released at COMMIT or ROLLBACK, always\nBEGIN;\nSELECT pg_advisory_xact_lock(hashtext('room:7'));\n-- ... check and insert ...\nCOMMIT;    -- lock gone\n\n-- session-scoped: survives COMMIT, survives ROLLBACK, survives your\n-- exception handler. Only pg_advisory_unlock() or disconnect frees it.\nSELECT pg_advisory_lock(42);\n```\n\nThe docs are explicit that session-level advisory locks \"do not honor transaction semantics: a lock acquired during a transaction that is later rolled back will still be held following the rollback.\" A session lock leaked by a code path that threw before unlocking doesn't show up in the `pg_locks` searches people usually run, and with a connection pool it is worse than a leak: the connection goes back to the pool still holding the lock, and the next unrelated request that borrows it inherits the lock or deadlocks against it. Unless you specifically need to span transactions, use `pg_advisory_xact_lock`. The automatic release is what you are buying.\n\nAdvisory locks are also purely cooperative. A transaction that doesn't ask for the lock is not blocked by it, so the protection is only as good as your discipline in taking it on every path that touches the resource.",
+      "references": "- [PostgreSQL: Advisory Locks](https://www.postgresql.org/docs/current/explicit-locking.html#ADVISORY-LOCKS)\n- [PostgreSQL: Advisory Lock Functions](https://www.postgresql.org/docs/current/functions-admin.html#FUNCTIONS-ADVISORY-LOCKS)"
+    },
+    {
+      "id": "advisory-xact-lock-function-name",
+      "title": "Which PostgreSQL function takes an exclusive advisory lock that is released automatically when the transaction ends?",
+      "description": "Give the function name, without arguments.",
+      "type": "input",
+      "validation": {
+        "mode": "text",
+        "acceptedAnswers": [
+          "pg_advisory_xact_lock",
+          "pg_advisory_xact_lock()",
+          "pg advisory xact lock"
+        ]
+      },
+      "explanation": "`pg_advisory_xact_lock(key bigint)`, or the two-argument `pg_advisory_xact_lock(key1 int, key2 int)` form, which is handy for namespacing keys by table or tenant.\n\nThe family is worth learning as a grid, because the naming is systematic:\n\n| | Session-scoped | Transaction-scoped |\n|---|---|---|\n| Exclusive, waits | `pg_advisory_lock` | `pg_advisory_xact_lock` |\n| Exclusive, no wait | `pg_try_advisory_lock` | `pg_try_advisory_xact_lock` |\n| Shared, waits | `pg_advisory_lock_shared` | `pg_advisory_xact_lock_shared` |\n| Unlock | `pg_advisory_unlock` | *(not possible)* |\n\nThe `try` variants return `boolean` immediately instead of blocking, which is what you want for \"only one worker should run this job, and everyone else should skip it rather than queue up behind it\":\n\n```sql\nSELECT pg_try_advisory_xact_lock(hashtext('nightly-rollup')) AS got_it;\n```\n\nThere is no `pg_advisory_xact_unlock` by design. Transaction-scoped locks are released only by the transaction ending, and that is the property that makes them leak-proof.",
+      "references": "- [PostgreSQL: Advisory Lock Functions](https://www.postgresql.org/docs/current/functions-admin.html#FUNCTIONS-ADVISORY-LOCKS)"
+    },
+    {
+      "id": "optimistic-version-column",
+      "title": "At `READ COMMITTED`, why does a version-column `UPDATE` reliably detect a concurrent modification, even though the transaction read the row minutes earlier?",
+      "description": "The row carries an integer `version` column, and the write is issued as:\n\n```sql\nUPDATE products\n   SET price = 19.99, version = version + 1\n WHERE id = 42 AND version = 7;\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Because Read Committed re-evaluates the `WHERE` clause against the newest committed row version after unblocking. If another transaction bumped `version`, the predicate no longer matches and the statement reports zero rows updated.",
+          "isCorrect": true
+        },
+        {
+          "text": "Because the `version` column causes PostgreSQL to promote the statement to `REPEATABLE READ` semantics for that row.",
+          "isCorrect": false
+        },
+        {
+          "text": "Because `UPDATE` always takes a snapshot at `BEGIN`, so the stale `version` value guarantees a serialization failure.",
+          "isCorrect": false
+        },
+        {
+          "text": "Because PostgreSQL compares the row's internal `xmin` against the transaction id and aborts on mismatch.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Optimistic concurrency control works at Read Committed for the same reason `SET balance = balance - 100` is safe: the `WHERE` clause is re-checked against the current row version. You are exploiting that re-check deliberately.\n\n```sql\n-- read, long ago (or in a previous HTTP request)\nSELECT id, price, version FROM products WHERE id = 42;   -- version = 7\n\n-- write, now\nUPDATE products\n   SET price = 19.99, version = version + 1\n WHERE id = 42 AND version = 7;\n```\n\nIf a competing transaction committed `version = 8` in between, this statement blocks on the row lock, unblocks, re-reads the row, finds `version = 8`, fails the predicate, and updates zero rows. Your application inspects the affected-row count, `cmdtuples` in libpq or `rowcount` in most drivers, and reports a conflict.\n\nThat last step is the one people skip, and skipping it turns a correct algorithm into silent data loss, because an `UPDATE` matching zero rows is not an error in SQL. Every optimistic write has to check the count.\n\nThe advantage over `SELECT ... FOR UPDATE` is that no lock is held across the user's thinking time. A pessimistic lock taken when a form opens and released when it is submitted can be held for minutes and will wreck concurrency. The version column holds a lock for microseconds and turns the conflict into a retry or a \"someone else edited this\" message. The cost is that under heavy contention you waste the work you have to redo.",
+      "references": "- [PostgreSQL: Read Committed Isolation Level, re-evaluation of the `WHERE` clause](https://www.postgresql.org/docs/current/transaction-iso.html#XACT-READ-COMMITTED)\n- [Martin Fowler: Optimistic Offline Lock](https://martinfowler.com/eaaCatalog/optimisticOfflineLock.html)"
+    },
+    {
+      "id": "row-lock-mode-strength",
+      "title": "Which locking clause should a `SELECT` use so that concurrent plain `UPDATE`s to a row's non-key columns are still allowed, while `DELETE`s and key changes are blocked?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`FOR KEY SHARE`, the weakest row-level mode, and the one PostgreSQL takes internally for foreign-key checks.",
+          "isCorrect": true
+        },
+        {
+          "text": "`FOR SHARE`, a shared lock, which by definition permits other readers and writers to proceed.",
+          "isCorrect": false
+        },
+        {
+          "text": "`FOR NO KEY UPDATE`, which as the name says declines to lock the key, leaving other updaters free.",
+          "isCorrect": false
+        },
+        {
+          "text": "`FOR UPDATE NOWAIT`, where the `NOWAIT` modifier downgrades the lock so it does not conflict with plain updates.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "PostgreSQL has four row-level lock modes, ordered from strongest to weakest:\n\n| Mode | Blocks | Typical source |\n|---|---|---|\n| `FOR UPDATE` | everything, including `FOR KEY SHARE` | explicit; `DELETE` |\n| `FOR NO KEY UPDATE` | all but `FOR KEY SHARE` | a plain `UPDATE` not touching key columns |\n| `FOR SHARE` | `FOR UPDATE`, `FOR NO KEY UPDATE` | explicit |\n| `FOR KEY SHARE` | `FOR UPDATE` only | foreign-key checks |\n\nThe naming rewards care, because the modes are named for what the holder intends to do, not for what they let through. `FOR NO KEY UPDATE` means \"I will update this row but not its key,\" which is a stronger lock than `FOR KEY SHARE`, meaning \"I need the key to keep existing unchanged.\"\n\n`FOR KEY SHARE` is the answer because it conflicts only with `FOR UPDATE`. A `DELETE` or a primary-key change is blocked, while a concurrent `UPDATE products SET price = ...`, which takes only `FOR NO KEY UPDATE`, proceeds unimpeded.\n\nThis granularity arrived in PostgreSQL 9.3 to solve a real production problem. Before it, inserting a child row took a `FOR SHARE` lock on the parent, so bulk inserts of children serialised against any update of the parent. Splitting out the key-only modes stopped FK checks from blocking unrelated updates, a large concurrency win that most users got without ever learning the mode names.",
+      "references": "- [PostgreSQL: Explicit Locking, Row-Level Locks](https://www.postgresql.org/docs/current/explicit-locking.html#LOCKING-ROWS)\n- [PostgreSQL: SELECT, The Locking Clause](https://www.postgresql.org/docs/current/sql-select.html#SQL-FOR-UPDATE-SHARE)"
+    },
+    {
+      "id": "choose-the-right-guard",
+      "title": "Which of these approaches, applied correctly, actually prevent the double booking?",
+      "description": "Two concurrent transactions each check that room 7 is free for an overlapping time range, then `INSERT` a booking. Assume `READ COMMITTED` unless the option says otherwise. Select every approach that closes the hole.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "An `EXCLUDE USING gist` constraint on `(room_id WITH =, during WITH &&)`.",
+          "isCorrect": true
+        },
+        {
+          "text": "Running both transactions at `SERIALIZABLE`, with a retry loop for SQLSTATE `40001`.",
+          "isCorrect": true
+        },
+        {
+          "text": "Taking `pg_advisory_xact_lock(room_id)` at the start of both transactions.",
+          "isCorrect": true
+        },
+        {
+          "text": "`SELECT ... FOR UPDATE` on the bookings that overlap the requested range.",
+          "isCorrect": false
+        },
+        {
+          "text": "Adding a `version` column to the `bookings` table and updating with `WHERE version = ?`.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The invariant is \"no row exists overlapping this range,\" so the deciding question for every candidate is whether it can reserve the absence of a row.\n\nThe exclusion constraint works. The database enforces the range invariant at any isolation level with no cooperation from application code, which makes it the strongest option: no code path can bypass it by forgetting the protocol.\n\n`SERIALIZABLE` works. SSI's predicate locks record that both transactions read the empty range, the second insert falsifies the first's read, the pivot is detected, and one transaction gets `40001`. This is only correct if you actually retry, and only if both sides run serializable.\n\nThe transactional advisory lock works. Serialising on `room_id` collapses concurrency to one writer per room, so check-then-insert becomes atomic in practice. It is cooperative, so it protects you only if every code path takes the lock.\n\n`FOR UPDATE` fails. The overlap query returns zero rows in both sessions, so zero locks are taken, and you cannot lock what doesn't exist.\n\nThe version column fails. Optimistic locking guards one specific existing row against concurrent modification. There is no row here, and the two sessions insert two different new rows, so no version comparison ever happens. It has the same blind spot as first-committer-wins: fine for update conflicts, useless for phantoms.",
+      "references": "- [PostgreSQL: Exclusion Constraints](https://www.postgresql.org/docs/current/ddl-constraints.html#DDL-CONSTRAINTS-EXCLUSION)\n- [PostgreSQL: Serializable Isolation Level](https://www.postgresql.org/docs/current/transaction-iso.html#XACT-SERIALIZABLE)\n- [PostgreSQL: Advisory Locks](https://www.postgresql.org/docs/current/explicit-locking.html#ADVISORY-LOCKS)"
+    },
+    {
+      "id": "oracle-serializable-is-snapshot-isolation",
+      "title": "Oracle's `SERIALIZABLE` isolation level: what does it actually implement?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Snapshot isolation, so it permits write skew despite the name matching the SQL standard's strongest level.",
+          "isCorrect": true
+        },
+        {
+          "text": "True serializability via strict two-phase locking, the same as MySQL/InnoDB's `SERIALIZABLE`.",
+          "isCorrect": false
+        },
+        {
+          "text": "Serializable Snapshot Isolation, the same algorithm PostgreSQL adopted in 9.1.",
+          "isCorrect": false
+        },
+        {
+          "text": "Read Committed with additional predicate locks that eliminate phantom reads only.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Oracle's `SERIALIZABLE` is snapshot isolation, and it shows the SQL standard's greatest weakness. The standard defines isolation levels by the list of anomalies they must prevent, so an implementation that avoids all three named ANSI phenomena (dirty read, non-repeatable read, phantom read) may call itself `SERIALIZABLE` while still permitting write skew, which the 1992 standard never named.\n\nThat gap is what Berenson et al.'s 1995 critique was written to expose. Snapshot isolation blocks all three ANSI phenomena and is still not serializable, and the standard's phenomenon-based definition cannot tell the difference.\n\nThe consequences are real. Code that relies on `SERIALIZABLE` to protect a multi-row invariant is correct on PostgreSQL 9.1+ and incorrect on Oracle, with no error to signal the difference. The doctors-on-call and booking-overlap scenarios both go wrong on Oracle at its strongest documented level.\n\nSo it pays to stop trusting level names across engines and check the actual guarantee. PostgreSQL's `REPEATABLE READ` is snapshot isolation, stronger than the standard requires. Oracle's `SERIALIZABLE` is also snapshot isolation, weaker than its name implies. MySQL's `REPEATABLE READ` is something else again. Three engines, three meanings, one vocabulary.",
+      "references": "- [Oracle: Data Concurrency and Consistency, Serializable Isolation Level](https://docs.oracle.com/en/database/oracle/oracle-database/19/cncpt/data-concurrency-and-consistency.html)\n- [Berenson et al.: A Critique of ANSI SQL Isolation Levels (SIGMOD 1995)](https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/tr-95-51.pdf)\n- [Fekete et al.: Making Snapshot Isolation Serializable (TODS 2005)](https://www.cse.iitb.ac.in/infolab/Data/Courses/CS632/2009/Papers/p492-fekete.pdf)"
+    },
+    {
+      "id": "mysql-default-isolation-level",
+      "title": "Which isolation level does MySQL's InnoDB engine use by default?",
+      "description": "Answer with the level's name, for example `read committed`.",
+      "type": "input",
+      "validation": {
+        "mode": "text",
+        "acceptedAnswers": [
+          "repeatable read",
+          "repeatableread",
+          "repeatable-read"
+        ]
+      },
+      "explanation": "InnoDB defaults to `REPEATABLE READ`, not Read Committed, so an application ported between MySQL and PostgreSQL silently changes isolation level unless someone sets it explicitly.\n\nThe name hides a strange implementation. InnoDB at `REPEATABLE READ` mixes two different read mechanisms in one transaction. Consistent non-locking reads, meaning a plain `SELECT`, read from the transaction's MVCC snapshot, established at the first read. Locking reads, meaning `SELECT ... FOR UPDATE`, `SELECT ... LOCK IN SHARE MODE`, and the row matching done by `UPDATE` and `DELETE`, read the latest committed version instead of the snapshot.\n\nSo one transaction can `SELECT` a row and see one value, then `UPDATE` that same row based on a different, newer value, at one isolation level. Locking reads also take next-key locks covering the row and the gap before it, which is why InnoDB blocks phantom inserts for locking reads where PostgreSQL's snapshot approach simply never shows them.\n\nAmazon RDS, Aurora and several MySQL-compatible forks ship or recommend `READ-COMMITTED` instead, partly because next-key gap locking at `REPEATABLE READ` is a common source of contention and deadlocks. Jepsen's analysis of MySQL 8.0.34 found its `REPEATABLE READ` admitting anomalies the level's name does not suggest, which is one more reason to read the level rather than the name.",
+      "references": "- [MySQL: InnoDB Transaction Isolation Levels](https://dev.mysql.com/doc/refman/8.0/en/innodb-transaction-isolation-levels.html)\n- [MySQL: Consistent Nonlocking Reads](https://dev.mysql.com/doc/refman/8.0/en/innodb-consistent-read.html)\n- [Jepsen: MySQL 8.0.34](https://jepsen.io/analyses/mysql-8.0.34)"
+    },
+    {
+      "id": "elle-g1a-aborted-read",
+      "title": "In the Adya-style anomaly taxonomy that Jepsen's Elle checker uses, what does G1a describe?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "An aborted read: a transaction read a value written by another transaction that ultimately aborted.",
+          "isCorrect": true
+        },
+        {
+          "text": "An intermediate read: a transaction read a value that was later overwritten within the same writing transaction before it committed.",
+          "isCorrect": false
+        },
+        {
+          "text": "A write cycle: a set of transactions whose writes form a cycle in the version order.",
+          "isCorrect": false
+        },
+        {
+          "text": "An anti-dependency cycle: a cycle containing at least one read-write dependency edge.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Adya's thesis replaced the SQL standard's informal phenomena with a graph-theoretic formalism, and Jepsen's Elle checker uses it because it is implementation-independent. You infer the dependency graph from observed histories and look for cycles.\n\nThe vocabulary is worth having straight. G0 is a dirty write, a cycle consisting only of write-write dependencies. G1a is an aborted read, where someone read a value from a transaction that later aborted. G1b is an intermediate read, where someone read a value the writing transaction then overwrote before committing, so the value was never a final state. G1c is circular information flow, a cycle of write-write and write-read dependencies. G2-item is a cycle including a read-write anti-dependency on a specific item, and G2 is the general anti-dependency cycle, of which write skew is an instance.\n\nEach isolation level is then defined by which of these it forbids. Read Committed prohibits G0 and G1. Repeatable Read adds G2-item. Snapshot isolation prohibits G0, G1 and a specific structural variant. Serializability prohibits all cycles.\n\nThe advantage is that this is checkable. Elle can look at a real database's observed history and say \"this system exhibits G2-item,\" which is a falsifiable claim about behaviour rather than a reading of the manual. That is how Jepsen keeps finding shipped isolation levels that don't match their documentation.",
+      "references": "- [Adya: Weak Consistency: A Generalized Theory and Optimistic Implementations for Distributed Transactions (MIT PhD thesis, 1999)](https://hdl.handle.net/1721.1/149899)\n- [Kingsbury & Alvaro: Elle: Inferring Isolation Anomalies from Experimental Observations (VLDB 2020)](https://arxiv.org/abs/2003.10554)\n- [Jepsen: Consistency Models](https://jepsen.io/consistency)"
+    },
+    {
+      "id": "serializable-does-not-mean-correct",
+      "title": "You have set every transaction to `SERIALIZABLE` and added retry loops. Which class of bug does this still leave completely untouched?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Anything that leaks outside the transaction, such as an email sent, a payment API called, or a cache written, since a retried transaction re-runs those side effects and an aborted one cannot undo them.",
+          "isCorrect": true
+        },
+        {
+          "text": "Write skew between two transactions reading and writing disjoint rows, which SSI cannot detect.",
+          "isCorrect": false
+        },
+        {
+          "text": "Lost updates in read-modify-write code, which require an explicit version column at every isolation level.",
+          "isCorrect": false
+        },
+        {
+          "text": "Phantom reads, since predicate locking covers only rows that already exist.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Serializability is a guarantee about the database's state, and it stops at the database's boundary. Everything your transaction does to the outside world is outside it.\n\nThe failure follows from the retry loop that `SERIALIZABLE` obliges you to write:\n\n```python\nfor attempt in range(5):\n    try:\n        with conn.transaction():\n            order = create_order(...)\n            charge_card(order)        # external API call\n            send_confirmation(order)  # external API call\n        break\n    except SerializationFailure:\n        continue                      # the DB rolls back; Stripe does not\n```\n\nIf the transaction aborts with `40001` after `charge_card` succeeded, the database rolls back cleanly and the customer is still charged. Retry and you may charge them twice. Serializability did its job, the state is equivalent to some serial order, and the money is still wrong.\n\nThe usual remedy is to keep side effects out of the transaction. Commit an intent row inside the transaction, then have a separate worker perform the external call afterwards, driven by that row and made idempotent with a key the remote service deduplicates on. Stripe's idempotency keys exist for this. The pattern is the transactional outbox.\n\nThe other three options are all things serializability does fix, which is what makes them tempting, and why it is worth being explicit that the guarantee ends at the database, not at the edge of your business logic.",
+      "references": "- [PostgreSQL: Serializable Isolation Level, retry requirement](https://www.postgresql.org/docs/current/transaction-iso.html#XACT-SERIALIZABLE)\n- [Stripe: Idempotent Requests](https://docs.stripe.com/api/idempotent_requests)\n- [microservices.io: Transactional Outbox pattern](https://microservices.io/patterns/data/transactional-outbox.html)"
+    }
+  ]
+}

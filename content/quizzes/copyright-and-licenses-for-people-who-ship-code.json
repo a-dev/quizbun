@@ -1,0 +1,1291 @@
+{
+  "schemaVersion": 1,
+  "id": "copyright-and-licenses-for-people-who-ship-code",
+  "title": "Copyright & Licenses for People Who Ship Code",
+  "description": "What MIT's one condition actually obliges you to do, why Apache-2.0's patent grant is the reason big companies prefer it, what really triggers AGPL section 13, and why \"no license\" means all rights reserved. Every answer is checked against the license texts, the SPDX License List, the US Copyright Act, and the decided cases. Educational material about how these documents read — not legal advice.",
+  "language": "en",
+  "tags": [
+    "open-source",
+    "licensing",
+    "copyright",
+    "spdx",
+    "gpl",
+    "fair-use",
+    "compliance"
+  ],
+  "questions": [
+    {
+      "id": "expression-not-ideas",
+      "title": "Your blog post explains a rate-limiting algorithm you invented. What can your copyright stop someone from doing?",
+      "description": "Assume the post contains prose, a diagram, and a pseudocode listing, and that you hold no patent on the method.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Writing a competing tutorial that teaches the same algorithm in their own words",
+          "isCorrect": false
+        },
+        {
+          "text": "Selling a product whose throttling logic uses your algorithm",
+          "isCorrect": false
+        },
+        {
+          "text": "Republishing the text of your post verbatim on their own site",
+          "isCorrect": true
+        },
+        {
+          "text": "Implementing the algorithm in their own code after reading your post",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Copyright protects **expression**, never the underlying idea. 17 U.S.C. § 102(b) says so in one sentence:\n\n> In no case does copyright protection for an original work of authorship extend to any idea, procedure, process, system, method of operation, concept, principle, or discovery, regardless of the form in which it is described, explained, illustrated, or embodied in such work.\n\nAn algorithm is a procedure and a method of operation, squarely in that list. Explaining it beautifully gives you rights in the explanation, not in the method. This is the rule from *Baker v. Selden* (1879): a book teaching a bookkeeping system was protected, but the system itself, and the ledger forms needed to practice it, were not.\n\nIf you want exclusivity over the method rather than the prose, copyright is the wrong instrument. Patents cover methods, and they cost you an examination, fees, and full publication of how the thing works.",
+      "references": "- [Cornell LII: 17 U.S.C. § 102, Subject matter of copyright](https://www.law.cornell.edu/uscode/text/17/102)\n- [Cornell LII: Baker v. Selden, 101 U.S. 99 (1879)](https://www.law.cornell.edu/supremecourt/text/101/99)"
+    },
+    {
+      "id": "copyright-attaches-on-fixation",
+      "title": "When does copyright attach to a source file you just wrote?",
+      "description": "You are in a country that has signed the Berne Convention.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "When you first publish or distribute it",
+          "isCorrect": false
+        },
+        {
+          "text": "The moment it is fixed in a tangible medium — when you save it",
+          "isCorrect": true
+        },
+        {
+          "text": "When you add a `Copyright (c) 2026` header to the file",
+          "isCorrect": false
+        },
+        {
+          "text": "When you register the work with a national copyright office",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Copyright is automatic on fixation. You file nothing, you register nothing, and you do not have to mark the file. Article 5(2) of the Berne Convention, which almost every country has signed, forecloses the alternative:\n\n> The enjoyment and the exercise of these rights shall not be subject to any formality; such enjoyment and such exercise shall be independent of the existence of protection in the country of origin of the work.\n\nThe US Copyright Office puts it plainly: protection begins the moment a work is created and fixed in a tangible medium of expression.\n\nNotice and registration are still worth doing. They are *optional*, and each one buys you something. A visible notice undercuts an innocent-infringement defence; timely registration in the US unlocks statutory damages and attorney's fees. But the copyright existed before any of that. Because protection is the default, code you find with no licence attached is not free. It carries a copyright that attached the instant it was typed.",
+      "references": "- [WIPO Lex: Berne Convention for the Protection of Literary and Artistic Works, Article 5](https://www.wipo.int/wipolex/en/text/283698)\n- [U.S. Copyright Office: Circular 1, Copyright Basics](https://www.copyright.gov/circs/circ01.pdf)"
+    },
+    {
+      "id": "registration-before-suing",
+      "title": "Copyright is automatic, so what still has to happen before you can file a US infringement suit over your own code?",
+      "description": "Your project is a US work and someone is redistributing it in violation of your license.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Nothing — automatic copyright is enough to walk into court",
+          "isCorrect": false
+        },
+        {
+          "text": "You must have filed a registration application, but it need not be processed yet",
+          "isCorrect": false
+        },
+        {
+          "text": "Every source file must carry a copyright notice",
+          "isCorrect": false
+        },
+        {
+          "text": "The Copyright Office must have acted on your application and registered the work",
+          "isCorrect": true
+        }
+      ],
+      "explanation": "Owning a copyright and being able to *enforce* it in a US court are two different things. 17 U.S.C. § 411(a) makes registration a precondition to suit for US works, and the Supreme Court settled what \"registration ... has been made\" means in *Fourth Estate Public Benefit Corp. v. Wall-Street.com* (2019): the Copyright Office must have acted on the application. Filing the paperwork is not enough. The decision was unanimous, written by Justice Ginsburg, and it resolved a real circuit split. Several circuits had accepted the mere-application rule.\n\nTwo practical consequences:\n\n- There is a lag between discovering an infringement and being able to sue. Registration takes months unless you pay for special handling.\n- Once the registration issues, you can sue over infringement that happened **before** it, but the timing still costs you. Statutory damages and attorney's fees under § 412 require registration before the infringement began, or within three months of publication.\n\nSo \"copyright is automatic\" is true and, on its own, misleading.",
+      "references": "- [Cornell LII: 17 U.S.C. § 411, Registration and civil infringement actions](https://www.law.cornell.edu/uscode/text/17/411)\n- [Supreme Court of the United States: Fourth Estate Pub. Benefit Corp. v. Wall-Street.com, LLC (opinion PDF)](https://www.supremecourt.gov/opinions/18pdf/17-571_e29f.pdf)"
+    },
+    {
+      "id": "no-license-all-rights-reserved",
+      "title": "A public GitHub repo has no LICENSE file. What are you actually permitted to do with the code?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "View it and fork it on GitHub, and nothing more",
+          "isCorrect": true
+        },
+        {
+          "text": "Anything — publishing on a public host puts code in the public domain",
+          "isCorrect": false
+        },
+        {
+          "text": "Use it in a commercial product as long as you credit the author",
+          "isCorrect": false
+        },
+        {
+          "text": "Use it internally, just not redistribute it",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "\"Public\" describes visibility, not permission. Because copyright attaches automatically, the default for unlicensed code is **all rights reserved**: no copying, no modifying, no redistributing. GitHub's own [choosealicense.com](https://choosealicense.com/no-permission/) states the consequence bluntly:\n\n> Unless you include a license that specifies otherwise, nobody else can copy, distribute, or modify your work without being at risk of take-downs, shake-downs, or litigation.\n\nThe one thing you *do* get comes from GitHub's Terms of Service, not from the author's generosity: by making a repository public the owner grants every GitHub user a licence to view and fork it through GitHub's own functionality. That is a narrow, platform-bound permission. It does not let you vendor the code into your product, publish a modified copy elsewhere, or ship it to customers.\n\nNote what is *not* on the correct answer's list: \"use it internally\" is not a general exemption either. Reproducing the code into your build already implicates the copyright owner's exclusive right to make copies.",
+      "references": "- [choosealicense.com: No License](https://choosealicense.com/no-permission/)\n- [GitHub Docs: Licensing a repository](https://docs.github.com/articles/licensing-a-repository)"
+    },
+    {
+      "id": "contractor-owns-the-code",
+      "title": "You paid a freelancer to write a module and the contract says nothing about IP. Who owns the copyright?",
+      "description": "The freelancer uses their own equipment, sets their own hours, and invoices you per milestone.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The freelancer — you have an implied licence at best, not ownership",
+          "isCorrect": true
+        },
+        {
+          "text": "You, because you commissioned the work and paid for it",
+          "isCorrect": false
+        },
+        {
+          "text": "You, because commissioned software is a work made for hire",
+          "isCorrect": false
+        },
+        {
+          "text": "Nobody, until someone registers it",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "This one bites real companies. \"Work made for hire\" has exactly two doors in 17 U.S.C. § 101, and a freelancer walks through neither:\n\n1. **A work prepared by an employee within the scope of employment.** An independent contractor is not an employee. *Community for Creative Non-Violence v. Reid* (1989) held that the term is read against common-law agency factors such as control over the work, source of tools, tax treatment, and benefits. Who paid is not the test.\n2. **A work specially ordered or commissioned**, but *only* if it falls into one of nine enumerated categories **and** there is a signed written agreement. The nine are: a contribution to a collective work, part of a motion picture or other audiovisual work, a translation, a supplementary work, a compilation, an instructional text, a test, answer material for a test, and an atlas.\n\nSoftware is not on that list. So a \"this is a work made for hire\" clause in a freelance contract does not, by itself, move ownership of code.\n\nThe fix is a **written assignment**: § 204(a) requires transfers to be \"in writing and signed by the owner of the rights conveyed.\" Well-drafted contracts say work-for-hire *and*, in the alternative, assign. Belt and braces.",
+      "references": "- [Cornell LII: 17 U.S.C. § 101, Definitions (\"work made for hire\")](https://www.law.cornell.edu/uscode/text/17/101)\n- [Cornell LII: 17 U.S.C. § 204, Execution of transfers of copyright ownership](https://www.law.cornell.edu/uscode/text/17/204)\n- [Cornell LII: Community for Creative Non-Violence v. Reid, 490 U.S. 730 (1989)](https://www.law.cornell.edu/supremecourt/text/490/730)"
+    },
+    {
+      "id": "what-copyright-does-not-protect",
+      "title": "Which of these fall **outside** what copyright protects?",
+      "description": "Copyright, patent, and trademark are separate regimes with separate rules. Select every item copyright does not reach.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "The specific source text of your implementation",
+          "isCorrect": false
+        },
+        {
+          "text": "The README prose explaining how to install the library",
+          "isCorrect": false
+        },
+        {
+          "text": "The mathematical method behind a compression algorithm",
+          "isCorrect": true
+        },
+        {
+          "text": "The name and logo of your library",
+          "isCorrect": true
+        },
+        {
+          "text": "The measured fact that your benchmark ran in 12.4 ms",
+          "isCorrect": true
+        }
+      ],
+      "explanation": "Three different regimes are doing three different jobs, and conflating them is the most common licensing mistake developers make.\n\n- **Methods and procedures** are excluded by 17 U.S.C. § 102(b). If you want them protected, that is patent territory.\n- **Names and logos** are trademark territory. Both Apache-2.0 (§ 6) and CC0 (§ 4a) go out of their way to say they grant no trademark rights. An open source licence on the code says nothing about the brand. This is why forks get renamed.\n- **Facts** are not original works of authorship. *Feist Publications v. Rural Telephone* (1991) rejected the \"sweat of the brow\" theory: a telephone directory's alphabetised facts were uncopyrightable no matter how much labour went into collecting them.\n\nThe source text itself *is* expression, and so is the README prose. Both are protected, which is precisely why you need a licence to copy them.\n\nA useful shorthand: copyright covers the *words you wrote*, patents cover the *thing you invented*, trademarks cover the *name people know you by*. A single project can be touched by all three at once.",
+      "references": "- [Cornell LII: 17 U.S.C. § 102(b), Subject matter of copyright](https://www.law.cornell.edu/uscode/text/17/102)\n- [Cornell LII: Feist Publications, Inc. v. Rural Telephone Service Co., 499 U.S. 340 (1991)](https://www.law.cornell.edu/supremecourt/text/499/340)"
+    },
+    {
+      "id": "license-is-permission-not-transfer",
+      "title": "Does releasing your project under MIT give away your copyright?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "No — you remain the copyright holder and may also license the same code on other terms",
+          "isCorrect": true
+        },
+        {
+          "text": "Yes — MIT transfers the copyright to the public",
+          "isCorrect": false
+        },
+        {
+          "text": "Yes, unless you separately register the copyright first",
+          "isCorrect": false
+        },
+        {
+          "text": "No, but you can never offer that code under different terms again",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A licence is *permission granted by an owner*, not a transfer of ownership. You keep the copyright; MIT simply tells the world what they may do with it. Nothing in the MIT text mentions assignment, and under § 204(a) a transfer would need a signed writing anyway.\n\nBecause you still own it, you can license the *same* code to different people on different terms. That is **dual licensing**, and it is a real business model: Qt, MySQL, and Sidekiq have all sold commercial licences alongside a copyleft or source-available public one.\n\nTwo limits worth knowing:\n\n- You cannot claw back a grant already made. Copies released under MIT stay under MIT for the people who received them; changing the LICENSE file affects future releases, not past ones.\n- Once you accept outside contributions, you no longer own the whole thing. Relicensing then needs every contributor's agreement, which is the entire reason CLAs and copyright-assignment agreements exist.",
+      "references": "- [SPDX License List: MIT License (full text and metadata)](https://spdx.org/licenses/MIT.html)\n- [Cornell LII: 17 U.S.C. § 204, Execution of transfers of copyright ownership](https://www.law.cornell.edu/uscode/text/17/204)"
+    },
+    {
+      "id": "fair-use-is-a-defense",
+      "title": "Why is \"this is fair use, so I'm allowed\" a misleading thing to say?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Fair use is decided after the fact, by a court, with the burden on the person who copied",
+          "isCorrect": true
+        },
+        {
+          "text": "Fair use applies only to non-commercial uses",
+          "isCorrect": false
+        },
+        {
+          "text": "Fair use requires prior written permission from the rights holder",
+          "isCorrect": false
+        },
+        {
+          "text": "Fair use only covers works older than five years",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "17 U.S.C. § 107 is phrased as a limitation on the copyright owner's rights. Fair use, it says, \"is not an infringement of copyright.\" Procedurally, though, it behaves as an **affirmative defence**. You raise it once you have been sued, and you carry the burden of persuading the court. *Campbell v. Acuff-Rose Music* (1994) describes it that way explicitly.\n\nThe gap between that and a licence is wide:\n\n- A licence is permission *in advance*, from someone who can grant it. You know where you stand before you ship.\n- Fair use is a *prediction* about how a judge will weigh four open-ended factors on your specific facts. Two similar-looking uses can come out differently.\n\nThat is why \"we'll rely on fair use\" is a risk posture, not a compliance plan, and why nobody sensible builds a product on it when a licence is available for the asking. It does not stop the lawsuit; it is how you try to win it.\n\n(The doctrine is not toothless, though. *Lenz v. Universal*, elsewhere in this quiz, is a place where the law forces rights holders to weigh fair use *before* acting.)",
+      "references": "- [Cornell LII: 17 U.S.C. § 107, Limitations on exclusive rights: Fair use](https://www.law.cornell.edu/uscode/text/17/107)\n- [Cornell LII: Campbell v. Acuff-Rose Music, Inc., 510 U.S. 569 (1994)](https://www.law.cornell.edu/supremecourt/text/510/569)"
+    },
+    {
+      "id": "fair-use-factor-count",
+      "title": "How many factors does 17 U.S.C. § 107 direct courts to weigh when deciding fair use?",
+      "description": "Answer with a number.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [
+          4
+        ]
+      },
+      "explanation": "Four, and they are worth memorising because people cite them wrongly all the time:\n\n1. the purpose and character of the use, including whether such use is of a commercial nature or is for nonprofit educational purposes;\n2. the nature of the copyrighted work;\n3. the amount and substantiality of the portion used in relation to the copyrighted work as a whole;\n4. the effect of the use upon the potential market for or value of the copyrighted work.\n\nTwo subtleties. The statute says courts shall consider factors \"**including**\" these four, so the list is a floor rather than a ceiling. And the factors get weighed together rather than scored. *Campbell* warned against any bright-line or mechanical application.\n\nThe statute also closes with a line people forget: \"The fact that a work is unpublished shall not itself bar a finding of fair use.\"",
+      "references": "- [Cornell LII: 17 U.S.C. § 107, Limitations on exclusive rights: Fair use](https://www.law.cornell.edu/uscode/text/17/107)\n- [U.S. Copyright Office: Fair Use Index](https://www.copyright.gov/fair-use/)"
+    },
+    {
+      "id": "fair-use-factors-identify",
+      "title": "Which of these are actually among the four statutory fair use factors?",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "The effect of the use on the potential market for the work",
+          "isCorrect": true
+        },
+        {
+          "text": "The amount and substantiality of the portion used",
+          "isCorrect": true
+        },
+        {
+          "text": "The nature of the copyrighted work",
+          "isCorrect": true
+        },
+        {
+          "text": "Whether the copier credited the original author",
+          "isCorrect": false
+        },
+        {
+          "text": "Whether the copied work carried a visible copyright notice",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Attribution is **not** a fair use factor. This surprises people, because crediting feels like the decent thing to do, and it is. But § 107 lists purpose and character, nature of the work, amount and substantiality, and market effect. Attribution appears nowhere.\n\nSo:\n\n- Naming the author does not convert an infringing copy into a fair one. \"Credit to @someone\" under a wholesale repost is not a defence.\n- Failing to name them does not automatically make a use unfair, though bad faith can colour the first factor.\n\nA copyright notice is not a factor either, and since 1989 US law has not even required one for protection to exist. Its absence tells you nothing about whether copying is fair.\n\nAttribution *is* a hard requirement in a different place: licences. MIT, BSD, Apache-2.0, and every CC BY variant require notices to travel with the code or content. That obligation comes from the licence you accepted, not from copyright's fair use provision.",
+      "references": "- [Cornell LII: 17 U.S.C. § 107, Limitations on exclusive rights: Fair use](https://www.law.cornell.edu/uscode/text/17/107)"
+    },
+    {
+      "id": "commercial-use-not-fatal",
+      "title": "Does a commercial purpose automatically defeat a fair use claim?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Only outside the United States",
+          "isCorrect": false
+        },
+        {
+          "text": "No — commerciality is one consideration inside the first factor, not a bar",
+          "isCorrect": true
+        },
+        {
+          "text": "Yes — § 107 excludes commercial uses by its terms",
+          "isCorrect": false
+        },
+        {
+          "text": "Yes, unless the work is a parody",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "*Campbell v. Acuff-Rose Music* (1994) is the case that killed this myth. 2 Live Crew's send-up of \"Oh, Pretty Woman\" was unambiguously commercial, and the Court still rejected any presumption against it, holding that commerciality is one element within the first factor and must be weighed against how transformative the use is.\n\n*Google v. Oracle* (2021) made the point again at industrial scale. Google's copying went into Android, one of the most commercially successful products ever built, and the Court still found fair use.\n\nWhat actually moves the first factor is whether the use *adds something new* with a different purpose or character, rather than superseding the original. Commerciality tilts the scale; it does not tip the board.",
+      "references": "- [Cornell LII: Campbell v. Acuff-Rose Music, Inc., 510 U.S. 569 (1994)](https://www.law.cornell.edu/supremecourt/text/510/569)\n- [Congressional Research Service: Google v. Oracle, Supreme Court Rules for Google in Landmark Software Copyright Case](https://www.congress.gov/crs-product/LSB10597)"
+    },
+    {
+      "id": "google-v-oracle-holding",
+      "title": "What did the Supreme Court actually decide in *Google v. Oracle* (2021)?",
+      "description": "The dispute concerned roughly 11,500 lines of declaring code from the Java SE API, reimplemented in Android.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "It held that reimplementing any API infringes the original author's copyright",
+          "isCorrect": false
+        },
+        {
+          "text": "It held that fair use does not apply to computer programs",
+          "isCorrect": false
+        },
+        {
+          "text": "It assumed the declaring code was copyrightable and held that Google's copying of it was fair use",
+          "isCorrect": true
+        },
+        {
+          "text": "It held that API declaring code is never copyrightable",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Decided 5 April 2021 by 6 votes to 2, with Justice Barrett taking no part. Google had copied roughly 11,500 lines of **declaring code** from the Java SE API into Android so that Java developers could reuse skills they already had.\n\nThe Court deliberately sidestepped the bigger question. It **assumed, for argument's sake**, that the declaring code was copyrightable, and decided the case on fair use, reversing the Federal Circuit and holding the copying fair as a matter of law. The reasoning leaned on the nature of declaring code (bound up with the uncopyrightable idea of organising tasks, and valuable largely because programmers had invested in learning it) and on the transformative purpose of building a new smartphone platform.\n\nThat distinction matters if you are planning a clean-room reimplementation of your own. The case is **not** authority that APIs are free to clone. It is authority that one particular reimplementation, in that context, was fair. Of the two holdings the Court could have reached, that is the fragile one, and it has to be re-argued on every new set of facts.",
+      "references": "- [Congressional Research Service: Google v. Oracle, Supreme Court Rules for Google](https://www.congress.gov/crs-product/LSB10597)\n- [Harvard Law Review: Google LLC v. Oracle America, Inc.](https://harvardlawreview.org/print/vol-135/google-llc-v-oracle-america-inc/)"
+    },
+    {
+      "id": "fair-dealing-outside-us",
+      "title": "Your team is in Berlin and plans to rely on \"fair use\". Which concerns are well founded?",
+      "description": "Select every statement that correctly describes the problem.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "The Berne Convention makes US fair use enforceable in every signatory country",
+          "isCorrect": false
+        },
+        {
+          "text": "Germany applies the US four-factor test through its implementation of Berne",
+          "isCorrect": false
+        },
+        {
+          "text": "Fair use is a US doctrine; many countries instead enumerate specific, narrower exceptions",
+          "isCorrect": true
+        },
+        {
+          "text": "Berne permits exceptions but does not require any country to adopt fair use",
+          "isCorrect": true
+        },
+        {
+          "text": "Commonwealth-style \"fair dealing\" regimes generally limit the defence to listed purposes",
+          "isCorrect": true
+        }
+      ],
+      "explanation": "\"Fair use\" is a term of art from US law. Copying it into a European risk assessment does not make it apply.\n\n- **Germany** and most civil-law systems work from a closed list of statutory limitations (*Schranken*): quotation, private copying, teaching, and so on. If your use is not on the list, there is no open-ended balancing test to fall back on.\n- **Commonwealth \"fair dealing\"** regimes (UK, Canada, Australia) sound similar but gate the defence on enumerated purposes such as research and private study, criticism and review, news reporting, and in some countries parody. Purpose first, fairness second.\n- **Berne** sets a ceiling, not a floor for users: Article 9(2)'s three-step test lets member states create exceptions in certain special cases that do not conflict with normal exploitation. It permits exceptions; it does not export the American doctrine. So no, Germany does not run the US four-factor test. Berne obliges its members to protect works. It does not hand them America's balancing standard.\n\nPractical upshot for a distributed team: a use that is comfortably fair in the US may be plain infringement where your users or your servers are. Licences, unlike defences, travel.",
+      "references": "- [WIPO Lex: Berne Convention, Article 9 (right of reproduction and permitted exceptions)](https://www.wipo.int/wipolex/en/text/283698)\n- [Cornell LII: 17 U.S.C. § 107, Limitations on exclusive rights: Fair use](https://www.law.cornell.edu/uscode/text/17/107)"
+    },
+    {
+      "id": "lenz-dmca-fair-use",
+      "title": "Before sending a DMCA takedown notice, what must a US rights holder do about fair use?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Nothing — fair use is only ever a matter for the courts",
+          "isCorrect": false
+        },
+        {
+          "text": "Obtain a court ruling that the use is not fair",
+          "isCorrect": false
+        },
+        {
+          "text": "Notify the uploader and wait 30 days before filing",
+          "isCorrect": false
+        },
+        {
+          "text": "Form a subjective good-faith belief that the use is not a fair use",
+          "isCorrect": true
+        }
+      ],
+      "explanation": "*Lenz v. Universal Music*, the \"dancing baby\" case decided by the Ninth Circuit in 2015, is where fair use stops being purely defensive. Stephanie Lenz posted a 29-second clip of her toddler dancing to a Prince track; Universal had it taken down.\n\nThe hook is statutory text. A § 512(c) takedown notice must state a good-faith belief that the use is \"not authorized by the copyright owner, its agent, **or the law**.\" Since § 107 says fair use is not an infringement, the court reasoned, fair use *is* authorised by law, so a rights holder must consider it before sending the notice.\n\nThe bar is deliberately low: a **subjective** good-faith belief, not an objectively correct legal conclusion. But wilful blindness will not do, and getting it wrong can expose the sender to liability for misrepresentation under § 512(f).\n\nSo fair use has two faces. In litigation it is a defence you must prove. In the takedown pipeline it is something the other side is obliged to think about first.",
+      "references": "- [Electronic Frontier Foundation: Lenz v. Universal (case archive)](https://www.eff.org/cases/lenz-v-universal)\n- [Cornell LII: 17 U.S.C. § 512, Limitations on liability relating to material online](https://www.law.cornell.edu/uscode/text/17/512)"
+    },
+    {
+      "id": "mit-notice-obligation",
+      "title": "You ship a closed-source desktop app that statically links an MIT-licensed library. What does MIT require of you?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Deliver the library's copyright notice and the MIT permission notice with your app",
+          "isCorrect": true
+        },
+        {
+          "text": "Publish your application's source code",
+          "isCorrect": false
+        },
+        {
+          "text": "Nothing — MIT is a no-conditions licence",
+          "isCorrect": false
+        },
+        {
+          "text": "Credit the library in your marketing materials",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "MIT has exactly one condition, and it is one sentence long:\n\n> The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nNote what that sentence does **not** say. It draws no distinction between source and binary, and it makes no exception for compiled, bundled, or minified output. If a substantial portion of the Software is in your shipped artifact, the notices go with it.\n\nWhat it does not require is equally important: no source disclosure, no copyleft, no advertising clause, no permission to use the author's name. MIT is permissive to the point of being almost frictionless, which is why forgetting its one condition is the most common open source compliance failure in shipped applications.\n\nIn practice, satisfy it with a generated `THIRD-PARTY-NOTICES.txt` in the installer and an \"Open source licences\" screen in the About dialog. Bundler plugins exist for exactly this job.",
+      "references": "- [SPDX License List: MIT License](https://spdx.org/licenses/MIT.html)\n- [Open Source Initiative: The MIT License](https://opensource.org/license/mit)"
+    },
+    {
+      "id": "express-patent-grant",
+      "title": "Which of these licences gives you an express patent licence from every contributor?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "MIT",
+          "isCorrect": false
+        },
+        {
+          "text": "BSD-3-Clause",
+          "isCorrect": false
+        },
+        {
+          "text": "ISC",
+          "isCorrect": false
+        },
+        {
+          "text": "Apache-2.0",
+          "isCorrect": true
+        }
+      ],
+      "explanation": "Only Apache-2.0. Its § 3 is explicit, and unusually generous in its verbs:\n\n> each Contributor hereby grants to You a perpetual, worldwide, non-exclusive, no-charge, royalty-free, irrevocable (except as stated in this section) patent license to make, have made, use, offer to sell, sell, import, and otherwise transfer the Work\n\nThe grant is scoped to claims \"necessarily infringed by their Contribution(s) alone or by combination of their Contribution(s) with the Work\", so it covers what the contributor actually put in rather than their whole patent portfolio.\n\nMIT, BSD-2-Clause, BSD-3-Clause, and ISC say nothing about patents at all. Lawyers argue that granting the right to \"use\" and \"sell\" implies a patent licence, but an implied licence you have to litigate is worth much less than an express one you can read.\n\nThis is why corporate open source programs so often standardise on Apache-2.0, and why Rust and many of its crates dual-license as `MIT OR Apache-2.0`. Users who want the patent grant take Apache. Users who want the shortest possible notice take MIT.",
+      "references": "- [Apache Software Foundation: Apache License, Version 2.0 (full text)](https://www.apache.org/licenses/LICENSE-2.0.txt)\n- [SPDX License List: MIT License](https://spdx.org/licenses/MIT.html)"
+    },
+    {
+      "id": "apache-patent-retaliation",
+      "title": "What single act terminates your patent licence under Apache-2.0?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Filing any patent lawsuit against any party, on any subject",
+          "isCorrect": false
+        },
+        {
+          "text": "Filing patent litigation alleging that the Work itself infringes a patent",
+          "isCorrect": true
+        },
+        {
+          "text": "Shipping a modified version without publishing the source",
+          "isCorrect": false
+        },
+        {
+          "text": "Failing to carry forward the project's NOTICE file",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Apache-2.0 § 3 ends with a defensive-termination trigger, and its scope is precise:\n\n> If You institute patent litigation against any entity (including a cross-claim or counterclaim in a lawsuit) alleging that the Work or a Contribution incorporated within the Work constitutes direct or contributory patent infringement, then any patent licenses granted to You under this License for that Work shall terminate as of the date such litigation is filed.\n\nThree details people get wrong:\n\n- **Only the patent licence dies.** The copyright grant in § 2 is untouched, so you may keep using and redistributing the code, just without patent peace.\n- **Only for that Work.** Suing over project A does not cost you your patent licence in unrelated project B.\n- **Unrelated suits are fine.** Your patent war with a competitor over something else does not trigger it. The clause fires only when you claim the licensed Work itself infringes.\n\nCounterclaims count, and that is the point. You cannot accept the patent grant and then turn a patent on the thing that granted it.",
+      "references": "- [Apache Software Foundation: Apache License, Version 2.0, Section 3 (Grant of Patent License)](https://www.apache.org/licenses/LICENSE-2.0.txt)\n- [Apache Software Foundation: Apache License FAQ](https://www.apache.org/foundation/license-faq.html)"
+    },
+    {
+      "id": "apache-redistribution-duties",
+      "title": "Which conditions does Apache-2.0 § 4 impose when you redistribute?",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "Give recipients a copy of the licence",
+          "isCorrect": true
+        },
+        {
+          "text": "Mark any files you modified with prominent notices stating that you changed them",
+          "isCorrect": true
+        },
+        {
+          "text": "Reproduce the attribution text from the project's NOTICE file, if it has one",
+          "isCorrect": true
+        },
+        {
+          "text": "Retain the copyright, patent, trademark, and attribution notices found in the source",
+          "isCorrect": true
+        },
+        {
+          "text": "Publish the source of your own modifications",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Apache-2.0 is permissive rather than copyleft. There is no source-disclosure obligation anywhere in it. All four of § 4's conditions are listed here:\n\n> (a) You must give any other recipients of the Work or Derivative Works a copy of this License; and\n> (b) You must cause any modified files to carry prominent notices stating that You changed the files; and\n> (c) You must retain ... all copyright, patent, trademark, and attribution notices from the Source form of the Work ...; and\n> (d) If the Work includes a \"NOTICE\" text file ... any Derivative Works that You distribute must include a readable copy of the attribution notices contained within such NOTICE file\n\n§ 4 then adds that you may license *your own* modifications however you like, as long as your use of the Work still complies.\n\nThe NOTICE duty is the one that trips up shipping teams, because it is the only Apache condition with no MIT equivalent. You must carry forward a file whose contents the upstream author chose. NOTICE contents are informational and cannot modify the licence, but they must travel.\n\nThe change-marking rule in (b) earns its keep too. It tells downstream readers which files are no longer as upstream shipped them.",
+      "references": "- [Apache Software Foundation: Apache License, Version 2.0, Section 4 (Redistribution)](https://www.apache.org/licenses/LICENSE-2.0.txt)\n- [Apache Software Foundation: Apache License FAQ](https://www.apache.org/foundation/license-faq.html)"
+    },
+    {
+      "id": "apache-trademark-carveout",
+      "title": "Apache-2.0 grants copyright and patent rights. What does it explicitly withhold?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Permission to use the licensor's trade names, trademarks, or product names",
+          "isCorrect": true
+        },
+        {
+          "text": "The right to redistribute the Work in object form",
+          "isCorrect": false
+        },
+        {
+          "text": "The right to modify the Work",
+          "isCorrect": false
+        },
+        {
+          "text": "The right to charge money for the Work",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Section 6, in full:\n\n> This License does not grant permission to use the trade names, trademarks, service marks, or product names of the Licensor, except as required for reasonable and customary use in describing the origin of the Work and reproducing the content of the NOTICE file.\n\nThat carve-out is not an Apache quirk. It reflects how the regimes divide. A copyright licence can only give away copyright-shaped rights. The brand is governed by trademark law, which protects consumers against confusion about *source*, and no amount of open-sourcing the code disclaims that.\n\nThis is why forks get renamed rather than shipped under the original name. The code was free; the name was never on offer. Chromium versus Chrome is the everyday example; the long-running Firefox/IceWeasel affair in Debian is the cautionary one.\n\nCC0 § 4(a) makes exactly the same reservation, in almost the same words.",
+      "references": "- [Apache Software Foundation: Apache License, Version 2.0, Section 6 (Trademarks)](https://www.apache.org/licenses/LICENSE-2.0.txt)\n- [Apache Software Foundation: Trademark Policy](https://www.apache.org/foundation/marks/)"
+    },
+    {
+      "id": "bsd-third-clause",
+      "title": "What does BSD-3-Clause add that BSD-2-Clause does not?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "A no-endorsement clause barring use of the authors' names to promote derived products",
+          "isCorrect": true
+        },
+        {
+          "text": "An express patent grant",
+          "isCorrect": false
+        },
+        {
+          "text": "A requirement to publish modifications",
+          "isCorrect": false
+        },
+        {
+          "text": "The advertising clause requiring acknowledgment in all promotional material",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The third clause reads:\n\n> Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.\n\nIt is a trademark-flavoured protection bolted onto a copyright licence, the same instinct behind Apache-2.0 § 6.\n\nThe advertising clause is a different licence entirely. It belongs to the **4-clause** BSD (`BSD-4-Clause`), and it required every advertisement mentioning features of the software to display an acknowledgment. That became notorious as BSD-derived code spread and the required acknowledgments piled up. It is also GPL-incompatible, because it adds a restriction the GPL does not permit. UC Berkeley formally rescinded it for its own code in 1999, which is why the modern BSD family stops at three clauses.\n\nNeither BSD-2 nor BSD-3 grants patent rights.",
+      "references": "- [SPDX License List: BSD-3-Clause](https://spdx.org/licenses/BSD-3-Clause.html)\n- [SPDX License List: BSD-4-Clause (original \"4-clause\" BSD with advertising clause)](https://spdx.org/licenses/BSD-4-Clause.html)"
+    },
+    {
+      "id": "mit-vs-x11",
+      "title": "SPDX lists `MIT` and `X11` as separate identifiers. What is the difference?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "X11 adds a clause restricting use of the X Consortium's name in advertising",
+          "isCorrect": true
+        },
+        {
+          "text": "They are identical; `X11` is a deprecated alias for `MIT`",
+          "isCorrect": false
+        },
+        {
+          "text": "X11 includes an express patent grant",
+          "isCorrect": false
+        },
+        {
+          "text": "X11 is a weak copyleft licence",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The two texts share their entire permission grant, then X11 adds a paragraph MIT has no equivalent of:\n\n> Except as contained in this notice, the name of the X Consortium shall not be used in advertising or otherwise to promote the sale, use or other dealings in this Software without prior written authorization from the X Consortium.\n\nThis is the argument for using SPDX identifiers instead of prose. \"The MIT License\" has been used for several different texts out of MIT. The FSF calls the one SPDX records as `MIT` the **Expat License**, precisely to dodge that ambiguity.\n\nSo a README that says \"MIT-style licence\" tells a compliance scanner nothing actionable. `SPDX-License-Identifier: MIT` names one exact document. That precision is the whole product SPDX sells.",
+      "references": "- [SPDX License List: X11 License](https://spdx.org/licenses/X11.html)\n- [GNU Project: Various Licenses and Comments About Them](https://www.gnu.org/licenses/license-list.html)"
+    },
+    {
+      "id": "third-party-patent-risk",
+      "title": "A third party holds a patent covering the technique your MIT-licensed dependency implements. Does MIT protect you?",
+      "description": "You did not write the dependency and have no relationship with the patent holder.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Only if the dependency's author also holds a patent on the technique",
+          "isCorrect": false
+        },
+        {
+          "text": "No — a licence binds only the person who granted it, and MIT grants no patent rights anyway",
+          "isCorrect": true
+        },
+        {
+          "text": "Yes — MIT's \"without restriction\" language covers all forms of intellectual property",
+          "isCorrect": false
+        },
+        {
+          "text": "Yes, because publishing the code as open source is prior art that voids the patent",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Two independent reasons the answer is no.\n\n**A licence is a promise from one party.** The MIT author can only grant rights they hold. A stranger's patent is untouched by anything in your dependency's LICENSE file. No open source licence, Apache-2.0 included, can immunise you against patents held by people who never contributed.\n\n**MIT grants no patent rights at all.** \"To deal in the Software without restriction\" is copyright-shaped language; the licence never mentions patents. Apache-2.0 would at least give you a grant from the contributors themselves, which is a real if narrow shield.\n\nThe prior-art argument is a genuine misconception, and worth pulling apart. Publishing code can be prior art bearing on whether a *later-filed* patent is valid, but it does not retroactively invalidate an existing one, and \"we think their patent is invalid\" is a litigation strategy, not a defence you can rely on when shipping.",
+      "references": "- [SPDX License List: MIT License](https://spdx.org/licenses/MIT.html)\n- [Apache Software Foundation: Apache License, Version 2.0, Section 3 (scope of the patent grant)](https://www.apache.org/licenses/LICENSE-2.0.txt)"
+    },
+    {
+      "id": "gpl-internal-use",
+      "title": "Your company patches a GPLv3 tool and runs it only on internal build machines. Must you publish the changes?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Yes — modifying GPL code always triggers the source obligation",
+          "isCorrect": false
+        },
+        {
+          "text": "Yes, but only after 60 days of internal use",
+          "isCorrect": false
+        },
+        {
+          "text": "Only if the tool is part of a product you sell",
+          "isCorrect": false
+        },
+        {
+          "text": "No — the GPL's source obligations attach to conveying, and nothing has been conveyed",
+          "isCorrect": true
+        }
+      ],
+      "explanation": "GPLv3 § 2 says it directly:\n\n> You may make, run and propagate covered works that you do not convey, without conditions so long as your license otherwise remains in force.\n\nModification alone triggers nothing. The obligations hang on **conveying**, and running software inside your own organisation is not conveying it to anyone.\n\n§ 2 even anticipates outsourcing. You may convey covered works to contractors \"for the sole purpose of having them make modifications exclusively for you, or provide you with facilities for running those works,\" provided they work under your direction and are barred from keeping copies outside the relationship.\n\nWhere teams actually get caught is the edges. Shipping the patched binary to a customer is conveying. Publishing the container image is conveying. Handing it to a separate legal entity can be conveying, and on a cautious reading that includes a subsidiary. \"We only use it internally\" is a fact about today's deployment, not a permanent property of the code.",
+      "references": "- [GNU Project: GNU General Public License v3.0 (full text)](https://www.gnu.org/licenses/gpl-3.0.txt)\n- [GNU Project: GPL Frequently Asked Questions](https://www.gnu.org/licenses/gpl-faq.html)"
+    },
+    {
+      "id": "gpl-conveying-verb",
+      "title": "Which verb does GPLv3 define as the act that triggers its source-code obligations?",
+      "description": "Answer with the verb, in any grammatical form.",
+      "type": "input",
+      "validation": {
+        "mode": "text",
+        "acceptedAnswers": [
+          "convey",
+          "conveying",
+          "conveyance",
+          "to convey",
+          "conveyed"
+        ]
+      },
+      "explanation": "**Convey.** GPLv3 § 0 defines it, and the second sentence of that definition does a great deal of work:\n\n> To \"convey\" a work means any kind of propagation that enables other parties to make or receive copies. Mere interaction with a user through a computer network, with no transfer of a copy, is not conveying.\n\nRead that again with a SaaS product in mind. A company can take GPLv3 code, modify it heavily, run it as the engine of a billion-dollar hosted service, and never convey a single copy, because users interact with it over HTTP and receive nothing. No conveying, no source obligation.\n\nThat gap is not an oversight; § 0 states it deliberately. It is also exactly the gap the AGPL was written to close, in its § 13.\n\nGPLv3 also defines the broader term **propagate** (any act that would make you liable for infringement under copyright law, except running it privately). Conveying is the subset of propagation that hands copies to others.",
+      "references": "- [GNU Project: GNU General Public License v3.0, Section 0 (Definitions)](https://www.gnu.org/licenses/gpl-3.0.txt)"
+    },
+    {
+      "id": "which-acts-are-conveying",
+      "title": "Which of these count as conveying a GPLv3 work?",
+      "description": "GPLv3 defines conveying as propagation that enables other parties to make or receive copies. Select every act that qualifies.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "Giving the modified binary to a partner company for their own use",
+          "isCorrect": true
+        },
+        {
+          "text": "Letting the public use the modified program through a web UI, with no download",
+          "isCorrect": false
+        },
+        {
+          "text": "Running the modified program on your own laptop",
+          "isCorrect": false
+        },
+        {
+          "text": "Shipping a modified binary to a paying customer",
+          "isCorrect": true
+        },
+        {
+          "text": "Publishing a container image containing the modified binary on a public registry",
+          "isCorrect": true
+        }
+      ],
+      "explanation": "The test from § 0 is whether the act \"enables other parties to make or receive copies.\"\n\nShipping a binary to a customer, publishing a container image, and handing a build to a partner company all put a copy in someone else's hands. Money is irrelevant here. A free gift to a partner is as much conveying as a sale, and publishing to a registry conveys to everyone who pulls the image.\n\nServing the program through a web UI is the SaaS case, and § 0 forecloses it in terms: \"Mere interaction with a user through a computer network, with no transfer of a copy, is not conveying.\" Your users receive rendered output, not the program.\n\nRunning it yourself is not conveying either. GPLv3 § 2 affirms \"your unlimited permission to run the unmodified Program,\" and adds that you may make, run, and propagate works you do not convey, without conditions.\n\nOne subtlety is worth carrying with you. The moment your web UI serves a *copy* of covered code, such as GPL-licensed JavaScript delivered to the browser, you are conveying after all. The question is always whether copies move, not whether users benefit.",
+      "references": "- [GNU Project: GNU General Public License v3.0, Section 0 (Definitions)](https://www.gnu.org/licenses/gpl-3.0.txt)\n- [GNU Project: GNU Affero General Public License v3.0, the licence written to close the network gap](https://www.gnu.org/licenses/agpl-3.0.txt)"
+    },
+    {
+      "id": "agpl-section-13-trigger",
+      "title": "What actually triggers AGPL-3.0's extra source obligation?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Modifying the Program and letting users interact with your modified version remotely over a network",
+          "isCorrect": true
+        },
+        {
+          "text": "Running the Program on a public server without changing it",
+          "isCorrect": false
+        },
+        {
+          "text": "Using an AGPL tool internally with no network-facing interaction",
+          "isCorrect": false
+        },
+        {
+          "text": "Reading an AGPL project's source code for reference",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "AGPL § 13 is one sentence, and both of its conditions matter:\n\n> Notwithstanding any other provision of this License, **if you modify the Program**, your modified version must prominently offer all users interacting with it remotely through a computer network (if your version supports such interaction) an opportunity to receive the Corresponding Source of your version by providing access to the Corresponding Source from a network server at no charge, through some standard or customary means of facilitating copying of software.\n\nSo: (1) you modified it, and (2) your version supports remote network interaction and you are offering that to users. Both must hold.\n\nThe offer has teeth. Read the words again: \"prominently,\" \"at no charge,\" from \"a network server,\" and to *users* rather than to whoever thinks to ask. In practice that is a visible link in the UI pointing at your source.\n\nNote how narrow the target is: the Corresponding Source **of your version**. AGPL reaches the covered work and things combined into it. It does not reach across your estate to unrelated services. That is the SSPL's much broader demand, which this quiz covers separately.",
+      "references": "- [GNU Project: GNU Affero General Public License v3.0, Section 13 (full text)](https://www.gnu.org/licenses/agpl-3.0.txt)\n- [GNU Project: Why the Affero GPL](https://www.gnu.org/licenses/why-affero-gpl.html)"
+    },
+    {
+      "id": "agpl-unmodified-deployment",
+      "title": "You deploy an unmodified AGPL-3.0 application as a public service. What does § 13 require?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "You must publish your entire infrastructure configuration",
+          "isCorrect": false
+        },
+        {
+          "text": "You must publish the source of every other application on the same server",
+          "isCorrect": false
+        },
+        {
+          "text": "You must relicense your other services under AGPL",
+          "isCorrect": false
+        },
+        {
+          "text": "Nothing additional, because § 13 speaks to modified versions",
+          "isCorrect": true
+        }
+      ],
+      "explanation": "§ 13 opens with \"if you modify the Program.\" Deploy it exactly as upstream shipped it and that condition is never met.\n\nThis is a real answer, but treat it as a narrow one, for three reasons:\n\n- **The offer costs you nothing anyway.** Upstream already publishes the source; linking to it satisfies the spirit and removes any argument.\n- **\"Modified\" arrives sooner than teams expect.** A cherry-picked patch, a maintained fork, a compiled-in plugin, a theme that gets linked into the program: any of these can make your deployment a modified version. Configuration usually does not; code changes do.\n- **The rest of the licence still applies.** AGPL is GPLv3 plus § 13. If you ever convey a copy, whether a container image or an on-prem build for a customer, the ordinary GPL obligations attach regardless of whether § 13 does.\n\nThe answers about publishing your infrastructure config or the other applications on your server describe the SSPL, not the AGPL. Conflating them is common and badly misstates the risk.",
+      "references": "- [GNU Project: GNU Affero General Public License v3.0 (full text)](https://www.gnu.org/licenses/agpl-3.0.txt)\n- [GNU Project: GPL Frequently Asked Questions](https://www.gnu.org/licenses/gpl-faq.html)"
+    },
+    {
+      "id": "sspl-beyond-agpl",
+      "title": "SSPL-1.0 is AGPL-3.0 with § 13 rewritten. What does the rewrite demand that AGPL never did?",
+      "description": "SSPL-1.0 was published by MongoDB in 2018 and reuses most of the AGPL text.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "Enough source that a user could stand up their own instance of the whole service",
+          "isCorrect": true
+        },
+        {
+          "text": "Approval from the Open Source Initiative before you may deploy",
+          "isCorrect": false
+        },
+        {
+          "text": "A royalty to MongoDB once your service passes a revenue threshold",
+          "isCorrect": false
+        },
+        {
+          "text": "The source of the management, monitoring, and backup software you use to run the service",
+          "isCorrect": true
+        },
+        {
+          "text": "The source of the user interfaces and APIs through which the service is offered",
+          "isCorrect": true
+        }
+      ],
+      "explanation": "SSPL § 13 replaces AGPL's targeted obligation with a sweeping one:\n\n> \"Service Source Code\" means the Corresponding Source for the Program or the modified version, and the Corresponding Source for all programs that you use to make the Program or modified version available as a service, including, without limitation, management software, user interfaces, application program interfaces, automation software, monitoring software, backup software, storage software and hosting software, all such that a user could run an instance of the service using the Service Source Code you make available.\n\nAnd unlike AGPL, it fires on offering the functionality as a service **whether or not you modified anything**.\n\nThat is the design. Make hosting the software commercially impractical for cloud providers, without touching ordinary users. Whether that is legitimate is contested. MongoDB withdrew the SSPL from OSI review in 2019, saying the community consensus needed for approval did not exist, and OSI has since said it does not meet the Open Source Definition. SPDX records `SSPL-1.0` with `isOsiApproved: false`.\n\nTwo things the SSPL does **not** do, both common misreadings. It charges nothing; there is no fee, royalty, or revenue threshold anywhere in the text. And OSI approval is not a deployment gate. The OSI reviews licence *texts*; it does not license users.",
+      "references": "- [SPDX License List: SSPL-1.0 (Server Side Public License, full text)](https://spdx.org/licenses/SSPL-1.0.html)\n- [Open Source Initiative: license-review discussion of SSPL](https://lists.opensource.org/pipermail/license-review_lists.opensource.org/2019-March/003989.html)"
+    },
+    {
+      "id": "gpl-mere-aggregation",
+      "title": "Does shipping a GPL utility and your proprietary binary in the same container image force you to open-source the binary?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Yes — anything in the same image becomes part of one derivative work",
+          "isCorrect": false
+        },
+        {
+          "text": "Yes, unless the two live in different directories",
+          "isCorrect": false
+        },
+        {
+          "text": "Only if the image is published to a public registry",
+          "isCorrect": false
+        },
+        {
+          "text": "No — that is mere aggregation, which does not extend the GPL to the other parts",
+          "isCorrect": true
+        }
+      ],
+      "explanation": "GPLv3 § 5 closes with the aggregation rule:\n\n> A compilation of a covered work with other separate and independent works, which are not by their nature extensions of the covered work, and which are not combined with it such as to form a larger program, in or on a volume of a storage or distribution medium, is called an \"aggregate\" if the compilation and its resulting copyright are not used to limit the access or legal rights of the compilation's users beyond what the individual works permit. **Inclusion of a covered work in an aggregate does not cause this License to apply to the other parts of the aggregate.**\n\nA container image, a Linux distribution ISO, and an app store are all aggregates in this sense. Proximity is not combination.\n\nThe test is whether the works form **one program**. Separate processes talking over pipes, sockets, or CLI invocations point toward independence. Linking into a single address space, sharing internal data structures, or loading as a plugin points toward a combined work. The GPL still applies in full to the covered work itself, so you still ship its source and its notices. It just does not reach sideways into the neighbours.",
+      "references": "- [GNU Project: GNU General Public License v3.0, Section 5 (mere aggregation)](https://www.gnu.org/licenses/gpl-3.0.txt)\n- [GNU Project: GPL Frequently Asked Questions](https://www.gnu.org/licenses/gpl-faq.html)"
+    },
+    {
+      "id": "gplv3-reinstatement-window",
+      "title": "Under GPLv3 § 8, how many days must a copyright holder stay silent after you stop violating before your licence is permanently reinstated?",
+      "description": "Answer with a number of days.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [
+          60
+        ]
+      },
+      "explanation": "Sixty. § 8 gives two independent routes back:\n\n> However, if you cease all violation of this License, then your license from a particular copyright holder is reinstated (a) provisionally, unless and until the copyright holder explicitly and finally terminates your license, and (b) **permanently, if the copyright holder fails to notify you of the violation by some reasonable means prior to 60 days after the cessation.**\n\n> Moreover, your license ... is reinstated permanently if the copyright holder notifies you of the violation ..., this is the first time you have received notice of violation of this License (for any work) from that copyright holder, and you **cure the violation prior to 30 days after your receipt of the notice**.\n\nSo: 60 days of silence after you stop, or a 30-day cure window after a first-ever notice.\n\nThe contrast with GPLv2 is the point. GPLv2 § 4 terminates your rights automatically on violation, with no cure mechanism at all. Only the copyright holder can restore them, at their discretion. Under GPLv2, a shipped product with a missing source offer could put a company permanently outside the licence. GPLv3's cure provisions were a direct response, and they are why GPLv3 compliance failures are usually recoverable.",
+      "references": "- [GNU Project: GNU General Public License v3.0, Section 8 (Termination)](https://www.gnu.org/licenses/gpl-3.0.txt)\n- [SPDX License List: GPL-2.0-only (compare Section 4, automatic termination)](https://spdx.org/licenses/GPL-2.0-only.html)"
+    },
+    {
+      "id": "gplv3-additions-over-gplv2",
+      "title": "Which of these did GPLv3 add relative to GPLv2?",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "An obligation to offer source to users of a network service",
+          "isCorrect": false
+        },
+        {
+          "text": "An express patent licence from contributors",
+          "isCorrect": true
+        },
+        {
+          "text": "Installation Information for User Products — the anti-tivoization rule",
+          "isCorrect": true
+        },
+        {
+          "text": "A cure period that can reinstate a terminated licence",
+          "isCorrect": true
+        },
+        {
+          "text": "An explicit list of additional terms that may be added without breaking compatibility",
+          "isCorrect": true
+        }
+      ],
+      "explanation": "GPLv3 (2007) was a response to sixteen years of changed conditions:\n\n- **Patents.** GPLv2 § 7 only addressed patent conditions imposed *on* you; GPLv3 § 11 grants patent rights outright from each contributor.\n- **Tivoization.** GPLv3 § 6 requires Installation Information for User Products, defined as \"any methods, procedures, authorization keys, or other information required to install and execute modified versions of a covered work in that User Product.\" The name comes from TiVo, which shipped Linux and honoured GPLv2's source requirement, then used signature checks so modified builds would not run. Source you cannot install is a hollow freedom.\n- **Additional terms.** § 7 enumerates the extra terms a licence may carry without becoming incompatible. That is the mechanism that made Apache-2.0 combinable with GPLv3.\n- **Cure periods.** § 8's reinstatement routes, 60 days of silence after you stop or a 30-day cure after a first notice, replaced GPLv2's irreversible automatic termination.\n\nThe network clause is the one thing GPLv3 pointedly did **not** add. GPLv3 § 0 still says network interaction with no copy transfer is not conveying. That obligation lives in the AGPL, published the following year as a separate licence precisely because it was too strong for the general-purpose GPL.",
+      "references": "- [GNU Project: GNU General Public License v3.0 (full text)](https://www.gnu.org/licenses/gpl-3.0.txt)\n- [GNU Project: A Quick Guide to GPLv3](https://www.gnu.org/licenses/quick-guide-gplv3.html)"
+    },
+    {
+      "id": "lgpl-combined-work-duties",
+      "title": "Your proprietary app links an LGPLv3 library. Which obligations does § 4 put on you?",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "Grant users a general right to reverse engineer your whole application",
+          "isCorrect": false
+        },
+        {
+          "text": "Give prominent notice that the library is used and is covered by the LGPL",
+          "isCorrect": true
+        },
+        {
+          "text": "Ship either relinkable object code or use a shared-library mechanism the user can swap",
+          "isCorrect": true
+        },
+        {
+          "text": "Include a copy of the GNU GPL and the LGPL",
+          "isCorrect": true
+        },
+        {
+          "text": "Release your application's own source code under the LGPL",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "\"Dynamic linking makes LGPL safe\" is folklore that gets the mechanism backwards. LGPLv3 § 4 lets you convey a Combined Work under terms of your choice, but only terms that\n\n> taken together, effectively do not restrict modification of the portions of the Library contained in the Combined Work and reverse engineering for debugging such modifications\n\nplus the conditions (a) through (e): notice that the Library is used, copies of both licence texts, the Library's copyright notice among any displayed notices, and the one that does the real work, option **4d0** or **4d1**:\n\n- **4d0.** Ship the Minimal Corresponding Source plus your application's code in a form that lets the user **relink** against a modified library.\n- **4d1.** Use a shared-library mechanism that loads the library at run time and \"will operate properly with a modified version of the Library that is interface-compatible.\"\n\nThe goal is the user's ability to swap in their own build of the library. Dynamic linking is not a magic exemption. It is simply the cheapest way to satisfy 4d1. And static linking is permitted, as long as you provide the relinkable pieces under 4d0.\n\nNote how narrow the reverse-engineering term is. § 4 bars you from restricting reverse engineering **for debugging modifications to the Library**. It does not open your whole application to inspection.\n\nYour own source stays yours throughout.",
+      "references": "- [GNU Project: GNU Lesser General Public License v3.0, Section 4 (Combined Works)](https://www.gnu.org/licenses/lgpl-3.0.txt)\n- [GNU Project: GPL Frequently Asked Questions](https://www.gnu.org/licenses/gpl-faq.html)"
+    },
+    {
+      "id": "mpl-file-level-copyleft",
+      "title": "How far does MPL-2.0's copyleft reach into your codebase?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Nowhere — MPL-2.0 is a permissive licence",
+          "isCorrect": false
+        },
+        {
+          "text": "To the individual files that contain MPL-covered code",
+          "isCorrect": true
+        },
+        {
+          "text": "To every file in the same repository",
+          "isCorrect": false
+        },
+        {
+          "text": "To the whole application, once you link the MPL code into it",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "MPL-2.0 is the best-known **file-level** copyleft, which puts it between MIT and the LGPL.\n\n§ 3.1 requires that Covered Software distributed in Source Code Form, \"including any Modifications that You create or to which You contribute\", stays under the MPL. But § 3.3 gives the escape hatch:\n\n> You may create and distribute a Larger Work under terms of Your choice, provided that You also comply with the requirements of this License for the Covered Software.\n\nSo in practice, edit an MPL file and that file stays MPL, and you must make its source available. Write new files alongside it and they can be proprietary. Link the whole thing into your closed-source product and the product stays closed.\n\nThe unit of contagion is the file, not the process, not the repository, and not the linkage boundary. MPL also carries an express patent grant (§ 2.1(b)) and a patent-retaliation clause, which MIT and BSD do not.",
+      "references": "- [Mozilla: Mozilla Public License 2.0 (full text)](https://www.mozilla.org/en-US/MPL/2.0/)\n- [Mozilla: MPL 2.0 FAQ](https://www.mozilla.org/en-US/MPL/2.0/FAQ/)"
+    },
+    {
+      "id": "apache-gplv2-incompatibility",
+      "title": "Why can Apache-2.0 code go into a GPLv3 project but not a GPLv2 one?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "GPLv3 relicenses incoming Apache code as public domain",
+          "isCorrect": false
+        },
+        {
+          "text": "GPLv2 predates SPDX, so no identifier exists for the combination",
+          "isCorrect": false
+        },
+        {
+          "text": "GPLv2 § 6 bars imposing further restrictions, and Apache's patent-termination and indemnity terms are exactly that",
+          "isCorrect": true
+        },
+        {
+          "text": "Apache-2.0 forbids combination with any copyleft licence",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "GPLv2 § 6 is categorical:\n\n> You may not impose any further restrictions on the recipients' exercise of the rights granted herein.\n\nApache-2.0 carries terms GPLv2 knows nothing about: the § 3 patent-termination trigger and the § 9 indemnity provision. From GPLv2's perspective those are extra conditions on downstream recipients, so the combination cannot be distributed. The FSF has never treated Apache-2.0 as GPLv2-compatible, and the Apache Software Foundation says so on its own compatibility page.\n\nGPLv3 fixed this deliberately. § 7 enumerates additional terms that may be added without breaking compatibility, and the Apache clauses fit.\n\n**Direction matters, and it is asymmetric.** Apache-2.0 code can be incorporated into a GPLv3 project, and the combined result is governed by GPLv3. The reverse is not allowed. The ASF states plainly that GPLv3 software cannot be included in Apache projects, because that would force Apache releases out from under the Apache License. \"Compatible\" in licensing always needs an arrow drawn on it.",
+      "references": "- [Apache Software Foundation: Apache License v2.0 and GPL Compatibility](https://www.apache.org/licenses/GPL-compatibility.html)\n- [SPDX License List: GPL-2.0-only (Section 6, no further restrictions)](https://spdx.org/licenses/GPL-2.0-only.html)"
+    },
+    {
+      "id": "gpl-version-suffixes",
+      "title": "What is the practical difference between `GPL-2.0-only` and `GPL-2.0-or-later`?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`-only` means the code may not be redistributed at all",
+          "isCorrect": false
+        },
+        {
+          "text": "They are aliases for the same thing; SPDX accepts either spelling",
+          "isCorrect": false
+        },
+        {
+          "text": "`-or-later` automatically relicenses the code as GPLv3",
+          "isCorrect": false
+        },
+        {
+          "text": "`-or-later` lets a recipient choose to comply with a later GPL version instead",
+          "isCorrect": true
+        }
+      ],
+      "explanation": "\"Version 2, or (at your option) any later version\" is a **grant the author chooses to make**. It is not a default, and it is not automatic relicensing. The code stays GPLv2; the recipient simply gains the option to comply with GPLv3 or a later version instead.\n\nThe consequences are concrete. The Linux kernel is `GPL-2.0-only`. That single choice means the kernel can never absorb GPLv3-only code, and it is why the kernel is unaffected by GPLv3's anti-tivoization rules.\n\nOn the identifier itself. The old SPDX spelling `GPL-2.0+` is **deprecated**, marked `isDeprecatedLicenseId: true` on the SPDX License List, and so is bare `GPL-2.0`, which was ambiguous about exactly this question. Modern tooling wants `GPL-2.0-only` or `GPL-2.0-or-later`, and the whole point of the rename was to force the ambiguity out into the open.",
+      "references": "- [SPDX License List: GPL-2.0-or-later](https://spdx.org/licenses/GPL-2.0-or-later.html)\n- [GNU Project: GPL Frequently Asked Questions](https://www.gnu.org/licenses/gpl-faq.html)"
+    },
+    {
+      "id": "cc0-fallback-layers",
+      "title": "Why does CC0 contain a fallback licence instead of simply declaring the work public domain?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Because some jurisdictions do not let authors abandon copyright, so the waiver may fail there",
+          "isCorrect": true
+        },
+        {
+          "text": "Because Creative Commons requires attribution even under CC0",
+          "isCorrect": false
+        },
+        {
+          "text": "Because public domain dedications expire after 70 years",
+          "isCorrect": false
+        },
+        {
+          "text": "Because CC0 must be filed with a copyright office to take effect",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "\"I hereby place this in the public domain\" is a sentence with no reliable legal effect in much of the world. Many civil-law systems, Germany and France among them, treat authorship rights as partly inalienable, so an author cannot simply walk away from them by saying so.\n\nCC0 answers this by stacking three layers that degrade gracefully:\n\n1. **§ 2 Waiver.** The author \"overtly, fully, permanently, irrevocably and unconditionally waives, abandons, and surrenders\" all Copyright and Related Rights. Where this works, the result is as close to public domain as the law allows.\n2. **§ 3 Public License Fallback.** \"Should any part of the Waiver for any reason be judged legally invalid or ineffective under applicable law,\" the author instead grants a royalty-free, irrevocable, unconditional licence to exercise those same rights.\n3. A final backstop. If even the licence partly fails, the author affirms they will not exercise the remaining rights or assert claims.\n\nThat is why CC0 is roughly 7,000 characters to express \"take it, it's yours.\" It is not lawyerly padding. Each layer catches what the one above it might drop in some country.",
+      "references": "- [Creative Commons: CC0 1.0 Universal legal code](https://creativecommons.org/publicdomain/zero/1.0/legalcode)\n- [Creative Commons: CC0 FAQ](https://wiki.creativecommons.org/wiki/CC0_FAQ)"
+    },
+    {
+      "id": "cc0-does-not-waive",
+      "title": "What does CC0 explicitly **not** waive?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The right to copy and modify the work",
+          "isCorrect": false
+        },
+        {
+          "text": "Sui generis database rights in the EU",
+          "isCorrect": false
+        },
+        {
+          "text": "Rights in the work outside the country of publication",
+          "isCorrect": false
+        },
+        {
+          "text": "Patent and trademark rights held by the person applying it",
+          "isCorrect": true
+        }
+      ],
+      "explanation": "CC0 § 4(a), in full:\n\n> No trademark or patent rights held by Affirmer are waived, abandoned, surrendered, licensed or otherwise affected by this document.\n\nSo CC0 code can still be covered by a patent belonging to the very person who dedicated it. That is a real gap, and it is one reason organisations with patent-risk concerns prefer Apache-2.0 for source code even when the author's intent is maximum generosity.\n\nCopying, modifying, and EU database rights are all things CC0 **does** cover. Copying and modifying are the core of what the waiver releases. \"Copyright and Related Rights\" is defined expansively enough to include sui generis database rights, which is exactly why CC0 became the default for open data. And the waiver is explicitly worldwide, \"in all territories worldwide.\"\n\nOne more thing catches people out. SPDX records `CC0-1.0` as **not** OSI-approved, while the FSF does consider it a free licence. A licence can be perfectly usable and still lack the OSI stamp.",
+      "references": "- [Creative Commons: CC0 1.0 Universal legal code, Section 4](https://creativecommons.org/publicdomain/zero/1.0/legalcode)\n- [SPDX License List: CC0-1.0 (approval metadata)](https://spdx.org/licenses/CC0-1.0.html)"
+    },
+    {
+      "id": "cc-licenses-for-software",
+      "title": "What one thing does Creative Commons itself recommend against using CC licences for?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Datasets",
+          "isCorrect": false
+        },
+        {
+          "text": "Software — with CC0 as the exception they consider acceptable for code",
+          "isCorrect": true
+        },
+        {
+          "text": "Photographs",
+          "isCorrect": false
+        },
+        {
+          "text": "Academic papers",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "From the Creative Commons FAQ:\n\n> We recommend against using Creative Commons licenses for software. Instead, we strongly encourage you to use one of the very good software licenses which are already available.\n\nThe reasons are structural, not political. CC licences say nothing about the distinction between source code and object code, the thing every software licence has to address. They do not grant patent rights. And they are generally incompatible with the established software licences, so CC-licensed code cannot be combined cleanly with anything else.\n\n**CC0 is the exception**, since a public domain dedication raises none of those problems; CC considers it fine for code, and the FSF treats it as GPL-compatible.\n\nThere is one useful compatibility route for projects that mix prose and code. **CC BY-SA 4.0 is one-way compatible with GPLv3**, added for cases where licensed content ends up so entangled with software that separating them is impractical.\n\nPhotographs, papers, and datasets are exactly what CC licences were designed for.",
+      "references": "- [Creative Commons: Frequently Asked Questions, Can I apply a CC license to software?](https://creativecommons.org/faq/#can-i-apply-a-creative-commons-license-to-software)\n- [Creative Commons: ShareAlike compatibility with GPLv3](https://creativecommons.org/share-your-work/licensing-considerations/compatible-licenses/)"
+    },
+    {
+      "id": "us-government-works",
+      "title": "A US federal agency publishes a tool on GitHub with no licence, saying it is \"a work of the US Government\". What follows?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Everything published by the US government is public domain worldwide",
+          "isCorrect": false
+        },
+        {
+          "text": "The same rule covers works published by US state governments",
+          "isCorrect": false
+        },
+        {
+          "text": "The US government cannot hold any copyright under any circumstances",
+          "isCorrect": false
+        },
+        {
+          "text": "The parts written by federal employees in their official duties carry no US copyright, but contractor-written parts may",
+          "isCorrect": true
+        }
+      ],
+      "explanation": "17 U.S.C. § 105(a) is narrower than its reputation:\n\n> Copyright protection under this title is not available for any work of the United States Government, but the United States Government is not precluded from receiving and holding copyrights transferred to it by assignment, bequest, or otherwise.\n\nThree traps are packed into that sentence and its § 101 definition.\n\n- **Who wrote it.** A \"work of the United States Government\" is one prepared by an officer or employee **as part of their official duties**. Government *contractors* are not employees, so contractor-written code in a federal repo can be under copyright, and often is. Mixed-authorship repos are the norm.\n- **Which copyright.** § 105 removes protection \"under this title,\" meaning US copyright. Other countries are not bound by it, and agencies sometimes assert copyright abroad.\n- **Which government.** States are not covered. Many state and local governments do claim copyright in their works.\n\nNote the second half of that sentence too. The federal government can perfectly well *own* copyrights assigned to it. It just cannot originate them.",
+      "references": "- [Cornell LII: 17 U.S.C. § 105, Subject matter of copyright: United States Government works](https://www.law.cornell.edu/uscode/text/17/105)\n- [Cornell LII: 17 U.S.C. § 101, Definitions (\"work of the United States Government\")](https://www.law.cornell.edu/uscode/text/17/101)"
+    },
+    {
+      "id": "copyright-term-years",
+      "title": "For a work created today by an identified human author, US copyright lasts for the author's life plus how many years?",
+      "description": "Answer with a number of years.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [
+          70
+        ]
+      },
+      "explanation": "Seventy. 17 U.S.C. § 302(a):\n\n> Copyright in a work created on or after January 1, 1978, subsists from its creation and, except as provided by the following subsections, endures for a term consisting of the life of the author and 70 years after the author's death.\n\nBut most code never runs on that clock. § 302(c) governs anonymous works, pseudonymous works, and works made for hire:\n\n> the copyright endures for a term of 95 years from the year of its first publication, or a term of 120 years from the year of its creation, whichever expires first.\n\nSo software written by employees within the scope of employment, which is the overwhelming majority of commercial code, gets a fixed term measured from publication or creation rather than from anyone's lifespan. Nobody has to track down when the original developer died.\n\nFor scale, a library published this year under corporate authorship is protected until roughly 2121. On human timescales your licensing decision is permanent, which is a good argument for picking a standard licence rather than writing your own.",
+      "references": "- [Cornell LII: 17 U.S.C. § 302, Duration of copyright: Works created on or after January 1, 1978](https://www.law.cornell.edu/uscode/text/17/302)\n- [U.S. Copyright Office: Circular 15a, Duration of Copyright](https://www.copyright.gov/circs/circ15a.pdf)"
+    },
+    {
+      "id": "public-domain-day-2026",
+      "title": "On 1 January 2026, which US-published works entered the public domain?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Works by authors who died in 1955",
+          "isCorrect": false
+        },
+        {
+          "text": "Works published in 1930, in every country simultaneously",
+          "isCorrect": false
+        },
+        {
+          "text": "Works published in 1930",
+          "isCorrect": true
+        },
+        {
+          "text": "Works published in 1975",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "US works published before 1978 run on a 95-year term from publication, so 1930 + 95 expires at the end of 2025 and the works enter the public domain on 1 January 2026. The 2026 class includes *All Quiet on the Western Front*, the cartoon debut of Betty Boop, and Gershwin's \"I Got Rhythm.\"\n\nTwo things worth carrying away.\n\n**Terms are jurisdictional.** \"Public domain\" is never a global status. A work free in the US may still be protected in countries that measure from the author's death, and vice versa. Anyone building on old material for a worldwide audience has to check per-territory.\n\n**Different media, different clocks.** Pre-1972 sound recordings follow rules set by the Music Modernization Act, which is why *recordings* from 1925 joined the same 2026 cohort as *compositions* from 1930.\n\nThere is a reason this happens as an annual event at all. The 1998 term extension froze US public domain entries for twenty years. The annual thaw resumed in 2019 with works from 1923.",
+      "references": "- [Duke University: Center for the Study of the Public Domain, Public Domain Day](https://web.law.duke.edu/cspd/publicdomainday/)\n- [Internet Archive: Public Domain Day 2026](https://blog.archive.org/public-domain-day-2026/)"
+    },
+    {
+      "id": "spdx-tag-name",
+      "title": "Which tag goes in a source file header to declare its licence in machine-readable form?",
+      "description": "Answer with the tag name only, without the colon or the licence expression that follows it.",
+      "type": "input",
+      "validation": {
+        "mode": "text",
+        "acceptedAnswers": [
+          "SPDX-License-Identifier",
+          "SPDX License Identifier",
+          "SPDX-License-Identifier:"
+        ]
+      },
+      "explanation": "`SPDX-License-Identifier`. One line, at the top of the file, followed by an SPDX licence expression:\n\n```ts\n// SPDX-FileCopyrightText: 2026 Your Name <you@example.com>\n// SPDX-License-Identifier: MIT\n\nexport function hello(): string {\n  return \"hi\";\n}\n```\n\nThe convention replaced the practice of pasting a twenty-line licence header into every file. That approach bloated the source, drifted out of sync, and still could not be parsed reliably. The Linux kernel adopted the tag in 2017 and removed hundreds of thousands of lines of boilerplate in the process.\n\nTooling is the payoff. Scanners can resolve a project's whole licence picture without heuristics, because the value is a defined expression over identifiers from a curated list rather than free prose. The [REUSE specification](https://reuse.software/spec/) builds on the same tag and adds the copyright line shown above.\n\nUse the exact casing, because tools match the tag literally.",
+      "references": "- [SPDX: Handling licence information with SPDX-License-Identifier](https://spdx.dev/learn/handling-license-info/)\n- [REUSE Software: specification for machine-readable copyright and licensing](https://reuse.software/spec/)"
+    },
+    {
+      "id": "spdx-or-operator",
+      "title": "A package declares `(MIT OR Apache-2.0)`. What does that mean for you as the consumer?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "You choose one of the two and comply with it",
+          "isCorrect": true
+        },
+        {
+          "text": "You must comply with both licences simultaneously",
+          "isCorrect": false
+        },
+        {
+          "text": "The maintainer decides at their discretion which one applies to you",
+          "isCorrect": false
+        },
+        {
+          "text": "It is invalid — an SPDX expression cannot contain two licences",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "SPDX defines the two binary operators by exactly this distinction:\n\n- **OR** is disjunctive: \"If presented with a choice between two or more licenses, use the disjunctive binary 'OR' operator.\" The recipient picks.\n- **AND** is conjunctive: \"If required to simultaneously comply with two or more licenses, use the conjunctive binary 'AND' operator.\" You obey both at once.\n\nSo `MIT AND Apache-2.0` would mean something quite different: carry MIT's notices *and* Apache's NOTICE handling and change-marking.\n\n`MIT OR Apache-2.0` is the Rust ecosystem's standard, and the choice is deliberate. A downstream user who wants Apache-2.0's express patent grant can take it, while one who just wants the shortest possible notice file can take MIT. Offering both costs the author nothing and removes an objection from both camps.\n\nThere is a third operator, **WITH**, which attaches a listed exception to a licence. `GPL-2.0-or-later WITH Classpath-exception-2.0` is the combination OpenJDK uses, so that linking to the class library does not pull applications into the GPL.",
+      "references": "- [SPDX Specification: License expressions](https://spdx.github.io/spdx-spec/v2.3/SPDX-license-expressions/)\n- [SPDX License List: exceptions index](https://spdx.org/licenses/exceptions-index.html)"
+    },
+    {
+      "id": "spdx-expression-reading",
+      "title": "Which readings of these SPDX expressions are correct?",
+      "description": "SPDX expressions combine licence identifiers with the operators `AND`, `OR`, and `WITH`.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "`LicenseRef-Acme-Internal` refers to a licence that is not on the SPDX License List",
+          "isCorrect": true
+        },
+        {
+          "text": "`MIT AND BSD-3-Clause` means you may satisfy whichever of the two you prefer",
+          "isCorrect": false
+        },
+        {
+          "text": "`GPL-2.0+` is the current, preferred way to write \"GPLv2 or later\"",
+          "isCorrect": false
+        },
+        {
+          "text": "`GPL-2.0-or-later WITH Classpath-exception-2.0` applies a listed exception to the GPL",
+          "isCorrect": true
+        }
+      ],
+      "explanation": "Two of these readings are right, and each maps to a distinct piece of the syntax.\n\n- **WITH** attaches a licence exception from SPDX's separate exceptions list, which registers 84 of them, including `Classpath-exception-2.0`. An exception modifies the base licence; it is not a licence on its own.\n- **LicenseRef-** is the escape hatch for anything not on the SPDX List: a bespoke commercial licence, an internal policy, an obscure historical text. The format is `LicenseRef-[idString]`, and it keeps expressions valid even when the licence itself is unlisted.\n\n**Both wrong readings are worth naming.** The `AND` reading offered here inverts the operator. `MIT AND BSD-3-Clause` means you must satisfy **both** sets of conditions at once; `OR` is the one that gives you a choice. Swapping the two is the most common SPDX misreading there is.\n\nAnd `GPL-2.0+` is a real trap. It was the old spelling, and the SPDX License List now marks it with `isDeprecatedLicenseId: true`. Bare `GPL-2.0` is deprecated as well, because it never said whether the \"or later\" grant applied. The current spellings are `GPL-2.0-only` and `GPL-2.0-or-later`. Old identifiers still parse in most tools, but they carry exactly the ambiguity the rename was meant to eliminate.",
+      "references": "- [SPDX Specification: License expressions](https://spdx.github.io/spdx-spec/v2.3/SPDX-license-expressions/)\n- [SPDX License List: GPL-2.0-or-later (and the deprecated `GPL-2.0+`)](https://spdx.org/licenses/GPL-2.0-or-later.html)"
+    },
+    {
+      "id": "npm-unlicensed-vs-unlicense",
+      "title": "In `package.json`, what does `\"license\": \"UNLICENSED\"` mean?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Consumers may pick whichever licence they prefer",
+          "isCorrect": false
+        },
+        {
+          "text": "Proprietary — nobody is granted any rights to the package",
+          "isCorrect": true
+        },
+        {
+          "text": "Public domain, the same as the `Unlicense` licence",
+          "isCorrect": false
+        },
+        {
+          "text": "The author has not decided on a licence yet",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`UNLICENSED` is npm's marker for \"no rights granted at all.\" The docs pair it with a safety net:\n\n```json\n{\n  \"name\": \"@acme/internal-billing\",\n  \"license\": \"UNLICENSED\",\n  \"private\": true\n}\n```\n\nnpm recommends `\"private\": true` alongside it to prevent accidental publication.\n\nNow the trap. **`Unlicense`**, with no \"D\" and a real SPDX identifier behind it, is a public domain dedication in the spirit of CC0, and it is **OSI-approved**. The two values sit one letter apart and mean precise opposites:\n\n| Value | Meaning |\n| --- | --- |\n| `UNLICENSED` | proprietary, all rights reserved |\n| `Unlicense` | public domain dedication, OSI-approved |\n\nA typo here does not throw an error. It silently publishes your proprietary package as public domain, or labels your gift to the world as closed. Automated licence scanners will faithfully report whichever one you wrote.\n\nFor a genuinely custom licence, npm's answer is `\"SEE LICENSE IN <filename>\"` with that file at the package root.",
+      "references": "- [npm Docs: package.json, the `license` field](https://docs.npmjs.com/cli/v11/configuring-npm/package-json#license)\n- [SPDX License List: The Unlicense](https://spdx.org/licenses/Unlicense.html)"
+    },
+    {
+      "id": "not-osi-approved",
+      "title": "Which of these are **not** OSI-approved open source licences?",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "SSPL-1.0, the Server Side Public License",
+          "isCorrect": true
+        },
+        {
+          "text": "The JSON License — MIT plus \"shall be used for Good, not Evil\"",
+          "isCorrect": true
+        },
+        {
+          "text": "Elastic License 2.0",
+          "isCorrect": true
+        },
+        {
+          "text": "AGPL-3.0, the GNU Affero General Public License",
+          "isCorrect": false
+        },
+        {
+          "text": "BUSL-1.1, the Business Source License",
+          "isCorrect": true
+        }
+      ],
+      "explanation": "**AGPL-3.0 is OSI-approved**, and that is the lesson hiding in this question. It is the strongest widely used copyleft licence, many companies ban it internally, and it is still unambiguously open source. \"Our policy forbids it\" and \"it isn't open source\" are different statements.\n\nThe other four all fail the Open Source Definition, each in its own way:\n\n- **BUSL-1.1** restricts production use until the Change Date. OSD criterion 6 forbids restricting fields of endeavour.\n- **Elastic License 2.0** bars providing the software to third parties as a hosted service and bars circumventing licence-key functionality. Those are the terms Elastic moved to in 2021 alongside the SSPL.\n- **SSPL-1.0** was submitted to OSI by MongoDB and withdrawn in 2019, its CTO conceding that \"the community consensus required to support OSI approval does not currently appear to exist.\" OSI has since stated it does not meet the OSD.\n- **The JSON License** adds a single sentence to MIT and thereby breaks it, on the same criterion 6 that catches BUSL.\n\nYou can verify all of this mechanically rather than by argument. The SPDX License List publishes an `isOsiApproved` flag per licence; it is `false` for `BUSL-1.1`, `SSPL-1.0`, `Elastic-2.0`, and `JSON`, and `true` for `AGPL-3.0`.",
+      "references": "- [Open Source Initiative: The Open Source Definition](https://opensource.org/osd)\n- [SPDX License List: full list with OSI approval flags](https://spdx.org/licenses/)"
+    },
+    {
+      "id": "busl-change-date-max",
+      "title": "Under BUSL 1.1, what is the maximum number of years before the code must convert to its Change License?",
+      "description": "Answer with a number of years.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [
+          4
+        ]
+      },
+      "explanation": "Four. The Business Source License sets the Change Date as the stated date **or** the fourth anniversary of the first publicly available distribution under the BUSL, whichever comes first. A vendor may choose something shorter; they cannot choose longer.\n\nThe other structural constraint is the Change License itself. It must be GPL version 2.0 or later, or a compatible licence. So BUSL code is guaranteed to become open source eventually. The conversion is written into the licence, and it happens per release, on a rolling basis. HashiCorp's Terraform and MariaDB's MaxScale are the best-known adopters.\n\nWhat BUSL is **not** is open source *while you are using it*. Its whole purpose is to restrict production use during the window, which is precisely what OSD criterion 6 forbids. MariaDB's own FAQ says so directly: the BSL does not meet the Open Source Definition.\n\nSource-available with a countdown is a coherent position. It is just a different one from open source, and the distinction matters when a procurement policy says \"open source only.\"",
+      "references": "- [MariaDB: Business Source License FAQ for adopters](https://mariadb.com/bsl-faq-adopting/)\n- [SPDX License List: BUSL-1.1](https://spdx.org/licenses/BUSL-1.1.html)"
+    },
+    {
+      "id": "json-license-good-not-evil",
+      "title": "The JSON License is the MIT licence plus one sentence. Why isn't it open source?",
+      "description": "The added sentence reads: *The Software shall be used for Good, not Evil.*",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "It removes MIT's warranty disclaimer",
+          "isCorrect": false
+        },
+        {
+          "text": "It has no SPDX identifier, so tools cannot process it",
+          "isCorrect": false
+        },
+        {
+          "text": "It forbids all commercial use",
+          "isCorrect": false
+        },
+        {
+          "text": "It restricts the field of endeavour, which the Open Source Definition forbids",
+          "isCorrect": true
+        }
+      ],
+      "explanation": "Criterion 6 of the Open Source Definition rules it out in one line:\n\n> **No Discrimination Against Fields of Endeavor.** The license must not restrict anyone from making use of the program in a specific field of endeavor. For example, it may not restrict the program from being used in a business, or from being used for genetic research.\n\nA restriction to \"Good\" is a field-of-endeavour restriction, and a vague one, which makes it worse rather than better. Nobody can tell you in advance whether your use complies, and corporate lawyers cannot sign off on a term with no definable boundary. Douglas Crockford, who wrote it, has said he granted IBM permission for their customers to use the software for evil, which captures the absurdity precisely.\n\nEverything else about the licence is MIT: the warranty disclaimer is intact, and SPDX does list it as `JSON`, recording `isOsiApproved: false` and `isFsfLibre: false`.\n\nThe practical lesson is that a licence is not a place for jokes or aspirations. One clever sentence turned a universally accepted licence into one that many organisations are contractually unable to accept.",
+      "references": "- [Open Source Initiative: The Open Source Definition, criterion 6](https://opensource.org/osd)\n- [SPDX License List: JSON License](https://spdx.org/licenses/JSON.html)"
+    },
+    {
+      "id": "inbound-equals-outbound",
+      "title": "You open a pull request against an Apache-2.0 project that has no CLA. Under what terms is your contribution licensed?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "It enters the public domain automatically on submission",
+          "isCorrect": false
+        },
+        {
+          "text": "Under the project's own licence, Apache-2.0",
+          "isCorrect": true
+        },
+        {
+          "text": "Under no licence until a maintainer asks you to sign one",
+          "isCorrect": false
+        },
+        {
+          "text": "Under whatever licence you name in the pull request description",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "This is the **inbound = outbound** norm, and it is written down in two places that both apply here.\n\nApache-2.0 § 5 states that any Contribution you intentionally submit for inclusion in the Work is under the terms of the Apache License, unless you explicitly say otherwise. GitHub's Terms of Service say the same thing platform-wide: when you contribute to a repository containing notice of a licence, you license your contribution under those same terms and you affirm you have the right to do so.\n\nSo the default works without ceremony, which is exactly why most projects need no CLA.\n\nWhat a CLA adds is something inbound = outbound does not give: broader rights for the *project*, typically a licence wide enough to relicense later, sometimes outright copyright assignment. Projects that may want to change licence, dual-license commercially, or enforce copyright centrally need that. Projects content to stay on one licence forever do not, and every CLA is friction that costs some contributions.\n\nA DCO sign-off is a third, lighter instrument, which this quiz covers separately.",
+      "references": "- [Apache Software Foundation: Apache License, Version 2.0, Section 5 (Submission of Contributions)](https://www.apache.org/licenses/LICENSE-2.0.txt)\n- [GitHub Docs: GitHub Terms of Service, Contributions Under Repository License](https://docs.github.com/articles/licensing-a-repository)"
+    },
+    {
+      "id": "dco-vs-cla",
+      "title": "What does adding `Signed-off-by:` to a commit under the Developer Certificate of Origin actually do?",
+      "description": "Select every statement that the DCO's own text supports.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "Assigns your copyright in the contribution to the project",
+          "isCorrect": false
+        },
+        {
+          "text": "Grants the project the right to relicense your contribution later",
+          "isCorrect": false
+        },
+        {
+          "text": "Certifies that you wrote the contribution or have the right to submit it under the project's licence",
+          "isCorrect": true
+        },
+        {
+          "text": "Certifies that any prior work it builds on was itself appropriately licensed",
+          "isCorrect": true
+        },
+        {
+          "text": "Puts your sign-off, including personal details, into a permanent public record",
+          "isCorrect": true
+        }
+      ],
+      "explanation": "The DCO 1.1, written for the Linux kernel after the SCO litigation, is a **certification of provenance** rather than a transfer of anything. Signing off asserts that one of the following is true:\n\n> (a) The contribution was created in whole or in part by me and I have the right to submit it under the open source license indicated in the file; or\n> (b) The contribution is based upon previous work that ... is covered under an appropriate open source license and I have the right under that license to submit that work with modifications ...; or\n> (c) The contribution was provided directly to me by some other person who certified (a), (b) or (c) and I have not modified it.\n\nClause (d) adds the record-keeping consent: you understand the contribution and your sign-off, including the personal information in it, are public and \"maintained indefinitely.\"\n\nNo copyright changes hands. You keep ownership; the project gets a signed statement that the code was yours to give.\n\nThat is also why a DCO cannot hand a project relicensing rights. Certifying that you had the right to submit under the *current* licence says nothing about permitting a future one. A **DCO** is one line in a commit message answering \"is this yours?\". A **CLA** is a signed agreement granting the project rights it would not otherwise have, typically the ability to relicense. Choose the DCO unless you have a concrete reason to need the extra rights.",
+      "references": "- [Developer Certificate of Origin 1.1 (full text)](https://developercertificate.org/)\n- [Linux Foundation: DCO tooling and guidance](https://www.kernel.org/doc/html/latest/process/submitting-patches.html)"
+    },
+    {
+      "id": "bundled-notices",
+      "title": "You bundle a React app with 40 npm dependencies into one minified `bundle.js`. Which obligations survive the build step?",
+      "description": "Your build strips all comments, including licence headers, from the output.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "You must state that you changed any Apache-2.0 files you actually modified",
+          "isCorrect": true
+        },
+        {
+          "text": "A copy of the Apache-2.0 licence text must reach recipients of the bundle",
+          "isCorrect": true
+        },
+        {
+          "text": "None — minified output is a new work, so upstream notices no longer apply",
+          "isCorrect": false
+        },
+        {
+          "text": "MIT, BSD, and ISC copyright and permission notices must still reach your users",
+          "isCorrect": true
+        },
+        {
+          "text": "NOTICE file contents from any Apache-2.0 dependency that ships one must be reproduced",
+          "isCorrect": true
+        }
+      ],
+      "explanation": "Minification is a mechanical transformation. It produces a derivative work of everything it consumed, not a clean-room reimplementation, and it strips comments, including every licence header, without changing a single obligation.\n\nWhat survives:\n\n- **MIT, BSD, and ISC.** The notices must be \"included in all copies or substantial portions of the Software.\" A bundle containing the library is a copy of it.\n- **Apache-2.0 § 4(a).** Recipients must receive a copy of the licence text itself. Bundling excuses this no more than it excuses the notices.\n- **Apache-2.0 § 4(d).** NOTICE contents must be reproduced in a NOTICE file, in the documentation, or \"within a display generated by the Derivative Works\", so an About screen qualifies.\n- **Apache-2.0 § 4(b).** Files you modified must carry prominent notices saying so. Vendoring and patching a dependency triggers this; merely bundling it does not.\n\nThe standard fix is to generate the notices at build time rather than maintain them by hand. Webpack, Rollup, and Vite all have licence plugins that walk the dependency graph and emit a `THIRD-PARTY-NOTICES.txt`; link it from your About page or ship it beside the bundle.\n\nThis is the most commonly violated obligation in open source, and the easiest to fix. One build step, once.",
+      "references": "- [SPDX License List: MIT License (the notice condition)](https://spdx.org/licenses/MIT.html)\n- [Apache Software Foundation: Apache License, Version 2.0, Section 4 (Redistribution)](https://www.apache.org/licenses/LICENSE-2.0.txt)"
+    }
+  ]
+}
