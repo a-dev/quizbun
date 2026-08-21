@@ -55,6 +55,79 @@
               "references": {
                 "type": "string"
               },
+              "images": {
+                "minItems": 1,
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "src": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*\\.(?:png|jpe?g|webp|avif|gif|svg)$"
+                        },
+                        {
+                          "type": "string",
+                          "pattern": "^https:\\/\\/\\S+$"
+                        }
+                      ]
+                    },
+                    "alt": {
+                      "type": "string"
+                    },
+                    "caption": {
+                      "type": "string"
+                    },
+                    "placement": {
+                      "type": "string",
+                      "enum": [
+                        "question",
+                        "explanation"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "src",
+                    "alt"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "videos": {
+                "minItems": 1,
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "provider": {
+                      "type": "string",
+                      "const": "youtube"
+                    },
+                    "id": {
+                      "type": "string",
+                      "pattern": "^[A-Za-z0-9_-]{11}$"
+                    },
+                    "start": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "placement": {
+                      "type": "string",
+                      "enum": [
+                        "question",
+                        "explanation"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "provider",
+                    "id"
+                  ],
+                  "additionalProperties": false
+                }
+              },
               "type": {
                 "type": "string",
                 "const": "single-choice"
@@ -110,6 +183,79 @@
               "references": {
                 "type": "string"
               },
+              "images": {
+                "minItems": 1,
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "src": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*\\.(?:png|jpe?g|webp|avif|gif|svg)$"
+                        },
+                        {
+                          "type": "string",
+                          "pattern": "^https:\\/\\/\\S+$"
+                        }
+                      ]
+                    },
+                    "alt": {
+                      "type": "string"
+                    },
+                    "caption": {
+                      "type": "string"
+                    },
+                    "placement": {
+                      "type": "string",
+                      "enum": [
+                        "question",
+                        "explanation"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "src",
+                    "alt"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "videos": {
+                "minItems": 1,
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "provider": {
+                      "type": "string",
+                      "const": "youtube"
+                    },
+                    "id": {
+                      "type": "string",
+                      "pattern": "^[A-Za-z0-9_-]{11}$"
+                    },
+                    "start": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "placement": {
+                      "type": "string",
+                      "enum": [
+                        "question",
+                        "explanation"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "provider",
+                    "id"
+                  ],
+                  "additionalProperties": false
+                }
+              },
               "type": {
                 "type": "string",
                 "const": "multiple-choice"
@@ -164,6 +310,79 @@
               },
               "references": {
                 "type": "string"
+              },
+              "images": {
+                "minItems": 1,
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "src": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*\\.(?:png|jpe?g|webp|avif|gif|svg)$"
+                        },
+                        {
+                          "type": "string",
+                          "pattern": "^https:\\/\\/\\S+$"
+                        }
+                      ]
+                    },
+                    "alt": {
+                      "type": "string"
+                    },
+                    "caption": {
+                      "type": "string"
+                    },
+                    "placement": {
+                      "type": "string",
+                      "enum": [
+                        "question",
+                        "explanation"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "src",
+                    "alt"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "videos": {
+                "minItems": 1,
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "provider": {
+                      "type": "string",
+                      "const": "youtube"
+                    },
+                    "id": {
+                      "type": "string",
+                      "pattern": "^[A-Za-z0-9_-]{11}$"
+                    },
+                    "start": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "placement": {
+                      "type": "string",
+                      "enum": [
+                        "question",
+                        "explanation"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "provider",
+                    "id"
+                  ],
+                  "additionalProperties": false
+                }
               },
               "type": {
                 "type": "string",

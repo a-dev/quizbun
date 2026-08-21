@@ -58,6 +58,35 @@ describe("computeContentHash", () => {
     expect(await computeContentHash(mutated)).not.toBe(await computeContentHash(choiceQuestion));
   });
 
+  test("media is part of a Question's content", async () => {
+    const withImage = structuredClone(choiceQuestion);
+    withImage.images = [{ src: "paris-map.svg", alt: "A map of Paris" }];
+    const withImageHash = await computeContentHash(withImage);
+
+    expect(withImageHash).not.toBe(await computeContentHash(choiceQuestion));
+
+    const editedAlt = structuredClone(withImage);
+    editedAlt.images![0]!.alt = "A map of central Paris";
+    expect(await computeContentHash(editedAlt)).not.toBe(withImageHash);
+
+    const withVideo = structuredClone(withImage);
+    withVideo.videos = [{ provider: "youtube", id: "dQw4w9WgXcQ" }];
+    expect(await computeContentHash(withVideo)).not.toBe(withImageHash);
+  });
+
+  // Absent `placement` means `question`, but the Renderer — not the schema —
+  // resolves that. An author who writes the default out has written different
+  // content, and the hash says so.
+  test('adding an explicit `placement: "question"` changes the hash', async () => {
+    const implicit = structuredClone(choiceQuestion);
+    implicit.images = [{ src: "paris-map.svg", alt: "A map of Paris" }];
+
+    const explicit = structuredClone(implicit);
+    explicit.images![0]!.placement = "question";
+
+    expect(await computeContentHash(explicit)).not.toBe(await computeContentHash(implicit));
+  });
+
   test("changing accepted answers or validation mode changes the hash", async () => {
     const base = await computeContentHash(inputQuestion);
 

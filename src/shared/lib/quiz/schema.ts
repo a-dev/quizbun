@@ -3,6 +3,12 @@ import { z } from "zod";
 const idPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const languagePattern = /^[a-zA-Z]{2,3}(?:-[a-zA-Z0-9]{2,8})*$/;
 
+/** A bare asset filename: kebab-case basename plus an allowlisted extension, no directories. */
+export const ASSET_FILE_NAME_PATTERN =
+  /^[a-z0-9]+(?:-[a-z0-9]+)*\.(?:png|jpe?g|webp|avif|gif|svg)$/;
+const remoteImageSrcPattern = /^https:\/\/\S+$/;
+const youtubeVideoIdPattern = /^[A-Za-z0-9_-]{11}$/;
+
 function strictObject<Shape extends z.ZodRawShape>(shape: Shape) {
   return z.object(shape).strict();
 }
@@ -56,12 +62,59 @@ export const optionSchema = strictObject({
 
 const choiceOptionsSchema = requiredArray(optionSchema).min(2, "Add at least two Options.");
 
+const placementSchema = z.enum(["question", "explanation"], {
+  error: "Set `placement` to `question` or `explanation`.",
+});
+
+// Two regex branches rather than one `superRefine`, so both patterns survive
+// `z.toJSONSchema()` into the published artifact. Absent `placement` means
+// `question`; the Renderer resolves that, so no `.default()` appears here and a
+// parsed Quiz never gains a field its author did not write.
+const imageSrcSchema = z.union(
+  [
+    nonEmptyStringSchema.regex(ASSET_FILE_NAME_PATTERN),
+    nonEmptyStringSchema.regex(remoteImageSrcPattern),
+  ],
+  {
+    error: (issue) =>
+      typeof issue.input === "string" && issue.input.startsWith("http://")
+        ? "Use `https`, not `http`."
+        : "Use an `https://` URL or a bare asset filename (kebab-case name plus png/jpg/jpeg/webp/avif/gif/svg).",
+  },
+);
+
+export const imageSchema = strictObject({
+  src: imageSrcSchema,
+  alt: nonEmptyStringSchema,
+  caption: nonEmptyStringSchema.optional(),
+  placement: placementSchema.optional(),
+});
+
+export const videoSchema = strictObject({
+  provider: z.literal("youtube", { error: "Set `provider` to `youtube`." }),
+  id: nonEmptyStringSchema.regex(
+    youtubeVideoIdPattern,
+    "Use the 11-character YouTube video id (for example `dQw4w9WgXcQ`), not a URL.",
+  ),
+  start: requiredNumber()
+    .int("Use a whole number of seconds, 0 or greater.")
+    .min(0, "Use a whole number of seconds, 0 or greater.")
+    .optional(),
+  placement: placementSchema.optional(),
+});
+
 const baseQuestionFields = {
   id: idSchema,
   title: nonEmptyStringSchema,
   description: nonEmptyStringSchema.optional(),
   explanation: nonEmptyStringSchema,
   references: nonEmptyStringSchema.optional(),
+  images: requiredArray(imageSchema)
+    .min(1, "Add at least one image, or remove the empty `images` array.")
+    .optional(),
+  videos: requiredArray(videoSchema)
+    .min(1, "Add at least one video, or remove the empty `videos` array.")
+    .optional(),
 };
 
 export const singleChoiceQuestionSchema = strictObject({
@@ -165,6 +218,9 @@ export const quizSchema = strictObject({
   }
 });
 
+export type Image = z.infer<typeof imageSchema>;
+export type Video = z.infer<typeof videoSchema>;
+export type MediaPlacement = z.infer<typeof placementSchema>;
 export type Option = z.infer<typeof optionSchema>;
 export type SingleChoiceQuestion = z.infer<typeof singleChoiceQuestionSchema>;
 export type MultipleChoiceQuestion = z.infer<typeof multipleChoiceQuestionSchema>;

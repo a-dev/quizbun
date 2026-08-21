@@ -29,6 +29,12 @@ Follow these rules:
 - Include an `explanation` for every Question. The Explanation should teach the concept, not only restate the correct answer.
 - Renderers shuffle Options, so the order in the JSON is not the order the learner sees. Never refer to an Option by its position or an invented label in any text field — no "the first option", "the last option", "the third distractor", "option B", or "(option 2)". Identify an Option by quoting or paraphrasing its text instead. (Positional labels are acceptable only when the Question defines them itself, e.g. as comments in a code snippet in the `description`.)
 - Add optional `references` when a Question benefits from source links, citations, or further reading. References appear after the Explanation and must be non-empty when present. Where practical, prefer link text that names both the publication and the linked article or topic (for example, `[MDN: Array.prototype.sort()](...)`); this is a recommendation, not a requirement.
+- Media is optional. Add `images` or `videos` to a Question only when a diagram, screenshot, or clip teaches something the text cannot. Both fields are arrays and must be non-empty when present.
+- An Image is `{ src, alt, caption?, placement? }`. `alt` is always required — a Question's Image is content, never decoration. `caption` is the right place for attribution. Image `src` is either an `https://` URL or a bare kebab-case filename with a `png`/`jpg`/`jpeg`/`webp`/`avif`/`gif`/`svg` extension; `http://`, protocol-relative, and `data:` sources are rejected, as are directories in the path.
+- A Video is `{ provider: "youtube", id, start?, placement? }`. `id` is the bare 11-character YouTube id, never a URL. `start` is a whole number of seconds.
+- `placement` is `"question"` or `"explanation"`, and an absent `placement` already means `"question"` — omit it rather than writing the default. Put anything that reveals the answer under `"explanation"`.
+- **Never fabricate a source.** Every image URL, every filename, and every YouTube id must point at something you have verified exists. Generating your own diagram is welcome; inventing a plausible-looking URL or video id is not. Omit the media instead.
+- Markdown image syntax does not work. `![alt](src)` and `<img>` are stripped everywhere; `images` is the only image channel.
 - Every text field is Markdown. Titles and Option text are inline-only; descriptions, Explanations, and References may use full Markdown. Never use raw HTML.
 - Fenced code blocks in descriptions, Explanations, and References are syntax-highlighted for JavaScript/TypeScript (`js`, `ts`, `jsx`, `tsx`), `json`, `html`, `css`, Python (`py`), Bash (`bash`, `sh`), and `sql`. Other languages still render, just without colors. Prefer these hints, and always tag the fence with its language.
 - Keep distractors plausible without making false facts feel correct.
@@ -45,6 +51,7 @@ Before emitting the final JSON, silently check:
 - Single-choice and multiple-choice correctness counts satisfy the rules above.
 - Every Question `title` states the actual question; no `description` carries the ask on its own.
 - No text field refers to an Option by position or label ("first option", "option B", …).
+- Every image source and every YouTube video id is one you verified, not one you invented.
 
 JSON Schema:
 
@@ -106,6 +113,67 @@ JSON Schema:
               "references": {
                 "type": "string"
               },
+              "images": {
+                "minItems": 1,
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "src": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*\\.(?:png|jpe?g|webp|avif|gif|svg)$"
+                        },
+                        {
+                          "type": "string",
+                          "pattern": "^https:\\/\\/\\S+$"
+                        }
+                      ]
+                    },
+                    "alt": {
+                      "type": "string"
+                    },
+                    "caption": {
+                      "type": "string"
+                    },
+                    "placement": {
+                      "type": "string",
+                      "enum": ["question", "explanation"]
+                    }
+                  },
+                  "required": ["src", "alt"],
+                  "additionalProperties": false
+                }
+              },
+              "videos": {
+                "minItems": 1,
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "provider": {
+                      "type": "string",
+                      "const": "youtube"
+                    },
+                    "id": {
+                      "type": "string",
+                      "pattern": "^[A-Za-z0-9_-]{11}$"
+                    },
+                    "start": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "placement": {
+                      "type": "string",
+                      "enum": ["question", "explanation"]
+                    }
+                  },
+                  "required": ["provider", "id"],
+                  "additionalProperties": false
+                }
+              },
               "type": {
                 "type": "string",
                 "const": "single-choice"
@@ -152,6 +220,67 @@ JSON Schema:
               "references": {
                 "type": "string"
               },
+              "images": {
+                "minItems": 1,
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "src": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*\\.(?:png|jpe?g|webp|avif|gif|svg)$"
+                        },
+                        {
+                          "type": "string",
+                          "pattern": "^https:\\/\\/\\S+$"
+                        }
+                      ]
+                    },
+                    "alt": {
+                      "type": "string"
+                    },
+                    "caption": {
+                      "type": "string"
+                    },
+                    "placement": {
+                      "type": "string",
+                      "enum": ["question", "explanation"]
+                    }
+                  },
+                  "required": ["src", "alt"],
+                  "additionalProperties": false
+                }
+              },
+              "videos": {
+                "minItems": 1,
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "provider": {
+                      "type": "string",
+                      "const": "youtube"
+                    },
+                    "id": {
+                      "type": "string",
+                      "pattern": "^[A-Za-z0-9_-]{11}$"
+                    },
+                    "start": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "placement": {
+                      "type": "string",
+                      "enum": ["question", "explanation"]
+                    }
+                  },
+                  "required": ["provider", "id"],
+                  "additionalProperties": false
+                }
+              },
               "type": {
                 "type": "string",
                 "const": "multiple-choice"
@@ -197,6 +326,67 @@ JSON Schema:
               },
               "references": {
                 "type": "string"
+              },
+              "images": {
+                "minItems": 1,
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "src": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*\\.(?:png|jpe?g|webp|avif|gif|svg)$"
+                        },
+                        {
+                          "type": "string",
+                          "pattern": "^https:\\/\\/\\S+$"
+                        }
+                      ]
+                    },
+                    "alt": {
+                      "type": "string"
+                    },
+                    "caption": {
+                      "type": "string"
+                    },
+                    "placement": {
+                      "type": "string",
+                      "enum": ["question", "explanation"]
+                    }
+                  },
+                  "required": ["src", "alt"],
+                  "additionalProperties": false
+                }
+              },
+              "videos": {
+                "minItems": 1,
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "provider": {
+                      "type": "string",
+                      "const": "youtube"
+                    },
+                    "id": {
+                      "type": "string",
+                      "pattern": "^[A-Za-z0-9_-]{11}$"
+                    },
+                    "start": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "placement": {
+                      "type": "string",
+                      "enum": ["question", "explanation"]
+                    }
+                  },
+                  "required": ["provider", "id"],
+                  "additionalProperties": false
+                }
               },
               "type": {
                 "type": "string",
