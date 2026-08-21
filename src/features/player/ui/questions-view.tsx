@@ -79,6 +79,7 @@ export function QuestionsView({
       {currentPage.questions.map(({ question, index, progress }) => (
         <QuestionCard
           key={question.id}
+          quizId={quiz.id}
           question={question}
           index={index}
           progress={progress}

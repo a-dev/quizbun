@@ -28,6 +28,45 @@ async function tabUntilFocused(page: Page, target: Locator, maxTabs = 12) {
   await expect(target).toBeFocused();
 }
 
+test("Catalog media resolves, Explanation media waits for submit, and Video stays behind its facade", async ({
+  page,
+}) => {
+  await page.goto("/quizzes/undo-redo-back-stacks-queues/");
+  await page.getByRole("button", { name: "Start" }).click();
+
+  const firstQuestion = questionGroup(page, 1);
+  const questionImage = firstQuestion.getByRole("img", {
+    name: "Three edits applied in order from edit1 to edit3",
+  });
+  const explanationImage = firstQuestion.getByRole("img", {
+    name: "A vertical stack with edit3 on top and an arrow showing edit3 being popped first",
+  });
+
+  await expect(questionImage).toBeVisible();
+  await expect
+    .poll(() =>
+      questionImage.evaluate((image: HTMLImageElement) => image.complete && image.naturalWidth),
+    )
+    .toBeGreaterThan(0);
+  await expect(explanationImage).toBeHidden();
+
+  await firstQuestion.getByRole("radio", { name: /most recently applied edit/ }).check();
+  await firstQuestion.getByRole("button", { name: "Submit" }).click();
+
+  await expect(explanationImage).toBeVisible();
+  await expect
+    .poll(() =>
+      explanationImage.evaluate((image: HTMLImageElement) => image.complete && image.naturalWidth),
+    )
+    .toBeGreaterThan(0);
+  await expect(
+    firstQuestion.getByRole("button", {
+      name: "Play Video for Undo modeled as a stack: which edit is undone first?",
+    }),
+  ).toBeVisible();
+  await expect(firstQuestion.locator("iframe")).toHaveCount(0);
+});
+
 test("Catalog single-choice Run locks the Question, shows the Explanation, and can be retaken", async ({
   page,
 }) => {

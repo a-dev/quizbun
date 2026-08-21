@@ -31,6 +31,22 @@ A passing quiz is more than valid JSON. The bundled prompt holds the full rules;
 - **Make it interesting and easy to read.** Concrete scenarios over abstractions; tight, unambiguous titles that carry the question itself (supporting context goes in `description`); distractors that are plausible misconceptions yet clearly wrong.
 - **Illustrate.** Where the topic allows, ground it in real material — a runnable code snippet (tagged with a highlightable language), a worked example, or a short attributed quote from a book, article, standard, notable person, or proverb. Put sources in `references`.
 
+## Media
+
+Add media only when a diagram, screenshot, or Video teaches something the Question's text cannot. The Question must remain understandable if its media fails to load. Use structured `images` and `videos`; Markdown image syntax is inert.
+
+- Omit `placement` for media shown with the Question. Set `placement: "explanation"` for anything that reveals or strongly hints at the answer.
+- Every Image needs concise `alt` text that communicates its relevant content. Do not repeat the filename or caption. Use `caption` for attribution and brief context; it accepts inline Markdown.
+- Use only `https://` remote Image URLs or bare kebab-case asset filenames with an allowed Image extension. Use the bare 11-character id for a YouTube Video, never its URL.
+
+AI-authored media is welcome, including diagrams the model draws itself — an SVG generated for a Question is as legitimate as one a human drew. The single rule is that nothing may be fabricated: every `src` and every YouTube `id` must point at something verified to exist. Do not invent plausible-looking image URLs, do not guess video ids, and do not reference a filename you have not written. Verify before writing, because the Standard deliberately cannot verify for you.
+
+Before writing media into the Quiz:
+
+1. Fetch every remote Image URL. Keep it only when the exact `https://` URL returns a successful response with an Image content type.
+2. Confirm every YouTube id through the keyless oEmbed endpoint: `https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v={id}&format=json`. Keep the Video only when the endpoint succeeds.
+3. For a bare filename, confirm the file exists. Inside the Quizbun repository, you may author an SVG diagram directly in `content/quizzes/{quiz.id}/`. The filename must be kebab-case, the Quiz must reference it, no unreferenced file may remain in the Asset folder, and each file must stay at or below 512,000 bytes.
+
 ## Validate
 
 - **Standalone:** confirm the JSON parses and check it against the JSON Schema embedded in the bundled prompt. Tell the user the Quizbun import page is the final authority for the cross-field rules JSON Schema cannot express (exactly one correct Option for single-choice, unique Question ids, and so on).

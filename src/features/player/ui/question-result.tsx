@@ -8,10 +8,13 @@ import { useSelectedVoice } from "@/shared/lib/speech";
 import { MarkdownRender } from "@/shared/ui/markdown";
 import { ReadAloudButton } from "@/shared/ui/read-aloud-button";
 
+import { QuestionMedia } from "./question-media";
+
 import { cx } from "#styles";
 import styles from "./question-result.module.css";
 
 interface QuestionResultProps {
+  quizId: string;
   question: Question;
   isCorrect: boolean;
   /** Id matching the fieldset's `aria-describedby`, linking verdict to controls. */
@@ -21,7 +24,7 @@ interface QuestionResultProps {
 }
 
 /** Post-submit verdict + Explanation shown once a Question is locked (T6.x). */
-export function QuestionResult({ question, isCorrect, id, ref }: QuestionResultProps) {
+export function QuestionResult({ quizId, question, isCorrect, id, ref }: QuestionResultProps) {
   // Null until the user opts into read-aloud by choosing a voice in the footer;
   // the button then hides itself, so no extra conditional is needed here.
   const voice = useSelectedVoice();
@@ -58,6 +61,13 @@ export function QuestionResult({ question, isCorrect, id, ref }: QuestionResultP
         <ReadAloudButton text={explanationText} voice={voice} label="Read explanation aloud" />
       </div>
       <MarkdownRender content={explanationHtml} size="m" className={styles.explanation} />
+      <QuestionMedia
+        quizId={quizId}
+        questionTitle={question.title}
+        images={question.images}
+        videos={question.videos}
+        surface="explanation"
+      />
       {referencesHtml !== undefined && (
         <section aria-labelledby={`${id}-references-title`} className={styles.references}>
           <h3 id={`${id}-references-title`} className={styles.referencesTitle}>

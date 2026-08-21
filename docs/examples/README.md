@@ -10,6 +10,7 @@ The normative reference is [the Quiz Object Standard](../standard.md). Tooling c
 2. Move to [public-quiz-multiple-choice.json](./public-quiz-multiple-choice.json) when one question needs multiple correct options.
 3. Use [public-quiz-input-text.json](./public-quiz-input-text.json) when learners should type a text answer. Text mode is case-insensitive, trimmed, and whitespace-collapsed by default.
 4. Use [public-quiz-input-numeric.json](./public-quiz-input-numeric.json) when answers are numeric and rounded responses should still pass within a defined tolerance.
+5. Use [public-quiz-media.json](./public-quiz-media.json) when a Question needs structured Images or a Video.
 
 ## What each example demonstrates
 
@@ -17,6 +18,7 @@ The normative reference is [the Quiz Object Standard](../standard.md). Tooling c
 - [public-quiz-multiple-choice.json](./public-quiz-multiple-choice.json): multi-select structure with the all-or-nothing correctness model.
 - [public-quiz-input-text.json](./public-quiz-input-text.json): text matching with the minimal zero-flag validation object, relying on the standard's hard defaults.
 - [public-quiz-input-numeric.json](./public-quiz-input-numeric.json): numeric matching with an explicit tolerance value.
+- [public-quiz-media.json](./public-quiz-media.json): bare Image filenames on both media surfaces, caption attribution, and a YouTube Video with a start time.
 - [quiz-generation-prompt.md](./quiz-generation-prompt.md): a reusable prompt template for generating one strict JSON quiz object at a time.
 
 ## Validation
@@ -34,3 +36,5 @@ bun run validate:docs-examples docs/examples/public-quiz-single-choice.json
 ```
 
 The command imports the same Zod schema and formatter the import page uses. A failure names the file, the JSON path, the problem, and a concrete fix.
+
+This base validation checks the Quiz JSON only. It does not require the bare Image filenames in the media example to exist. A real public Catalog contribution must add every referenced file to `content/quizzes/{id}/`; `bun run validate:public-quizzes` checks those files and rejects missing or orphaned assets. The alternative `https://` Image source form is documented in [the Standard's Media section](../standard.md#media), not in this public contribution example.

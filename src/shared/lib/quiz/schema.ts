@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-const idPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+export const ID_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const languagePattern = /^[a-zA-Z]{2,3}(?:-[a-zA-Z0-9]{2,8})*$/;
 
 /** A bare asset filename: kebab-case basename plus an allowlisted extension, no directories. */
@@ -49,7 +49,7 @@ const nonEmptyStringSchema = requiredString().refine(
 );
 
 const idSchema = nonEmptyStringSchema.regex(
-  idPattern,
+  ID_PATTERN,
   "Use kebab-case with lowercase latin letters, digits, and single hyphens.",
 );
 

@@ -1,8 +1,15 @@
 import { execFileSync } from "node:child_process";
-import { readdirSync, readFileSync } from "node:fs";
+import { lstatSync, readdirSync, readFileSync } from "node:fs";
 import { basename, relative, resolve } from "node:path";
 
-import { formatQuizValidationErrors, parseQuizJson, type Quiz, quizSchema } from "../quiz";
+import {
+  ASSET_FILE_NAME_PATTERN,
+  formatQuizValidationErrors,
+  ID_PATTERN,
+  parseQuizJson,
+  type Quiz,
+  quizSchema,
+} from "../quiz";
 
 /**
  * Build-time-only module: reads the repo filesystem, so it may be imported
@@ -16,7 +23,7 @@ export const PUBLIC_QUIZZES_DIR = "content/quizzes";
 /** Manually curated list of public Quiz ids to feature on the homepage. */
 export const FEATURED_QUIZZES_FILE = "content/featured-quizzes.txt";
 
-const quizIdPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const MAX_ASSET_FILE_SIZE_BYTES = 512_000;
 
 /** Metadata projection for Catalog lists; the build-time counterpart of the Library's `QuizSummary`. */
 export interface PublicQuizSummary {
@@ -98,6 +105,8 @@ export function loadPublicQuizzes(
 
     quizzes.push(quiz);
   }
+
+  validatePublicQuizAssets(directoryPath, quizzes);
 
   const summaries = quizzes.map((quiz) => {
     const fileName = fileNameByQuizId.get(quiz.id);
@@ -194,7 +203,7 @@ export function parseFeaturedQuizIds(fileContents: string, sourceLabel: string):
 
     if (quizId === "" || quizId.startsWith("#")) continue;
 
-    if (!quizIdPattern.test(quizId)) {
+    if (!ID_PATTERN.test(quizId)) {
       throw new Error(
         [
           `Invalid featured Quiz id in ${sourceLabel}:`,
@@ -296,6 +305,133 @@ function parseAndValidateQuizFile(directoryPath: string, fileName: string, fileL
   }
 
   return result.data;
+}
+
+function validatePublicQuizAssets(directoryPath: string, quizzes: readonly Quiz[]) {
+  const quizzesById = new Map(quizzes.map((quiz) => [quiz.id, quiz]));
+  const referencedFilesByQuizId = new Map<string, Set<string>>();
+
+  for (const quiz of quizzes) {
+    const referencedFiles = new Set<string>();
+    referencedFilesByQuizId.set(quiz.id, referencedFiles);
+
+    for (const [questionIndex, question] of quiz.questions.entries()) {
+      for (const [imageIndex, image] of (question.images ?? []).entries()) {
+        const fieldPath = `questions[${questionIndex}].images[${imageIndex}].src`;
+
+        if (image.src.startsWith("https://")) {
+          throw assetValidationError({
+            fileLabel: toWorkspacePathLabel(resolve(directoryPath, `${quiz.id}.json`)),
+            heading: "Remote Image is not allowed in a public Quiz",
+            path: fieldPath,
+            problem: `The Image source "${image.src}" is remote, but Catalog Images must be vendored in the repository.`,
+            fix: `Download the Image into "${toWorkspacePathLabel(resolve(directoryPath, quiz.id))}" and replace the src value with its bare asset filename.`,
+          });
+        }
+
+        referencedFiles.add(image.src);
+        const assetPath = resolve(directoryPath, quiz.id, image.src);
+
+        if (!isRegularFile(assetPath)) {
+          throw assetValidationError({
+            fileLabel: toWorkspacePathLabel(resolve(directoryPath, `${quiz.id}.json`)),
+            heading: "Referenced Quiz asset is missing",
+            path: fieldPath,
+            problem: `The Image references "${image.src}", but "${toWorkspacePathLabel(assetPath)}" is not a file.`,
+            fix: `Add the file to "${toWorkspacePathLabel(resolve(directoryPath, quiz.id))}", or fix/remove this Image reference.`,
+          });
+        }
+      }
+    }
+  }
+
+  const assetFolders = readdirSync(directoryPath, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .sort((left, right) => left.name.localeCompare(right.name, "en"));
+
+  for (const assetFolder of assetFolders) {
+    const folderPath = resolve(directoryPath, assetFolder.name);
+    const quiz = quizzesById.get(assetFolder.name);
+
+    if (quiz === undefined) {
+      throw assetValidationError({
+        fileLabel: toWorkspacePathLabel(folderPath),
+        heading: "Orphan Quiz asset folder",
+        path: toWorkspacePathLabel(folderPath),
+        problem: `The asset folder "${assetFolder.name}" does not match any public Quiz id.`,
+        fix: "Remove the folder, rename it to match its Quiz id, or add the matching public Quiz JSON file.",
+      });
+    }
+
+    const referencedFiles = referencedFilesByQuizId.get(quiz.id) ?? new Set<string>();
+    const assetEntries = readdirSync(folderPath, { withFileTypes: true }).sort((left, right) =>
+      left.name.localeCompare(right.name, "en"),
+    );
+
+    for (const assetEntry of assetEntries) {
+      const assetPath = resolve(folderPath, assetEntry.name);
+      const assetLabel = toWorkspacePathLabel(assetPath);
+
+      if (!assetEntry.isFile() || !ASSET_FILE_NAME_PATTERN.test(assetEntry.name)) {
+        throw assetValidationError({
+          fileLabel: assetLabel,
+          heading: "Invalid Quiz asset filename",
+          path: assetLabel,
+          problem: `"${assetEntry.name}" is not a bare kebab-case asset filename with an allowed image extension.`,
+          fix: "Rename it using lowercase latin letters, digits, and single hyphens plus png/jpg/jpeg/webp/avif/gif/svg, then update its Image reference.",
+        });
+      }
+
+      if (!referencedFiles.has(assetEntry.name)) {
+        throw assetValidationError({
+          fileLabel: assetLabel,
+          heading: "Orphan Quiz asset file",
+          path: assetLabel,
+          problem: `The file is not referenced by any Image in ${quiz.id}.json.`,
+          fix: "Remove the file, or add its bare filename to an Image `src` in the Quiz.",
+        });
+      }
+
+      const fileSize = lstatSync(assetPath).size;
+      if (fileSize > MAX_ASSET_FILE_SIZE_BYTES) {
+        throw assetValidationError({
+          fileLabel: assetLabel,
+          heading: "Quiz asset file is too large",
+          path: assetLabel,
+          problem: `The file is ${fileSize} bytes; the per-file limit is ${MAX_ASSET_FILE_SIZE_BYTES} bytes (500 KB).`,
+          fix: "Compress or resize the Image so the file is at most 500 KB.",
+        });
+      }
+    }
+  }
+}
+
+function isRegularFile(filePath: string) {
+  try {
+    return lstatSync(filePath).isFile();
+  } catch {
+    return false;
+  }
+}
+
+function assetValidationError({
+  fileLabel,
+  heading,
+  path,
+  problem,
+  fix,
+}: {
+  fileLabel: string;
+  heading: string;
+  path: string;
+  problem: string;
+  fix: string;
+}) {
+  return new Error(
+    [`${heading} in ${fileLabel}:`, `Path: \`${path}\``, `Problem: ${problem}`, `Fix: ${fix}`].join(
+      "\n",
+    ),
+  );
 }
 
 function toPublicQuizSummary(quiz: Quiz, addedAt: string): PublicQuizSummary {

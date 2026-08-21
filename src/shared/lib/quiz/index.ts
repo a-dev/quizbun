@@ -7,6 +7,7 @@ export { parseQuizJson } from "./parse-quiz-json";
 export {
   ASSET_FILE_NAME_PATTERN,
   imageSchema,
+  ID_PATTERN,
   inputQuestionSchema,
   inputValidationSchema,
   multipleChoiceQuestionSchema,

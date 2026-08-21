@@ -19,7 +19,7 @@ Bun is the package manager (`bun.lock`); Node >= 22.12.
 - `bun run css:dts` — regenerate `.d.ts` typings for CSS Modules
 - `bun run storybook` — Storybook on port 6006
 - `bun run validate:docs-examples [path]` — validate canonical example quizzes in `docs/examples/` against the base Standard schema; accepts a single file or the whole directory
-- `bun run validate:public-quizzes` — validate public Catalog quizzes in `content/quizzes/` against the Standard plus the Public catalog profile (filename = `id`, repo-wide-unique `id`, required `description`/`language`/≥1 tag). Both validators reuse the same Zod schema and error formatter as the import page
+- `bun run validate:public-quizzes` — validate public Catalog quizzes in `content/quizzes/` against the Standard plus the Public catalog profile (filename = `id`, repo-wide-unique `id`, required `description`/`language`/≥1 tag, vendored Image references, no orphan or oversized assets). Both validators reuse the same Zod schema and error formatter as the import page
 - `bun run schema:generate` / `bun run schema:check` — regenerate `public/schema/quiz.v1.json` from the Zod schema, and fail if the committed artifact has drifted
 
 Tests run on **Vitest** (consolidated from `bun test`), in three lanes:
@@ -32,6 +32,7 @@ GitHub Pages builds set `GITHUB_PAGES=true`, which switches the Astro `base` to 
 ## Architecture
 
 - **The Standard is the core artifact.** A strict Zod schema (single source of truth, unknown fields are errors, integer `schemaVersion`) from which the published JSON Schema is generated via `z.toJSONSchema()`. Validation error messages are a product feature: path-precise and actionable enough to paste back into an AI chat. Canonical example quizzes live in `docs/examples/` and are validated in CI.
+- **Question media is structured content.** Optional `images` and `videos` arrays use Question or Explanation placement without presentation hints. Catalog Images are vendored in `content/quizzes/{id}/`; `astro-quiz-assets.ts` serves them in development and copies them to base-aware `/quiz-assets/{id}/` build output. YouTube uses a click-to-load privacy facade.
 - **Content vs. Renderer split:** the Standard carries no presentation fields. Option identity is original JSON order (no ids/labels); shuffling, option labeling, and pagination ("Page size") are Renderer behavior.
 - **Storage:** quizzes and Runs in IndexedDB; UI preferences (e.g. Page size) in localStorage. Exactly one saved Run per quiz; per-Question progress is invalidated by Content hash when a quiz is re-imported.
 - **Markdown:** two-tier rendering via `marked` + `sanitize-html` ([src/shared/lib/render/markdown.ts](src/shared/lib/render/markdown.ts)) — inline-only for short fields, full Markdown for long fields; raw HTML is always stripped.

@@ -1,4 +1,7 @@
-import { describe, expect, test } from "vitest";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { afterEach, describe, expect, test } from "vitest";
 
 import {
   loadFeaturedQuizIds,
@@ -12,6 +15,13 @@ import {
 
 const fixtureDir = (name: string) => `src/shared/lib/content/fixtures/${name}`;
 const fixedNow = new Date("2026-06-12T12:00:00.000Z");
+const temporaryDirectories: string[] = [];
+
+afterEach(() => {
+  for (const directory of temporaryDirectories.splice(0)) {
+    rmSync(directory, { force: true, recursive: true });
+  }
+});
 
 describe("loadPublicQuizzes", () => {
   test("loads a valid content directory with summaries and tag counts", () => {
@@ -92,6 +102,68 @@ describe("loadPublicQuizzes", () => {
   test("fails with a clear message when the content directory is missing", () => {
     expect(() => loadPublicQuizzes(fixtureDir("does-not-exist"))).toThrow(
       /Public quizzes directory not found/,
+    );
+  });
+
+  test("accepts a referenced vendored Image within the size limit", () => {
+    const contentDir = makeAssetCatalog({ imageSrc: "cache-tiers.svg" });
+    writeAsset(contentDir, "sample-quiz", "cache-tiers.svg", "<svg></svg>");
+
+    expect(loadAssetCatalog(contentDir).quizzes).toHaveLength(1);
+  });
+
+  test("rejects a remote Image in a Catalog Quiz", () => {
+    const contentDir = makeAssetCatalog({ imageSrc: "https://example.com/cache-tiers.svg" });
+
+    expect(() => loadAssetCatalog(contentDir)).toThrow(
+      /questions\[0\]\.images\[0\]\.src[\s\S]*Catalog Images must be vendored[\s\S]*Fix:/,
+    );
+  });
+
+  test("rejects a missing referenced asset", () => {
+    const contentDir = makeAssetCatalog({ imageSrc: "missing.svg" });
+
+    expect(() => loadAssetCatalog(contentDir)).toThrow(
+      /questions\[0\]\.images\[0\]\.src[\s\S]*missing\.svg[\s\S]*is not a file[\s\S]*Fix:/,
+    );
+  });
+
+  test("rejects an unreferenced file in a Quiz asset folder", () => {
+    const contentDir = makeAssetCatalog();
+    writeAsset(contentDir, "sample-quiz", "orphan.svg", "<svg></svg>");
+
+    expect(() => loadAssetCatalog(contentDir)).toThrow(
+      /Orphan Quiz asset file[\s\S]*Path: `[^`]*orphan\.svg`[\s\S]*not referenced[\s\S]*Fix:/,
+    );
+  });
+
+  test("rejects an asset folder without a matching public Quiz id", () => {
+    const contentDir = makeAssetCatalog();
+    mkdirSync(join(contentDir, "ghost-quiz"));
+
+    expect(() => loadAssetCatalog(contentDir)).toThrow(
+      /Orphan Quiz asset folder[\s\S]*ghost-quiz[\s\S]*does not match any public Quiz id[\s\S]*Fix:/,
+    );
+  });
+
+  test.each(["Bad-Name.svg", "diagram.txt"])(
+    "rejects the invalid asset filename %s",
+    (fileName) => {
+      const contentDir = makeAssetCatalog();
+      writeAsset(contentDir, "sample-quiz", fileName, "asset");
+
+      expect(() => loadAssetCatalog(contentDir)).toThrow(
+        /Invalid Quiz asset filename[\s\S]*bare kebab-case asset filename with an allowed image extension[\s\S]*Fix:/,
+      );
+    },
+  );
+
+  test("rejects an asset larger than 500 KB", () => {
+    const contentDir = makeAssetCatalog({ imageSrc: "large-image.png" });
+    writeAsset(contentDir, "sample-quiz", "large-image.png", Buffer.alloc(512_001));
+
+    expect(() => loadAssetCatalog(contentDir)).toThrow(
+      /Quiz asset file is too large[\s\S]*512001 bytes[\s\S]*limit is 512000 bytes \(500 KB\)[\s\S]*Fix:/,
     );
   });
 });
@@ -213,4 +285,51 @@ function makeSummary(id: string, addedAt: string): PublicQuizSummary {
     questionCount: 1,
     addedAt,
   };
+}
+
+function makeAssetCatalog({ imageSrc }: { imageSrc?: string } = {}) {
+  const contentDir = mkdtempSync(join(tmpdir(), "quizbun-public-quizzes-"));
+  temporaryDirectories.push(contentDir);
+  const quiz = {
+    schemaVersion: 1,
+    id: "sample-quiz",
+    title: "Sample quiz",
+    description: "A Quiz used to test Catalog assets.",
+    language: "en",
+    tags: ["testing"],
+    questions: [
+      {
+        id: "question-one",
+        type: "single-choice",
+        title: "Which answer is correct?",
+        ...(imageSrc === undefined ? {} : { images: [{ src: imageSrc, alt: "A test diagram" }] }),
+        options: [
+          { text: "This one", isCorrect: true },
+          { text: "Not this one", isCorrect: false },
+        ],
+        explanation: "The first Option is correct.",
+      },
+    ],
+  };
+
+  writeFileSync(join(contentDir, "sample-quiz.json"), JSON.stringify(quiz));
+  return contentDir;
+}
+
+function writeAsset(
+  contentDir: string,
+  quizId: string,
+  fileName: string,
+  contents: string | NodeJS.ArrayBufferView,
+) {
+  const assetDirectory = join(contentDir, quizId);
+  mkdirSync(assetDirectory, { recursive: true });
+  writeFileSync(join(assetDirectory, fileName), contents);
+}
+
+function loadAssetCatalog(contentDir: string) {
+  return loadPublicQuizzes(contentDir, {
+    addedAtByFileName: new Map([["sample-quiz.json", "2026-01-01T00:00:00.000Z"]]),
+    warnOnDateFallback: false,
+  });
 }
