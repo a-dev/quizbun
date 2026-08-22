@@ -138,7 +138,7 @@ These were the small gaps the design interviews never pinned down; they are now 
 ### Published artifacts and the Public catalog profile
 
 - The **JSON Schema** at `/schema/quiz.v1.json` is generated via `z.toJSONSchema()`. It is necessarily looser than Zod (cross-field rules like single-choice correctness become prose annotations); the import page and Zod validator are the final authority. CI regenerates it and fails on any drift against the committed file.
-- The **AI generation prompt** (`docs/quiz-generation-prompt.md`) embeds the JSON Schema plus one canonical example and instructs "output one JSON object, nothing else."
+- The **AI generation prompt** (`skills/create-quiz/references/quiz-generation-prompt.md`) embeds the JSON Schema plus one canonical example and instructs "output one JSON object, nothing else." The `create-quiz` skill owns the prompt source; the `/docs/prompt/` page renders it alongside a docs-only introduction instead of keeping a second copy.
 - **Canonical examples** in `docs/examples/` (one per type plus the numeric-input variant) are validated in CI by the same Zod schema.
 - The **Public catalog profile** is a stricter rule set applied **only in CI** to repository content — a profile on top of the Standard, never a second schema. It requires `description`, `language`, and at least one Tag, plus repo-wide `id` uniqueness and filename = `id`.
 
