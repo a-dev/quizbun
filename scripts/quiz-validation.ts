@@ -1,7 +1,6 @@
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { basename, extname, relative, resolve } from "node:path";
 
-import { checkCatalogProfile, formatProfileIssues } from "../src/shared/lib/content";
 import {
   formatQuizValidationErrors,
   parseQuizJson,
@@ -10,12 +9,15 @@ import {
 } from "../src/shared/lib/quiz";
 
 /**
- * Validation mechanics shared by the repository CI gates
- * (`validate-doc-examples.ts`, `validate-public-quizzes.ts`) and by the
- * standalone validator bundled into the `create-quiz` skill
- * (`create-quiz-validator.ts`). Only the file walking, the Standard parse, and
- * the Public catalog profile tally live here; each caller keeps its own
+ * Standard-level validation mechanics shared by the CI gates
+ * (`validate-doc-examples.ts`, `validate-public-quizzes.ts`) and the standalone
+ * validator bundled into the `create-quiz` skill. Each caller keeps its own
  * framing, exit behaviour, and contributor hints.
+ *
+ * Deliberately imports nothing but the schema: the Public catalog profile lives
+ * in `catalog-profile-validation.ts` because it pulls in the Markdown renderer,
+ * and `sanitize-html` (CommonJS) requires the ESM-only `htmlparser2`, which Bun
+ * refuses to load from some entry graphs. Keep this module renderer-free.
  */
 
 /** One Quiz plus the label every error report uses to point back at its file. */
@@ -24,23 +26,14 @@ export interface LabelledQuiz {
   quiz: Quiz;
 }
 
-export interface CatalogProfileReport {
-  errorCount: number;
-  quizCount: number;
-  /** One formatted report per Quiz that has at least one issue. */
-  reports: string[];
-  warningCount: number;
-}
-
 export function toPathLabel(filePath: string): string {
   return relative(process.cwd(), filePath) || basename(filePath);
 }
 
 /**
- * Resolves a validation target to the Quiz files it names. A directory target
- * takes every `*.json` entry in stable, locale-aware order so the reported file
- * count and any failure are deterministic. The walk is deliberately shallow: a
- * subdirectory of `content/quizzes/` is an Asset folder, never a Quiz.
+ * Resolves a validation target to the Quiz files it names. Directory entries are
+ * sorted so the reported count and any failure are deterministic. The walk is
+ * shallow: a subdirectory of `content/quizzes/` is an Asset folder, never a Quiz.
  */
 export function collectJsonFiles(targetPath: string): string[] {
   if (!existsSync(targetPath)) {
@@ -81,9 +74,9 @@ export function parseAndValidateQuiz(rawText: string, sourceLabel: string): Quiz
 }
 
 /**
- * Reads and validates each file against the Standard. Fails fast on the first
- * invalid file: the first path-precise report is the one an author pastes back
- * into an AI chat, so collecting every failure first adds nothing.
+ * Reads and validates each file against the Standard, failing on the first
+ * invalid file: that path-precise report is the one an author pastes back into
+ * an AI chat, so collecting every failure first adds nothing.
  */
 export function readQuizFiles(filePaths: string[]): LabelledQuiz[] {
   return filePaths.map((filePath) => {
@@ -91,45 +84,4 @@ export function readQuizFiles(filePaths: string[]): LabelledQuiz[] {
 
     return { fileLabel, quiz: parseAndValidateQuiz(readFileSync(filePath, "utf8"), fileLabel) };
   });
-}
-
-/**
- * Applies the Public catalog profile to already-validated Quizzes and tallies
- * severities in one pass. Severity is exactly "error" | "warning" (see
- * ProfileIssue): errors fail a gate, warnings only print.
- */
-export function checkCatalogQuizzes(quizzes: Quiz[], directoryPath: string): CatalogProfileReport {
-  const reports: string[] = [];
-  let errorCount = 0;
-  let warningCount = 0;
-
-  for (const quiz of quizzes) {
-    const issues = checkCatalogProfile(quiz);
-
-    if (issues.length === 0) continue;
-
-    reports.push(
-      formatProfileIssues(toPathLabel(resolve(directoryPath, `${quiz.id}.json`)), issues),
-    );
-
-    for (const issue of issues) {
-      if (issue.severity === "error") {
-        errorCount += 1;
-      } else {
-        warningCount += 1;
-      }
-    }
-  }
-
-  return { errorCount, quizCount: quizzes.length, reports, warningCount };
-}
-
-/** The one-line verdict every Public catalog profile run ends with. */
-export function formatCatalogProfileSummary(
-  report: CatalogProfileReport,
-  targetLabel: string,
-): string {
-  return report.errorCount > 0
-    ? `Public catalog profile check failed: ${report.errorCount} error(s), ${report.warningCount} warning(s) across ${report.quizCount} Quiz file(s) in ${targetLabel}.`
-    : `Validated ${report.quizCount} public Quiz file(s) from ${targetLabel} against the Public catalog profile (${report.warningCount} warning(s)).`;
 }

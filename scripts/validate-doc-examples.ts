@@ -4,8 +4,8 @@ import { collectJsonFiles, readQuizFiles, toPathLabel } from "./quiz-validation"
 
 /**
  * CI gate for the canonical examples in `docs/examples/`: every file an author
- * is told to copy must validate against the Standard. The mechanics are shared
- * with the other gates and the `create-quiz` skill (see `quiz-validation.ts`).
+ * is told to copy must validate against the Standard. Base Standard only — the
+ * Public catalog profile does not apply to docs examples.
  */
 
 const targetPath = resolve(process.cwd(), process.argv[2] ?? "docs/examples");

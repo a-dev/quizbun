@@ -10948,7 +10948,7 @@ import { readFileSync as readFileSync3 } from "node:fs";
 
 // scripts/create-quiz-validator.ts
 import { existsSync as existsSync2, statSync as statSync2 } from "node:fs";
-import { resolve as resolve3 } from "node:path";
+import { resolve as resolve4 } from "node:path";
 
 // node_modules/marked/lib/marked.esm.js
 function C() {
@@ -27539,6 +27539,9 @@ function warnWhenLikelyShallowGitHistory({
   ].join(`
 `));
 }
+// scripts/catalog-profile-validation.ts
+import { resolve as resolve3 } from "node:path";
+
 // scripts/quiz-validation.ts
 import { existsSync, readdirSync as readdirSync2, readFileSync as readFileSync2, statSync } from "node:fs";
 import { basename as basename2, extname, relative as relative2, resolve as resolve2 } from "node:path";
@@ -27573,6 +27576,8 @@ function readQuizFiles(filePaths) {
     return { fileLabel, quiz: parseAndValidateQuiz(readFileSync2(filePath, "utf8"), fileLabel) };
   });
 }
+
+// scripts/catalog-profile-validation.ts
 function checkCatalogQuizzes(quizzes, directoryPath) {
   const reports = [];
   let errorCount = 0;
@@ -27581,7 +27586,7 @@ function checkCatalogQuizzes(quizzes, directoryPath) {
     const issues = checkCatalogProfile(quiz);
     if (issues.length === 0)
       continue;
-    reports.push(formatProfileIssues(toPathLabel(resolve2(directoryPath, `${quiz.id}.json`)), issues));
+    reports.push(formatProfileIssues(toPathLabel(resolve3(directoryPath, `${quiz.id}.json`)), issues));
     for (const issue2 of issues) {
       if (issue2.severity === "error") {
         errorCount += 1;
@@ -27681,7 +27686,7 @@ function toProfile(value) {
   return value;
 }
 async function validateStandardTarget(targetArg, checkMedia) {
-  const targetPath = resolve3(process.cwd(), targetArg);
+  const targetPath = resolve4(process.cwd(), targetArg);
   const filePaths = collectJsonFiles(targetPath);
   if (filePaths.length === 0) {
     throw new Error(`No Quiz JSON files found in ${toPathLabel(targetPath)}.`);
@@ -27696,7 +27701,7 @@ async function validateStandardTarget(targetArg, checkMedia) {
   };
 }
 async function validateCatalogDirectory(targetArg, checkMedia) {
-  const targetPath = resolve3(process.cwd(), targetArg);
+  const targetPath = resolve4(process.cwd(), targetArg);
   if (!existsSync2(targetPath) || !statSync2(targetPath).isDirectory()) {
     throw new Error(`Catalog validation target must be a directory. Received: ${toPathLabel(targetPath)}.`);
   }
@@ -27713,7 +27718,7 @@ async function validateCatalogDirectory(targetArg, checkMedia) {
   }
   if (checkMedia) {
     await validateRemoteMedia(catalog.quizzes.map((quiz) => ({
-      fileLabel: toPathLabel(resolve3(targetPath, `${quiz.id}.json`)),
+      fileLabel: toPathLabel(resolve4(targetPath, `${quiz.id}.json`)),
       quiz
     })));
   }

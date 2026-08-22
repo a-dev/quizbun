@@ -2,19 +2,19 @@ import { resolve } from "node:path";
 
 import { loadPublicQuizzes, PUBLIC_QUIZZES_DIR } from "../src/shared/lib/content";
 
-import { checkCatalogQuizzes, formatCatalogProfileSummary, toPathLabel } from "./quiz-validation";
+import { checkCatalogQuizzes, formatCatalogProfileSummary } from "./catalog-profile-validation";
+import { toPathLabel } from "./quiz-validation";
 
 /**
  * CI gate for contributor PRs: validates every public Quiz against the
  * Standard (via the loader — invalid files, duplicate ids, and filename ≠ id
  * throw there) and then against the Public catalog profile. Errors fail the
- * run; warnings print but pass. The profile mechanics are shared with the
- * `create-quiz` skill's standalone validator (see `quiz-validation.ts`); what
- * belongs to CI alone is the contributor-guide hint below.
+ * run; warnings print but pass. What belongs to CI alone is the
+ * contributor-guide hint below.
  */
 
-// T5.3: a rejected contributor must land on the page that explains what to
-// do with this report — the round-trip section of the contributor guide.
+// A rejected contributor must land on the page that explains what to do with
+// this report — the round-trip section of the contributor guide.
 const CONTRIBUTOR_GUIDE_HINT =
   "\nHow to fix this (and how to paste the report back into an AI chat):\n" +
   "https://a-dev.github.io/quizbun/docs/contributing/#the-error-message-round-trip";

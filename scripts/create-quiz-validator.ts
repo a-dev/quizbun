@@ -4,10 +4,9 @@ import { resolve } from "node:path";
 import { loadPublicQuizzes } from "../src/shared/lib/content";
 import type { Quiz } from "../src/shared/lib/quiz";
 
+import { checkCatalogQuizzes, formatCatalogProfileSummary } from "./catalog-profile-validation";
 import {
-  checkCatalogQuizzes,
   collectJsonFiles,
-  formatCatalogProfileSummary,
   type LabelledQuiz,
   parseAndValidateQuiz,
   readQuizFiles,
@@ -17,8 +16,8 @@ import {
 /**
  * The standalone validator bundled into the `create-quiz` skill. It runs on
  * plain Node.js outside this repository, so it owns the profile orchestration
- * and the CLI contract; the mechanics it shares with the repository CI gates
- * live in `quiz-validation.ts`.
+ * and the CLI contract; the shared mechanics live in `quiz-validation.ts` and
+ * `catalog-profile-validation.ts`.
  */
 
 export type ValidationProfile = "catalog" | "standard";
