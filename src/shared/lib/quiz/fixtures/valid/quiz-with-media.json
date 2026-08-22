@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "id": "quiz-with-media",
+  "title": "Quiz With Media",
+  "description": "A fixture exercising every media field the Standard allows.",
+  "language": "en",
+  "tags": ["standard", "fixtures", "media"],
+  "questions": [
+    {
+      "id": "vendored-image",
+      "title": "Which tier answers the repeat read?",
+      "type": "single-choice",
+      "images": [
+        {
+          "src": "cache-tiers.svg",
+          "alt": "Three-tier cache hierarchy with request arrows",
+          "caption": "Diagram: J. Doe, CC-BY 4.0",
+          "placement": "question"
+        },
+        {
+          "src": "cache-hit-path-2.png",
+          "alt": "The request path taken on a cache hit"
+        }
+      ],
+      "options": [
+        { "text": "The nearest tier that holds the value", "isCorrect": true },
+        { "text": "Always the origin store", "isCorrect": false }
+      ],
+      "explanation": "A repeat read is served by the nearest tier that still holds the value."
+    },
+    {
+      "id": "remote-image",
+      "title": "What does this histogram show?",
+      "type": "multiple-choice",
+      "images": [
+        {
+          "src": "https://example.com/latency-histogram.webp",
+          "alt": "Latency histogram with a long right tail",
+          "placement": "explanation"
+        }
+      ],
+      "options": [
+        { "text": "A long tail of slow requests", "isCorrect": true },
+        { "text": "A tight cluster near the median", "isCorrect": true },
+        { "text": "Nothing measurable", "isCorrect": false }
+      ],
+      "explanation": "Most requests are fast; a small share is much slower."
+    },
+    {
+      "id": "video-both-surfaces",
+      "title": "How many bits are in a byte?",
+      "type": "input",
+      "videos": [
+        { "provider": "youtube", "id": "dQw4w9WgXcQ", "start": 90, "placement": "question" },
+        { "provider": "youtube", "id": "aBc_1-3XyZ0", "placement": "explanation" }
+      ],
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [8]
+      },
+      "explanation": "A byte contains 8 bits."
+    }
+  ]
+}

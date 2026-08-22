@@ -18,6 +18,7 @@ export type MarkdownTier = "full" | "inline" | "plain";
 export type MarkdownField =
   | "acceptedAnswerDisplay"
   | "explanation"
+  | "imageCaption"
   | "optionText"
   | "questionDescription"
   | "questionReferences"
@@ -29,6 +30,7 @@ export type MarkdownField =
 export const MARKDOWN_FIELD_TIERS: Record<MarkdownField, MarkdownTier> = {
   acceptedAnswerDisplay: "inline",
   explanation: "full",
+  imageCaption: "inline",
   optionText: "inline",
   questionDescription: "full",
   questionReferences: "full",

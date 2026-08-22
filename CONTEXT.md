@@ -34,12 +34,24 @@ _Avoid_: feedback, rationale, solution
 Optional source material on a Question, shown after its Explanation. Long Markdown content intended for links, citations, and further reading.
 _Avoid_: bibliography (unless a formal bibliography is meant), sources (when referring to the Standard field)
 
+**Image**:
+A structured media item on a Question: `{ src, alt, caption?, placement? }`. `src` is either a bare asset filename or an `https://` URL, `alt` is always required, and `caption` is optional attribution or context.
+_Avoid_: picture, photo, illustration
+
+**Video**:
+A structured YouTube reference on a Question: `{ provider, id, start?, placement? }`. `id` is the 11-character YouTube video id, never a URL.
+_Avoid_: embed, clip
+
+**Placement**:
+Which surface an Image or Video belongs to: `question` (shown with the prompt) or `explanation` (revealed with the Explanation). Absent means `question`; the Renderer resolves the default, the Standard never writes it.
+_Avoid_: position, slot
+
 **Tag**:
 A kebab-case keyword (latin letters, digits, `-`) on a Quiz, used for filtering and discovery. The only taxonomy that exists.
 _Avoid_: category, topic, label, hashtag
 
 **Renderer**:
-Any application that displays Quizzes — the Quizbun site is the first. Shuffling, labeling Options, and layout are Renderer behavior, never content.
+Any application that displays Quizzes — the Quizbun site is the first. Shuffling, labeling Options, and layout are Renderer behavior, never content. So are media decisions: image auto-layout, resolving an Image `src` to a URL, degrading an unresolvable Image to its alt text, and the click-to-load facade that keeps a Video from contacting YouTube until the learner asks for it.
 _Avoid_: player, viewer, frontend (when referring to the role)
 
 **Public catalog profile**:
@@ -52,8 +64,12 @@ _Avoid_: public schema, extended schema
 The bundled, read-only set of quizzes that lives in the repository and ships with the site.
 _Avoid_: store, gallery, public library
 
+**Asset folder**:
+`content/quizzes/{id}/` — the vendored image files of one Public catalog Quiz, sitting next to its `{id}.json` and served at `{base}/quiz-assets/{id}/`. Catalog Quizzes vendor their images here instead of linking remote ones.
+_Avoid_: uploads, media directory, attachments
+
 **Library**:
-A user's locally stored quizzes on one device, separate from the Catalog. Private by construction — nothing leaves the device.
+A user's locally stored quizzes on one device, separate from the Catalog. Quiz content never leaves the device. One honest caveat: rendering a Question whose Image `src` is a bare filename requests a same-origin asset URL derived from the quiz's `id` and that filename, and a Video the learner clicks to play contacts YouTube like any other embed.
 _Avoid_: my quizzes, collection, private catalog
 
 **Persistent storage**:

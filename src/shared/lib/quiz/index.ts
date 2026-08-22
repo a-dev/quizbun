@@ -5,6 +5,9 @@ export { formatQuizValidationErrors } from "./format-errors";
 export { parseQuizJson } from "./parse-quiz-json";
 
 export {
+  ASSET_FILE_NAME_PATTERN,
+  imageSchema,
+  ID_PATTERN,
   inputQuestionSchema,
   inputValidationSchema,
   multipleChoiceQuestionSchema,
@@ -14,11 +17,14 @@ export {
   quizSchema,
   singleChoiceQuestionSchema,
   textInputValidationSchema,
+  videoSchema,
 } from "./schema";
 
 export type {
+  Image,
   InputQuestion,
   InputValidation,
+  MediaPlacement,
   MultipleChoiceQuestion,
   NumericInputValidation,
   Option,
@@ -26,4 +32,5 @@ export type {
   Quiz,
   SingleChoiceQuestion,
   TextInputValidation,
+  Video,
 } from "./schema";

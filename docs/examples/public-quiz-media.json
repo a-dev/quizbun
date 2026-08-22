@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "id": "cpu-cache-hierarchy-media-example",
+  "title": "CPU Cache Hierarchy Media Example",
+  "description": "A canonical public quiz example showing how Images and a Video can support a Question without replacing its text.",
+  "language": "en",
+  "tags": ["computer-architecture", "caching", "media"],
+  "questions": [
+    {
+      "id": "l1-cache-miss",
+      "title": "After an L1 cache miss, where does a CPU look next in this simplified hierarchy?",
+      "description": "The prompt diagram shows the lookup order from the processor toward slower memory tiers.",
+      "type": "single-choice",
+      "images": [
+        {
+          "src": "cpu-cache-hierarchy.svg",
+          "alt": "Simplified hierarchy with the processor connected to L1 cache, then L2 cache, then main memory",
+          "caption": "Diagram: Quizbun contributors, CC BY 4.0"
+        },
+        {
+          "src": "cpu-cache-miss-path.svg",
+          "alt": "Arrows tracing an L1 cache miss to L2 cache before main memory",
+          "caption": "Answer path: Quizbun contributors, CC BY 4.0",
+          "placement": "explanation"
+        }
+      ],
+      "videos": [
+        {
+          "provider": "youtube",
+          "id": "SAk-6gVkio0",
+          "start": 90,
+          "placement": "explanation"
+        }
+      ],
+      "options": [
+        {
+          "text": "The L2 cache",
+          "isCorrect": true
+        },
+        {
+          "text": "Main memory, skipping every other cache",
+          "isCorrect": false
+        },
+        {
+          "text": "Permanent storage",
+          "isCorrect": false
+        },
+        {
+          "text": "A CPU register",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "In the simplified hierarchy, the processor checks L1 first and then L2. It reaches main memory only if the requested data is absent from both cache levels. The explanation Image makes that miss path explicit, while the Video gives the broader reason CPUs use several cache levels.",
+      "references": "[Computerphile: How CPU Memory & Caches Work](https://www.youtube.com/watch?v=SAk-6gVkio0)"
+    }
+  ]
+}

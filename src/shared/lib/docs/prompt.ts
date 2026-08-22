@@ -1,5 +1,6 @@
 /**
- * Extracts the copyable prompt text from `docs/quiz-generation-prompt.md`.
+ * Extracts the copyable prompt text from the create-quiz skill's bundled
+ * `references/quiz-generation-prompt.md`.
  *
  * The "Copy prompt" action must copy the prompt **source text** — everything
  * under the `## Prompt` heading, including the embedded JSON Schema and the

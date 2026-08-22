@@ -41,6 +41,17 @@ function explainIssue(issue: QuizValidationIssue) {
     };
   }
 
+  // Media issues are matched by path suffix, so they must not shadow the
+  // generic missing-field report below: a `src` that is absent is a different
+  // problem from a `src` that is malformed.
+  if (!isMissingField(issue)) {
+    const mediaExplanation = explainMediaIssue(issue);
+
+    if (mediaExplanation !== undefined) {
+      return mediaExplanation;
+    }
+  }
+
   if (issue.code === "invalid_union" && "options" in issue && issue.options !== undefined) {
     const options = issue.options.map((option) => `\`${String(option)}\``).join(", ");
 
@@ -59,7 +70,7 @@ function explainIssue(issue: QuizValidationIssue) {
     };
   }
 
-  if (issue.code === "invalid_type" && issue.message === "Required field missing.") {
+  if (isMissingField(issue)) {
     return {
       path: formatPath(issue.path),
       problem: "Required field is missing.",
@@ -106,6 +117,72 @@ function explainIssue(issue: QuizValidationIssue) {
   };
 }
 
+/**
+ * `schema.ts` emits this exact message wherever `issue.input === undefined`,
+ * across several issue codes — a union reports an absent value as a failed
+ * union, not as a missing field. Keying on the sentinel rather than the code
+ * keeps every absent field reporting as absent.
+ */
+function isMissingField(issue: QuizValidationIssue) {
+  return issue.message === "Required field missing.";
+}
+
+/** Media-specific reports, keyed on the field the issue landed on. */
+function explainMediaIssue(issue: QuizValidationIssue) {
+  if (isPathEnding(issue.path, ["src"])) {
+    return {
+      path: formatPath(issue.path),
+      problem: issue.message,
+      fix: "Use a bare asset filename such as `cache-tiers.svg`, or an `https://` URL. `http://`, protocol-relative, and `data:` sources are not accepted.",
+    };
+  }
+
+  if (isPathEnding(issue.path, ["placement"])) {
+    return {
+      path: formatPath(issue.path),
+      problem: issue.message,
+      fix: "Use `question` or `explanation`, or omit `placement` entirely — an absent `placement` already means `question`.",
+    };
+  }
+
+  if (isPathEnding(issue.path, ["provider"])) {
+    return {
+      path: formatPath(issue.path),
+      problem: issue.message,
+      fix: "`youtube` is the only video provider in version 1.",
+    };
+  }
+
+  if (isVideoIdPath(issue.path)) {
+    return {
+      path: formatPath(issue.path),
+      problem: issue.message,
+      fix: "Take the 11 characters after `v=` or `youtu.be/` in the video URL and use those alone.",
+    };
+  }
+
+  if (isPathEnding(issue.path, ["start"])) {
+    return {
+      path: formatPath(issue.path),
+      problem: issue.message,
+      fix: "Use a whole number of seconds, such as `90` for one minute thirty.",
+    };
+  }
+
+  if (
+    issue.code === "too_small" &&
+    (isPathEnding(issue.path, ["images"]) || isPathEnding(issue.path, ["videos"]))
+  ) {
+    return {
+      path: formatPath(issue.path),
+      problem: issue.message,
+      fix: "Both media fields are optional; omit the field instead of leaving it empty.",
+    };
+  }
+
+  return undefined;
+}
+
 function formatPath(path: QuizValidationIssue["path"]) {
   if (path.length === 0) {
     return "root";
@@ -142,4 +219,9 @@ function isIdLikePath(path: QuizValidationIssue["path"]) {
   const parentSegment = path.at(-2);
 
   return lastSegment === "id" || parentSegment === "tags";
+}
+
+/** `videos[n].id` is a YouTube video id, not a kebab-case Standard id. */
+function isVideoIdPath(path: QuizValidationIssue["path"]) {
+  return path.at(-1) === "id" && path.at(-3) === "videos";
 }

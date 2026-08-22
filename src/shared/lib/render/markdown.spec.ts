@@ -192,6 +192,22 @@ describe("hostile input is stripped in both tiers", () => {
       expect(html).not.toContain("<img");
     });
 
+    // D13: the structured `images` field is the only image channel, so the
+    // sanitizer must close the Markdown one too. docs/standard.md states this
+    // normatively, and the validator is pure Zod over JSON — it cannot police
+    // prose, so the guarantee lives here or nowhere.
+    test(`${tier}: Markdown image syntax is inert`, () => {
+      const html = render("![a diagram](cache-tiers.svg)");
+      expect(html).not.toContain("<img");
+      expect(html).not.toContain("cache-tiers.svg");
+    });
+
+    test(`${tier}: an image wrapped in a link leaves the link empty`, () => {
+      const html = render("[![a diagram](cache-tiers.svg)](https://example.com)");
+      expect(html).not.toContain("<img");
+      expect(html).not.toContain("cache-tiers.svg");
+    });
+
     test(`${tier}: javascript: links are removed`, () => {
       const html = render("[click](javascript:alert(1))");
       expect(html).not.toContain("javascript:");

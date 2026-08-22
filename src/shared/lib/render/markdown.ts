@@ -94,7 +94,7 @@ const TOKEN_CLASS_PATTERN = /^[a-z][a-z0-9-]*$/;
 
 // Markdown fence info string -> Prism grammar name. The supported set is Renderer
 // behavior; keep it in sync with the author-facing docs (docs/standard.md Markdown
-// section, the AI generation prompt, and the quizbun-author skill). An unlisted
+// section, the AI generation prompt, and the create-quiz skill). An unlisted
 // fence renders un-highlighted by design — see highlightPreCodeBlock.
 const PRISM_LANGUAGE_BY_MARKDOWN_LANGUAGE = {
   bash: "bash",

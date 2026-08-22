@@ -9,11 +9,13 @@ import { MarkdownRender } from "@/shared/ui/markdown";
 
 import { useAnswerDraft } from "../model/use-answer-draft";
 import { AnswerControl } from "./answer-control";
+import { QuestionMedia } from "./question-media";
 import { QuestionResult } from "./question-result";
 
 import styles from "./question-card.module.css";
 
 interface Props {
+  quizId: string;
   question: Question;
   /** Index in the Quiz's original Question order (0-based). */
   index: number;
@@ -30,6 +32,7 @@ interface Props {
  * without it, submitting one Question re-renders every other card on the page.
  */
 export const QuestionCard = memo(function QuestionCard({
+  quizId,
   question,
   index,
   progress,
@@ -88,6 +91,13 @@ export const QuestionCard = memo(function QuestionCard({
         aria-describedby={isLocked ? `${idPrefix}-result` : undefined}
       >
         <MarkdownRender content={titleHtml} size="m" as="legend" className={styles.question} />
+        <QuestionMedia
+          quizId={quizId}
+          questionTitle={question.title}
+          images={question.images}
+          videos={question.videos}
+          surface="question"
+        />
         {descriptionHtml !== undefined && (
           <MarkdownRender content={descriptionHtml} size="s" className={styles.description} />
         )}
@@ -127,6 +137,7 @@ export const QuestionCard = memo(function QuestionCard({
       {progress !== undefined && (
         <QuestionResult
           ref={resultRef}
+          quizId={quizId}
           question={question}
           isCorrect={progress.isCorrect}
           id={`${idPrefix}-result`}

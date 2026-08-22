@@ -7,6 +7,7 @@ import { patchCssModules } from "vite-css-modules";
 import { loadEnv } from "vite";
 
 import { sharedViteConfig } from "./vite.shared.ts";
+import { quizAssets } from "./astro-quiz-assets.ts";
 
 const githubPagesBase = "/quizbun";
 const githubPagesSite = `https://a-dev.github.io${githubPagesBase}`;
@@ -26,7 +27,7 @@ export default defineConfig({
   server: {
     allowedHosts,
   },
-  integrations: [react(), sitemap()],
+  integrations: [react(), sitemap(), quizAssets()],
   output: "static",
   // A cross-document view transition only starts once the next page has
   // arrived; prefetching every link on hover/focus makes that near-instant on

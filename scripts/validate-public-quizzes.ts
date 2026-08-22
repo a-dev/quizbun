@@ -1,60 +1,45 @@
-import {
-  checkCatalogProfile,
-  formatProfileIssues,
-  loadPublicQuizzes,
-  PUBLIC_QUIZZES_DIR,
-} from "../src/shared/lib/content";
+import { resolve } from "node:path";
+
+import { loadPublicQuizzes, PUBLIC_QUIZZES_DIR } from "../src/shared/lib/content";
+
+import { checkCatalogQuizzes, formatCatalogProfileSummary } from "./catalog-profile-validation";
+import { toPathLabel } from "./quiz-validation";
 
 /**
- * CI gate for contributor PRs: validates every public quiz against the
+ * CI gate for contributor PRs: validates every public Quiz against the
  * Standard (via the loader — invalid files, duplicate ids, and filename ≠ id
  * throw there) and then against the Public catalog profile. Errors fail the
- * run; warnings print but pass.
+ * run; warnings print but pass. What belongs to CI alone is the
+ * contributor-guide hint below.
  */
 
-const contentDir = process.argv[2] ?? PUBLIC_QUIZZES_DIR;
-
-// T5.3: a rejected contributor must land on the page that explains what to
-// do with this report — the round-trip section of the contributor guide.
+// A rejected contributor must land on the page that explains what to do with
+// this report — the round-trip section of the contributor guide.
 const CONTRIBUTOR_GUIDE_HINT =
   "\nHow to fix this (and how to paste the report back into an AI chat):\n" +
   "https://a-dev.github.io/quizbun/docs/contributing/#the-error-message-round-trip";
 
+// Stays exactly as given: the loader dates Quizzes from `git log` output, whose
+// paths are repo-relative, so an absolute directory would match nothing there.
+const contentDir = process.argv[2] ?? PUBLIC_QUIZZES_DIR;
+
 try {
   const catalog = loadPublicQuizzes(contentDir);
-  let errorCount = 0;
-  let warningCount = 0;
+  const report = checkCatalogQuizzes(catalog.quizzes, resolve(process.cwd(), contentDir));
+  const summary = formatCatalogProfileSummary(
+    report,
+    toPathLabel(resolve(process.cwd(), contentDir)),
+  );
 
-  for (const quiz of catalog.quizzes) {
-    const issues = checkCatalogProfile(quiz);
-
-    if (issues.length === 0) {
-      continue;
-    }
-
-    const fileLabel = `${contentDir}/${quiz.id}.json`;
-    console.error(`${formatProfileIssues(fileLabel, issues)}\n`);
-
-    // Tally severities in one pass: errors fail the gate below, warnings only
-    // print. Severity is exactly "error" | "warning" (see ProfileIssue).
-    for (const issue of issues) {
-      if (issue.severity === "error") {
-        errorCount += 1;
-      } else {
-        warningCount += 1;
-      }
-    }
+  for (const quizReport of report.reports) {
+    console.error(`${quizReport}\n`);
   }
 
-  if (errorCount > 0) {
-    console.error(
-      `Public catalog profile check failed: ${errorCount} error(s), ${warningCount} warning(s) across ${catalog.quizzes.length} quiz file(s) in ${contentDir}.${CONTRIBUTOR_GUIDE_HINT}`,
-    );
+  if (report.errorCount > 0) {
+    console.error(`${summary}${CONTRIBUTOR_GUIDE_HINT}`);
     process.exitCode = 1;
   } else {
-    console.log(
-      `Validated ${catalog.quizzes.length} public quiz file(s) from ${contentDir} against the Public catalog profile (${warningCount} warning(s)).`,
-    );
+    console.log(summary);
   }
 } catch (error) {
   console.error(

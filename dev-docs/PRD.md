@@ -1,10 +1,10 @@
-# Quizbun — Product & Architecture Reference (app v1.1)
+# Quizbun — Product & Architecture Reference (app v1.1, Standard v1.1)
 
-Status: **app v1.1.0 — storage durability shipped, the Standard remains frozen at v1** · Last updated: 2026-08-17
+Status: **app v1.1.0 and the additive Standard v1.1 media revision shipped; `schemaVersion` remains `1`** · Last updated: 2026-08-22
 
 This is the single, self-contained reference for what Quizbun is and how it is built at app v1.1. It is the starting point for future development: it does not depend on any other document to be understood. It consolidates what were previously three separate artifacts — the product-requirements document, the per-milestone build plans, and the architecture decision records. Those described _how the project was going to be built, in what order_; this one describes _what exists now and why it was built that way_.
 
-The **app version** and the Quiz Object Standard's **`schemaVersion`** are independent version lines: app v1.1 adds storage durability while Quiz JSON remains at `schemaVersion: 1`.
+The **app version**, the Standard's documentation revision, and **`schemaVersion`** are independent version lines. App v1.1 adds storage durability. Standard v1.1 adds optional Question media without a breaking schema change, so Quiz JSON remains at `schemaVersion: 1`.
 
 A few living documents remain the executable or normative authority for exact rules, and this reference summarizes rather than replaces them:
 
@@ -42,7 +42,7 @@ The product is both a learning site and a reusable content standard: the same Qu
 
 One person is usually all three. There are no accounts and no identity anywhere in the product.
 
-## 3. The Quiz Object Standard (frozen at v1)
+## 3. The Quiz Object Standard (frozen v1, additive v1.1 revision)
 
 The Standard is the core artifact. A Quiz is one JSON object: metadata plus an ordered list of Questions. The Zod schema (`src/shared/lib/quiz/schema.ts`) is the single source of truth; the JSON Schema at `/schema/quiz.v1.json` is generated from it. This section summarizes the frozen v1 shape; `docs/standard.md` is the normative text.
 
@@ -52,6 +52,7 @@ The Standard is the core artifact. A Quiz is one JSON object: metadata plus an o
 - Validation is **strict at every level** — unknown fields are errors on the Quiz, Question, Option, and validation objects. When authors are AIs, leniency is where errors hide; a hallucinated or misspelled field must fail loudly at import.
 - **Error messages are a product feature.** They are path-precise and actionable enough to paste back into an AI chat to get a corrected file. The same formatter (`src/shared/lib/quiz/format-errors.ts`) drives the import page and the CI validators.
 - Within version 1, only **adding optional fields** is allowed. Removing a field, changing a required field, tightening a constraint, or changing correctness semantics requires `schemaVersion: 2`. A Quiz that validates today keeps validating.
+- **Standard v1.1 is an additive documentation revision.** It adds optional `images` and `videos` arrays to Questions. The integer `schemaVersion` stays `1`, and every pre-media Quiz remains valid byte for byte. A cached pre-v1.1 copy of `quiz.v1.json` must be refreshed before it can validate media fields.
 
 ### Quiz-level fields
 
@@ -70,7 +71,7 @@ Quiz `id` is the Library primary key. Library and Catalog are **separate namespa
 
 ### Questions
 
-Every Question has `id` (unique within the Quiz, kebab-case), `title` (short Markdown prompt — the question itself, phrased as the actual ask), `type`, and `explanation` (long Markdown, shown after submission regardless of correctness). Optional: `description` (long Markdown supporting context rendered as secondary text — a scenario, code, constraints; never the question itself) and `references` (long Markdown for links/citations, shown after the Explanation); both must be non-empty when present. Question `id` is part of Progress identity — changing it creates a new Question from the storage perspective.
+Every Question has `id` (unique within the Quiz, kebab-case), `title` (short Markdown prompt — the question itself, phrased as the actual ask), `type`, and `explanation` (long Markdown, shown after submission regardless of correctness). Optional fields are `description` (long Markdown supporting context rendered as secondary text), `references` (long Markdown for links or citations), and the `images` and `videos` arrays described below. Optional text and media arrays must be non-empty when present. Question `id` is part of Progress identity, so changing it creates a new Question from the storage perspective.
 
 Three types, all in v1: **`single-choice`**, **`multiple-choice`**, **`input`**.
 
@@ -85,6 +86,25 @@ Three types, all in v1: **`single-choice`**, **`multiple-choice`**, **`input`**.
 
 - `mode: "text"` — compares against every `acceptedAnswers` string; trims, collapses internal whitespace to one space, normalizes to Unicode NFC, and is case-insensitive unless `caseSensitive: true`.
 - `mode: "numeric"` — `acceptedAnswers` are finite JSON numbers only (numeric strings are invalid); optional `tolerance` (default `0`); accepts `.` or `,` as the decimal separator (not both in one value); no thousands separators; correct when `abs(submitted − accepted) <= tolerance` for any accepted answer.
+
+### Media
+
+Every Question type may carry non-empty `images` and `videos` arrays. Media lives at Question level only. The Standard has no Option media, quiz cover, quiz-level video, sizing, column, or alignment fields.
+
+An Image is `{ src, alt, caption?, placement? }`. `alt` is required and non-empty because Question Images are content, never decoration. `caption` is optional inline Markdown and is the natural place for attribution. `src` accepts exactly two forms:
+
+- a bare kebab-case asset filename with a `png`, `jpg`, `jpeg`, `webp`, `avif`, `gif`, or `svg` extension, with no directory or traversal segments;
+- an `https://` URL. `http://`, protocol-relative, and `data:` sources are invalid.
+
+A Video is `{ provider: "youtube", id, start?, placement? }`. The `id` is the 11-character YouTube video id, not a URL. `start` is an optional whole number of seconds at or above zero. `videos` is an array from the start because changing a single-object field to an array later would break existing Quiz JSON. More providers can be added later without a breaking schema change.
+
+Both media types accept `placement: "question" | "explanation"`. An absent placement means `question`, but the Renderer resolves that default. The schema never materializes it, so parsing and Export do not rewrite content. Question media appears between the title and description. Explanation media appears after the Explanation and before References, and stays hidden until submission. Images keep their array order, then Videos follow.
+
+Media remains presentation-neutral. The Renderer lays Images out at natural size, never upscales them, caps them to the available space, and wraps multiple items. A failed Image displays its `alt` text. A Video starts as a same-origin click-to-load facade and contacts `youtube-nocookie.com` only after explicit activation. Structured fields are the only media channel; Markdown image syntax remains inert under the sanitizer.
+
+`computeContentHash` already serializes the entire Question. Changing media, including adding an explicit `placement: "question"`, therefore invalidates that Question's saved answer. Export never normalizes placement or rewrites `src`.
+
+AI-authored media is welcome, including generated diagrams. Fabricated sources are not. Authors must verify each remote URL and YouTube id before writing it. Catalog asset existence and file rules are deterministic CI checks; validation never depends on a network request.
 
 ### Correctness model
 
@@ -118,7 +138,7 @@ These were the small gaps the design interviews never pinned down; they are now 
 ### Published artifacts and the Public catalog profile
 
 - The **JSON Schema** at `/schema/quiz.v1.json` is generated via `z.toJSONSchema()`. It is necessarily looser than Zod (cross-field rules like single-choice correctness become prose annotations); the import page and Zod validator are the final authority. CI regenerates it and fails on any drift against the committed file.
-- The **AI generation prompt** (`docs/quiz-generation-prompt.md`) embeds the JSON Schema plus one canonical example and instructs "output one JSON object, nothing else."
+- The **AI generation prompt** (`skills/create-quiz/references/quiz-generation-prompt.md`) embeds the JSON Schema plus one canonical example and instructs "output one JSON object, nothing else." The `create-quiz` skill owns the prompt source; the `/docs/prompt/` page renders it alongside a docs-only introduction instead of keeping a second copy.
 - **Canonical examples** in `docs/examples/` (one per type plus the numeric-input variant) are validated in CI by the same Zod schema.
 - The **Public catalog profile** is a stricter rule set applied **only in CI** to repository content — a profile on top of the Standard, never a second schema. It requires `description`, `language`, and at least one Tag, plus repo-wide `id` uniqueness and filename = `id`.
 
@@ -138,6 +158,16 @@ These were the small gaps the design interviews never pinned down; they are now 
 - `src/shared/` — cross-cutting building blocks. `shared/lib/` homes: `quiz` (schema, types, Content hash, error formatter), `storage` (IndexedDB + preferences + storage-persistence wrappers), `render` (Markdown), `content` (build-time public-quiz loader), `docs` (build-time docs loader), `speech` (Read aloud store), `routing`, `errors`, and `site` (name, description, theme and background colours — the one source for values the document head, the generated manifest, and the rasterized icons must all agree on); plus `shared/styles/` and `shared/ui/`.
 
 There is **no `widgets/` layer**, recreate it only when a true widget appears — a reusable block with limited business logic that composes features/entities and is not itself a page.
+
+### Decision: vendored Catalog Images and the Quiz asset pipeline
+
+Catalog Images live beside their Quiz JSON in `content/quizzes/{id}/` and use bare filenames in the Quiz. The `astro-quiz-assets.ts` integration serves validated `GET /quiz-assets/{quizId}/{file}` requests from those folders during development and copies non-JSON files to `dist/quiz-assets/{id}/` after a static build. Quiz ids and filenames must match the schema patterns before the integration touches the filesystem. The output URL flows through `withBase`, so the same path works at the site root and under the GitHub Pages `/quizbun` base.
+
+The Public catalog profile rejects remote Image URLs. Catalog content is meant to remain reviewable and durable, while remote files introduce third-party requests and link rot. Videos are exempt because their provider is inherently remote and the click-to-load facade prevents contact before activation. The rejected alternatives were remote Catalog Images and host allowlists.
+
+Keeping assets under `content/quizzes/{id}/` makes one contribution self-contained. Putting them in `public/quiz-assets/` would split one Quiz across two directory trees and make orphan files harder to spot. The JSON stores no folder path, so the serving layout can change later without changing Quiz content.
+
+Library imports accept both Image source forms. An `https://` source remains unchanged. A bare filename resolves blindly to `{BASE_URL}quiz-assets/{quiz.id}/{filename}`, even when the imported Quiz did not come from the Catalog. A load failure displays the Image's alt text. Import-time rejection would break the valid Export to Import round trip; Catalog-id-gated resolution would couple private content to the build-time Catalog; rewriting `src` would change the Content hash and discard Progress. The tradeoff is explicit: Library Quiz JSON stays on the device, but rendering a bare filename may request a same-origin URL derived from the Quiz id and filename.
 
 ### Storage
 
@@ -239,6 +269,7 @@ The player is the heart of the loop, hosted identically on the public `/quizzes/
 - **Resume:** reopening an in-progress Run lands on the first page containing an unsubmitted Question.
 - **Finish → Summary:** Finish appears only when every Question is submitted; the Summary shows "X of Y correct," a per-Question correct/incorrect list linking back to each Explanation, plus **Retake** and **Back**. Retake replaces the Run (no archive).
 - **Question components:** `single-choice` (radio group), `multiple-choice` (checkbox group, all-or-nothing), `input` (text/numeric via the shared `check-answer` module). Options render in original JSON order in v1; Option text renders through the inline tier, prompt/Explanation/References through the full tier.
+- **Question media:** `placement: "question"`, including the absent default, renders between the title and description. `placement: "explanation"` renders after the Explanation and before References, and is revealed only after submit. Each group keeps Image order, then Video order. Images use base-aware source resolution and fall back to an alt-text placeholder after a load error. Videos render a keyboard-operable same-origin facade; activation creates an exact `youtube-nocookie.com` iframe with the optional start time and autoplay, and moves focus onto that iframe so the activated control does not strand a keyboard learner at the document body. Read aloud still speaks Explanation text only.
 - **Read aloud** (§4) attaches a per-Explanation speak control once a Voice is chosen.
 
 ### Import, Library, and quiz detail
@@ -249,19 +280,20 @@ The player is the heart of the loop, hosted identically on the public `/quizzes/
 
 ## 6. Public catalog and contribution pipeline
 
-- **Catalog content** lives as one JSON file per quiz in `content/quizzes/*.json` — outside `src/` so contributors never touch app code, outside `public/` so files are not shipped twice. Filename must equal the quiz `id`. The build-time loader (`src/shared/lib/content/`) validates every file through the Zod schema (a bad file fails the build through the formatter), and treats duplicate ids or filename ≠ id as **build errors**, not merely CI errors.
+- **Catalog content** lives as one JSON file per quiz in `content/quizzes/*.json` — outside `src/` so contributors never touch app code, outside `public/` so files are not shipped twice. Filename must equal the quiz `id`. A Quiz with Images vendors them in `content/quizzes/{id}/` and references each by bare filename. The build-time loader (`src/shared/lib/content/`) validates every file through the Zod schema (a bad file fails the build through the formatter), and treats duplicate ids or filename ≠ id as **build errors**, not merely CI errors.
 - **The Catalog currently ships more than 40 public quizzes** across many topic clusters (JavaScript/TypeScript, CSS, Node.js internals, systems/networking, economics, and more). All three Question types and both `input` modes are represented, and tags overlap across clusters so the filter is genuinely useful. (This is well beyond the original ~8-quiz seed target — the seed pipeline succeeded and the Catalog kept growing through the normal review flow.)
-- **CI profile validator** (`scripts/validate-public-quizzes.ts`) imports the loader (base Standard validation comes free), then applies the Public catalog profile and Markdown/sanitization checks. Failures print through the same formatter as the import page and end with a link to the contributor guide's error-round-trip section, so a rejected contributor lands on the page that explains what to do.
+- **CI profile validator** (`scripts/validate-public-quizzes.ts`) imports the loader, so base Standard validation comes free, then applies the Public catalog profile and Markdown/sanitization checks. Catalog Images must use bare filenames, every reference must resolve to a file in that Quiz's Asset folder, every asset file must be referenced, every Asset folder must match a Quiz id, filenames and extensions must match the schema allowlist, and each file must be at most 500 KB (512,000 bytes). `docs/contributing.md` documents the same rules contributor-side, including the Video verification duty and theming a diagram with `prefers-color-scheme` — an `<img>`-embedded SVG cannot read `data-theme`, but it does inherit the document's `color-scheme`, so a diagram can follow the site theme including an explicit toggle. Failures use the established Path / Problem / Fix shape and end with a link to the contributor guide's error-round-trip section.
 - **Contribution surface:** the docs section publishes the standard document, a copyable prompt page, the canonical examples (with downloads), and a contributor guide (`docs/contributing/`) covering generate → validate on `/import/` → meet the profile → open a PR → read CI feedback → revise. A single PR template mirrors the profile and review focus; a root `CONTRIBUTING.md` is a pointer, not a fork. The MIT `LICENSE` at the repo root backs the license-by-contribution statement (submitting a public quiz licenses it under the repo license; there is no per-quiz license field).
 - **Human review** — beyond CI — evaluates topic quality, clarity, and Explanation value. An Explanation that merely restates the correct answer fails review; explanation-first is the product.
+- **Media review** checks whether media helps the Question, whether answer-revealing media uses `placement: "explanation"`, whether `alt` explains the content, and whether `caption` records useful attribution. Contributors and AI tools verify remote URLs and YouTube ids before writing; CI never calls YouTube or another remote service.
 - **The error-message round-trip is documented as a feature:** the contributor guide shows a real broken quiz, the genuine formatter report it produces, and that report pasted back into an AI chat to get a corrected file — the same report shape on both the import page (creator) and the CI check (contributor).
 
 ## 7. Testing and CI
 
 Tests run on **Vitest**, in two in-repo lanes plus a separate end-to-end lane:
 
-- **Unit** (`.spec.ts`, Node environment) and **component** (`.test.tsx`, real Chromium via `vitest-browser-react`) projects under one `vitest.config.ts`. The Standard's fixture-based `valid/`/`invalid/` set is the regression net; the error formatter is covered by snapshot tests (its output is an API, so changes show up in diffs).
-- **End-to-end** (`e2e/`, `.e2e.ts` suffix) on **Playwright**, driven against the static `astro preview` build with **relative** navigation. Library journeys seed IndexedDB directly via `e2e/fixtures/seed.ts`; the import journey is the one that exercises the real UI; Catalog journeys need no seeding because public quizzes ship in `dist/`. Each test gets a fresh browser context (empty IndexedDB + localStorage). **Catalog specs must stay content-agnostic**: derive Tags, titles, and page membership from the rendered page (and `QUIZZES_PER_PAGE` from `@/shared/lib/routing`) rather than naming quizzes, because every added quiz shifts the alphabetical order and thus which titles land on which page. Pinning a quiz by URL is fine when the journey needs one (`e2e/player.e2e.ts`). The core journeys are covered — import→run→finish, Catalog browse/filter, all Question types, resume, Library management, Page-size re-chunking, Content-hash invalidation, keyboard/phone/theme passes, install metadata, absence of any service worker, and durability-notice dismissal. One optional deploy-fidelity spec (base-path deep links under `GITHUB_PAGES=true`) remains open.
+- **Unit** (`.spec.ts`, Node environment) and **component** (`.test.tsx`, real Chromium via `vitest-browser-react`) projects under one `vitest.config.ts`. The Standard's fixture-based `valid/`/`invalid/` set covers every media shape and error message. Content-hash tests prove that media changes and explicit default placement invalidate Progress. Routing tests cover remote and base-aware Image resolution. Public-profile tests cover remote sources, missing and orphan assets, orphan folders, invalid filenames, and the 500 KB cap. Component tests cover placement filtering, Image source resolution, caption tier rendering, Image failure fallback, and both the exact iframe created by the Video facade and the focus move onto it, without loading YouTube. `astro-quiz-assets.spec.ts` pins the asset-route parser: base handling, and the encoded-traversal, nested-path, and bad-pattern rejections that keep the dev middleware off the filesystem.
+- **End-to-end** (`e2e/`, `.e2e.ts` suffix) on **Playwright**, driven against the static `astro preview` build with **relative** navigation. Library journeys seed IndexedDB directly via `e2e/fixtures/seed.ts`; the import journey is the one that exercises the real UI; Catalog journeys need no seeding because public quizzes ship in `dist/`. Each test gets a fresh browser context (empty IndexedDB + localStorage). **Catalog specs must stay content-agnostic**: derive Tags, titles, and page membership from the rendered page (and `QUIZZES_PER_PAGE` from `@/shared/lib/routing`) rather than naming quizzes, because every added quiz shifts the alphabetical order and thus which titles land on which page. Pinning a quiz by URL is fine when the journey needs one (`e2e/player.e2e.ts`). The core journeys are covered: import→run→finish, Catalog browse/filter, all Question types, resume, Library management, Page-size re-chunking, Content-hash invalidation, Catalog Image delivery, post-submit media reveal, the unloaded YouTube facade, keyboard/phone/theme passes, install metadata, absence of any service worker, and durability-notice dismissal. The component lane covers an Image load failure swapping to the alt-text placeholder. One optional deploy-fidelity spec (base-path deep links under `GITHUB_PAGES=true`) remains open.
 
 **CI** is a single `.github/workflows/ci.yml`. Its check set: `css:dts` (regenerate CSS Module typings so the typecheck sees fresh class names), `typecheck`, `check:astro` (`astro check`, covering `.astro` template diagnostics `tsc` doesn't see), the unit and browser-component Vitest suites (`bun run test`, with Chromium installed in CI), `check` (oxlint + oxfmt with import sorting), `stylelint`, `validate:docs-examples`, `validate:public-quizzes`, JSON Schema and install-icon drift checks, `astro build`, and a `dist/` base-path guard (`scripts/check-dist-base-paths.sh`) covering HTML and the web app manifest. A `deploy` job (`GITHUB_PAGES=true bun run build` → upload → `actions/deploy-pages`) gates on the checks passing.
 
@@ -280,6 +312,7 @@ Tests run on **Vitest**, in two in-repo lanes plus a separate end-to-end lane:
 - **Release model:** continuous deployment is the intended model — every merge to `main` deploys to GitHub Pages, no release ceremony. v1.0 = the creator/contributor surface complete **and** the Standard frozen, in one tag.
 - **Frozen Standard:** the `v1.0.0` tag exists on the release commit; the draft banner is gone from `docs/standard.md` and replaced with the frozen/versioning statement; the pre-freeze sweep found no schema or error-message change warranted (all public quizzes validate at zero warnings, `schema:check` reports no drift). From here, breaking Standard changes require `schemaVersion: 2`; adding optional fields is the only in-version evolution.
 - **App v1.1:** `package.json` is at `1.1.0`. Installability and Persistent storage shipped for Library and Run durability without changing the Standard.
+- **Standard v1.1 media revision:** optional Question Images and Videos now ship across the schema, published JSON Schema, docs, authoring skill, Catalog validator, asset pipeline, Renderer, a dogfood Catalog Quiz, component tests, and end-to-end coverage. The revision stays inside `schemaVersion: 1`; every earlier Quiz remains valid.
 - **The one open verification:** everything above has been exercised on local production builds (`bun run build` + `astro preview`, including a `GITHUB_PAGES=true` build served under `/quizbun/`). What has **not** happened yet is a real GitHub Pages deployment and the acceptance run against the _live_ site — the deploy is deliberately deferred while the repo is private. When the repo goes public: push `main` and the tag, publish the GitHub Release from the drafted notes, re-enable automatic CI triggers, run the end-to-end acceptance flow on the live URL (browse → filter → complete a Run → export → re-import as a private copy → confirm both namespaced Runs coexist), and verify the CI profile check fires on a fork PR.
 
 ## 10. Deferred product work
@@ -297,6 +330,9 @@ Each cut is intentional, with its reason — recorded, not dropped, so a future 
 - **Length caps** on Standard fields — deliberately omitted (§3 micro-decision 3), because tightening later is breaking.
 - **Example "try it" links** into the player from the docs — would require loading a known quiz into the private player shell (a new feature); the Catalog already demonstrates the player.
 - **Reading Explanations in non-English voices** — waits until the Renderer can match a Voice to the quiz `language`.
+- **Media source and presentation extensions** — data URIs, import-page load warnings, intrinsic size hints, Option Images, quiz cover Images, and quiz-level Videos remain deferred. The current structured fields leave room for each as an additive change.
+- **Additional Video providers** — the Video array and provider discriminator can accept more providers later. Each provider needs its own privacy and facade decision first.
+- **Direct AI loading through MCP** — AI tools currently generate or edit Quiz JSON and the learner imports it. Loading a Quiz into the app directly needs an explicit local integration and permission model.
 
 ## 11. Risks
 

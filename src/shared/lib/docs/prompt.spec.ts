@@ -6,6 +6,10 @@ import { quizSchema } from "../quiz";
 import { extractPromptText } from "./prompt";
 
 const promptDocSource = readFileSync(
+  resolve(process.cwd(), "skills/create-quiz/references/quiz-generation-prompt.md"),
+  "utf8",
+);
+const promptPageSource = readFileSync(
   resolve(process.cwd(), "docs/quiz-generation-prompt.md"),
   "utf8",
 );
@@ -47,5 +51,10 @@ describe("extractPromptText", () => {
     expect(() => extractPromptText("# No prompt here\n\nJust text.")).toThrow(
       /no "## Prompt" heading/,
     );
+  });
+
+  it("keeps the copyable prompt out of the docs page source", () => {
+    expect(promptPageSource).not.toContain("Generate exactly one Quiz as strict JSON.");
+    expect(promptPageSource).toContain("a-dev/quizbun --skill create-quiz");
   });
 });
