@@ -1,17 +1,25 @@
-import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
-import { basename, extname, relative, resolve } from "node:path";
+import { existsSync, statSync } from "node:fs";
+import { resolve } from "node:path";
+
+import { loadPublicQuizzes } from "../src/shared/lib/content";
+import type { Quiz } from "../src/shared/lib/quiz";
 
 import {
-  checkCatalogProfile,
-  formatProfileIssues,
-  loadPublicQuizzes,
-} from "../src/shared/lib/content";
-import {
-  formatQuizValidationErrors,
-  parseQuizJson,
-  type Quiz,
-  quizSchema,
-} from "../src/shared/lib/quiz";
+  checkCatalogQuizzes,
+  collectJsonFiles,
+  formatCatalogProfileSummary,
+  type LabelledQuiz,
+  parseAndValidateQuiz,
+  readQuizFiles,
+  toPathLabel,
+} from "./quiz-validation";
+
+/**
+ * The standalone validator bundled into the `create-quiz` skill. It runs on
+ * plain Node.js outside this repository, so it owns the profile orchestration
+ * and the CLI contract; the mechanics it shares with the repository CI gates
+ * live in `quiz-validation.ts`.
+ */
 
 export type ValidationProfile = "catalog" | "standard";
 
@@ -25,8 +33,27 @@ export interface ValidationReport {
   warnings: string[];
 }
 
+export interface CliOptions {
+  checkMedia: boolean;
+  help: boolean;
+  profile: ValidationProfile;
+  stdin: boolean;
+  target?: string;
+}
+
 const MAX_MEDIA_CHECK_CONCURRENCY = 4;
 const MEDIA_CHECK_TIMEOUT_MS = 15_000;
+
+export const USAGE = `Usage:
+  validate-quiz [--profile standard] [--check-media] <quiz.json|directory>
+  validate-quiz --profile catalog [--check-media] <catalog-directory>
+  validate-quiz [--profile standard] [--check-media] --stdin
+
+Options:
+  --profile <standard|catalog>  Validation profile (default: standard)
+  --check-media                 Verify remote Images and YouTube ids over the network
+  --stdin                       Read one Quiz JSON object from standard input
+  -h, --help                    Show this help`;
 
 export async function validateTarget(
   targetArg: string,
@@ -53,6 +80,78 @@ export async function validateStandardInput(
   };
 }
 
+export function parseCliArguments(args: string[]): CliOptions {
+  let checkMedia = false;
+  let profile: ValidationProfile = "standard";
+  let stdin = false;
+  let target: string | undefined;
+
+  for (let index = 0; index < args.length; index += 1) {
+    const argument = args[index];
+
+    if (argument === "-h" || argument === "--help") {
+      return { checkMedia, help: true, profile, stdin };
+    }
+
+    if (argument === "--check-media") {
+      checkMedia = true;
+      continue;
+    }
+
+    if (argument === "--stdin" || argument === "-") {
+      stdin = true;
+      continue;
+    }
+
+    if (argument === "--profile") {
+      profile = toProfile(args[index + 1]);
+      index += 1;
+      continue;
+    }
+
+    if (argument?.startsWith("--profile=")) {
+      profile = toProfile(argument.slice("--profile=".length));
+      continue;
+    }
+
+    if (argument?.startsWith("-")) {
+      throw new Error(`Unknown option: ${argument}\n\n${USAGE}`);
+    }
+
+    if (target !== undefined) {
+      throw new Error(
+        `Provide one validation target, not both ${target} and ${argument}.\n\n${USAGE}`,
+      );
+    }
+
+    target = argument;
+  }
+
+  if (stdin && target !== undefined) {
+    throw new Error("Use either `--stdin` or a file/directory target, not both.\n\n" + USAGE);
+  }
+
+  if (!stdin && target === undefined) {
+    throw new Error(`Provide a Quiz JSON file, directory, or \`--stdin\`.\n\n${USAGE}`);
+  }
+
+  if (stdin && profile === "catalog") {
+    throw new Error(
+      "Catalog validation requires a directory so filenames and Assets can be checked.",
+    );
+  }
+
+  return { checkMedia, help: false, profile, stdin, ...(target !== undefined && { target }) };
+}
+
+function toProfile(value: string | undefined): ValidationProfile {
+  if (value !== "catalog" && value !== "standard") {
+    throw new Error("Set `--profile` to `standard` or `catalog`.\n\n" + USAGE);
+  }
+
+  return value;
+}
+
 async function validateStandardTarget(
   targetArg: string,
   checkMedia: boolean,
@@ -64,10 +163,7 @@ async function validateStandardTarget(
     throw new Error(`No Quiz JSON files found in ${toPathLabel(targetPath)}.`);
   }
 
-  const quizzes = filePaths.map((filePath) => ({
-    fileLabel: toPathLabel(filePath),
-    quiz: parseAndValidateQuiz(readFileSync(filePath, "utf8"), toPathLabel(filePath)),
-  }));
+  const quizzes = readQuizFiles(filePaths);
 
   if (checkMedia) {
     await validateRemoteMedia(quizzes);
@@ -91,38 +187,17 @@ async function validateCatalogDirectory(
     );
   }
 
+  // The skill runs outside a git checkout, so there is no commit history to
+  // date Quizzes from: pass an empty map and stay quiet about the fallback.
   const catalog = loadPublicQuizzes(targetPath, {
     addedAtByFileName: new Map(),
     warnOnDateFallback: false,
   });
-  const warnings: string[] = [];
-  let errorCount = 0;
-  let warningCount = 0;
+  const report = checkCatalogQuizzes(catalog.quizzes, targetPath);
+  const summary = formatCatalogProfileSummary(report, toPathLabel(targetPath));
 
-  for (const quiz of catalog.quizzes) {
-    const issues = checkCatalogProfile(quiz);
-
-    if (issues.length === 0) continue;
-
-    const report = formatProfileIssues(toPathLabel(resolve(targetPath, `${quiz.id}.json`)), issues);
-    warnings.push(report);
-
-    for (const issue of issues) {
-      if (issue.severity === "error") {
-        errorCount += 1;
-      } else {
-        warningCount += 1;
-      }
-    }
-  }
-
-  if (errorCount > 0) {
-    throw new Error(
-      [
-        ...warnings,
-        `Public catalog profile check failed: ${errorCount} error(s), ${warningCount} warning(s) across ${catalog.quizzes.length} Quiz file(s) in ${toPathLabel(targetPath)}.`,
-      ].join("\n\n"),
-    );
+  if (report.errorCount > 0) {
+    throw new Error([...report.reports, summary].join("\n\n"));
   }
 
   if (checkMedia) {
@@ -134,53 +209,20 @@ async function validateCatalogDirectory(
     );
   }
 
-  return {
-    output: `Validated ${catalog.quizzes.length} public Quiz file(s) from ${toPathLabel(targetPath)} against the Public catalog profile (${warningCount} warning(s)).`,
-    warnings,
-  };
+  return { output: summary, warnings: report.reports };
 }
 
-function parseAndValidateQuiz(rawText: string, sourceLabel: string): Quiz {
-  const quizJson = parseQuizJson(rawText, sourceLabel);
-  const result = quizSchema.safeParse(quizJson);
+type RemoteMediaCheck =
+  | { fileLabel: string; kind: "image"; path: string; value: string }
+  | { fileLabel: string; kind: "youtube"; path: string; value: string };
 
-  if (!result.success) {
-    throw new Error(
-      [`Quiz validation failed in ${sourceLabel}:`, formatQuizValidationErrors(result.error)].join(
-        "\n",
-      ),
-    );
-  }
-
-  return result.data;
-}
-
-function collectJsonFiles(targetPath: string): string[] {
-  if (!existsSync(targetPath)) {
-    throw new Error(`Validation target does not exist: ${toPathLabel(targetPath)}.`);
-  }
-
-  const stats = statSync(targetPath);
-
-  if (stats.isDirectory()) {
-    return readdirSync(targetPath)
-      .filter((entryName) => entryName.endsWith(".json"))
-      .sort((left, right) => left.localeCompare(right, "en"))
-      .map((entryName) => resolve(targetPath, entryName));
-  }
-
-  if (stats.isFile() && extname(targetPath) === ".json") {
-    return [targetPath];
-  }
-
-  throw new Error(
-    `Validation target must be a JSON file or directory. Received: ${toPathLabel(targetPath)}.`,
-  );
-}
-
-async function validateRemoteMedia(
-  quizzes: Array<{ fileLabel: string; quiz: Quiz }>,
-): Promise<void> {
+/**
+ * Opt-in network verification (`--check-media`). It requests only the
+ * `https://` Image URLs and YouTube ids the Quiz itself names, so the target
+ * list is author-supplied: keep it opt-in rather than wiring it into a gate
+ * that runs over untrusted contributions.
+ */
+async function validateRemoteMedia(quizzes: LabelledQuiz[]): Promise<void> {
   const checks = quizzes.flatMap(({ fileLabel, quiz }) => listRemoteMediaChecks(fileLabel, quiz));
   const problems: string[] = [];
 
@@ -203,10 +245,6 @@ async function validateRemoteMedia(
     );
   }
 }
-
-type RemoteMediaCheck =
-  | { fileLabel: string; kind: "image"; path: string; value: string }
-  | { fileLabel: string; kind: "youtube"; path: string; value: string };
 
 function listRemoteMediaChecks(fileLabel: string, quiz: Quiz): RemoteMediaCheck[] {
   const checks: RemoteMediaCheck[] = [];
@@ -295,8 +333,4 @@ function formatMediaProblem(check: RemoteMediaCheck, problem: string, fix: strin
     `   Problem: ${problem}`,
     `   Fix: ${fix}`,
   ].join("\n");
-}
-
-function toPathLabel(filePath: string): string {
-  return relative(process.cwd(), filePath) || basename(filePath);
 }

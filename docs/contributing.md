@@ -12,14 +12,40 @@ For AI generation, use the [AI generation prompt](./quiz-generation-prompt.md). 
 
 Writing the JSON yourself? Start with a [canonical example](./examples/README.md) and check [the Quiz Object Standard](./standard.md) when you need a rule.
 
-## Step 2: validate locally on the import page
+## Step 2: validate locally
 
-Use the [import page](https://a-dev.github.io/quizbun/import/) as the local validator. Paste your Quiz JSON there:
+Two local validators exist. They share the same schema and the same error formatter, so both produce the report described in [the error-message round-trip](#the-error-message-round-trip).
+
+### The import page
+
+Paste your Quiz JSON into the [import page](https://a-dev.github.io/quizbun/import/):
 
 - If it validates, the Quiz lands in your browser Library. Run it once and read every Explanation as a learner would.
-- If it fails, you get a path-precise error report. See [the error-message round-trip](#the-error-message-round-trip) below for how to turn that report into a fix.
+- If it fails, you get a path-precise error report.
 
 Quizbun does not upload anything you import. Private Quizzes live only in your browser.
+
+### The create-quiz validator
+
+The import page judges one Quiz object, so it cannot check the rules that involve files: filename = `id`, repo-wide `id` uniqueness, and the Asset folder rules below. The `create-quiz` skill ships a validator that checks those too, running the same code as CI. Install it with the [Skills CLI](https://skills.sh):
+
+```sh
+npx skills add a-dev/quizbun --skill create-quiz
+```
+
+Run the Public catalog profile over the content directory of your fork:
+
+```sh
+node <create-quiz-skill>/scripts/validate-quiz.mjs --profile catalog content/quizzes
+```
+
+Drop `--profile catalog` to check a single file against the Standard alone:
+
+```sh
+node <create-quiz-skill>/scripts/validate-quiz.mjs my-quiz.json
+```
+
+The validator needs Node.js 22.12 or newer and nothing else: no dependencies to install, and no Bun.
 
 ## Step 3: meet the Public catalog profile
 
@@ -44,7 +70,7 @@ The Standard lets an Image `src` be an `https://` URL, but the Catalog does not.
 - Use `caption` for attribution when the Image is not your own work.
 - Put anything that gives away the answer behind `"placement": "explanation"`.
 
-Videos are the exception to the vendoring rule: `provider: "youtube"` references are inherently remote, and the site renders them behind a click-to-load facade that contacts YouTube only after a learner asks for it. Verify that every video id resolves to a real video before you write it — CI deliberately never calls YouTube, so a wrong id fails silently in front of learners rather than loudly in the pull request.
+Videos are the exception to the vendoring rule: `provider: "youtube"` references are inherently remote, and the site renders them behind a click-to-load facade that contacts YouTube only after a learner asks for it. Verify that every video id resolves to a real video before you write it — CI deliberately never calls YouTube, so a wrong id fails silently in front of learners rather than loudly in the pull request. Add `--check-media` to the validator above and it resolves every YouTube id and remote Image URL over the network for you.
 
 Diagrams read better when they follow the site theme. An Image loaded through `<img>` cannot see the page's theme attribute, but an SVG can carry its own `@media (prefers-color-scheme: dark)` block; the diagrams in `content/quizzes/undo-redo-back-stacks-queues/` are a working example.
 
@@ -123,7 +149,7 @@ Public quiz does not satisfy the Public catalog profile in content/quizzes/git-b
    Problem: The Public catalog profile requires a `description`.
    Fix: Add a short `description` explaining what the quiz covers and who it is for.
 
-Public catalog profile check failed: 1 error(s), 0 warning(s) across 4 quiz file(s) in content/quizzes.
+Public catalog profile check failed: 1 error(s), 0 warning(s) across 4 Quiz file(s) in content/quizzes.
 ```
 
 In either place, read the path, apply the fix yourself or send it to your AI chat, then validate again.

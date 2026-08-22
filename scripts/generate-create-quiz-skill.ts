@@ -1,11 +1,40 @@
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, relative, resolve } from "node:path";
+import type { BunPlugin } from "bun";
 
 const workspaceRoot = process.cwd();
 const skillDirectory = resolve(workspaceRoot, "skills/create-quiz");
 const checkOnly = process.argv.includes("--check");
 const temporaryDirectory = mkdtempSync(join(tmpdir(), "create-quiz-skill-"));
+
+/**
+ * The validator reaches the Markdown pipeline through the Public catalog
+ * profile's sanitization audit, and that pipeline imports Prism plus seven
+ * grammars for the site. Nothing the validator reports depends on syntax
+ * highlighting: it asks whether a field renders to anything and whether raw
+ * HTML survived, and highlighting only rewrites the inside of a `<pre><code>`
+ * block that is non-empty either way.
+ *
+ * So the skill bundle ships without the highlighter (~57 KB). The stub has an
+ * empty `languages` map, which lands `highlightPreCodeBlock` on the branch it
+ * already takes for an unlisted fence — un-highlighted by design, not a new
+ * code path. `create-quiz-skill-bundle.spec.ts` guards both halves of that.
+ */
+const stubSyntaxHighlighterPlugin: BunPlugin = {
+  name: "stub-prismjs",
+  setup(build) {
+    build.onResolve({ filter: /^prismjs(\/.*)?$/ }, (args) => ({
+      path: args.path,
+      namespace: "stub-prismjs",
+    }));
+
+    build.onLoad({ filter: /.*/, namespace: "stub-prismjs" }, () => ({
+      contents: "export default { highlight: (code) => code, languages: {} };",
+      loader: "js",
+    }));
+  },
+};
 
 try {
   const build = await Bun.build({
@@ -14,6 +43,7 @@ try {
     minify: false,
     naming: "validate-quiz.mjs",
     outdir: temporaryDirectory,
+    plugins: [stubSyntaxHighlighterPlugin],
     sourcemap: "none",
     target: "node",
   });

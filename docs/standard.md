@@ -211,7 +211,7 @@ Any future `placement` value must name a surface. Values such as `explanation-to
 
 - Media never replaces text. A Question must still read correctly with every Image and Video removed.
 - If an Image cannot be resolved or loaded, the Renderer shows its `alt` text. The failure never blocks a Run or makes the Quiz invalid. A missing file is a broken link.
-- Validation is deterministic and offline. Neither the schema nor the import page fetches an image or checks that a YouTube id exists; they judge shape only. Repository CI enforces file existence for Public catalog Quizzes.
+- Validation is deterministic and offline. Neither the schema nor the import page fetches an image or checks that a YouTube id exists; they judge shape only. Repository CI enforces file existence for Public catalog Quizzes. The `create-quiz` skill's validator can resolve remote media on demand with `--check-media`, but that is an opt-in authoring step, not part of the Standard.
 
 ### How to add media
 
