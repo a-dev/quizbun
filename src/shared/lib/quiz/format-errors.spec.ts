@@ -179,6 +179,28 @@ describe("formatQuizValidationErrors", () => {
     `);
   });
 
+  // The media handlers match on path suffix, so they must not intercept an
+  // absent field and answer it as if it were a malformed one.
+  test("formats a missing image `src` as a missing field", () => {
+    expect(reportForQuestionMedia({ images: [{ alt: "A diagram" }] })).toMatchInlineSnapshot(`
+      "Quiz JSON is invalid. Please revise it to satisfy the Quiz Object Standard.
+
+      1. Path: \`questions[0].images[0].src\`
+         Problem: Required field is missing.
+         Fix: Add this required field using the shape defined by the Standard."
+    `);
+  });
+
+  test("formats a missing video `id` as a missing field", () => {
+    expect(reportForQuestionMedia({ videos: [{ provider: "youtube" }] })).toMatchInlineSnapshot(`
+        "Quiz JSON is invalid. Please revise it to satisfy the Quiz Object Standard.
+
+        1. Path: \`questions[0].videos[0].id\`
+           Problem: Required field is missing.
+           Fix: Add this required field using the shape defined by the Standard."
+      `);
+  });
+
   test("formats a missing image `alt`", () => {
     expect(reportForQuestionMedia({ images: [{ src: "diagram.svg" }] })).toMatchInlineSnapshot(`
       "Quiz JSON is invalid. Please revise it to satisfy the Quiz Object Standard.

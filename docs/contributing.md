@@ -31,10 +31,27 @@ The Catalog adds these CI-enforced publishing requirements to the Standard:
 - Name the file after the Quiz id. A Quiz with `"id": "git-basics"` belongs in `content/quizzes/git-basics.json`.
 - The Quiz `id` must be unique across the repository.
 
+### If your Quiz uses Images
+
+The Standard lets an Image `src` be an `https://` URL, but the Catalog does not. Catalog Images must be **vendored**: the file itself lives in the repository, and the Quiz refers to it by bare filename. Remote images make the built site depend on somebody else's server, they rot, and a reviewer cannot check the licensing of a file that is not in the pull request.
+
+- Put the files in an Asset folder named after the Quiz id, next to its JSON: `content/quizzes/git-basics/` beside `content/quizzes/git-basics.json`.
+- Reference each one by bare filename, with no directories: `"src": "branch-diagram.svg"`, never `"images/branch-diagram.svg"` or a URL.
+- Filenames are kebab-case with an allowed extension: `png`, `jpg`, `jpeg`, `webp`, `avif`, `gif`, or `svg`.
+- Every file in the folder must be referenced by the Quiz, and every reference must resolve to a file. CI rejects both orphan files and dangling references, so a folder never quietly accumulates leftovers.
+- Each file must be at most 500 KB. Compress or resize rather than shipping an original export.
+- Every Image needs non-empty `alt`. A Question Image carries part of the teaching, so it is never decorative.
+- Use `caption` for attribution when the Image is not your own work.
+- Put anything that gives away the answer behind `"placement": "explanation"`.
+
+Videos are the exception to the vendoring rule: `provider: "youtube"` references are inherently remote, and the site renders them behind a click-to-load facade that contacts YouTube only after a learner asks for it. Verify that every video id resolves to a real video before you write it — CI deliberately never calls YouTube, so a wrong id fails silently in front of learners rather than loudly in the pull request.
+
+Diagrams read better when they follow the site theme. An Image loaded through `<img>` cannot see the page's theme attribute, but an SVG can carry its own `@media (prefers-color-scheme: dark)` block; the diagrams in `content/quizzes/undo-redo-back-stacks-queues/` are a working example.
+
 ## Step 4: open a pull request
 
 1. Fork the repository and create a branch.
-2. Add one `{id}.json` file per Quiz under [`content/quizzes/`](https://github.com/a-dev/quizbun/tree/main/content/quizzes).
+2. Add one `{id}.json` file per Quiz under [`content/quizzes/`](https://github.com/a-dev/quizbun/tree/main/content/quizzes), plus an Asset folder of the same name if the Quiz uses Images.
 3. Open the PR and complete the short checklist in the PR template. It mirrors this guide.
 
 ## Step 5: read the CI feedback and revise

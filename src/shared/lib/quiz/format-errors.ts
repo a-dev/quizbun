@@ -41,6 +41,94 @@ function explainIssue(issue: QuizValidationIssue) {
     };
   }
 
+  // Media issues are matched by path suffix, so they must not shadow the
+  // generic missing-field report below: a `src` that is absent is a different
+  // problem from a `src` that is malformed.
+  if (!isMissingField(issue)) {
+    const mediaExplanation = explainMediaIssue(issue);
+
+    if (mediaExplanation !== undefined) {
+      return mediaExplanation;
+    }
+  }
+
+  if (issue.code === "invalid_union" && "options" in issue && issue.options !== undefined) {
+    const options = issue.options.map((option) => `\`${String(option)}\``).join(", ");
+
+    return {
+      path: formatPath(issue.path),
+      problem: issue.message,
+      fix: `Use one of: ${options}.`,
+    };
+  }
+
+  if (isPathEnding(issue.path, ["validation"])) {
+    return {
+      path: formatPath(issue.path),
+      problem: issue.message,
+      fix: 'Add a `validation` object with `mode: "text"` or `mode: "numeric"` and at least one accepted answer.',
+    };
+  }
+
+  if (isMissingField(issue)) {
+    return {
+      path: formatPath(issue.path),
+      problem: "Required field is missing.",
+      fix: "Add this required field using the shape defined by the Standard.",
+    };
+  }
+
+  if (issue.code === "invalid_format" && isIdLikePath(issue.path)) {
+    return {
+      path: formatPath(issue.path),
+      problem: issue.message,
+      fix: "Use lowercase latin letters, digits, and single hyphens; do not use spaces, underscores, or leading/trailing hyphens.",
+    };
+  }
+
+  if (issue.code === "too_small" && "origin" in issue && issue.origin === "array") {
+    return {
+      path: formatPath(issue.path),
+      problem: issue.message,
+      fix: "Add the required item or remove the incomplete object.",
+    };
+  }
+
+  if (issue.code === "custom" && isPathEnding(issue.path, ["options"])) {
+    return {
+      path: formatPath(issue.path),
+      problem: issue.message,
+      fix: "Set the required correct Options: exactly one for `single-choice`, at least one for `multiple-choice`.",
+    };
+  }
+
+  if (issue.code === "custom" && isPathEnding(issue.path, ["id"])) {
+    return {
+      path: formatPath(issue.path),
+      problem: issue.message,
+      fix: "Give each Question a unique `id` within this Quiz.",
+    };
+  }
+
+  return {
+    path: formatPath(issue.path),
+    problem: issue.message,
+    fix: "Change this value to match the Standard at the reported path.",
+  };
+}
+
+/**
+ * `schema.ts` emits this exact message wherever `issue.input === undefined`,
+ * across several issue codes — a union reports an absent value as a failed
+ * union, not as a missing field. Keying on the sentinel rather than the code
+ * keeps every absent field reporting as absent.
+ */
+function isMissingField(issue: QuizValidationIssue) {
+  return issue.message === "Required field missing.";
+}
+
+/** Media-specific reports, keyed on the field the issue landed on. */
+function explainMediaIssue(issue: QuizValidationIssue) {
   if (isPathEnding(issue.path, ["src"])) {
     return {
       path: formatPath(issue.path),
@@ -92,69 +180,7 @@ function explainIssue(issue: QuizValidationIssue) {
     };
   }
 
-  if (issue.code === "invalid_union" && "options" in issue && issue.options !== undefined) {
-    const options = issue.options.map((option) => `\`${String(option)}\``).join(", ");
-
-    return {
-      path: formatPath(issue.path),
-      problem: issue.message,
-      fix: `Use one of: ${options}.`,
-    };
-  }
-
-  if (isPathEnding(issue.path, ["validation"])) {
-    return {
-      path: formatPath(issue.path),
-      problem: issue.message,
-      fix: 'Add a `validation` object with `mode: "text"` or `mode: "numeric"` and at least one accepted answer.',
-    };
-  }
-
-  if (issue.code === "invalid_type" && issue.message === "Required field missing.") {
-    return {
-      path: formatPath(issue.path),
-      problem: "Required field is missing.",
-      fix: "Add this required field using the shape defined by the Standard.",
-    };
-  }
-
-  if (issue.code === "invalid_format" && isIdLikePath(issue.path)) {
-    return {
-      path: formatPath(issue.path),
-      problem: issue.message,
-      fix: "Use lowercase latin letters, digits, and single hyphens; do not use spaces, underscores, or leading/trailing hyphens.",
-    };
-  }
-
-  if (issue.code === "too_small" && "origin" in issue && issue.origin === "array") {
-    return {
-      path: formatPath(issue.path),
-      problem: issue.message,
-      fix: "Add the required item or remove the incomplete object.",
-    };
-  }
-
-  if (issue.code === "custom" && isPathEnding(issue.path, ["options"])) {
-    return {
-      path: formatPath(issue.path),
-      problem: issue.message,
-      fix: "Set the required correct Options: exactly one for `single-choice`, at least one for `multiple-choice`.",
-    };
-  }
-
-  if (issue.code === "custom" && isPathEnding(issue.path, ["id"])) {
-    return {
-      path: formatPath(issue.path),
-      problem: issue.message,
-      fix: "Give each Question a unique `id` within this Quiz.",
-    };
-  }
-
-  return {
-    path: formatPath(issue.path),
-    problem: issue.message,
-    fix: "Change this value to match the Standard at the reported path.",
-  };
+  return undefined;
 }
 
 function formatPath(path: QuizValidationIssue["path"]) {

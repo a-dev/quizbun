@@ -1,8 +1,7 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { Play } from "lucide-react";
 
-import { cx } from "#styles";
 import styles from "./youtube-embed.module.css";
 
 interface YouTubeEmbedProps {
@@ -20,12 +19,23 @@ function embedUrl(videoId: string, start: number | undefined): string {
 /** A privacy-preserving YouTube facade that creates its iframe only on click. */
 export function YouTubeEmbed({ videoId, title, start, className }: YouTubeEmbedProps) {
   const [loadedVideoId, setLoadedVideoId] = useState<string>();
+  const iframeRef = useRef<HTMLIFrameElement>(null);
   const loaded = loadedVideoId === videoId;
 
+  // The activated Play control unmounts with the facade, so focus would fall
+  // back to the document body and strand a keyboard learner above the whole
+  // Question. Move it onto the player that replaced the control instead.
+  useEffect(() => {
+    if (loaded) {
+      iframeRef.current?.focus();
+    }
+  }, [loaded]);
+
   return (
-    <div className={cx(styles.root, className)}>
+    <div className={className}>
       {loaded ? (
         <iframe
+          ref={iframeRef}
           src={embedUrl(videoId, start)}
           title={title}
           className={styles.iframe}

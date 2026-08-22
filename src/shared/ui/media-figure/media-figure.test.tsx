@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { page } from "vitest/browser";
 
+import { renderMarkdownField } from "@/shared/lib/render";
+
 import { MediaFigure } from "./media-figure";
 
 const IMAGE_SRC =
@@ -26,9 +28,13 @@ describe("MediaFigure", () => {
     expect(placeholder.element().tagName).toBe("DIV");
   });
 
-  it("renders a caption through the inline Markdown tier", async () => {
+  it("renders the caption HTML it was handed", async () => {
     const screen = await page.render(
-      <MediaFigure src={IMAGE_SRC} alt="Cache tiers" caption="Diagram by **J. Doe**." />,
+      <MediaFigure
+        src={IMAGE_SRC}
+        alt="Cache tiers"
+        captionHtml={renderMarkdownField("imageCaption", "Diagram by **J. Doe**.")}
+      />,
     );
 
     const caption = screen.container.querySelector("figcaption");

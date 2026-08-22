@@ -1,6 +1,5 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
-import { renderInlineMarkdown } from "@/shared/lib/render";
 import { MarkdownRender } from "@/shared/ui/markdown";
 
 import { cx } from "#styles";
@@ -10,18 +9,15 @@ interface MediaFigureProps {
   /** A URL already resolved by the caller. */
   src: string;
   alt: string;
-  caption?: string;
+  /** Caption HTML already rendered through its Markdown tier by the caller. */
+  captionHtml?: string;
   className?: string;
 }
 
 /** An Image with an optional caption and a visible alt-text fallback. */
-export function MediaFigure({ src, alt, caption, className }: MediaFigureProps) {
+export function MediaFigure({ src, alt, captionHtml, className }: MediaFigureProps) {
   const [failedSrc, setFailedSrc] = useState<string>();
   const failed = failedSrc === src;
-  const captionHtml = useMemo(
-    () => (caption === undefined ? undefined : renderInlineMarkdown(caption)),
-    [caption],
-  );
 
   return (
     <figure className={cx(styles.root, className)}>

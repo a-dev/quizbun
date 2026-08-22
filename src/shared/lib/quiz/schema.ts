@@ -76,10 +76,16 @@ const imageSrcSchema = z.union(
     nonEmptyStringSchema.regex(remoteImageSrcPattern),
   ],
   {
-    error: (issue) =>
-      typeof issue.input === "string" && issue.input.startsWith("http://")
+    error: (issue) => {
+      // A union reports an absent value as a failed union rather than a missing
+      // field, so it has to say so itself or the formatter answers "your `src`
+      // is malformed" to an author who simply forgot to write one.
+      if (issue.input === undefined) return "Required field missing.";
+
+      return typeof issue.input === "string" && issue.input.startsWith("http://")
         ? "Use `https`, not `http`."
-        : "Use an `https://` URL or a bare asset filename (kebab-case name plus png/jpg/jpeg/webp/avif/gif/svg).",
+        : "Use an `https://` URL or a bare asset filename (kebab-case name plus png/jpg/jpeg/webp/avif/gif/svg).";
+    },
   },
 );
 

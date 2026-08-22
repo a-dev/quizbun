@@ -1,5 +1,5 @@
 import type { Image, MediaPlacement, Video } from "@/shared/lib/quiz";
-import { renderMarkdownFieldText } from "@/shared/lib/render";
+import { renderMarkdownField, renderMarkdownFieldText } from "@/shared/lib/render";
 import { resolveImageSrc } from "@/shared/lib/routing";
 import { MediaFigure } from "@/shared/ui/media-figure";
 import { YouTubeEmbed } from "@/shared/ui/youtube-embed";
@@ -50,7 +50,11 @@ export function QuestionMedia({
           key={`${image.src}-${index}`}
           src={resolveImageSrc(quizId, image.src)}
           alt={image.alt}
-          caption={image.caption}
+          captionHtml={
+            image.caption === undefined
+              ? undefined
+              : renderMarkdownField("imageCaption", image.caption)
+          }
           className={styles.figure}
         />
       ))}

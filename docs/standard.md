@@ -253,7 +253,7 @@ Markdown image syntax is intentionally inert. Both `![alt](src)` and a raw `<img
 
 The Renderer uses two tiers:
 
-- Short fields are inline-only: Quiz `title`, Question `title`, and Option `text`.
+- Short fields are inline-only: Quiz `title`, Question `title`, Option `text`, and Image `caption`.
 - Long fields allow full Markdown: Quiz `description`, Question `description`, Explanation, and References.
 
 Inline-only is a rendering rule, not an import-time validation rule. If a short field contains block Markdown, the Renderer flattens or degrades it instead of rejecting the Quiz. In contexts that cannot render Markdown, such as the browser tab title or compact lists, the Renderer strips formatting to plain text.

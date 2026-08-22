@@ -1,5 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 
+import { renderMarkdownField } from "@/shared/lib/render";
+
 import { MediaFigure } from "./media-figure";
 
 const meta = {
@@ -11,7 +13,7 @@ const meta = {
   args: {
     src: "/quizbun-og-image.png",
     alt: "Quizbun logo beside an open book",
-    caption: "Quizbun **preview image**.",
+    captionHtml: renderMarkdownField("imageCaption", "Quizbun **preview image**."),
   },
   tags: ["autodocs"],
 } satisfies Meta<typeof MediaFigure>;
@@ -25,6 +27,9 @@ export const BrokenSource: Story = {
   args: {
     src: "/missing-image.png",
     alt: "A missing diagram described by its alt text",
-    caption: "The caption remains visible when the Image cannot load.",
+    captionHtml: renderMarkdownField(
+      "imageCaption",
+      "The caption remains visible when the Image cannot load.",
+    ),
   },
 };

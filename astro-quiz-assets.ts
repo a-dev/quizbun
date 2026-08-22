@@ -91,8 +91,11 @@ async function copyQuizAssets(contentDirectory: string, outputDirectory: string)
       .map(async (quizEntry) => {
         const sourceDirectory = resolve(contentDirectory, quizEntry.name);
         const assetEntries = await readdir(sourceDirectory, { withFileTypes: true });
+        // Same allowlist the schema and the Catalog validator use: the copy step
+        // must not widen what counts as an asset, or a stray editor or OS file
+        // would ship in `dist/`.
         const files = assetEntries.filter(
-          (entry) => entry.isFile() && !entry.name.endsWith(".json"),
+          (entry) => entry.isFile() && ASSET_FILE_NAME_PATTERN.test(entry.name),
         );
 
         if (files.length === 0) return;
@@ -108,7 +111,16 @@ async function copyQuizAssets(contentDirectory: string, outputDirectory: string)
   );
 }
 
-function parseAssetRequest(
+/**
+ * Splits an incoming request into the Quiz id and asset filename it addresses.
+ *
+ * Three outcomes: an object for a well-formed asset request, `null` for an
+ * asset request that names something unservable (respond 404), and `undefined`
+ * for a URL outside the asset route (hand back to the next middleware). Both
+ * segments are validated *after* decoding and before any filesystem access, so
+ * traversal is impossible by construction rather than by normalization.
+ */
+export function parseAssetRequest(
   requestUrl: string,
   base: string,
 ): { fileName: string; quizId: string } | null | undefined {

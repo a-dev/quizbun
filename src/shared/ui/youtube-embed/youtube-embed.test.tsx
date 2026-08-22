@@ -30,4 +30,17 @@ describe("YouTubeEmbed", () => {
         "https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?start=90&autoplay=1",
       );
   });
+
+  // The Play control unmounts with the facade. Without an explicit move, focus
+  // falls to the document body and a keyboard learner is thrown above the
+  // Question they were working through.
+  it("moves focus onto the player it just created", async () => {
+    const screen = await page.render(
+      <YouTubeEmbed videoId="dQw4w9WgXcQ" title="Video for cache hierarchy" />,
+    );
+
+    await userEvent.click(screen.getByRole("button", { name: "Play Video for cache hierarchy" }));
+
+    await expect.element(screen.getByTitle("Video for cache hierarchy")).toHaveFocus();
+  });
 });

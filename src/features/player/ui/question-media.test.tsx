@@ -53,6 +53,59 @@ describe("QuestionMedia", () => {
       .toBeInTheDocument();
   });
 
+  it("resolves a bare Image filename through the Quiz asset route", async () => {
+    const screen = await page.render(
+      <QuestionMedia
+        quizId="cache-hierarchy"
+        questionTitle="Which tier answers the repeat read?"
+        images={[{ src: "cache-tiers.svg", alt: "Three cache tiers" }]}
+        videos={undefined}
+        surface="question"
+      />,
+    );
+
+    expect(screen.container.querySelector("img")?.getAttribute("src")).toBe(
+      "/quiz-assets/cache-hierarchy/cache-tiers.svg",
+    );
+  });
+
+  it("leaves a remote Image source untouched", async () => {
+    const src = "https://example.com/cache-tiers.svg";
+    const screen = await page.render(
+      <QuestionMedia
+        quizId="cache-hierarchy"
+        questionTitle="Which tier answers the repeat read?"
+        images={[{ src, alt: "Three cache tiers" }]}
+        videos={undefined}
+        surface="question"
+      />,
+    );
+
+    expect(screen.container.querySelector("img")?.getAttribute("src")).toBe(src);
+  });
+
+  it("renders an Image caption through the inline Markdown tier", async () => {
+    const screen = await page.render(
+      <QuestionMedia
+        quizId="cache-hierarchy"
+        questionTitle="Which tier answers the repeat read?"
+        images={[
+          {
+            src: "cache-tiers.svg",
+            alt: "Three cache tiers",
+            caption: "Diagram: **J. Doe**, CC-BY 4.0",
+          },
+        ]}
+        videos={undefined}
+        surface="question"
+      />,
+    );
+
+    const caption = screen.container.querySelector("figcaption");
+    await expect.element(caption!).toHaveTextContent("Diagram: J. Doe, CC-BY 4.0");
+    expect(caption!.querySelector("strong")?.textContent).toBe("J. Doe");
+  });
+
   it("keeps Image order and renders Videos after Images", async () => {
     const screen = await page.render(
       <QuestionMedia

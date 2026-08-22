@@ -11,7 +11,7 @@ const unitProject = defineProject({
   test: {
     name: "unit",
     environment: "node",
-    include: ["src/**/*.spec.ts", "scripts/**/*.spec.ts", ".storybook/**/*.spec.ts"],
+    include: ["*.spec.ts", "src/**/*.spec.ts", "scripts/**/*.spec.ts", ".storybook/**/*.spec.ts"],
     exclude: [...defaultExclude],
   },
 });
