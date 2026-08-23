@@ -16,6 +16,7 @@ import {
 import {
   getRun,
   getRunStatus,
+  getRunStatusAndAnswers,
   listUnfinishedRuns,
   reconcileRunWithQuiz,
   resetRun,
@@ -110,13 +111,22 @@ describe("quiz repository", () => {
 describe("run repository", () => {
   test("saveAnswer creates the Run and getRunStatus reports in-progress X of Y", async () => {
     expect(await getRunStatus("library", sampleQuiz)).toEqual({ kind: "none" });
+    expect(await getRunStatusAndAnswers("library", sampleQuiz)).toEqual({
+      status: { kind: "none" },
+      answers: {},
+    });
 
-    await saveAnswer("library", sampleQuiz, "q-one", await progressFor(sampleQuiz.questions[0]!));
+    const savedProgress = await progressFor(sampleQuiz.questions[0]!);
+    await saveAnswer("library", sampleQuiz, "q-one", savedProgress);
 
     expect(await getRunStatus("library", sampleQuiz)).toEqual({
       kind: "in-progress",
       answered: 1,
       total: 2,
+    });
+    expect(await getRunStatusAndAnswers("library", sampleQuiz)).toEqual({
+      status: { kind: "in-progress", answered: 1, total: 2 },
+      answers: { "q-one": savedProgress },
     });
   });
 

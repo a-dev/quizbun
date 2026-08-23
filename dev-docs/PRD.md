@@ -239,17 +239,31 @@ Page content must keep any unscoped `z-index` below `2`. `import-quiz-form.modul
 
 Private routes use **static shells plus query params** — no hash router, no `404.html` fallback. GitHub Pages serves only build-time files; a query param is the honest way to address content that exists only on the visitor's device.
 
-| Route                                                             | Kind             | Surface                                               |
-| ----------------------------------------------------------------- | ---------------- | ----------------------------------------------------- |
-| `/`                                                               | static + island  | Home: marketing + recently added + continue block     |
-| `/quizzes/`, `/quizzes/page/{n}/`                                 | static + island  | Catalog list (Tag filter, `?tags=` in URL), paginated |
-| `/quizzes/{id}/`                                                  | static, per quiz | Public quiz detail + player island                    |
-| `/library/`                                                       | static shell     | Library list (client-rendered from IndexedDB)         |
-| `/library/quiz/?id={id}`                                          | static shell     | Private quiz detail + player                          |
-| `/import/`                                                        | static + island  | Import page                                           |
-| `/docs/` (+ `standard/`, `prompt/`, `examples/`, `contributing/`) | static           | Docs surface                                          |
-| `/docs/examples/{file}.json`                                      | static endpoint  | Raw canonical example JSON (download)                 |
-| `/schema/quiz.v1.json`                                            | static asset     | Published JSON Schema                                 |
+| Route                                                             | Kind                  | Surface                                               |
+| ----------------------------------------------------------------- | --------------------- | ----------------------------------------------------- |
+| `/`                                                               | static + island       | Home: marketing + recently added + continue block     |
+| `/quizzes/`, `/quizzes/page/{n}/`                                 | static + island       | Catalog list (Tag filter, `?tags=` in URL), paginated |
+| `/quizzes/{id}/`                                                  | static, per quiz      | Public quiz detail, Question preview + player island  |
+| `/library/`                                                       | static shell, noindex | Library list (client-rendered from IndexedDB)         |
+| `/library/quiz/?id={id}`                                          | static shell, noindex | Private quiz detail + player                          |
+| `/import/`                                                        | static + island       | Import page                                           |
+| `/docs/` (+ `standard/`, `prompt/`, `examples/`, `contributing/`) | static                | Docs surface                                          |
+| `/docs/examples/{file}.json`                                      | static endpoint       | Raw canonical example JSON (download)                 |
+| `/schema/quiz.v1.json`                                            | static asset          | Published JSON Schema                                 |
+
+The sitemap omits both Library shells and `/quizzes/page/1/`. The duplicate
+page 1 URL canonicals to `/quizzes/`; later Catalog pages remain
+self-canonical. Library shells also emit `noindex`, because their useful
+content exists only in IndexedDB. The project-level `public/robots.txt` is not
+served from the `github.io` origin root and crawlers therefore do not read it;
+the root 404 means "allow all", so this does not block crawling.
+
+**Player links carry `rel="nofollow"`.** Both the Question preview links and
+the static Start stand-in target the page they sit on under a `?mode=` query
+param — same HTML, canonicalling back to the clean URL. The words they buy are
+their own anchor text, already indexed in place, so following ~1,737 such URLs
+would only spend the scarce crawl budget of a shared free host. They stay real
+`<a href>` elements: deep-linkable, copyable, and cmd-clickable.
 
 ### Home and the Catalog (the split)
 
@@ -276,7 +290,7 @@ The player is the heart of the loop, hosted identically on the public `/quizzes/
 
 - **Import (`/import/`):** one `<textarea>` is the single input surface — file upload and drag-and-drop just fill it. Parse JSON → validate against the Zod schema → on failure render the formatter output verbatim (path-precise, ordered, copyable as one block; JSON syntax errors get the same human-readable treatment) with the textarea still editable → on success preview (title, question count, tags) and save. An `id` collision triggers the explicit replace-or-cancel dialog, stating what will happen to Progress; replace runs the reconciliation above.
 - **Library (`/library/`):** a static shell whose island lists quizzes from IndexedDB — list, import, open, **Export** (the stored Quiz JSON exactly as imported; Progress is never exported), delete (confirms; cascades the Run), and the Tag filter (the same data-source-injected component the Catalog uses — it never knows about IndexedDB).
-- **Quiz detail** (shared by public and private surfaces) hosts title, description, tags, author, question count, Export, Reset progress, and a **state-aware primary action** driven by Run status: **Start** (no Run) / **Continue — X of Y answered** (in progress) / **See summary** + **Retake** (finished). Activating it swaps the player in on the same route — no navigation. Reset progress and Retake are the same underlying operation (delete the saved Run).
+- **Quiz detail** (shared by public and private surfaces) hosts title, description, tags, author, question count, Export, Reset progress, and a **state-aware primary action** driven by Run status: **Start** (no Run) / **Continue — X of Y answered** (in progress) / **See summary** + **Retake** (finished). Because those labels need a Run status only IndexedDB can supply, a static **Start** stand-in (`DetailActionsFallback`) holds the slot through SSR and the first render, so the primary action is in the static HTML and works with JavaScript disabled. Below the actions, an SSR-visible ordered preview lists every Question title with its position and a neutral/correct/incorrect outcome; each title is a deep link that opens that Question in the player while preserving normal modified-click behavior. The preview may show anything the player already shows before submit: titles yes, descriptions optionally, Options and Explanations never. Activating the primary action swaps the player in on the same route — no navigation. Reset progress and Retake are the same underlying operation (delete the saved Run).
 
 ## 6. Public catalog and contribution pipeline
 
@@ -293,7 +307,7 @@ The player is the heart of the loop, hosted identically on the public `/quizzes/
 Tests run on **Vitest**, in two in-repo lanes plus a separate end-to-end lane:
 
 - **Unit** (`.spec.ts`, Node environment) and **component** (`.test.tsx`, real Chromium via `vitest-browser-react`) projects under one `vitest.config.ts`. The Standard's fixture-based `valid/`/`invalid/` set covers every media shape and error message. Content-hash tests prove that media changes and explicit default placement invalidate Progress. Routing tests cover remote and base-aware Image resolution. Public-profile tests cover remote sources, missing and orphan assets, orphan folders, invalid filenames, and the 500 KB cap. Component tests cover placement filtering, Image source resolution, caption tier rendering, Image failure fallback, and both the exact iframe created by the Video facade and the focus move onto it, without loading YouTube. `astro-quiz-assets.spec.ts` pins the asset-route parser: base handling, and the encoded-traversal, nested-path, and bad-pattern rejections that keep the dev middleware off the filesystem.
-- **End-to-end** (`e2e/`, `.e2e.ts` suffix) on **Playwright**, driven against the static `astro preview` build with **relative** navigation. Library journeys seed IndexedDB directly via `e2e/fixtures/seed.ts`; the import journey is the one that exercises the real UI; Catalog journeys need no seeding because public quizzes ship in `dist/`. Each test gets a fresh browser context (empty IndexedDB + localStorage). **Catalog specs must stay content-agnostic**: derive Tags, titles, and page membership from the rendered page (and `QUIZZES_PER_PAGE` from `@/shared/lib/routing`) rather than naming quizzes, because every added quiz shifts the alphabetical order and thus which titles land on which page. Pinning a quiz by URL is fine when the journey needs one (`e2e/player.e2e.ts`). The core journeys are covered: import→run→finish, Catalog browse/filter, all Question types, resume, Library management, Page-size re-chunking, Content-hash invalidation, Catalog Image delivery, post-submit media reveal, the unloaded YouTube facade, keyboard/phone/theme passes, install metadata, absence of any service worker, and durability-notice dismissal. The component lane covers an Image load failure swapping to the alt-text placeholder. One optional deploy-fidelity spec (base-path deep links under `GITHUB_PAGES=true`) remains open.
+- **End-to-end** (`e2e/`, `.e2e.ts` suffix) on **Playwright**, driven against the static `astro preview` build with **relative** navigation. The lane needs a **root-base** `dist/`: its `baseURL` carries no `/quizbun` prefix, so an e2e run against a `GITHUB_PAGES=true` build fails on 404s throughout. Rebuild before switching between the two. Library journeys seed IndexedDB directly via `e2e/fixtures/seed.ts`; the import journey is the one that exercises the real UI; Catalog journeys need no seeding because public quizzes ship in `dist/`. Each test gets a fresh browser context (empty IndexedDB + localStorage). **Catalog specs must stay content-agnostic**: derive Tags, titles, and page membership from the rendered page (and `QUIZZES_PER_PAGE` from `@/shared/lib/routing`) rather than naming quizzes, because every added quiz shifts the alphabetical order and thus which titles land on which page. Pinning a quiz by URL is fine when the journey needs one (`e2e/player.e2e.ts`). The core journeys are covered: import→run→finish, Catalog browse/filter, all Question types, resume, Library management, Page-size re-chunking, Content-hash invalidation, Catalog Image delivery, post-submit media reveal, the unloaded YouTube facade, Question-preview deep links (item N opens Question N), keyboard/phone/theme passes, install metadata, absence of any service worker, and durability-notice dismissal. The component lane covers an Image load failure swapping to the alt-text placeholder. One optional deploy-fidelity spec (base-path deep links under `GITHUB_PAGES=true`) remains open.
 
 **CI** is a single `.github/workflows/ci.yml`. Its check set: `css:dts` (regenerate CSS Module typings so the typecheck sees fresh class names), `typecheck`, `check:astro` (`astro check`, covering `.astro` template diagnostics `tsc` doesn't see), the unit and browser-component Vitest suites (`bun run test`, with Chromium installed in CI), `check` (oxlint + oxfmt with import sorting), `stylelint`, `validate:docs-examples`, `validate:public-quizzes`, JSON Schema and install-icon drift checks, `astro build`, and a `dist/` base-path guard (`scripts/check-dist-base-paths.sh`) covering HTML and the web app manifest. A `deploy` job (`GITHUB_PAGES=true bun run build` → upload → `actions/deploy-pages`) gates on the checks passing.
 

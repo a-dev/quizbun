@@ -2,12 +2,14 @@ import { useCallback, useEffect, useState } from "react";
 
 import { messageFromError } from "@/shared/lib/errors";
 import type { Quiz } from "@/shared/lib/quiz";
-import { getRunStatus, reconcileRunWithQuiz, resetRun } from "@/shared/lib/storage";
-import type { RunSource, RunStatus } from "@/shared/lib/storage";
+import { getRunStatusAndAnswers, reconcileRunWithQuiz, resetRun } from "@/shared/lib/storage";
+import type { QuestionProgress, RunSource, RunStatus } from "@/shared/lib/storage";
 
 export interface RunStatusController {
   /** `undefined` until the first load resolves — render a loading state meanwhile. */
   status: RunStatus | undefined;
+  /** `undefined` through SSR and the first client render; then the saved per-Question Progress. */
+  answers: Record<string, QuestionProgress> | undefined;
   /** Last load or mutation error, if any. */
   error: string | undefined;
   /** Re-read the Run from storage (e.g. after returning from the player). */
@@ -26,6 +28,7 @@ export interface RunStatusController {
  */
 export function useRunStatus(source: RunSource, quiz: Quiz): RunStatusController {
   const [status, setStatus] = useState<RunStatus | undefined>(undefined);
+  const [answers, setAnswers] = useState<Record<string, QuestionProgress> | undefined>(undefined);
   const [error, setError] = useState<string | undefined>(undefined);
 
   useEffect(() => {
@@ -35,8 +38,11 @@ export function useRunStatus(source: RunSource, quiz: Quiz): RunStatusController
       try {
         if (source === "catalog") await reconcileRunWithQuiz(source, quiz);
 
-        const next = await getRunStatus(source, quiz);
-        if (!cancelled) setStatus(next);
+        const next = await getRunStatusAndAnswers(source, quiz);
+        if (!cancelled) {
+          setStatus(next.status);
+          setAnswers(next.answers);
+        }
       } catch (loadError) {
         if (!cancelled) setError(messageFromError(loadError));
       }
@@ -49,7 +55,9 @@ export function useRunStatus(source: RunSource, quiz: Quiz): RunStatusController
 
   const refresh = useCallback(async () => {
     try {
-      setStatus(await getRunStatus(source, quiz));
+      const next = await getRunStatusAndAnswers(source, quiz);
+      setStatus(next.status);
+      setAnswers(next.answers);
     } catch (refreshError) {
       setError(messageFromError(refreshError));
     }
@@ -61,7 +69,9 @@ export function useRunStatus(source: RunSource, quiz: Quiz): RunStatusController
     try {
       // Reset progress and Retake share this: replace the Run, no archive.
       await resetRun(source, quiz.id);
-      setStatus(await getRunStatus(source, quiz));
+      const next = await getRunStatusAndAnswers(source, quiz);
+      setStatus(next.status);
+      setAnswers(next.answers);
       return true;
     } catch (resetError) {
       setError(messageFromError(resetError));
@@ -69,5 +79,5 @@ export function useRunStatus(source: RunSource, quiz: Quiz): RunStatusController
     }
   }, [quiz, source]);
 
-  return { status, error, refresh, reset };
+  return { status, answers, error, refresh, reset };
 }

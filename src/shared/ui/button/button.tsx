@@ -47,6 +47,7 @@ export function Button({ children, variant = "primary", size = "m", className, .
 type LinkAsButtonProps = Omit<Props, "onClick" | "aria-current"> & {
   href: string;
   target?: "_blank";
+  rel?: string;
   onClick?: MouseEventHandler<HTMLAnchorElement>;
   "aria-current"?: AriaAttributes["aria-current"];
   "aria-label"?: string;
@@ -59,6 +60,7 @@ export function LinkAsButton({
   size,
   href,
   target,
+  rel,
   disabled,
   onClick,
   "aria-current": ariaCurrent,
@@ -68,6 +70,7 @@ export function LinkAsButton({
     <a
       href={href}
       target={target}
+      rel={rel}
       className={cx(styles.root, !!size && SIZE_CLASS[size], VARIANT_CLASS[variant], className)}
       aria-current={ariaCurrent}
       aria-disabled={disabled || undefined}

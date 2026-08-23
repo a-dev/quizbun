@@ -3,7 +3,7 @@ import type { GetStaticPaths } from "astro";
 import Layout from "@/app/layout.astro";
 import { loadPublicQuizzes } from "@/shared/lib/content";
 import type { PublicQuizSummary, TagCount } from "@/shared/lib/content";
-import { QUIZZES_PER_PAGE } from "@/shared/lib/routing";
+import { QUIZZES_PER_PAGE, withBase } from "@/shared/lib/routing";
 import { QuizzesCatalog } from "@/_pages/quizzes";
 import { layout } from "#styles";
 
@@ -30,6 +30,9 @@ const { page, summaries, tags } = Astro.props;
 <Layout
   title={`Quizzes, page ${page.currentPage} · Quizbun`}
   description="Browse the public Quizbun Catalog and filter explanation-first quizzes by Tag."
+  canonical={
+    page.currentPage === 1 ? new URL(withBase("quizzes/"), Astro.site ?? Astro.url) : undefined
+  }
 >
   <header class={layout.section}>
     <h1>Quizzes</h1>
