@@ -3,7 +3,7 @@
 // (browser, OS installer), so a drifted copy surfaces as a mismatched install
 // experience rather than a build error — hence one source. The hand-authored
 // install icons in `public/icons/` are a third copy that no code can reach; see
-// dev-docs/storage-durability-plan.md §9.
+// SPEC.md §3, "Storage durability."
 
 export const SITE_NAME = "Quizbun";
 

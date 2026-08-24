@@ -58,7 +58,7 @@ function QuizDetailHeaderComponent({ quiz, runStatus }: QuizDetailHeaderProps) {
           {quiz.questions.length} {quiz.questions.length === 1 ? "question" : "questions"}
         </span>
         {quiz.author !== undefined && <> · by {quiz.author}</>}
-        {/* Progress lives in the header meta, not the button label (idea.md). */}
+        {/* Progress lives in the header meta, not the button label (description.md). */}
         {runStatus !== undefined && runStatus.kind !== "none" && runStatus.answered > 0 && (
           <div className={styles.progress} style={quizTransitionStyle("progress", quiz.id)}>
             {`${runStatus.answered} of ${runStatus.total} answered`}

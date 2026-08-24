@@ -1,7 +1,7 @@
 import type { PlayerUrlState } from "@/shared/lib/routing";
 
 /**
- * Detail and player share one route (PRD §5): activating the primary action
+ * Detail and player share one route (SPEC.md §4): activating the primary action
  * swaps the player in as in-page state instead of navigating. `Surface` is
  * which of the two the detail feature currently shows. It is always *derived*
  * from the URL state, never stored separately — the URL is the single source

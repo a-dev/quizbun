@@ -419,7 +419,9 @@
           {
             "if": {
               "properties": {
-                "kind": { "const": "rule" }
+                "kind": {
+                  "const": "rule"
+                }
               }
             },
             "then": {
@@ -442,5 +444,26 @@
         "type": "string"
       }
     }
-  }
+  },
+  "allOf": [
+    {
+      "$comment": "Mechanical enforcement checks shared modules against their recorded public class list.",
+      "if": {
+        "required": ["enforcement"]
+      },
+      "then": {
+        "properties": {
+          "sharedApi": {
+            "properties": {
+              "modules": {
+                "items": {
+                  "required": ["name", "path", "layer", "publicClasses"]
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
 }

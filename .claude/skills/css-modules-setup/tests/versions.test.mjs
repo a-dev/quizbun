@@ -40,3 +40,26 @@ test("package, methodology, schema, adapter, and minimum versions share one cont
     );
   }
 });
+
+test("the published schema requires every conditional field the validator enforces", async () => {
+  const schema = await json("../assets/css-modules.schema.json");
+  const conditionals = schema.allOf ?? [];
+
+  // validateProfile rejects enforcement without publicClasses. The schema ships
+  // beside the profile so an editor catches that before a script does, so the
+  // two must agree on it.
+  const enforcementRule = conditionals.find((entry) => entry.if?.required?.includes("enforcement"));
+  assert.ok(enforcementRule, "schema must condition on the enforcement field");
+  assert.deepEqual(enforcementRule.then.properties.sharedApi.properties.modules.items.required, [
+    "name",
+    "path",
+    "layer",
+    "publicClasses",
+  ]);
+
+  const modules = schema.properties.sharedApi.properties.modules.items;
+  assert.ok(
+    !modules.required.includes("publicClasses"),
+    "publicClasses stays optional without enforcement",
+  );
+});

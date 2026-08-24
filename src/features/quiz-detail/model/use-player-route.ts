@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useSyncExternalStore } from "react";
 
 import type { Quiz } from "@/shared/lib/quiz";
-import { parsePlayerUrlState, updatePlayerUrlSearch } from "@/shared/lib/routing";
+import { parsePlayerUrlState, questionAnchorId, updatePlayerUrlSearch } from "@/shared/lib/routing";
 import type { PlayerUrlState } from "@/shared/lib/routing";
 import { withViewTransition } from "@/shared/lib/view-transition";
 
@@ -46,7 +46,11 @@ function getServerSearchSnapshot(): string {
 
 function writeHistory(method: "push" | "replace", state: PlayerUrlState): void {
   const search = updatePlayerUrlSearch(window.location.search, state);
-  const url = `${window.location.pathname}${search}${window.location.hash}`;
+  const hash =
+    state.mode === "run" && state.questionId !== undefined
+      ? `#${questionAnchorId(state.questionId)}`
+      : "";
+  const url = `${window.location.pathname}${search}${hash}`;
 
   if (method === "push") {
     window.history.pushState(window.history.state, "", url);
@@ -98,7 +102,8 @@ export function usePlayerRoute(quiz: Quiz): PlayerRoute {
   const startHref = useMemo(() => updatePlayerUrlSearch(search, { mode: "run" }), [search]);
 
   const questionHref = useCallback(
-    (questionId: string) => updatePlayerUrlSearch(search, { mode: "run", questionId }),
+    (questionId: string) =>
+      `${updatePlayerUrlSearch(search, { mode: "run", questionId })}#${questionAnchorId(questionId)}`,
     [search],
   );
 

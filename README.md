@@ -18,4 +18,4 @@ The installed skill includes the Quiz Object Standard authoring contract and a d
 ## Documentation
 
 - Public quiz author and Catalog contributor docs live in [`docs/`](docs/).
-- Developer planning and architecture docs live in [`dev-docs/`](dev-docs/).
+- Maintainer product and architecture decisions live in [`SPEC.md`](SPEC.md).

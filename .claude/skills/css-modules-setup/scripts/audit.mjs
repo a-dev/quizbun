@@ -543,14 +543,24 @@ export async function auditProject({
     ["alias.bare", profile.alias.bare],
     ["alias.subpath", profile.alias.subpath],
   ]) {
+    // Match the alias as a complete quoted key or value. A bare substring search
+    // would let "#styles/*" satisfy "#styles" and hide a missing bare mapping.
+    const declared = new RegExp(`["']${escapeRegExp(alias)}["']`).test(staticConfigText);
     findings.push(
-      staticConfigText.includes(alias)
-        ? finding(id, "aligned", alias)
-        : finding(
+      declared
+        ? finding(
             id,
             "not-verifiable",
-            `Alias is not statically visible: ${alias}`,
+            `Alias is declared but resolution is not statically provable: ${alias}`,
             undefined,
+            undefined,
+            profile.commands["css:verify"] ?? profile.commands["css:types"],
+          )
+        : finding(
+            id,
+            "missing",
+            `Alias is not declared in package, TypeScript, or build configuration: ${alias}`,
+            alias,
             undefined,
             profile.commands["css:verify"] ?? profile.commands["css:types"],
           ),
@@ -560,7 +570,7 @@ export async function auditProject({
   const stylesRoot = resolveInside(resolvedRoot, profile.stylesRoot);
   const relativeGlobal = path.relative(stylesRoot, globalPath).split(path.sep).join("/");
   const globalSpecifier = `${profile.alias.bare}/${relativeGlobal}`;
-  const sourceFiles = await walkSources(path.join(appRoot, "src"));
+  const sourceFiles = await walkSources(appRoot);
   let globalImportCount = 0;
   for (const sourceFile of sourceFiles) {
     const source = await readText(sourceFile);
@@ -646,9 +656,7 @@ export async function auditProject({
         : finding("colors.semantic-mapping", "missing", "No light-dark semantic mapping found"),
     );
 
-    const moduleFiles = await walk(path.join(appRoot, "src"), (filePath) =>
-      filePath.endsWith(".module.css"),
-    );
+    const moduleFiles = await walk(appRoot, (filePath) => filePath.endsWith(".module.css"));
     const paletteViolations = [];
     const themeSelectorViolations = [];
     const themeSelector = new RegExp(
@@ -670,40 +678,75 @@ export async function auditProject({
       }
     }
 
+    // An empty scan proves nothing; only a scan that actually read component
+    // modules may report these boundaries as aligned.
+    const scannedModules = moduleFiles.length > 0;
     findings.push(
-      paletteViolations.length === 0
-        ? finding("colors.palette-boundary", "aligned", "Component modules avoid palette tokens")
-        : finding(
+      !scannedModules
+        ? finding(
             "colors.palette-boundary",
-            "drifted",
-            "Component modules consume primitive palette tokens",
-            "semantic color roles only",
-            paletteViolations,
-          ),
+            "not-verifiable",
+            `No component modules were found under ${profile.appRoot}`,
+            undefined,
+            undefined,
+            profile.commands["css:check"] ?? profile.commands["css:types"],
+          )
+        : paletteViolations.length === 0
+          ? finding("colors.palette-boundary", "aligned", "Component modules avoid palette tokens")
+          : finding(
+              "colors.palette-boundary",
+              "drifted",
+              "Component modules consume primitive palette tokens",
+              "semantic color roles only",
+              paletteViolations,
+            ),
     );
     findings.push(
-      themeSelectorViolations.length === 0
+      !scannedModules
         ? finding(
             "colors.theme-ownership",
-            "aligned",
-            "Component modules do not own theme selectors",
+            "not-verifiable",
+            `No component modules were found under ${profile.appRoot}`,
+            undefined,
+            undefined,
+            profile.commands["css:check"] ?? profile.commands["css:types"],
           )
-        : finding(
-            "colors.theme-ownership",
-            "drifted",
-            "Component modules contain the application theme selector",
-            profile.colorTokens.themeOwner,
-            themeSelectorViolations,
-          ),
+        : themeSelectorViolations.length === 0
+          ? finding(
+              "colors.theme-ownership",
+              "aligned",
+              "Component modules do not own theme selectors",
+            )
+          : finding(
+              "colors.theme-ownership",
+              "drifted",
+              "Component modules contain the application theme selector",
+              profile.colorTokens.themeOwner,
+              themeSelectorViolations,
+            ),
     );
   }
 
-  const commandEntries = Object.entries(profile.commands);
+  // css:generate and css:types are guaranteed by profile validation; the optional
+  // CSS-specific static and runtime checks are the ones worth reporting on.
+  const optionalCommands = ["css:check", "css:verify"].filter((key) => profile.commands[key]);
   findings.push(
-    commandEntries.length > 0 &&
-      commandEntries.every(([, command]) => typeof command === "string" && command.length > 0)
-      ? finding("commands.profile", "aligned", `${commandEntries.length} commands recorded`)
-      : finding("commands.profile", "missing", "No usable CSS-harness commands recorded"),
+    optionalCommands.length === 2
+      ? finding(
+          "commands.profile",
+          "aligned",
+          "CSS-specific static and runtime checks are recorded",
+        )
+      : finding(
+          "commands.profile",
+          "not-verifiable",
+          `No recorded CSS-specific ${["css:check", "css:verify"]
+            .filter((key) => !profile.commands[key])
+            .join(" or ")} command`,
+          ["css:check", "css:verify"],
+          optionalCommands,
+          "node .agents/css-modules-harness/scripts/check.mjs --root . --run-declarations",
+        ),
   );
 
   const ciFiles = await collectCiFiles(resolvedRoot);
@@ -714,43 +757,52 @@ export async function auditProject({
   } else {
     const generateCommand = profile.commands["css:generate"];
     const typesCommand = profile.commands["css:types"];
-    const matchingFile = ciFiles.find(
-      ({ text }) => text.includes(generateCommand) || text.includes(typesCommand),
+    // A repository may split its workflows; one file running both commands in the
+    // right order satisfies the contract, so every candidate is evaluated.
+    const evaluations = ciFiles.map(({ path: filePath, text }) => {
+      const generateIndex = text.indexOf(generateCommand);
+      const typesIndex = text.indexOf(typesCommand);
+      return {
+        path: filePath,
+        generateIndex,
+        typesIndex,
+        ordered: generateIndex >= 0 && typesIndex > generateIndex,
+      };
+    });
+    const orderedFile = evaluations.find(({ ordered }) => ordered);
+    const reversedFile = evaluations.find(
+      ({ generateIndex, typesIndex }) => generateIndex >= 0 && typesIndex >= 0,
     );
 
-    if (!matchingFile) {
+    if (orderedFile) {
+      findings.push(
+        finding(
+          "ci.css-order",
+          "aligned",
+          `${path.relative(resolvedRoot, orderedFile.path)} generates declarations before typechecking`,
+        ),
+      );
+    } else if (reversedFile) {
       findings.push(
         finding(
           "ci.css-order",
           "drifted",
-          "CI exists but does not run the recorded CSS generation and type commands",
+          "CI must run the recorded CSS generation command before the CSS type command",
           [generateCommand, typesCommand],
-          [],
+          [typesCommand, generateCommand],
         ),
       );
     } else {
-      const generateIndex = matchingFile.text.indexOf(generateCommand);
-      const typesIndex = matchingFile.text.indexOf(typesCommand);
-      const ordered = generateIndex >= 0 && typesIndex > generateIndex;
       findings.push(
-        ordered
-          ? finding(
-              "ci.css-order",
-              "aligned",
-              `${path.relative(resolvedRoot, matchingFile.path)} generates declarations before typechecking`,
-            )
-          : finding(
-              "ci.css-order",
-              "drifted",
-              "CI must run the recorded CSS generation command before the CSS type command",
-              [generateCommand, typesCommand],
-              matchingFile.text.includes(typesCommand) &&
-                matchingFile.text.includes(generateCommand)
-                ? [typesCommand, generateCommand]
-                : [generateCommand, typesCommand].filter((command) =>
-                    matchingFile.text.includes(command),
-                  ),
-            ),
+        finding(
+          "ci.css-order",
+          "drifted",
+          "No CI file runs the recorded CSS generation command before the CSS type command",
+          [generateCommand, typesCommand],
+          [generateCommand, typesCommand].filter((command) =>
+            ciFiles.some(({ text }) => text.includes(command)),
+          ),
+        ),
       );
     }
   }

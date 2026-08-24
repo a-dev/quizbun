@@ -8,6 +8,11 @@ export interface PlayerUrlState {
 const MODE_PARAM = "mode";
 const QUESTION_PARAM = "question";
 
+/** DOM id for a Question card and the matching URL fragment. */
+export function questionAnchorId(questionId: string): string {
+  return `question-${questionId}`;
+}
+
 export function parsePlayerUrlState(
   search: string,
   availableQuestionIds: readonly string[],

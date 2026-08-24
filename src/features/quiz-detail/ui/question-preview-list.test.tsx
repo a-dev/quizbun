@@ -61,7 +61,7 @@ describe("QuestionPreviewList", () => {
       <QuestionPreviewList
         quiz={quiz}
         answers={answers}
-        questionHref={(questionId) => `?mode=run&question=${questionId}`}
+        questionHref={(questionId) => `?mode=run&question=${questionId}#question-${questionId}`}
         onQuestionSelect={() => undefined}
       />,
     );
@@ -73,9 +73,11 @@ describe("QuestionPreviewList", () => {
     await expect.element(screen.getByText("0.1 + 0.2", { exact: true })).toBeInTheDocument();
 
     const firstQuestion = screen.getByRole("link", { name: "What is 0.1 + 0.2?" });
-    expect(firstQuestion.element().getAttribute("href")).toBe("?mode=run&question=q-one");
+    expect(firstQuestion.element().getAttribute("href")).toBe(
+      "?mode=run&question=q-one#question-q-one",
+    );
     // The target is this same page under a query param: crawling it buys
-    // nothing and the anchor text is already indexed here (PRD §5).
+    // nothing and the anchor text is already indexed here (SPEC.md §4).
     expect(firstQuestion.element().getAttribute("rel")).toBe("nofollow");
   });
 
@@ -85,7 +87,7 @@ describe("QuestionPreviewList", () => {
       <QuestionPreviewList
         quiz={quiz}
         answers={undefined}
-        questionHref={(questionId) => `?mode=run&question=${questionId}`}
+        questionHref={(questionId) => `?mode=run&question=${questionId}#question-${questionId}`}
         onQuestionSelect={onQuestionSelect}
       />,
     );

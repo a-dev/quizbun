@@ -6,14 +6,13 @@ description: >
   shared, creating or moving a slice, adding an index.ts public API, placing a
   test or story, or reviewing structure for FSD compliance. This is the local
   overlay; the official methodology is the feature-sliced-design skill, and
-  the project authority for the live layer/slice inventory is
-  dev-docs/PRD.md §4.
+  the project authority for the live layer/slice inventory is SPEC.md §3.
 ---
 
 # FSD in Quizbun
 
 Official methodology: the `feature-sliced-design` skill. Current layers and
-live slices: `dev-docs/PRD.md` §4. Static Astro 6 output with React 19
+live slices: `SPEC.md` §3. Static Astro 7 output with React 19
 islands — no SPA router, no providers.
 
 ## Layers (import only downward)

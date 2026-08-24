@@ -8,8 +8,8 @@ test("verifies cascade, composition, semantic themes, DOM state, and accessibili
 
   const button = page.getByRole("button", { name: "Save" });
   await expect(button).toHaveAttribute("aria-pressed", "false");
-  await expect(button).not.toHaveAttribute("data-loading", "");
-  await expect(button).not.toHaveAttribute("aria-busy", "true");
+  await expect(button).not.toHaveAttribute("data-loading");
+  await expect(button).not.toHaveAttribute("aria-busy");
   await expect(button).toHaveClass(/caller-class/);
   await expect(button).toHaveCSS("--_progress", "0.6");
 

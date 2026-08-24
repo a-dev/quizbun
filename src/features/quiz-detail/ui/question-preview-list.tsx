@@ -58,14 +58,13 @@ export function QuestionPreviewList({
               <div aria-hidden="true" className={cx(styles.position, OUTCOME_CLASS[outcome])}>
                 {index + 1}
               </div>
-              {/* <span className={utils.visuallyHidden}>{OUTCOME_LABEL[outcome]}. </span> */}
-              {/* <span aria-hidden="true" className={cx(styles.outcome, OUTCOME_CLASS[outcome])} /> */}
+              <span className={utils.visuallyHidden}>{OUTCOME_LABEL[outcome]}. </span>
               <a
                 className={styles.link}
                 href={questionHref(question.id)}
                 // The words are already indexed here; the target serves the
                 // same HTML under a query param and only spends crawl budget
-                // (PRD §5). Real `href`, so deep-link and copy still work.
+                // (SPEC.md §4). Real `href`, so deep-link and copy still work.
                 rel="nofollow"
                 onClick={(event) => {
                   if (!shouldEnterInPlace(event)) return;

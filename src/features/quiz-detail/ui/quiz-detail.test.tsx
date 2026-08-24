@@ -77,7 +77,7 @@ describe("QuizDetail", () => {
 
     expect(html).toContain("Questions");
     expect(html).toContain("Not answered");
-    expect(html).toContain("?mode=run&amp;question=q-one");
+    expect(html).toContain("?mode=run&amp;question=q-one#question-q-one");
 
     // Duplicates of this page under a query param: linked for people, not for
     // crawlers — the Start stand-in plus one per Question.

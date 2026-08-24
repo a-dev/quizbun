@@ -195,3 +195,28 @@ test("Oxlint adapter supports warning-first adoption and documented exceptions",
     await rm(root, { recursive: true, force: true });
   }
 });
+
+test("a file Oxlint cannot parse fails even during warning-first adoption", async () => {
+  const root = await createFixture({
+    overrides: {
+      enforcement: { severity: "warning", privateBooleanAttributes: ["data-loading"] },
+    },
+  });
+
+  try {
+    await write(root, "src/broken.tsx", "export const broken = (=> {\n");
+    const result = await run(root);
+    const parseErrors = result.json.findings.filter(
+      ({ ruleId }) => ruleId === "oxlint/parse-error",
+    );
+
+    // A file that never parsed had no rule applied to it, so lowering the rule
+    // severity must not turn that into a passing run.
+    assert.equal(parseErrors.length, 1);
+    assert.equal(parseErrors[0].severity, "error");
+    assert.equal(result.json.status, "failed");
+    assert.equal(result.code, 1);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});

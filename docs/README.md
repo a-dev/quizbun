@@ -7,6 +7,6 @@ Keep this directory focused on:
 - The Quiz Object Standard: `standard.md`
 - The contributor guide: `contributing.md`
 - Canonical examples and the AI generation prompt: `examples/`
-- Product rationale that public authoring docs may cite: `idea.md`
+- Product rationale that public authoring docs may cite: `description.md`
 
-Developer planning, implementation notes, CSS architecture, and ADRs live in `dev-docs/`.
+Maintainer product and architecture decisions live in the root [`SPEC.md`](../SPEC.md).

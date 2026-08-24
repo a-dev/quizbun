@@ -50,6 +50,78 @@ function isGlobalClass(classNode) {
   return false;
 }
 
+// Pseudo-classes whose arguments are selector lists; a bare descendant type
+// hides inside them just as readily as at the top level.
+const SELECTOR_LIST_PSEUDOS = new Set([
+  ":is",
+  ":where",
+  ":not",
+  ":has",
+  ":matches",
+  ":any",
+  ":-moz-any",
+  ":-webkit-any",
+]);
+
+// :is(.a, .b) qualifies its compound with an owned class; :is(.a, h2) does not,
+// because it still matches a bare element. :not() never qualifies a compound.
+const CLASS_BEARING_PSEUDOS = new Set([":is", ":where", ":matches", ":any"]);
+
+function isSelectorListPseudo(node) {
+  return node.type === "pseudo" && SELECTOR_LIST_PSEUDOS.has(node.value.toLowerCase());
+}
+
+function compoundHasClass(compound) {
+  return compound.some((node) => {
+    if (node.type === "class") return true;
+    if (node.type !== "pseudo" || !CLASS_BEARING_PSEUDOS.has(node.value.toLowerCase())) {
+      return false;
+    }
+    const nested = node.nodes ?? [];
+    return (
+      nested.length > 0 &&
+      nested.every((selector) => (selector.nodes ?? []).some((child) => child.type === "class"))
+    );
+  });
+}
+
+// Walks one selector compound by compound. A type selector is only a finding
+// when it sits in a descendant compound that owns no class of its own.
+function inspectDescendantTypes(container, { ownedClassSeen, relationshipSeen }, report) {
+  let owned = ownedClassSeen;
+  let related = relationshipSeen;
+  let compound = [];
+
+  const flush = () => {
+    if (compound.length === 0) return;
+    const hasClass = compoundHasClass(compound);
+    for (const node of compound) {
+      if (node.type === "tag" && related && !hasClass) report(node);
+      if (isSelectorListPseudo(node)) {
+        for (const nested of node.nodes ?? []) {
+          inspectDescendantTypes(
+            nested,
+            { ownedClassSeen: owned, relationshipSeen: related && !hasClass },
+            report,
+          );
+        }
+      }
+    }
+    if (hasClass) owned = true;
+    compound = [];
+  };
+
+  for (const node of container.nodes ?? []) {
+    if (node.type === "combinator") {
+      flush();
+      if (owned) related = true;
+      continue;
+    }
+    compound.push(node);
+  }
+  flush();
+}
+
 const plugins = [
   plugin(
     "css-modules/class-pattern",
@@ -150,15 +222,12 @@ const plugins = [
       root.walkRules((rule) => {
         parseSelectors(rule, (selectors) => {
           selectors.each((selector) => {
-            let ownedClassSeen = false;
-            let relationshipSeen = false;
-            selector.each((node) => {
-              if (node.type === "class") ownedClassSeen = true;
-              if (node.type === "combinator" && ownedClassSeen) relationshipSeen = true;
-              if (node.type === "tag" && relationshipSeen) {
-                warn(rule, `Descendant type selector ${node.value} needs a local role class.`);
-              }
-            });
+            inspectDescendantTypes(
+              selector,
+              { ownedClassSeen: false, relationshipSeen: false },
+              (node) =>
+                warn(rule, `Descendant type selector ${node.value} needs a local role class.`),
+            );
           });
         });
       });

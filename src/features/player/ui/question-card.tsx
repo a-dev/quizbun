@@ -3,6 +3,7 @@ import { memo, useEffect, useId, useMemo, useRef } from "react";
 import { checkAnswer } from "@/shared/lib/quiz";
 import type { Question } from "@/shared/lib/quiz";
 import { renderMarkdownField } from "@/shared/lib/render";
+import { questionAnchorId } from "@/shared/lib/routing";
 import type { QuestionProgress, SubmittedAnswer } from "@/shared/lib/storage";
 import { Button } from "@/shared/ui/button";
 import { MarkdownRender } from "@/shared/ui/markdown";
@@ -81,10 +82,14 @@ export const QuestionCard = memo(function QuestionCard({
   }
 
   return (
-    // `data-question-number` is the per-Question anchor for e2e specs: the
-    // Question's global 1-based number, stable across pagination and Page-size
-    // re-chunking, unlike DOM order on the current page.
-    <div className={styles.root} data-question-number={index + 1}>
+    // `id` is the URL fragment target. `data-question-number` gives e2e specs
+    // the Question's global 1-based number, stable across pagination and
+    // Page-size re-chunking, unlike DOM order on the current page.
+    <div
+      id={questionAnchorId(question.id)}
+      className={styles.root}
+      data-question-number={index + 1}
+    >
       <div className={styles.number}>{index + 1}</div>
       <fieldset
         className={styles.fieldset}

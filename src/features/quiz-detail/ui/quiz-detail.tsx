@@ -42,7 +42,7 @@ export interface QuizDetailProps {
 
 /**
  * Source-agnostic detail surface for a single quiz. The two surfaces (detail
- * and the injected player) share one route (PRD §5): `usePlayerRoute` derives
+ * and the injected player) share one route (SPEC.md §4): `usePlayerRoute` derives
  * which to show from the URL, so activating the primary action never navigates.
  */
 export function QuizDetail({ quiz, source, backHref, backLabel, renderPlayer }: QuizDetailProps) {
@@ -86,7 +86,7 @@ export function QuizDetail({ quiz, source, backHref, backLabel, renderPlayer }: 
   }, [reset]);
 
   if (surface === "player") {
-    // The injected player swaps in here; the swap stays on this route (PRD §5).
+    // The injected player swaps in here; the swap stays on this route (SPEC.md §4).
     return renderPlayer({
       quiz,
       source,

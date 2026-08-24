@@ -449,17 +449,46 @@ test("template choices remain profile-driven", async () => {
     new URL("../assets/templates/global.css.template", import.meta.url),
     "utf8",
   );
-  const buttonTemplate = await readFile(
-    new URL("../assets/templates/reference-button.module.css.template", import.meta.url),
+  const paletteTemplate = await readFile(
+    new URL("../assets/templates/palette.css.template", import.meta.url),
+    "utf8",
+  );
+  const colorsTemplate = await readFile(
+    new URL("../assets/templates/colors.css.template", import.meta.url),
     "utf8",
   );
 
   assert.match(globalTemplate, /\{\{COLOR_SCHEME_BLOCK\}\}/);
   assert.doesNotMatch(globalTemplate, /data-theme/);
-  assert.match(buttonTemplate, /\{\{REFERENCE_BUTTON_COLOR_RULES\}\}/);
-  assert.match(buttonTemplate, /var\(--_progress\)/);
-  assert.match(buttonTemplate, /prefers-reduced-motion/);
-  assert.match(buttonTemplate, /forced-colors/);
+  assert.match(paletteTemplate, /\{\{PALETTE_TOKENS\}\}/);
+  assert.match(colorsTemplate, /\{\{SEMANTIC_COLOR_TOKENS\}\}/);
+  assert.doesNotMatch(paletteTemplate, /#[\da-f]{3,8}\b/i);
+  assert.doesNotMatch(colorsTemplate, /#[\da-f]{3,8}\b/i);
+});
+
+test("every bundled template placeholder has a renderer in the setup planner", async () => {
+  const templateRoot = new URL("../assets/templates/", import.meta.url);
+  const planner = await readFile(new URL("../scripts/setup.mjs", import.meta.url), "utf8");
+  const templates = (await readdir(templateRoot)).sort();
+
+  assert.ok(templates.length > 0);
+  for (const template of templates) {
+    const source = await readFile(new URL(template, templateRoot), "utf8");
+    const placeholders = new Set(
+      [...source.matchAll(/\{\{([A-Z0-9_]+)\}\}/g)].map(([, name]) => name),
+    );
+    assert.ok(placeholders.size > 0, `${template} has no placeholders and is not a template`);
+    assert.ok(
+      planner.includes(JSON.stringify(template)),
+      `${template} is never read by the setup planner`,
+    );
+    for (const placeholder of placeholders) {
+      assert.ok(
+        planner.includes(placeholder),
+        `${template} placeholder ${placeholder} has no renderer`,
+      );
+    }
+  }
 });
 
 test("reports profile paths that escape the project root", async () => {
@@ -571,5 +600,152 @@ test("distinguishes missing CI from a broken CSS command order", async () => {
   } finally {
     await rm(missingRoot, { recursive: true, force: true });
     await rm(brokenRoot, { recursive: true, force: true });
+  }
+});
+
+test("discovers sources through the recorded appRoot rather than a hardcoded src directory", async () => {
+  const root = await createFixture();
+
+  try {
+    // Move the whole application out of src/ without changing anything else.
+    await updateProfile(root, (profile) => {
+      profile.appRoot = ".";
+      profile.stylesRoot = "app/styles";
+      profile.globalStylesheet = "app/styles/global.css";
+      profile.sharedApi.entryPoint = "app/styles/index.ts";
+      profile.sharedApi.modules = [
+        {
+          name: "atoms",
+          export: "atoms",
+          path: "app/styles/atoms.module.css",
+          layer: "foundation",
+        },
+      ];
+      profile.layers.ownership = [{ glob: "app/styles/*.module.css", layer: "foundation" }];
+      profile.colorTokens = {
+        enabled: true,
+        paletteFiles: ["app/styles/palette.css"],
+        semanticFiles: ["app/styles/colors.css"],
+        themeOwner: "app/theme.ts",
+        themeAttribute: "data-theme",
+        modes: ["system", "light", "dark"],
+      };
+    });
+    await rm(path.join(root, "src"), { recursive: true, force: true });
+    await write(
+      root,
+      "app/styles/global.css",
+      '@layer foundation, components;\nhtml { color-scheme: light dark; }\nhtml[data-theme="light"] { color-scheme: light; }\nhtml[data-theme="dark"] { color-scheme: dark; }\n',
+    );
+    await write(root, "app/styles/palette.css", ":root { --palette-blue-500: blue; }\n");
+    await write(
+      root,
+      "app/styles/colors.css",
+      ":root { --color-action-bg: light-dark(var(--palette-blue-500), Canvas); }\n",
+    );
+    await write(
+      root,
+      "app/styles/atoms.module.css",
+      "@layer foundation { .stack { display: grid; } }\n",
+    );
+    await write(
+      root,
+      "app/styles/index.ts",
+      'export { default as atoms } from "./atoms.module.css";\n',
+    );
+    await write(root, "app/theme.ts", "export const themeOwner = true;\n");
+    await write(root, "app/main.tsx", 'import "#shared/global.css";\n');
+    await write(
+      root,
+      "app/card.module.css",
+      ':root { color: red; }\n[data-theme="dark"] .root { color: var(--palette-blue-500); }\n',
+    );
+
+    const result = await auditProject({ root });
+    const status = (id) => result.findings.find((finding) => finding.id === id)?.status;
+
+    assert.equal(status("styles.global-import"), "aligned");
+    assert.equal(status("colors.palette-boundary"), "drifted");
+    assert.equal(status("colors.theme-ownership"), "drifted");
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test("never reports a color boundary as aligned when no component module was scanned", async () => {
+  const root = await createFixture();
+
+  try {
+    await updateProfile(root, (profile) => {
+      profile.appRoot = "empty-app";
+      profile.colorTokens = {
+        enabled: true,
+        paletteFiles: ["src/styles/palette.css"],
+        semanticFiles: ["src/styles/colors.css"],
+        themeOwner: "src/theme.ts",
+        themeAttribute: "data-theme",
+        modes: ["system"],
+      };
+    });
+    await write(root, "src/styles/palette.css", ":root { --palette-blue-500: blue; }\n");
+    await write(
+      root,
+      "src/styles/colors.css",
+      ":root { --color-action-bg: light-dark(var(--palette-blue-500), Canvas); }\n",
+    );
+    await write(root, "src/theme.ts", "export const themeOwner = true;\n");
+    await write(root, "empty-app/placeholder.ts", "export const empty = true;\n");
+
+    const result = await auditProject({ root });
+    const boundary = (id) => result.findings.find((finding) => finding.id === id);
+
+    assert.equal(boundary("colors.palette-boundary")?.status, "not-verifiable");
+    assert.equal(boundary("colors.theme-ownership")?.status, "not-verifiable");
+    assert.ok(boundary("colors.palette-boundary")?.verifyCommand);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test("a declared subpath alias does not satisfy the bare alias", async () => {
+  const root = await createFixture();
+
+  try {
+    await write(
+      root,
+      "package.json",
+      JSON.stringify({ packageManager: "npm@11.0.0", imports: { "#shared/*": "./src/styles/*" } }),
+    );
+    await write(root, "tsconfig.json", JSON.stringify({ compilerOptions: { paths: {} } }));
+
+    const result = await auditProject({ root });
+    const status = (id) => result.findings.find((finding) => finding.id === id)?.status;
+
+    assert.equal(status("alias.bare"), "missing");
+    assert.equal(status("alias.subpath"), "not-verifiable");
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test("accepts the recorded CSS command order from any CI file", async () => {
+  const root = await createFixture({ ci: "broken" });
+
+  try {
+    // A second workflow runs the commands in the right order; one correct file
+    // satisfies the contract even when another mentions only one command.
+    await write(
+      root,
+      ".github/workflows/zz-css.yml",
+      "steps:\n  - run: npm run css:generate\n  - run: npm run css:types\n",
+    );
+
+    const result = await auditProject({ root });
+    const order = result.findings.find(({ id }) => id === "ci.css-order");
+
+    assert.equal(order?.status, "aligned");
+    assert.match(order?.detail ?? "", /zz-css\.yml/);
+  } finally {
+    await rm(root, { recursive: true, force: true });
   }
 });

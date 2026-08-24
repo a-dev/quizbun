@@ -77,6 +77,15 @@ function diagnosticLocation(diagnostic) {
   };
 }
 
+const CONFIGURED_RULE_IDS = new Set(oxlintRuleIds.map((id) => `css-modules/${id}`));
+
+// Warning-first adoption lowers the severity of the CSS Modules rules only. A
+// diagnostic Oxlint raises outside them means a file was never linted at all,
+// so it stays an error exactly as the ESLint adapter reports it.
+function severityFor(ruleId, selectedSeverity) {
+  return CONFIGURED_RULE_IDS.has(ruleId) ? selectedSeverity : "error";
+}
+
 function normalizeDiagnostics(payload, root, severity) {
   // Oxlint runs with the project root as cwd and may report either cwd-relative
   // or absolute file paths, so relative paths must resolve against root.
@@ -86,26 +95,32 @@ function normalizeDiagnostics(payload, root, severity) {
   const parsed = JSON.parse(payload || "[]");
   if (Array.isArray(parsed) && parsed.some((item) => Array.isArray(item.messages))) {
     return parsed.flatMap((result) =>
-      (result.messages ?? []).map((message) => ({
-        engine: "oxlint",
-        ruleId: ruleIdOf(message),
-        file: relativeToRoot(result.filePath),
-        line: message.line ?? 1,
-        column: message.column ?? 1,
-        message: message.message,
-        severity,
-      })),
+      (result.messages ?? []).map((message) => {
+        const ruleId = ruleIdOf(message);
+        return {
+          engine: "oxlint",
+          ruleId,
+          file: relativeToRoot(result.filePath),
+          line: message.line ?? 1,
+          column: message.column ?? 1,
+          message: message.message,
+          severity: severityFor(ruleId, severity),
+        };
+      }),
     );
   }
   const diagnostics = Array.isArray(parsed) ? parsed : (parsed.diagnostics ?? []);
-  return diagnostics.map((diagnostic) => ({
-    engine: "oxlint",
-    ruleId: ruleIdOf(diagnostic),
-    file: relativeToRoot(diagnostic.filename ?? diagnostic.filePath ?? root),
-    ...diagnosticLocation(diagnostic),
-    message: diagnostic.message,
-    severity,
-  }));
+  return diagnostics.map((diagnostic) => {
+    const ruleId = ruleIdOf(diagnostic);
+    return {
+      engine: "oxlint",
+      ruleId,
+      file: relativeToRoot(diagnostic.filename ?? diagnostic.filePath ?? root),
+      ...diagnosticLocation(diagnostic),
+      message: diagnostic.message,
+      severity: severityFor(ruleId, severity),
+    };
+  });
 }
 
 export async function checkWithOxlint({

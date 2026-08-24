@@ -30,7 +30,7 @@ export interface QuestionProgress {
 }
 
 /**
- * Run namespace: Catalog and Library are separate namespaces (idea.md), so a
+ * Run namespace: Catalog and Library are separate namespaces (description.md), so a
  * public quiz and a same-id private copy track Progress independently.
  */
 export type RunSource = "catalog" | "library";

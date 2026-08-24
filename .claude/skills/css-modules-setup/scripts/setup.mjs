@@ -78,7 +78,7 @@ function importSpecifier(fromFile, toFile) {
   return relative;
 }
 
-function colorInputs(profile, inputs) {
+async function colorInputs(profile, inputs) {
   if (!profile.colorTokens.enabled) {
     return { required: [], files: [], imports: "", colorScheme: "" };
   }
@@ -87,20 +87,39 @@ function colorInputs(profile, inputs) {
   const files = [];
   const palette = inputs.paletteFiles ?? {};
   const semantic = inputs.semanticFiles ?? {};
+  const paletteTemplate = await readTemplate("palette.css.template");
+  const semanticTemplate = await readTemplate("colors.css.template");
+
+  const renderTokens = (filePath, tokens, template, templateName, placeholder, inputKey) => {
+    if (typeof tokens !== "string" || tokens.trim().length === 0) {
+      required.push(`${inputKey}.${filePath}`);
+      return;
+    }
+    files.push({
+      path: filePath,
+      content: render(template, { [placeholder]: tokens.trim() }, templateName),
+    });
+  };
 
   for (const filePath of profile.colorTokens.paletteFiles) {
-    if (typeof palette[filePath] !== "string" || palette[filePath].trim().length === 0) {
-      required.push(`paletteFiles.${filePath}`);
-    } else {
-      files.push({ path: filePath, content: `${palette[filePath].trim()}\n` });
-    }
+    renderTokens(
+      filePath,
+      palette[filePath],
+      paletteTemplate,
+      "palette.css.template",
+      "PALETTE_TOKENS",
+      "paletteFiles",
+    );
   }
   for (const filePath of profile.colorTokens.semanticFiles) {
-    if (typeof semantic[filePath] !== "string" || semantic[filePath].trim().length === 0) {
-      required.push(`semanticFiles.${filePath}`);
-    } else {
-      files.push({ path: filePath, content: `${semantic[filePath].trim()}\n` });
-    }
+    renderTokens(
+      filePath,
+      semantic[filePath],
+      semanticTemplate,
+      "colors.css.template",
+      "SEMANTIC_COLOR_TOKENS",
+      "semanticFiles",
+    );
   }
   if (!profile.layers.order.includes(inputs.colorLayer)) {
     required.push("colorLayer");
@@ -161,7 +180,7 @@ async function renderBaseline(profile, inputs) {
     });
   }
 
-  const colors = colorInputs(profile, inputs);
+  const colors = await colorInputs(profile, inputs);
   requiredInputs.push(...colors.required);
   if (requiredInputs.length > 0) {
     return { requiredInputs: [...new Set(requiredInputs)].sort(), files: [] };
@@ -343,7 +362,7 @@ export async function planSetup({
     changes,
     conflicts,
     dependencies: [
-      ...(mode === "bootstrap" ? ["classix", "vite-css-modules"] : []),
+      ...(mode === "bootstrap" ? ["vite-css-modules"] : []),
       ...(profile.enforcement ? ENFORCEMENT_DEPENDENCIES : []),
     ],
     commands: Object.entries(storedProfile.commands).map(([id, command]) => ({ id, command })),
@@ -417,8 +436,15 @@ export function formatPlan(plan) {
 }
 
 function parseArgs(argv) {
-  const [mode, ...rest] = argv;
-  const options = { mode, root: process.cwd(), format: "human", apply: false };
+  const [first, ...rest] = argv;
+  const help = first === "--help" || first === "-h";
+  const options = {
+    mode: help ? undefined : first,
+    help,
+    root: process.cwd(),
+    format: "human",
+    apply: false,
+  };
 
   for (let index = 0; index < rest.length; index += 1) {
     const argument = rest[index];

@@ -39,12 +39,19 @@ test("Question preview opens the selected Question in the player", async ({ page
 
   const targetQuestion = questionLinks.last();
   const targetHref = await targetQuestion.getAttribute("href");
-  const targetQuestionId = new URL(targetHref!, page.url()).searchParams.get("question");
+  const targetUrl = new URL(targetHref!, page.url());
+  const targetQuestionId = targetUrl.searchParams.get("question");
+
+  expect(targetUrl.hash).toBe(`#question-${targetQuestionId}`);
 
   await targetQuestion.click();
 
-  await expect(page).toHaveURL(new RegExp(`question=${targetQuestionId}$`));
-  await expect(questionGroup(page, questionCount)).toBeVisible();
+  await expect(page).toHaveURL(
+    new RegExp(`question=${targetQuestionId}#question-${targetQuestionId}$`),
+  );
+  const targetGroup = questionGroup(page, questionCount);
+  await expect(targetGroup).toHaveAttribute("id", `question-${targetQuestionId}`);
+  await expect(targetGroup).toBeInViewport();
 });
 
 test("Catalog media resolves, Explanation media waits for submit, and Video stays behind its facade", async ({

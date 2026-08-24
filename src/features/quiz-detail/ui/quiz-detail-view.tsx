@@ -12,7 +12,7 @@ export interface QuizDetailViewProps {
   renderPlayer: QuizDetailProps["renderPlayer"];
 }
 /**
- * Library wrapper for `/library/quiz/?id={id}` (PRD §4): resolves the quiz
+ * Library wrapper for `/library/quiz/?id={id}` (SPEC.md §4): resolves the quiz
  * from IndexedDB by query param, then hosts the source-agnostic `QuizDetail`.
  * Catalog pages host the same component with build-time props instead.
  */
