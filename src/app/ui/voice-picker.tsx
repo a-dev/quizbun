@@ -53,6 +53,7 @@ export function VoicePicker() {
         value={selectedVoiceUri ?? OFF}
         onValueChange={(value) => selectVoice(value === OFF ? null : value)}
         scrollArrows
+        triggerProps={{ "aria-labelledby": labelId }}
       >
         {items.map((item) => (
           <Select.Item key={item.value} value={item.value}>

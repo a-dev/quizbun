@@ -35,6 +35,11 @@ type SelectProps<Value, Multiple extends boolean | undefined = false> = Omit<
   renderValue?: ComponentProps<typeof SelectPrimitive.Value>["children"];
   /** Show the scroll up/down arrows for an overflowing list. */
   scrollArrows?: boolean;
+  /** Accessible naming and description attributes for the combobox trigger. */
+  triggerProps?: Pick<
+    ComponentPropsWithRef<typeof SelectPrimitive.Trigger>,
+    "aria-describedby" | "aria-label" | "aria-labelledby"
+  >;
   sideOffset?: number;
   alignItemWithTrigger?: boolean;
   /** The `Select.Item`s, optionally wrapped in `Select.Group`. */
@@ -50,6 +55,7 @@ type SelectProps<Value, Multiple extends boolean | undefined = false> = Omit<
 function SelectRoot<Value, Multiple extends boolean | undefined = false>({
   size = "m",
   trigger,
+  triggerProps,
   renderValue,
   scrollArrows = false,
   sideOffset = 8,
@@ -64,6 +70,7 @@ function SelectRoot<Value, Multiple extends boolean | undefined = false>({
   return (
     <SelectPrimitive.Root<Value, Multiple> {...rootProps}>
       <SelectPrimitive.Trigger
+        {...triggerProps}
         className={cx(styles.trigger, SIZE_CLASS[size], classNames?.trigger)}
       >
         {customTrigger ?? (

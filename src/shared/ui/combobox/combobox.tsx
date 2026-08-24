@@ -23,7 +23,7 @@ export function Combobox<T extends ComboboxOptionValue>({
   label,
   placeholder,
   positioner = {
-    sideOffset: 12,
+    sideOffset: 4,
   },
   isClearable = true,
   disabled,
