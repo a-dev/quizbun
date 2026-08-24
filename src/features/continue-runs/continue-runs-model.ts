@@ -71,7 +71,7 @@ export function resolveContinueRuns({
 
 /**
  * Catalog quizzes live at a static prerendered path; Library quizzes share a
- * single static shell addressed by query param (PRD §4). Ids are
+ * single static shell addressed by query param (SPEC.md §4). Ids are
  * percent-encoded because they may contain `/` or spaces.
  */
 function runHrefPath(source: RunSource, quizId: string): string {

@@ -88,16 +88,33 @@ export async function resetRun(source: RunSource, quizId: string): Promise<void>
  * the button label.
  */
 export async function getRunStatus(source: RunSource, quiz: Quiz): Promise<RunStatus> {
+  return (await getRunStatusAndAnswers(source, quiz)).status;
+}
+
+/**
+ * The one derivation both detail reads share: status plus per-Question outcomes
+ * from a single IndexedDB read. An empty answer map distinguishes a loaded quiz
+ * with no Run from the controller's initial `undefined` state.
+ */
+export async function getRunStatusAndAnswers(
+  source: RunSource,
+  quiz: Quiz,
+): Promise<{ status: RunStatus; answers: Run["answers"] }> {
   const run = await getRun(source, quiz.id);
 
-  if (run === undefined) return { kind: "none" };
+  if (run === undefined) {
+    return { status: { kind: "none" }, answers: {} };
+  }
 
   const answered = Object.keys(run.answers).length;
 
   return {
-    kind: run.finishedAt === undefined ? "in-progress" : "finished",
-    answered,
-    total: quiz.questions.length,
+    status: {
+      kind: run.finishedAt === undefined ? "in-progress" : "finished",
+      answered,
+      total: quiz.questions.length,
+    },
+    answers: run.answers,
   };
 }
 

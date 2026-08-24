@@ -12,7 +12,8 @@ import { playerViewFromState } from "../model/player-route";
 import type { PlayerView } from "../model/player-route";
 import { usePlayerRoute } from "../model/use-player-route";
 import { useRunStatus } from "../model/use-run-status";
-import { DetailActions } from "./detail-actions";
+import { DetailActions, DetailActionsFallback } from "./detail-actions";
+import { QuestionPreviewList } from "./question-preview-list";
 import { QuizDetailHeader } from "./quiz-detail-header";
 import { ResetProgressDialog } from "./reset-progress-dialog";
 
@@ -41,12 +42,12 @@ export interface QuizDetailProps {
 
 /**
  * Source-agnostic detail surface for a single quiz. The two surfaces (detail
- * and the injected player) share one route (PRD §5): `usePlayerRoute` derives
+ * and the injected player) share one route (SPEC.md §4): `usePlayerRoute` derives
  * which to show from the URL, so activating the primary action never navigates.
  */
 export function QuizDetail({ quiz, source, backHref, backLabel, renderPlayer }: QuizDetailProps) {
-  const { state, surface, enter, exit, replace } = usePlayerRoute(quiz);
-  const { status, error, refresh, reset } = useRunStatus(source, quiz);
+  const { state, surface, enter, startHref, questionHref, exit, replace } = usePlayerRoute(quiz);
+  const { status, answers, error, refresh, reset } = useRunStatus(source, quiz);
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
 
   // The player unmounts on exit, taking the focused control with it. Focus the
@@ -75,6 +76,8 @@ export function QuizDetail({ quiz, source, backHref, backLabel, renderPlayer }: 
     })();
   }, [reset, enter]);
 
+  const handleStart = useCallback(() => enter("questions"), [enter]);
+
   const requestReset = useCallback(() => setResetDialogOpen(true), []);
 
   const confirmReset = useCallback(() => {
@@ -83,7 +86,7 @@ export function QuizDetail({ quiz, source, backHref, backLabel, renderPlayer }: 
   }, [reset]);
 
   if (surface === "player") {
-    // The injected player swaps in here; the swap stays on this route (PRD §5).
+    // The injected player swaps in here; the swap stays on this route (SPEC.md §4).
     return renderPlayer({
       quiz,
       source,
@@ -107,7 +110,12 @@ export function QuizDetail({ quiz, source, backHref, backLabel, renderPlayer }: 
       {error !== undefined && <Note type="error">{error}</Note>}
 
       {status === undefined ? (
-        <TopLineLoader />
+        <>
+          {/* Fixed 2px page-top bar — it takes no layout space, so the
+              fallback below occupies the slot `DetailActions` will take. */}
+          <TopLineLoader />
+          <DetailActionsFallback startHref={startHref} onStart={handleStart} />
+        </>
       ) : (
         <DetailActions
           runStatus={status}
@@ -116,6 +124,13 @@ export function QuizDetail({ quiz, source, backHref, backLabel, renderPlayer }: 
           onResetRequest={requestReset}
         />
       )}
+
+      <QuestionPreviewList
+        quiz={quiz}
+        answers={answers}
+        questionHref={questionHref}
+        onQuestionSelect={(questionId) => enter("questions", questionId)}
+      />
 
       <ResetProgressDialog
         open={resetDialogOpen}

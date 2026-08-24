@@ -1,11 +1,51 @@
 import { memo } from "react";
 
 import type { RunStatus } from "@/shared/lib/storage";
-import { Button } from "@/shared/ui/button";
+import { Button, LinkAsButton } from "@/shared/ui/button";
 
+import { shouldEnterInPlace } from "../lib/in-place-navigation";
 import type { PlayerView } from "../model/player-route";
 
 import styles from "./detail-actions.module.css";
+
+interface DetailActionsFallbackProps {
+  startHref: string;
+  onStart: () => void;
+}
+
+/**
+ * The SSR and first-render stand-in for `DetailActions`, whose labels need a
+ * Run status that only IndexedDB can supply. "Start" is the honest default:
+ * correct for every first-time visitor, and it puts the primary action in the
+ * static HTML instead of behind hydration. A real `href` preserves normal link
+ * behavior while JavaScript is available to load the player.
+ *
+ * Sized to match the no-Run "Start" below, so the common case — and every
+ * crawler — sees no shift when the real actions replace this. A visitor with a
+ * saved Run briefly reads "Start" before "Continue"; that swap already changes
+ * the row (Reset appears), and the top-line loader marks it as still resolving.
+ */
+export function DetailActionsFallback({ startHref, onStart }: DetailActionsFallbackProps) {
+  return (
+    <div className={styles.root}>
+      <LinkAsButton
+        size="l"
+        variant="primary"
+        href={startHref}
+        // Same page under a query param, so there is nothing new to index (SPEC.md §4).
+        rel="nofollow"
+        onClick={(event) => {
+          if (!shouldEnterInPlace(event)) return;
+
+          event.preventDefault();
+          onStart();
+        }}
+      >
+        Start
+      </LinkAsButton>
+    </div>
+  );
+}
 
 interface DetailActionsProps {
   runStatus: RunStatus;
@@ -15,7 +55,7 @@ interface DetailActionsProps {
 }
 
 /**
- * The state-aware primary action (idea.md): a single button whose label and
+ * The state-aware primary action (description.md): a single button whose label and
  * target view track the Run — Start (no Run), Continue (in progress), or See
  * summary (finished). Retake and Reset appear only once a Run exists.
  *

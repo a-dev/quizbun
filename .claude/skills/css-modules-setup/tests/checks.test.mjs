@@ -324,3 +324,127 @@ test("the checker is read-only", async () => {
     await rm(root, { recursive: true, force: true });
   }
 });
+
+test("reports ambiguous layer ownership instead of guessing the fallback layer", async () => {
+  const root = await createFixture({
+    overrides: {
+      layers: {
+        order: ["base", "atoms", "ui"],
+        ownership: [
+          { glob: "src/styles/*.module.css", layer: "atoms" },
+          { glob: "src/**/*.module.css", layer: "ui" },
+        ],
+        localModules: { strategy: "unlayered" },
+      },
+    },
+  });
+
+  try {
+    const result = await checkProject({ root });
+    const ambiguous = result.findings.filter(
+      ({ ruleId }) => ruleId === "css-modules/layer-ownership-ambiguous",
+    );
+
+    assert.ok(
+      ambiguous.some(({ file }) => file === "src/styles/atoms.module.css"),
+      "the doubly-owned shared module must be reported as ambiguous",
+    );
+    // The shared module declares the layer its profile entry records, so the
+    // layer rule must not demand that the developer strip the wrapper.
+    assert.deepEqual(
+      result.findings.filter(
+        ({ ruleId, file }) =>
+          ruleId === "css-modules/layer-by-profile" && file === "src/styles/atoms.module.css",
+      ),
+      [],
+    );
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test("accepts a shared export re-exported through a star specifier", async () => {
+  const root = await createFixture();
+
+  try {
+    await write(
+      root,
+      "src/styles/exports.ts",
+      'import atomsStyles from "./atoms.module.css";\nexport const atoms = atomsStyles;\n',
+    );
+    await write(root, "src/styles/index.ts", 'export * from "./exports";\n');
+
+    const result = await checkProject({ root });
+
+    assert.deepEqual(
+      result.findings.filter(({ ruleId }) => ruleId === "css-modules/shared-entry-export"),
+      [],
+    );
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test("separates a typed literal class key from a dynamic one", async () => {
+  const root = await createFixture();
+
+  try {
+    await write(
+      root,
+      "src/literal-key.tsx",
+      'import styles from "./button.module.css";\n\nexport const literal = styles["root"];\n',
+    );
+    await write(
+      root,
+      "src/dynamic-key.tsx",
+      'import styles from "./button.module.css";\n\nexport const dynamic = (key: string) => styles[key];\n',
+    );
+
+    const result = await checkProject({ root });
+    const computed = result.findings.filter(
+      ({ ruleId }) => ruleId === "css-modules/no-computed-key",
+    );
+
+    // styles["root"] is checked by the generated declarations exactly like
+    // styles.root; only the dynamic key escapes the type system.
+    assert.deepEqual(
+      computed.map(({ file }) => file),
+      ["src/dynamic-key.tsx"],
+    );
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test("judges descendant type selectors by the compound that owns them", async () => {
+  const root = await createFixture();
+
+  try {
+    await write(
+      root,
+      "src/qualified.module.css",
+      ".root h2.title {\n  color: var(--color-action-bg);\n}\n",
+    );
+    await write(
+      root,
+      "src/nested-list.module.css",
+      ".root :is(h2, h3) {\n  color: var(--color-action-bg);\n}\n",
+    );
+
+    const result = await checkProject({ root });
+    const descendants = result.findings.filter(
+      ({ ruleId }) => ruleId === "css-modules/no-descendant-type",
+    );
+
+    assert.ok(
+      !descendants.some(({ file }) => file === "src/qualified.module.css"),
+      "h2.title already owns a role class",
+    );
+    assert.ok(
+      descendants.some(({ file }) => file === "src/nested-list.module.css"),
+      "a bare type inside :is() is still a bare descendant type",
+    );
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});

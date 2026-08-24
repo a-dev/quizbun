@@ -28,6 +28,32 @@ async function tabUntilFocused(page: Page, target: Locator, maxTabs = 12) {
   await expect(target).toBeFocused();
 }
 
+test("Question preview opens the selected Question in the player", async ({ page }) => {
+  await page.goto("/quizzes/undo-redo-back-stacks-queues/");
+
+  const preview = page.getByRole("region", { name: "Questions" });
+  const questionLinks = preview.getByRole("link");
+  const questionCount = await questionLinks.count();
+
+  expect(questionCount).toBeGreaterThan(5);
+
+  const targetQuestion = questionLinks.last();
+  const targetHref = await targetQuestion.getAttribute("href");
+  const targetUrl = new URL(targetHref!, page.url());
+  const targetQuestionId = targetUrl.searchParams.get("question");
+
+  expect(targetUrl.hash).toBe(`#question-${targetQuestionId}`);
+
+  await targetQuestion.click();
+
+  await expect(page).toHaveURL(
+    new RegExp(`question=${targetQuestionId}#question-${targetQuestionId}$`),
+  );
+  const targetGroup = questionGroup(page, questionCount);
+  await expect(targetGroup).toHaveAttribute("id", `question-${targetQuestionId}`);
+  await expect(targetGroup).toBeInViewport();
+});
+
 test("Catalog media resolves, Explanation media waits for submit, and Video stays behind its facade", async ({
   page,
 }) => {

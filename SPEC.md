@@ -1,0 +1,337 @@
+# Quizbun specification
+
+Status: app v1.1.0 and Standard v1.1 shipped. Quiz JSON still uses `schemaVersion: 1`.
+
+Last updated: 2026-08-23
+
+This file is the maintainer reference for Quizbun's product behavior, architecture, decisions, release state, and deferred work. It describes the system as it exists and replaces the earlier planning and decision documents.
+
+Use these sources for exact rules:
+
+- [CONTEXT.md](CONTEXT.md) defines the project's vocabulary.
+- [docs/description.md](docs/description.md) defines the product vision and wins if product documents conflict.
+- [src/shared/lib/quiz/schema.ts](src/shared/lib/quiz/schema.ts) is the executable source of truth for Quiz validation.
+- [docs/standard.md](docs/standard.md) is the normative Quiz Object Standard for authors and Renderer implementers.
+
+The app version, Standard document revision, and `schemaVersion` are separate. App v1.1 added storage durability. Standard v1.1 added optional Question media without breaking existing Quiz JSON.
+
+## 1. Product
+
+Quizbun is a static, explanation-first quiz catalog for self-learners. It uses the versioned JSON Quiz Object Standard, which is designed for AI generation. The MIT-licensed site runs in the browser with no backend, accounts, or server-side runtime.
+
+The core loop is short: generate a Quiz with an AI tool, copy its JSON, Import it into Quizbun, learn from each Explanation, then resume or Retake the Run.
+
+The same Quiz JSON can be validated, reviewed in a pull request, and rendered by another application.
+
+### Product principles
+
+1. **Learning before testing.** Every submitted Question reveals its Explanation. Results stay binary because the Explanation matters more than the score.
+2. **Static Catalog, local Library.** The build bundles Catalog Quizzes. Imported Quizzes and all Runs stay in browser storage. Remote Images may load from their declared URLs, and Videos contact YouTube only after activation.
+3. **One strict Standard.** Minimal required fields and fixed defaults reduce invalid AI output. Unknown fields fail validation.
+4. **Safe Markdown.** Quiz content uses Markdown. The Renderer strips raw HTML and sanitizes the generated markup.
+5. **Open contributions.** CI checks structure and schema. Reviewers check facts, clarity, and Explanation quality. A merged Quiz uses the repository's MIT license.
+6. **Presentation-neutral content.** A Quiz describes content and correctness, not layout, Option labels, pagination, or themes.
+
+### People
+
+- A **Learner** takes Quizzes. The player is phone-first.
+- A **Creator** makes Quizzes, usually with AI, and may keep them private.
+- A **Contributor** submits a Quiz to the Catalog through a pull request.
+
+One person may fill every role. Quizbun has no user identity.
+
+## 2. Quiz Object Standard
+
+The Standard defines one Quiz as metadata plus an ordered list of Questions. The generated JSON Schema is published at `/schema/quiz.v1.json`. This section summarizes the frozen v1 contract and its additive v1.1 media revision.
+
+### Versioning and validation
+
+- `schemaVersion` is the integer `1`. Strings such as `"1"` and `"1.0"` are invalid.
+- Validation is strict on Quiz, Question, Option, and validation objects. Unknown fields are errors.
+- Errors include a precise path, problem, and suggested fix. [src/shared/lib/quiz/format-errors.ts](src/shared/lib/quiz/format-errors.ts) formats errors for Import and CI.
+- Version 1 may add optional fields. Removing a field, tightening a constraint, or changing correctness requires `schemaVersion: 2`.
+- Standard v1.1 added optional `images` and `videos` arrays. Existing Quiz JSON remains valid.
+
+### Quiz fields
+
+| Field           | Required | Rule                                                                     |
+| --------------- | -------- | ------------------------------------------------------------------------ |
+| `schemaVersion` | yes      | Integer `1`                                                              |
+| `id`            | yes      | Kebab-case slug with lowercase Latin letters, digits, and single hyphens |
+| `title`         | yes      | Non-empty inline Markdown                                                |
+| `questions`     | yes      | Ordered, non-empty array with unique Question ids                        |
+| `description`   | no       | Non-empty full Markdown                                                  |
+| `language`      | no       | BCP 47-shaped tag such as `en` or `en-US`                                |
+| `tags`          | no       | Tag array, defaults to `[]`                                              |
+| `author`        | no       | Non-empty free-form string, not an account                               |
+
+Quiz `id` is the Library primary key. Library and Catalog use separate namespaces, so a private Quiz may reuse a Catalog id.
+
+### Questions and answers
+
+Every Question has a kebab-case `id`, `title`, `type`, and `explanation`. The title contains the ask. An optional `description` adds context but does not replace the ask. Optional `description` and `references` fields use full Markdown. Optional media arrays must be non-empty. A Question id is part of Progress identity, so changing it creates a new Question for storage.
+
+Version 1 has three Question types:
+
+- `single-choice`
+- `multiple-choice`
+- `input`
+
+Choice Questions contain at least two `{ text, isCorrect }` Options. Options have no ids or labels. Their identity is their index in the original JSON order.
+
+- `single-choice` requires exactly one correct Option.
+- `multiple-choice` requires at least one correct Option. All Options may be correct. The submitted Option set must match the correct set exactly.
+
+Input Questions use one validation mode:
+
+- `text` compares submitted text with each accepted string. It trims, collapses whitespace, normalizes to Unicode NFC, and ignores case unless `caseSensitive` is `true`.
+- `numeric` accepts finite JSON numbers. It allows `.` or `,` as the decimal separator, but not both. The answer is correct when its absolute difference from any accepted number is no greater than `tolerance`, which defaults to `0`.
+
+Every Question produces one correct or incorrect result. Version 1 has no points, weighting, partial credit, or Run history. A Summary reports `X of Y correct`.
+
+Version 1 also fixes these constraints:
+
+- A choice Question needs at least two Options.
+- `multiple-choice` cannot express "select none" as correct.
+- Fields and arrays have no hard maximum lengths beyond their non-empty requirements.
+- Numeric accepted answers are JSON numbers, not numeric strings.
+
+### Media
+
+Any Question may contain `images` and `videos`. Media exists only at Question level.
+
+An Image is `{ src, alt, caption?, placement? }`. Its required `alt` text describes content. `caption` uses inline Markdown. `src` accepts either an `https://` URL or a bare kebab-case filename with a supported image extension. Directory segments, `http://`, protocol-relative URLs, and data URLs are invalid.
+
+A Video is `{ provider: "youtube", id, start?, placement? }`. The id is an 11-character YouTube video id. `start` is a whole number of seconds at or above zero.
+
+Both media types accept `placement: "question" | "explanation"`. Missing placement means `question`, but the Renderer does not write that default into the Quiz. Question media appears between the title and description. Explanation media appears after the Explanation and before References.
+
+The Renderer keeps Image order, then Video order. It never upscales Images. Failed Images show their alt text. Videos use a same-origin facade and create a `youtube-nocookie.com` iframe only after the Learner activates it. Markdown image syntax remains inert.
+
+Media is part of the Content hash. Any media change invalidates that Question's saved answer. Export preserves the original placement and source values.
+
+Authors must verify remote URLs and YouTube ids. CI checks Catalog Image files without making network requests.
+
+### Markdown
+
+Every text field uses Markdown. Raw HTML is stripped.
+
+- Short fields use inline Markdown: Quiz titles, Question titles, Option text, and Image captions.
+- Long fields use full Markdown: descriptions, Explanations, and References.
+
+Fenced code highlighting supports JavaScript, TypeScript, JSX, TSX, JSON, HTML, CSS, Python, Bash, shell, and SQL. Unknown or missing language names render without highlighting.
+
+### Renderer rules
+
+Two rules preserve content identity across Renderers:
+
+1. Saved choice answers use original-order Option indexes. A shuffled Renderer must translate displayed positions before saving or checking an answer.
+2. Progress uses Quiz id, Question id, and Content hash. Re-import keeps an answer only when its Question id and Content hash still match.
+
+Shuffling, Option labels, pagination, Page size, keyboard controls, and layout never belong in Quiz JSON.
+
+### Published artifacts and Catalog profile
+
+- `z.toJSONSchema()` generates [public/schema/quiz.v1.json](public/schema/quiz.v1.json). CI rejects drift from the Zod schema. Zod remains the final authority for cross-field rules that JSON Schema cannot fully express.
+- The `create-quiz` skill owns the [AI generation prompt](skills/create-quiz/references/quiz-generation-prompt.md). The site renders that source with a short introduction.
+- CI validates every file in [docs/examples](docs/examples) with the Zod schema.
+- The Public catalog profile adds repository-only rules. It requires `description`, `language`, at least one Tag, repository-wide Quiz id uniqueness, and a filename that matches the Quiz id.
+
+## 3. Architecture
+
+Quizbun uses Astro 7 static output and React 19 islands, with Bun as the package manager and Node 22.12 or newer. GitHub Pages hosts the build. JavaScript hydrates only interactive parts such as the player, Import, Library, Tag filter, continue block, and copy-prompt control.
+
+GitHub Pages builds set `GITHUB_PAGES=true`, which changes Astro's base path to `/quizbun`. Route and asset URLs must use `withBase` or the documentation loader's rewriting. Do not hardcode root-relative site URLs.
+
+### Code layout
+
+The code follows Feature-Sliced Design:
+
+- `src/app/` contains layouts and chrome used on every page.
+- `src/pages/` contains Astro routes and required Astro endpoints only. Routes compose page slices and assign all `client:` directives.
+- `src/_pages/` contains screen-specific React composition for `home`, `quizzes`, `quiz`, `library`, and `library-quiz`. Page slices do not import each other.
+- `src/features/` contains user capabilities.
+- `src/entities/quiz/` contains Quiz metadata presentation.
+- `src/shared/` contains cross-cutting code, styles, and UI components.
+
+There is no `widgets/` layer. Add it only for a reusable multi-feature block that is not a page.
+
+### Catalog Images
+
+Each Catalog Quiz stores vendored Images in `content/quizzes/{id}/` and refers to them by filename. [astro-quiz-assets.ts](astro-quiz-assets.ts) serves validated asset requests during development and copies assets to `dist/quiz-assets/{id}/` during a build. `withBase` produces the public URL.
+
+The Public catalog profile rejects remote Images because they cause third-party requests and link rot. Videos remain remote and use the click-to-load facade.
+
+Library Imports accept both valid Image source forms. A bare filename resolves to `{BASE_URL}quiz-assets/{quiz.id}/{filename}`. A missing file falls back to alt text. Import does not reject or rewrite the source because either action would break Export round trips or alter the Content hash.
+
+### Storage
+
+IndexedDB stores Library Quizzes and Runs. A Library record wraps the original Quiz as `{ quiz, importedAt }`. Export returns only the Quiz.
+
+The database stores one Run per Quiz and source. The key is `${source}:${quizId}`, where source is `catalog` or `library`. Each submitted answer records its Content hash, submitted value, and correctness. A Run also records `startedAt`, optional `finishedAt`, and `updatedAt`. Readers use `startedAt` when an older Run lacks `updatedAt`.
+
+The Content hash is SHA-256 over a stable serialization of the whole Question. Replacing a Library Quiz keeps answers whose Question ids and hashes still match, then discards the rest.
+
+`localStorage` holds Page size, the selected Voice URI, and storage-notice dismissal. Invalid values fall back to defaults.
+
+#### Storage durability
+
+The app shows durability advice only while browser storage is not persistent. It never reports a byte count because `estimate()` covers the whole origin and browsers may pad it.
+
+Installation is the primary action when the browser offers it. In standalone mode, the app calls `persist()` automatically. An explicit request button appears only when installation is unavailable. The app registers no service worker because installability no longer requires one and offline support has not shipped.
+
+The notice appears on Home and Library because Catalog Runs and Library Quizzes share IndexedDB. `hasStoredData()` checks both stores. Home waits until data exists. Library may advise installation before the first Import.
+
+Safari keeps home-screen storage separate from browser storage. The notice warns Learners to add browser Quizzes again after installation. Dismissal has separate `nothing-stored` and `data-stored` states so an early dismissal expires once data exists.
+
+### Private Quiz routes
+
+Library Quiz ids do not exist at build time. Private detail pages therefore use the static shell `/library/quiz/?id={id}`. GitHub Pages cannot serve an arbitrary dynamic path.
+
+Quizbun rejects two alternatives:
+
+- A `404.html` rewrite would return a real 404 before client code corrected the route.
+- Hash routing would add SPA routing to an otherwise static site.
+
+Do not replace the query-param route without revisiting the GitHub Pages constraint.
+
+### Documentation rendering
+
+The site renders repository Markdown at build time through [src/shared/lib/docs](src/shared/lib/docs). The repository files remain canonical. The loader rewrites published documentation links for the deployment base and fails the build when a local link is missing.
+
+Astro content collections were rejected because the small documentation set needs link rewriting, not a second content source.
+
+### Read aloud
+
+Read aloud uses the browser's Web Speech API and lists only on-device English Voices. It is off until the Learner chooses a Voice. The Renderer speaks flattened Explanation text and sends no Quiz content to a speech service.
+
+The footer picker and player are separate Astro islands. [src/shared/lib/speech](src/shared/lib/speech) stores the selection with `useSyncExternalStore`, `localStorage`, `voiceschanged`, and a same-tab `quizbun:voice-preference` event.
+
+Cloud speech and automatic playback are out of scope because they would break the privacy and accessibility rules.
+
+### Popup stacking
+
+Base UI appends each popup portal to `document.body`. [src/shared/styles/global.css](src/shared/styles/global.css) assigns `[data-base-ui-portal] { z-index: 2 }`. This works because the body is a grid and static grid items honor `z-index`. The most recently opened portal paints last because portals share the same value and append in open order.
+
+Popup transforms create their own stacking contexts, so popup-level `z-index` cannot order separate portals. Browser tests must assert visible paint order with `document.elementFromPoint`, not compare computed values.
+
+Page content must keep unscoped `z-index` below `2`. The Import form isolates its internal sticky toolbar. If the body stops using grid, move page content into an isolated wrapper and keep portals as its siblings.
+
+## 4. Routes and behavior
+
+| Route                             | Kind                  | Purpose                                       |
+| --------------------------------- | --------------------- | --------------------------------------------- |
+| `/`                               | static with islands   | Home, recent Catalog Quizzes, unfinished Runs |
+| `/quizzes/`, `/quizzes/page/{n}/` | static with island    | Paginated Catalog and Tag filter              |
+| `/quizzes/{id}/`                  | static per Quiz       | Catalog Quiz detail and player                |
+| `/library/`                       | static shell, noindex | Library list from IndexedDB                   |
+| `/library/quiz/?id={id}`          | static shell, noindex | Library Quiz detail and player                |
+| `/import/`                        | static with island    | Import                                        |
+| `/docs/` and child routes         | static                | Public documentation                          |
+| `/docs/examples/{file}.json`      | static endpoint       | Canonical example download                    |
+| `/schema/quiz.v1.json`            | static asset          | Published JSON Schema                         |
+
+The sitemap omits Library routes and `/quizzes/page/1/`. Page 1 uses `/quizzes/` as its canonical URL. Library routes emit `noindex` because their useful content exists only in IndexedDB.
+
+Player links use real anchors with `rel="nofollow"`. They support deep links and modified clicks without asking crawlers to visit thousands of query-param copies of the same page.
+
+### Home and Catalog
+
+Home explains Quizbun, lists the ten most recently added Catalog Quizzes, and shows up to five unfinished Runs when any exist. The full Catalog and Tag filter live at `/quizzes/`.
+
+The build derives Quiz recency from each Catalog file's first Git commit. Missing history falls back to the build time and emits a warning when more than half of the Catalog uses the fallback. Equal dates sort by filename.
+
+The continue block sorts Runs by `updatedAt`, resolves them across both namespaces, and shows the first five valid entries. Missing Quizzes are skipped.
+
+The Tag filter stores a comma-separated `?tags=` value with `history.replaceState`. Unknown Tags are ignored.
+
+### Player
+
+The Catalog and Library use the same player with different Quiz sources.
+
+- Page size is `1`, `3`, `5`, or `10`, defaults to `5`, and may change during a Run.
+- Submission reveals correctness, Explanation, optional media, and References. The Question then locks for the Run and saves immediately.
+- Learners may visit pages in any order. Resume opens the first page with an unanswered Question.
+- Finish appears after every Question is submitted. Summary links back to each Explanation. Retake replaces the Run.
+- Choice controls use the original Option order in v1. Input Questions share one answer-checking module.
+- Question media and Explanation media follow the placement rules in section 2. Video activation moves focus to the created iframe.
+- Read aloud appears after the Learner selects a Voice.
+
+### Import, Library, and Quiz detail
+
+Import uses one textarea. Paste, file selection, and drag and drop all fill it. The app parses and validates JSON, shows an editable error report or a preview, then saves the Quiz. An id collision requires an explicit replace or cancel choice.
+
+Library lists, opens, exports, and deletes Quizzes from IndexedDB. Deleting a Quiz also deletes its Run. The Library and Catalog use the same Tag-filter feature with different data sources.
+
+Quiz detail shows metadata, Export, Reset progress, a Question preview, and a Run-aware action. The action is Start, Continue, See summary, or Retake. Public pages render a static Start fallback so the primary action exists before hydration.
+
+Preview titles are real deep links into the player. Starting a Run swaps the player into the same route. The `features/player` shell lazy-loads its runtime, which keeps Question controls and Summary code out of the initial detail bundle. Its loading frame retains the Quiz title so the detail-to-player view transition can connect. This code split reduced eager quiz-page JavaScript from 528 KB to 419 KB raw, and from 187 KB to 146 KB compressed.
+
+Reset progress and Retake both delete the saved Run.
+
+## 5. Catalog contributions
+
+Catalog JSON lives in `content/quizzes/*.json`. A filename must match its Quiz id. Quizzes with Images store those files in `content/quizzes/{id}/`. The build fails on invalid content, duplicate ids, or filename mismatches.
+
+[scripts/validate-public-quizzes.ts](scripts/validate-public-quizzes.ts) applies the Public catalog profile. It also checks missing and orphaned assets, folder and filename rules, supported extensions, and the 512,000-byte file limit. [docs/contributing.md](docs/contributing.md) documents the same rules.
+
+The public documentation includes the Standard, generation prompt, canonical examples, and contribution guide. The pull request template mirrors the automated checks. The root `CONTRIBUTING.md` points to the guide.
+
+Human review checks facts, clarity, and whether each Explanation teaches more than the correct answer. Media review also checks usefulness, placement, alt text, attribution, and remote ids.
+
+Import and CI use the same error shape, so a Contributor can paste the report back into an AI chat for correction.
+
+## 6. Testing and CI
+
+Vitest runs two projects under [vitest.config.ts](vitest.config.ts):
+
+- Unit tests use `.spec.ts` in Node.
+- Component tests use `.test.tsx` in real Chromium through `vitest-browser-react`.
+
+Playwright runs `.e2e.ts` journeys in [e2e](e2e) against a root-base `astro preview` build. Rebuild after a `GITHUB_PAGES=true` build because Playwright's base URL has no `/quizbun` prefix. Each test gets fresh browser storage. Catalog tests derive mutable content from the rendered page instead of hardcoding Quiz names.
+
+The covered journeys include Import through Summary, Catalog filtering, every Question type, resume, Library management, Page-size changes, Content-hash invalidation, media behavior, preview deep links, keyboard and phone use, theme behavior, install metadata, and storage notices. A deploy-fidelity test for base-path deep links remains open.
+
+[.github/workflows/ci.yml](.github/workflows/ci.yml) regenerates CSS Module types, type-checks TypeScript and Astro, runs tests and linters, validates documentation examples and Catalog Quizzes, checks generated artifacts, builds Astro, and checks deployment-base paths. Deploy waits for these checks.
+
+While the repository is private, CI runs only through `workflow_dispatch`. Restore automatic push and pull request triggers when the repository becomes public.
+
+## 7. Non-functional requirements
+
+- Support current Chrome, Firefox, Safari, and Edge.
+- Keep every page responsive. Design the player phone-first.
+- Use semantic HTML, full keyboard operation, visible focus, labeled controls, `fieldset` and `legend` for each Question, live correctness announcements, and correct dialog focus handling. Target WCAG AA, but do not claim certification without an audit.
+- Render build-time content statically. Hydrate only interactive islands. The player runtime remains lazy-loaded.
+- Use `light-dark()` with `<html data-theme>` for theming. Components use semantic tokens and co-located CSS Modules.
+- Keep the theme control two-state. `system` means no stored preference. Do not store a choice that matches the current system theme, and do not rewrite a stored choice when the system changes.
+
+## 8. Release state
+
+- The `v1.0.0` tag froze Standard v1. Breaking changes now require `schemaVersion: 2`.
+- App v1.1.0 added installation guidance and persistent browser storage for Library and Run durability.
+- Standard v1.1 added Question Images and Videos across schema, docs, validation, assets, rendering, and tests without changing `schemaVersion`.
+- Local production and `/quizbun/` base-path builds pass. A live GitHub Pages acceptance run remains blocked while the repository is private.
+
+When the repository becomes public, restore automatic CI, deploy `main`, publish the release, run the full acceptance flow on the live URL, and verify validation on a pull request from a fork.
+
+## 9. Deferred work
+
+- Progress export and Import across devices. This needs its own versioned format and merge rules.
+- Run history and statistics.
+- Partial credit and scoring.
+- Raw HTML in Quiz content.
+- Structured Author data and per-Quiz licenses.
+- Offline routing and caching.
+- Interface localization.
+- Option ids, presentation hints, and a richer taxonomy.
+- Hard field-length limits.
+- Documentation links that load an example directly into the player.
+- Read aloud for non-English Voices.
+- More media sources, presentation fields, and Video providers.
+- Direct AI loading through an explicit local integration and permission model.
+
+## 10. Risks
+
+- The frozen Standard makes late schema mistakes expensive. Existing fixtures, Catalog generation, and schema drift checks reduce the risk.
+- The live GitHub Pages path has not been exercised. Base-path builds and preview tests reduce the risk until deployment is possible.
+- Strict validation can slow contributions. Precise, reusable error reports keep correction work small.

@@ -68,7 +68,7 @@ Layer ownership resolves by file path. Exactly one matching ownership glob selec
 - `profiled` assigns `localModules.layer` to every unmatched CSS Module;
 - `custom` delegates to `localModules.document`.
 
-Scoped ownership and the fallback may intentionally select the same layer. The path rule remains unchanged: an ownership match wins, and only unmatched modules use the fallback.
+Scoped ownership and the fallback may intentionally select the same layer. The path rule remains unchanged: an ownership match wins, and only unmatched modules use the fallback. When more than one glob matches, audit reports the module as `ambiguous` and the checker reports `css-modules/layer-ownership-ambiguous`; neither falls back to the local-module strategy, because that would assert a layer the profile never selected.
 
 ## Template rules
 
@@ -76,14 +76,17 @@ Files under `assets/templates/` contain placeholders. Resolve every placeholder 
 
 Treat any remaining `{{PLACEHOLDER}}` as a setup failure. Render placeholders from these profile decisions:
 
-- `LAYER_ORDER`, `SHARED_LAYER`, and `UI_LAYER` come from `layers`; the color import and `color-scheme` blocks use the reviewed `colorLayer` input;
-- helper and alias placeholders come from `helpers` and `alias`;
-- shared exports come from `sharedApi.modules`;
-- palette and semantic token bodies require developer-provided color values.
+- `LAYER_ORDER` and `SHARED_LAYER` come from `layers`; the color import and `color-scheme` blocks use the reviewed `colorLayer` input;
+- `CLASS_HELPER` and `CSS_VARIABLE_HELPER` come from `helpers`;
+- `SHARED_EXPORTS` comes from `sharedApi.modules`;
+- `CLASS_NAME` and `DECLARATIONS` come from the reviewed `sharedModules` input;
+- `PALETTE_TOKENS` and `SEMANTIC_COLOR_TOKENS` require developer-provided color values.
 
-When `colorTokens.enabled` is false, render `COLOR_IMPORTS`, `COLOR_SCHEME_BLOCK`, and `REFERENCE_BUTTON_COLOR_RULES` as empty strings. Do not create the palette or colors files.
+When `colorTokens.enabled` is false, render `COLOR_IMPORTS` and `COLOR_SCHEME_BLOCK` as empty strings. Do not create the palette or colors files.
 
-When it is true, `COLOR_SCHEME_BLOCK` must use the selected base layer, `colorTokens.themeAttribute`, and the recorded modes. `REFERENCE_BUTTON_COLOR_RULES` must consume the project's selected semantic roles, never palette values.
+When it is true, `COLOR_SCHEME_BLOCK` must use the selected base layer, `colorTokens.themeAttribute`, and the recorded modes. Semantic tokens must map palette values to roles; component modules consume the roles, never the palette.
+
+The reference component is not a template. It lives in `fixtures/vite-react/` as adapter evidence, and `references/reference-fixture.md` explains why it is never copied into a target application.
 
 Do not create optional modules to make the reference map appear complete. Create only the selected modules and exports.
 

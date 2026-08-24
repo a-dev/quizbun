@@ -28,6 +28,7 @@ export {
 export {
   getRun,
   getRunStatus,
+  getRunStatusAndAnswers,
   listUnfinishedRuns,
   reconcileRunWithQuiz,
   resetRun,

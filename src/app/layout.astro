@@ -15,9 +15,18 @@ import { utils } from "#styles";
 
 const themeBootstrapScript = createThemeBootstrapScript();
 
+interface Props {
+  title?: string;
+  description?: string;
+  canonical?: URL | string;
+  noindex?: boolean;
+}
+
 const {
   title = "Quizbun: quizzes for learning",
   description = SITE_DESCRIPTION,
+  canonical,
+  noindex,
 } = Astro.props;
 ---
 
@@ -48,6 +57,8 @@ const {
     <SEO
       title={title}
       description={description}
+      canonical={canonical}
+      noindex={noindex}
       openGraph={{
         basic: {
           title: title,

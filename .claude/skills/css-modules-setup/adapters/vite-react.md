@@ -6,7 +6,7 @@ Load this adapter only for a Vite + React target. Do not describe another framew
 
 ## Dependencies
 
-Install `vite-css-modules` as a development dependency. Install `classix` only when the project selects the reference `cx` helper and has no compatible class combiner.
+Install `vite-css-modules` as a development dependency. The reference `cx` helper is dependency-free; keep a project's existing class combiner when it already has one.
 
 When the profile enables mechanical enforcement, install the dependencies printed by the setup plan. The bundled checker uses ESLint AST rules for TSX/React syntax, Stylelint for CSS syntax, and PostCSS contract checks for cross-file facts.
 

@@ -1,10 +1,14 @@
 import assert from "node:assert/strict";
-import { mkdtemp, mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
+import { spawn } from "node:child_process";
+import { mkdtemp, mkdir, readFile, readdir, rm, symlink, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
+import { fileURLToPath } from "node:url";
 
 import { applySetupPlan, planSetup } from "../scripts/setup.mjs";
+
+const REPOSITORY_ROOT = fileURLToPath(new URL("../../../../", import.meta.url));
 
 async function write(root, relativePath, contents) {
   const filePath = path.join(root, relativePath);
@@ -421,6 +425,144 @@ test("a partial apply failure reports completed files and leaves unrelated files
       }
     }, /Refusing to overwrite/);
     assert.equal(await readFile(path.join(root, second.path), "utf8"), "created after planning\n");
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test("the color contract renders through its templates and never invents a palette", async () => {
+  const root = await createGreenfieldFixture();
+  const colorProfile = JSON.parse(await readFile(path.join(root, "selected-profile.json"), "utf8"));
+  colorProfile.colorTokens = {
+    enabled: true,
+    paletteFiles: ["src/foundation/palette.css"],
+    semanticFiles: ["src/foundation/colors.css"],
+    themeOwner: "src/foundation/theme.ts",
+    themeAttribute: "data-theme",
+    modes: ["system", "light", "dark"],
+  };
+  await write(root, "selected-profile.json", `${JSON.stringify(colorProfile, null, 2)}\n`);
+
+  try {
+    const inputs = JSON.parse(await readFile(path.join(root, "setup-inputs.json"), "utf8"));
+    const withoutColors = await planSetup({
+      root,
+      mode: "bootstrap",
+      profileSource: "selected-profile.json",
+      inputsPath: "setup-inputs.json",
+    });
+
+    assert.equal(withoutColors.status, "needs-input");
+    assert.deepEqual(withoutColors.requiredInputs, [
+      "colorLayer",
+      "paletteFiles.src/foundation/palette.css",
+      "semanticFiles.src/foundation/colors.css",
+    ]);
+    assert.deepEqual(withoutColors.changes, []);
+
+    await write(
+      root,
+      "color-inputs.json",
+      `${JSON.stringify(
+        {
+          ...inputs,
+          colorLayer: "ground",
+          paletteFiles: { "src/foundation/palette.css": "--palette-ink: rgb(20 20 20);" },
+          semanticFiles: {
+            "src/foundation/colors.css": "--color-text: light-dark(var(--palette-ink), Canvas);",
+          },
+        },
+        null,
+        2,
+      )}\n`,
+    );
+    const plan = await planSetup({
+      root,
+      mode: "bootstrap",
+      profileSource: "selected-profile.json",
+      inputsPath: "color-inputs.json",
+    });
+
+    assert.equal(plan.status, "ready");
+    assert.ok(plan.changes.every(({ content }) => !content.includes("{{")));
+
+    const palette = plan.changes.find(({ path: file }) => file.endsWith("palette.css"));
+    const colors = plan.changes.find(({ path: file }) => file.endsWith("colors.css"));
+    const global = plan.changes.find(({ path: file }) => file.endsWith("global.css"));
+
+    assert.match(palette.content, /Do not invent brand colors/);
+    assert.match(palette.content, /--palette-ink: rgb\(20 20 20\);/);
+    assert.match(colors.content, /Map project palette values to semantic roles/);
+    assert.match(colors.content, /--color-text: light-dark/);
+    assert.match(global.content, /@import ".\/palette\.css" layer\(ground\);/);
+    assert.match(global.content, /html\[data-theme="dark"\]/);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test("the bootstrap TypeScript templates compile as written", async () => {
+  const root = await createGreenfieldFixture();
+
+  try {
+    const plan = await planSetup({
+      root,
+      mode: "bootstrap",
+      profileSource: "selected-profile.json",
+      inputsPath: "setup-inputs.json",
+    });
+    await applySetupPlan(plan);
+
+    // The rendered helpers ship into real projects, so they must typecheck with
+    // no dependency the setup plan did not print.
+    await symlink(
+      path.join(REPOSITORY_ROOT, "node_modules"),
+      path.join(root, "node_modules"),
+      "dir",
+    );
+    await write(
+      root,
+      "src/foundation/css-modules.d.ts",
+      'declare module "*.module.css" {\n  const classes: Record<string, string>;\n  export default classes;\n}\n',
+    );
+    await write(
+      root,
+      "tsconfig.templates.json",
+      `${JSON.stringify(
+        {
+          compilerOptions: {
+            target: "ES2022",
+            lib: ["ES2022", "DOM"],
+            module: "ESNext",
+            moduleResolution: "Bundler",
+            strict: true,
+            noEmit: true,
+            jsx: "react-jsx",
+          },
+          include: ["src/foundation"],
+        },
+        null,
+        2,
+      )}\n`,
+    );
+
+    const typecheck = await new Promise((resolve) => {
+      const child = spawn(
+        path.join(REPOSITORY_ROOT, "node_modules", ".bin", "tsc"),
+        ["--project", path.join(root, "tsconfig.templates.json")],
+        { stdio: ["ignore", "pipe", "pipe"] },
+      );
+      let output = "";
+      child.stdout.on("data", (chunk) => {
+        output += chunk;
+      });
+      child.stderr.on("data", (chunk) => {
+        output += chunk;
+      });
+      child.on("close", (code) => resolve({ code, output }));
+    });
+
+    assert.equal(typecheck.code, 0, typecheck.output);
   } finally {
     await rm(root, { recursive: true, force: true });
   }

@@ -47,18 +47,23 @@ async function paletteTokens(root, profile) {
   return tokens;
 }
 
+function layerOwners(profile, relativeFile) {
+  return profile.layers.ownership.filter(({ glob }) => matchesGlob(relativeFile, glob));
+}
+
+// Returns the layer the file must declare, null when it must stay unlayered, or
+// undefined when the profile does not decide. More than one matching ownership
+// glob is ambiguous, not a fallback: css-modules/layer-ownership-ambiguous
+// reports it rather than this rule guessing a layer.
 function expectedLayer(profile, relativeFile) {
-  const owners = profile.layers.ownership.filter(({ glob }) => matchesGlob(relativeFile, glob));
+  const owners = layerOwners(profile, relativeFile);
+  if (owners.length > 1) return undefined;
   if (owners.length === 1) return owners[0].layer;
-  if (relativeFile.endsWith(".module.css") && profile.layers.localModules.strategy === "profiled") {
+  if (!relativeFile.endsWith(".module.css")) return undefined;
+  if (profile.layers.localModules.strategy === "profiled") {
     return profile.layers.localModules.layer;
   }
-  if (
-    relativeFile.endsWith(".module.css") &&
-    profile.layers.localModules.strategy === "unlayered"
-  ) {
-    return null;
-  }
+  if (profile.layers.localModules.strategy === "unlayered") return null;
   return undefined;
 }
 
@@ -193,14 +198,55 @@ function resolveComposesSpecifier(profile, specifier) {
     : null;
 }
 
-function exportedNames(source, filePath) {
-  const parsed = babelParser.parseForESLint(source, {
-    filePath,
-    requireConfigFile: false,
-    babelOptions: { parserOpts: { plugins: ["typescript"] } },
-  });
+const RE_EXPORT_EXTENSIONS = [".ts", ".tsx", ".mts", ".js", ".jsx", ".mjs"];
+
+async function resolveReExport(fromFile, specifier) {
+  if (!specifier.startsWith(".")) return null;
+  const target = path.resolve(path.dirname(fromFile), specifier);
+  const candidates = [
+    target,
+    ...RE_EXPORT_EXTENSIONS.map((extension) => `${target}${extension}`),
+    ...RE_EXPORT_EXTENSIONS.map((extension) => path.join(target, `index${extension}`)),
+  ];
+  for (const candidate of candidates) {
+    if (path.extname(candidate) && (await exists(candidate))) return candidate;
+  }
+  return null;
+}
+
+// Collects the names a module exports. `export * from "./x"` re-exports every
+// named export of ./x, so relative star re-exports are followed; an unresolvable
+// or unparsable target contributes nothing rather than a false missing export.
+async function exportedNames(filePath, visited = new Set()) {
+  const resolved = path.resolve(filePath);
+  if (visited.has(resolved)) return new Set();
+  visited.add(resolved);
+
   const names = new Set();
+  let parsed;
+  try {
+    parsed = babelParser.parseForESLint(await readFile(resolved, "utf8"), {
+      filePath: resolved,
+      requireConfigFile: false,
+      babelOptions: { parserOpts: { plugins: ["typescript", "jsx"] } },
+    });
+  } catch {
+    return names;
+  }
+
   for (const statement of parsed.ast.body) {
+    if (statement.type === "ExportAllDeclaration") {
+      // `export * as ns from "./x"` introduces exactly one binding.
+      if (statement.exported?.type === "Identifier") {
+        names.add(statement.exported.name);
+        continue;
+      }
+      const target = await resolveReExport(resolved, statement.source.value);
+      if (target) {
+        for (const name of await exportedNames(target, visited)) names.add(name);
+      }
+      continue;
+    }
     if (statement.type !== "ExportNamedDeclaration") continue;
     for (const specifier of statement.specifiers) {
       if (specifier.exported?.type === "Identifier") names.add(specifier.exported.name);
@@ -242,6 +288,17 @@ async function runContracts(root, profile, severity) {
   for (const file of componentModules) {
     const relativeFile = path.relative(root, file).split(path.sep).join("/");
     const css = postcss.parse(await readFile(file, "utf8"), { from: file });
+    const owners = layerOwners(profile, relativeFile);
+    if (owners.length > 1) {
+      add(
+        "css-modules/layer-ownership-ambiguous",
+        relativeFile,
+        css,
+        `More than one layers.ownership glob matches this module (${owners
+          .map(({ glob, layer }) => `${glob} -> ${layer}`)
+          .join(", ")}); narrow the globs so exactly one owner selects its layer.`,
+      );
+    }
     if (profile.colorTokens.enabled && !profile.colorTokens.semanticFiles.includes(relativeFile)) {
       css.walkDecls((declaration) => {
         valueParser(declaration.value).walk((node) => {
@@ -278,8 +335,7 @@ async function runContracts(root, profile, severity) {
   }
 
   const entryPath = resolveInside(root, profile.sharedApi.entryPoint);
-  const entrySource = (await exists(entryPath)) ? await readFile(entryPath, "utf8") : "";
-  const entryExports = entrySource ? exportedNames(entrySource, entryPath) : new Set();
+  const entryExports = (await exists(entryPath)) ? await exportedNames(entryPath) : new Set();
   for (const module of profile.sharedApi.modules) {
     if (module.export && !entryExports.has(module.export)) {
       add(

@@ -4,6 +4,7 @@ import type { RefObject } from "react";
 import { messageFromError } from "@/shared/lib/errors";
 import { computeContentHash } from "@/shared/lib/quiz";
 import type { Question, Quiz } from "@/shared/lib/quiz";
+import { questionAnchorId } from "@/shared/lib/routing";
 import type { PlayerUrlState } from "@/shared/lib/routing";
 import {
   DEFAULT_PAGE_SIZE,
@@ -197,6 +198,18 @@ export function usePlayer({
   useEffect(() => {
     if (isLoaded) headingRef.current?.focus();
   }, [isLoaded, pageIndex, view]);
+
+  // A fragment may be present before the async Run load mounts its Question.
+  // Scroll after that Question's page has committed instead of relying on the
+  // browser's one-shot fragment scroll during the initial document load.
+  useEffect(() => {
+    if (!isLoaded || view !== "questions" || activeQuestionId === undefined) return;
+
+    const anchorId = questionAnchorId(activeQuestionId);
+    if (window.location.hash !== `#${anchorId}`) return;
+
+    document.getElementById(anchorId)?.scrollIntoView();
+  }, [activeQuestionId, isLoaded, pageIndex, view]);
 
   const pages = useMemo(
     () => (answers === undefined ? [] : chunkIntoPages(quiz, answers, pageSize)),

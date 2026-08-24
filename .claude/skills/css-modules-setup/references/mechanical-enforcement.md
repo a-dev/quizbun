@@ -16,7 +16,7 @@ The command runs the recorded `css:generate` and `css:types` commands first, the
 
 1. ESLint rules for TSX state, class lookup, and inline styles;
 2. Stylelint rules for selectors, colors, layers, and `!important`;
-3. cross-file checks for semantic tokens, shared exports/public classes, and external `composes` paths.
+3. cross-file checks for semantic tokens, shared exports/public classes, layer-ownership ambiguity, and external `composes` paths.
 
 It never invokes `commands["css:check"]` recursively. It does not add generic application lint, test, build, or development commands to the CSS profile.
 
@@ -47,6 +47,8 @@ Start an existing project with:
 ```
 
 Warnings are reported but do not fail the command. Move to `error` only after the baseline is reviewed. Rule definitions and IDs do not change between the two levels.
+
+Severity applies to the `css-modules/*` rules only. A file that fails to parse is reported as an error by both adapters and fails the command at either level, because no rule ran against it.
 
 ## Narrow exceptions
 

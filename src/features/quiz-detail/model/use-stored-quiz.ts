@@ -18,7 +18,7 @@ function readQuizId(): string | undefined {
 
 /**
  * Resolves the `?id={id}` quiz from IndexedDB for the Library detail route
- * (PRD §4). Client-only by nature — IndexedDB is per-device — so the lookup
+ * (SPEC.md §4). IndexedDB is per-device, so the lookup
  * runs after mount and the island server-renders the "loading" state. The id
  * is fixed for the page's lifetime, hence a mount-only (`[]`) effect.
  */

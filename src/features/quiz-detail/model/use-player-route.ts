@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useSyncExternalStore } from "react";
 
 import type { Quiz } from "@/shared/lib/quiz";
-import { parsePlayerUrlState, updatePlayerUrlSearch } from "@/shared/lib/routing";
+import { parsePlayerUrlState, questionAnchorId, updatePlayerUrlSearch } from "@/shared/lib/routing";
 import type { PlayerUrlState } from "@/shared/lib/routing";
 import { withViewTransition } from "@/shared/lib/view-transition";
 
@@ -46,7 +46,11 @@ function getServerSearchSnapshot(): string {
 
 function writeHistory(method: "push" | "replace", state: PlayerUrlState): void {
   const search = updatePlayerUrlSearch(window.location.search, state);
-  const url = `${window.location.pathname}${search}${window.location.hash}`;
+  const hash =
+    state.mode === "run" && state.questionId !== undefined
+      ? `#${questionAnchorId(state.questionId)}`
+      : "";
+  const url = `${window.location.pathname}${search}${hash}`;
 
   if (method === "push") {
     window.history.pushState(window.history.state, "", url);
@@ -64,7 +68,11 @@ export interface PlayerRoute {
   /** Which surface to show, derived from `state`. */
   surface: Surface;
   /** Enter the player and push history — a new back-stack entry, so Back returns to detail. */
-  enter: (view: PlayerView) => void;
+  enter: (view: PlayerView, questionId?: string) => void;
+  /** Crawlable href for opening the player at its first unsubmitted Question. */
+  startHref: string;
+  /** Crawlable href for opening one Question in the player. */
+  questionHref: (questionId: string) => string;
   /** Return to detail, replacing history — no extra back-stack entry. */
   exit: () => void;
   /** Mirror a player-driven state change into the URL, replacing history. */
@@ -82,11 +90,22 @@ export function usePlayerRoute(quiz: Quiz): PlayerRoute {
   // Enter/exit swap the whole surface, so they run inside a same-document
   // view transition (detail ↔ player morph). `replace` stays unwrapped: it
   // only mirrors player-internal state into the URL, nothing visual swaps.
-  const enter = useCallback((view: PlayerView) => {
+  const enter = useCallback((view: PlayerView, questionId?: string) => {
     withViewTransition(() => {
-      writeHistory("push", { mode: view === "summary" ? "summary" : "run" });
+      writeHistory("push", {
+        mode: view === "summary" ? "summary" : "run",
+        ...(view === "questions" && questionId !== undefined && { questionId }),
+      });
     });
   }, []);
+
+  const startHref = useMemo(() => updatePlayerUrlSearch(search, { mode: "run" }), [search]);
+
+  const questionHref = useCallback(
+    (questionId: string) =>
+      `${updatePlayerUrlSearch(search, { mode: "run", questionId })}#${questionAnchorId(questionId)}`,
+    [search],
+  );
 
   const exit = useCallback(() => {
     withViewTransition(() => {
@@ -98,5 +117,5 @@ export function usePlayerRoute(quiz: Quiz): PlayerRoute {
     writeHistory("replace", next);
   }, []);
 
-  return { state, surface: surfaceFromState(state), enter, exit, replace };
+  return { state, surface: surfaceFromState(state), enter, startHref, questionHref, exit, replace };
 }

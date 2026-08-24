@@ -1,25 +1,25 @@
 # Quizbun
 
-A static, explanation-first quiz catalog for self-learners, built around a JSON quiz standard designed for AI generation. One context: the standard, the site, and the contribution pipeline all share this language.
+A static, explanation-first quiz catalog built around a JSON quiz standard designed for AI generation. The Standard, site, and contribution workflow share this language.
 
 ## Language
 
 ### The Standard
 
 **Quiz**:
-One self-contained learning unit — metadata plus an ordered list of questions — expressed as a single JSON object conforming to the Quiz Object Standard.
+One self-contained learning unit with metadata and an ordered list of Questions, expressed as a single JSON object that follows the Quiz Object Standard.
 _Avoid_: test, exam, deck
 
-**Quiz Object Standard** (short: **the Standard**):
+**Quiz Object Standard**, usually **the Standard**:
 The versioned, strictly validated JSON format that defines what a Quiz is. Integer `schemaVersion`; unknown fields are errors.
 _Avoid_: format, spec (when referring to the artifact)
 
 **Question**:
-One prompt inside a Quiz that the learner answers and gets an Explanation for. Types: `single-choice`, `multiple-choice`, `input`. The `title` carries the question itself; the optional `description` only adds supporting context.
+One prompt inside a Quiz that a Learner answers and receives an Explanation for. The title asks the Question, while the optional description adds context.
 _Avoid_: item, task, exercise
 
 **Option**:
-One selectable entry in a choice Question: `{ text, isCorrect }`. Has no id and no label; identity is its position in the original JSON order.
+One selectable entry in a choice Question. An Option has `text` and `isCorrect`, and its original JSON position is its identity.
 _Avoid_: answer, choice, variant
 
 **Accepted answer**:
@@ -31,79 +31,75 @@ The teaching text shown after a Question is submitted, regardless of correctness
 _Avoid_: feedback, rationale, solution
 
 **References**:
-Optional source material on a Question, shown after its Explanation. Long Markdown content intended for links, citations, and further reading.
+Optional Question source material shown after the Explanation. References use full Markdown for links, citations, and further reading.
 _Avoid_: bibliography (unless a formal bibliography is meant), sources (when referring to the Standard field)
 
 **Image**:
-A structured media item on a Question: `{ src, alt, caption?, placement? }`. `src` is either a bare asset filename or an `https://` URL, `alt` is always required, and `caption` is optional attribution or context.
+A structured visual item on a Question with a source, required alt text, and optional caption and Placement.
 _Avoid_: picture, photo, illustration
 
 **Video**:
-A structured YouTube reference on a Question: `{ provider, id, start?, placement? }`. `id` is the 11-character YouTube video id, never a URL.
+A structured YouTube reference on a Question with a video id, optional start time, and optional Placement.
 _Avoid_: embed, clip
 
 **Placement**:
-Which surface an Image or Video belongs to: `question` (shown with the prompt) or `explanation` (revealed with the Explanation). Absent means `question`; the Renderer resolves the default, the Standard never writes it.
+The part of a Question where an Image or Video belongs. `question` shows it with the prompt, while `explanation` reveals it with the Explanation.
 _Avoid_: position, slot
 
 **Tag**:
-A kebab-case keyword (latin letters, digits, `-`) on a Quiz, used for filtering and discovery. The only taxonomy that exists.
+A kebab-case keyword on a Quiz used for filtering and discovery. Tags are the only Quiz taxonomy.
 _Avoid_: category, topic, label, hashtag
 
 **Renderer**:
-Any application that displays Quizzes — the Quizbun site is the first. Shuffling, labeling Options, and layout are Renderer behavior, never content. So are media decisions: image auto-layout, resolving an Image `src` to a URL, degrading an unresolvable Image to its alt text, and the click-to-load facade that keeps a Video from contacting YouTube until the learner asks for it.
+An application that displays Quizzes. Presentation choices belong to the Renderer, not the Standard.
 _Avoid_: player, viewer, frontend (when referring to the role)
 
 **Public catalog profile**:
-The stricter rule set (description, language, ≥1 tag, repo-wide id uniqueness) applied in CI to Public catalog quizzes only. A profile on top of the Standard, not a second schema.
+The stricter rules applied to Catalog Quizzes during repository validation. It extends the Standard for contributions but is not another schema.
 _Avoid_: public schema, extended schema
 
-### The Site
+### The site
 
-**Public catalog** (short: **Catalog**):
+**Public catalog**, usually **Catalog**:
 The bundled, read-only set of quizzes that lives in the repository and ships with the site.
 _Avoid_: store, gallery, public library
 
 **Asset folder**:
-`content/quizzes/{id}/` — the vendored image files of one Public catalog Quiz, sitting next to its `{id}.json` and served at `{base}/quiz-assets/{id}/`. Catalog Quizzes vendor their images here instead of linking remote ones.
+The directory that holds one Catalog Quiz's vendored Image files.
 _Avoid_: uploads, media directory, attachments
 
 **Library**:
-A user's locally stored quizzes on one device, separate from the Catalog. Quiz content never leaves the device. One honest caveat: rendering a Question whose Image `src` is a bare filename requests a same-origin asset URL derived from the quiz's `id` and that filename, and a Video the learner clicks to play contacts YouTube like any other embed.
+A Learner's Quizzes stored on one device, separate from the Catalog.
 _Avoid_: my quizzes, collection, private catalog
 
-**Persistent storage**:
-A browser storage mode that protects everything stored for the current origin from automatic deletion — the Library and **every** Run, Catalog Runs included. It is not a backup and does not survive clearing site data, another browser, or another device. User-facing copy says what it does rather than naming the mode; the term is for us, not the UI.
-_Avoid_: permanent storage, backup, PWA, best-effort storage (in UI copy)
-
 **Import**:
-Bringing quiz JSON into the Library via the import page (paste or file fill the same textarea). Validation happens here; the import page is the final authority on validity.
+Bringing Quiz JSON into the Library after it passes validation.
 _Avoid_: upload, load, add
 
 **Export**:
-Saving any quiz — Catalog or Library — back out as JSON. Quizzes are the only thing exported; progress never is.
+Saving a Catalog or Library Quiz as JSON. Export never includes Progress.
 _Avoid_: download, backup
 
 ### Learning
 
 **Run**:
-One pass of a user through a Quiz. Exactly one saved Run per quiz; a Retake replaces it. A Run completes when every Question is submitted; questions may be answered in any order.
+One pass by a Learner through a Quiz. A Run completes when every Question is submitted, and a Retake replaces it.
 _Avoid_: attempt, session, playthrough
 
 **Page size**:
-A learner-owned Renderer setting (1, 3, 5, or 10 questions per page) that windows the question list. Never quiz content — the Standard has no pagination fields.
+A Learner-owned Renderer setting that controls how many Questions appear on a page. Page size is never Quiz content.
 _Avoid_: questionsPerPage (the deleted quiz field from attempt #1)
 
 **Voice**:
-A learner-owned Renderer setting: the on-device speech voice that Read aloud uses, chosen in the footer and stored per browser. Off by default — which hides Read aloud entirely — and English-only in v1. Never quiz content; the Standard has no speech fields.
+The Learner-selected on-device speech voice used by Read aloud. Voice is Renderer behavior, never Quiz content.
 _Avoid_: narrator, TTS voice
 
 **Read aloud**:
-The Renderer's opt-in feature that speaks a Question's Explanation with the browser's local speech engine and the selected Voice. Hidden until a Voice is chosen; the Explanation text is synthesized on the device and never leaves it. Renderer behavior, never content.
+An opt-in Renderer feature that speaks a Question's Explanation with the selected on-device Voice.
 _Avoid_: text-to-speech, TTS, narrate
 
 **Progress**:
-The auto-saved state of a Run — which Questions were submitted and how. Keyed by quiz id, validated per Question by Content hash.
+The saved state of a Run, including which Questions were submitted and how.
 _Avoid_: history, results (Progress is one Run, not an archive)
 
 **Content hash**:
@@ -118,25 +114,22 @@ Explicitly deleting the saved Run of a Quiz, mid-run or after completion. The sa
 _Avoid_: clear, wipe
 
 **Summary**:
-The end-of-Run screen: "X of Y correct," per-Question marks linking back to Explanations, Retake and Back actions.
+The end-of-Run view with the result, links to each Explanation, and Run actions.
 _Avoid_: results page, score screen
 
 ### People
 
+**Learner**:
+A person who takes a Quiz and reads its Explanations.
+_Avoid_: test taker, student, user when the learning role matters
+
+**Creator**:
+A person who makes a Quiz, usually with AI, for private use or contribution.
+_Avoid_: Author when referring to the person doing the work
+
 **Contributor**:
-Someone who submits a Quiz to the Public catalog through a pull request.
+Someone who submits a Quiz to the Catalog through a pull request.
 
 **Author**:
-The free-form string in a Quiz's optional `author` field. Not an account, not structured identity.
+The free-form string in a Quiz's optional `author` field. It is not an account or structured identity.
 _Avoid_: creator, owner
-
-## Example dialogue
-
-> **Dev:** When a user uploads a file on the import page, do we save it straight to the Library?
-> **Domain expert:** No — upload just fills the textarea. Import is one surface: paste or file, then validate, then save. The import page is the final authority, not the JSON Schema.
-> **Dev:** And if the imported quiz id already exists in the Library?
-> **Domain expert:** Explicit choice: replace or cancel. Replace keeps Progress for Questions whose Content hash still matches.
-> **Dev:** So if they replace a quiz mid-Run, the Run survives partially?
-> **Domain expert:** Per Question, yes. A changed Question loses its saved answer; unchanged ones keep theirs. There's still only one Run — we never archive attempts.
-> **Dev:** Is a Catalog quiz ever in the Library?
-> **Domain expert:** Only if the user exports it and imports it back — then it's a private copy in a separate namespace, and the same id is fine.

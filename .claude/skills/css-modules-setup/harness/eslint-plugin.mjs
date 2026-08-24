@@ -44,6 +44,12 @@ function cssModuleTracker(visitor) {
   };
 }
 
+function isStringLiteralKey(node) {
+  return (
+    node?.type === "StringLiteral" || (node?.type === "Literal" && typeof node.value === "string")
+  );
+}
+
 const noComputedKey = {
   meta: ruleMeta({
     computed: "Use an exhaustive typed lookup instead of a computed CSS Module key.",
@@ -51,9 +57,11 @@ const noComputedKey = {
   create(context) {
     return cssModuleTracker((identifiers) => ({
       MemberExpression(node) {
-        if (node.computed && memberBelongsTo(node, identifiers)) {
-          context.report({ node, messageId: "computed" });
-        }
+        if (!node.computed || !memberBelongsTo(node, identifiers)) return;
+        // styles["root"] is checked against the generated declarations exactly
+        // like styles.root; only a dynamic key escapes the type system.
+        if (isStringLiteralKey(node.property)) return;
+        context.report({ node, messageId: "computed" });
       },
     }));
   },

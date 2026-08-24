@@ -7,6 +7,6 @@ export {
   stringifyListUrlState,
 } from "./list-url-state";
 export type { ListTagMatchMode, ListUrlState } from "./list-url-state";
-export { parsePlayerUrlState, updatePlayerUrlSearch } from "./player-url-state";
+export { parsePlayerUrlState, questionAnchorId, updatePlayerUrlSearch } from "./player-url-state";
 export type { PlayerUrlMode, PlayerUrlState } from "./player-url-state";
 export { quizAssetUrl, resolveImageSrc } from "./quiz-asset-url";

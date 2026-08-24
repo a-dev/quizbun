@@ -21,13 +21,35 @@ const { ALLOWED_HOSTS = "", GITHUB_PAGES } = loadEnv(
 const allowedHosts = ALLOWED_HOSTS.split(",")
   .map((host) => host.trim())
   .filter(Boolean);
+const base = GITHUB_PAGES === "true" ? githubPagesBase : "/";
+
+// Base-relative, so the exclusion list stays the same in a root build and a
+// `GITHUB_PAGES=true` one. Duplicates (`/quizzes/page/1/` canonicals to
+// `/quizzes/`) and the two device-local Library shells have nothing to index.
+const excludedSitemapRoutes = new Set(["/library/", "/library/quiz/", "/quizzes/page/1/"]);
+const basePrefix = base === "/" ? "" : base;
+
+/** @param {string} page */
+function sitemapRoutePath(page) {
+  const pathname = new URL(page).pathname;
+
+  return basePrefix !== "" && pathname.startsWith(`${basePrefix}/`)
+    ? pathname.slice(basePrefix.length)
+    : pathname;
+}
 
 export default defineConfig({
-  base: GITHUB_PAGES === "true" ? githubPagesBase : "/",
+  base,
   server: {
     allowedHosts,
   },
-  integrations: [react(), sitemap(), quizAssets()],
+  integrations: [
+    react(),
+    sitemap({
+      filter: (page) => !excludedSitemapRoutes.has(sitemapRoutePath(page)),
+    }),
+    quizAssets(),
+  ],
   output: "static",
   // A cross-document view transition only starts once the next page has
   // arrived; prefetching every link on hover/focus makes that near-instant on

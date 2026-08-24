@@ -1,3 +1,4 @@
+import { renderToString } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { page } from "vitest/browser";
 
@@ -58,6 +59,38 @@ async function renderDetail(quiz: Quiz) {
 }
 
 describe("QuizDetail", () => {
+  it("server-renders the primary action and the Question preview before Run status loads", () => {
+    const html = renderToString(
+      <QuizDetail
+        quiz={makeQuiz("detail-ssr")}
+        source="catalog"
+        backHref="/quizzes/"
+        backLabel="Catalog"
+        renderPlayer={() => null}
+      />,
+    );
+
+    // The state-aware action needs IndexedDB; its static stand-in does not, so
+    // the primary action is in the crawlable HTML and works without hydration.
+    expect(html).toContain("Start");
+    expect(html).toContain('href="?mode=run"');
+
+    expect(html).toContain("Questions");
+    expect(html).toContain("Not answered");
+    expect(html).toContain("?mode=run&amp;question=q-one#question-q-one");
+
+    // Duplicates of this page under a query param: linked for people, not for
+    // crawlers — the Start stand-in plus one per Question.
+    expect(html.match(/rel="nofollow"/g)).toHaveLength(3);
+  });
+
+  it("swaps the static Start stand-in for the state-aware action once status loads", async () => {
+    const screen = await renderDetail(makeQuiz("detail-fallback-swap"));
+
+    await expect.element(screen.getByRole("button", { name: "Start" })).toBeInTheDocument();
+    await expect.element(screen.getByRole("link", { name: "Start" })).not.toBeInTheDocument();
+  });
+
   it("offers Start before a Run exists", async () => {
     const screen = await renderDetail(makeQuiz("detail-start"));
 
