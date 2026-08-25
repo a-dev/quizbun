@@ -93,6 +93,7 @@ export function QuestionsView({
         currentPage={currentPage.index + 1}
         pageCount={pages.length}
         onPageChange={onGoToPage}
+        className={styles.pagination}
       />
 
       {complete && (
