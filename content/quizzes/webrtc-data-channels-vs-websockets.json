@@ -10,6 +10,14 @@
       "id": "webrtc-p2p-vs-websocket",
       "title": "How does a WebRTC data channel's topology fundamentally differ from a WebSocket's?",
       "description": "Think about who sits between the two endpoints exchanging data.",
+      "images": [
+        {
+          "src": "protocol-stack.svg",
+          "alt": "Two protocol stacks side by side: WebSocket layers application over WebSocket framing over TLS over TCP over IP, always client to server; a WebRTC data channel layers application over SCTP over DTLS over UDP over IP with ICE handling NAT traversal, peer to peer, bootstrapped by a separate signaling server such as a WebSocket.",
+          "caption": "The topology row at the bottom — client↔server for WebSocket vs. direct peer↔peer for the data channel.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -36,6 +44,14 @@
       "id": "webrtc-signaling-channel",
       "title": "WebRTC peers must first exchange SDP offers/answers and ICE candidates. What does the spec say about transporting this \"signaling\"?",
       "description": "Before any peer-to-peer data flows, the two sides have to find and describe each other.",
+      "images": [
+        {
+          "src": "protocol-stack.svg",
+          "alt": "Two protocol stacks side by side: WebSocket layers application over WebSocket framing over TLS over TCP over IP, always client to server; a WebRTC data channel layers application over SCTP over DTLS over UDP over IP with ICE handling NAT traversal, peer to peer, bootstrapped by a separate signaling server such as a WebSocket.",
+          "caption": "The dashed lines to \"Signaling server\" — both peers bootstrap through it before talking directly.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -62,6 +78,14 @@
       "id": "webrtc-datachannel-sctp",
       "title": "WebRTC data channels carry application data over which message-oriented transport protocol (itself layered on DTLS/UDP)?",
       "description": "Not TCP and not raw UDP — a protocol that adds multiplexing and configurable reliability. Give its acronym.",
+      "images": [
+        {
+          "src": "protocol-stack.svg",
+          "alt": "Two protocol stacks side by side: WebSocket layers application over WebSocket framing over TLS over TCP over IP, always client to server; a WebRTC data channel layers application over SCTP over DTLS over UDP over IP with ICE handling NAT traversal, peer to peer, bootstrapped by a separate signaling server such as a WebSocket.",
+          "caption": "The right-hand stack's second layer — SCTP, sitting directly below the data-channel application layer.",
+          "placement": "explanation"
+        }
+      ],
       "type": "input",
       "validation": {
         "mode": "text",
@@ -152,6 +176,14 @@
       "id": "webrtc-encryption-mandatory",
       "title": "WebRTC data channels are protected with DTLS. Is encryption optional or mandatory in WebRTC? (one word)",
       "description": "Contrast this with WebSocket, where `ws://` (plaintext) is a legal choice.",
+      "images": [
+        {
+          "src": "protocol-stack.svg",
+          "alt": "Two protocol stacks side by side: WebSocket layers application over WebSocket framing over TLS over TCP over IP, always client to server; a WebRTC data channel layers application over SCTP over DTLS over UDP over IP with ICE handling NAT traversal, peer to peer, bootstrapped by a separate signaling server such as a WebSocket.",
+          "caption": "The two highlighted encryption layers — TLS marked optional, DTLS marked mandatory.",
+          "placement": "explanation"
+        }
+      ],
       "type": "input",
       "validation": {
         "mode": "text",
@@ -242,6 +274,14 @@
       "id": "webrtc-protocol-stack",
       "title": "What is the correct protocol stack beneath a WebRTC data channel message?",
       "description": "Order the layers from the data channel down to the network.",
+      "images": [
+        {
+          "src": "protocol-stack.svg",
+          "alt": "Two protocol stacks side by side: WebSocket layers application over WebSocket framing over TLS over TCP over IP, always client to server; a WebRTC data channel layers application over SCTP over DTLS over UDP over IP with ICE handling NAT traversal, peer to peer, bootstrapped by a separate signaling server such as a WebSocket.",
+          "caption": "The right-hand stack, top to bottom — exactly the order this question asks for.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {

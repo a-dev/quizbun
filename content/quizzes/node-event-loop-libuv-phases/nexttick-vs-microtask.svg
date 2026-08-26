@@ -1,0 +1,112 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="600" viewBox="0 0 720 600">
+  <style>
+    /* An &lt;img&gt;-embedded SVG cannot see the page's `data-theme`, but it does
+       inherit the embedding document's `color-scheme`, so `prefers-color-scheme`
+       tracks the site theme including an explicit toggle. The presentation
+       attributes below stay as the light fallback for renderers without CSS. */
+    svg {
+      --panel: #f5f7fb;
+      --title: #20242c;
+      --muted: #526173;
+      --edge: #64748b;
+      --card: #ffffff;
+      --ctx-fill: #dbeafe;
+      --ctx-edge: #2563eb;
+      --ctx-label: #172554;
+      --accent-fill: #ffedd5;
+      --accent-edge: #c2410c;
+      --accent-text: #9a3412;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      svg {
+        --panel: #1a1f27;
+        --title: #e6eaf2;
+        --muted: #9aa8bd;
+        --edge: #8b9bb4;
+        --card: #252b35;
+        --ctx-fill: #1e3a5f;
+        --ctx-edge: #60a5fa;
+        --ctx-label: #dbeafe;
+        --accent-fill: #3a2416;
+        --accent-edge: #fb923c;
+        --accent-text: #fdba74;
+      }
+    }
+
+    .panel { fill: var(--panel); }
+    .title { fill: var(--title); }
+    .muted { fill: var(--muted); }
+    .edge-line { stroke: var(--edge); }
+    .card { fill: var(--card); stroke: var(--edge); }
+    .phase { fill: var(--ctx-fill); stroke: var(--ctx-edge); }
+    .phase-label { fill: var(--ctx-label); }
+    .accent-box { fill: var(--accent-fill); stroke: var(--accent-edge); }
+    .accent-text { fill: var(--accent-text); }
+  </style>
+
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="var(--edge)" fill-rule="evenodd" />
+    </marker>
+    <marker id="arrow-accent" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="var(--accent-edge)" fill-rule="evenodd" />
+    </marker>
+  </defs>
+
+  <rect class="panel" width="720" height="600" rx="20" fill="#f5f7fb" />
+
+  <text class="title" x="36" y="40" fill="#20242c" font-family="system-ui, sans-serif" font-size="20" font-weight="700">
+    What happens at a microtask checkpoint
+  </text>
+  <text class="muted" x="36" y="64" fill="#526173" font-family="system-ui, sans-serif" font-size="14">
+    Two queues drain here, in strict order, before the loop is allowed to move on.
+  </text>
+
+  <g fill="none" class="edge-line" stroke="#64748b" stroke-width="2.2">
+    <path d="M300,140 L300,164" marker-end="url(#arrow)" />
+    <path d="M300,216 L300,242" marker-end="url(#arrow)" />
+    <path d="M300,334 L300,356" marker-end="url(#arrow)" />
+    <path d="M300,428 L300,450" marker-end="url(#arrow)" />
+  </g>
+  <path d="M440,289 L468,289" fill="none" stroke="#c2410c" stroke-width="2.2" marker-end="url(#arrow-accent)" />
+
+  <g font-family="system-ui, sans-serif" text-anchor="middle">
+    <rect class="card" x="160" y="86" width="280" height="54" rx="12" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <text class="title" x="300" y="112" fill="#20242c" font-size="14" font-weight="700">A callback or script finishes</text>
+    <text class="muted" x="300" y="130" fill="#526173" font-size="11.5">any phase, or the initial run</text>
+
+    <rect class="accent-box" x="160" y="166" width="280" height="50" rx="12" fill="#ffedd5" stroke="#c2410c" stroke-width="2" />
+    <text class="accent-text" x="300" y="190" fill="#9a3412" font-size="14" font-weight="700">MICROTASK CHECKPOINT</text>
+    <text class="accent-text" x="300" y="206" fill="#9a3412" font-size="11.5">runs between every phase</text>
+
+    <rect class="phase" x="160" y="244" width="280" height="90" rx="12" fill="#dbeafe" stroke="#2563eb" stroke-width="2" />
+    <text class="phase-label" x="300" y="266" fill="#172554" font-size="14" font-weight="700">1st — process.nextTick queue</text>
+    <text class="muted" x="300" y="286" fill="#526173" font-size="11.5">drains completely before moving on</text>
+    <text class="muted" x="300" y="310" fill="#526173" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="13">spin() → spin() → spin() → …</text>
+
+    <rect class="phase" x="160" y="358" width="280" height="70" rx="12" fill="#dbeafe" stroke="#2563eb" stroke-width="2" />
+    <text class="phase-label" x="300" y="382" fill="#172554" font-size="14" font-weight="700">2nd — Promise / queueMicrotask</text>
+    <text class="muted" x="300" y="406" fill="#526173" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="13">p.then() → queueMicrotask() → …</text>
+
+    <rect class="card" x="160" y="452" width="280" height="56" rx="12" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <text class="title" x="300" y="478" fill="#20242c" font-size="14" font-weight="700">Loop advances to next phase</text>
+    <text class="muted" x="300" y="496" fill="#526173" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="11">timers → pending → poll → check → close</text>
+  </g>
+
+  <g font-family="system-ui, sans-serif" text-anchor="start">
+    <rect class="accent-box" x="470" y="244" width="214" height="184" rx="12" fill="#ffedd5" stroke="#c2410c" stroke-width="2" />
+    <text class="accent-text" x="490" y="270" fill="#9a3412" font-size="15" font-weight="700">Why recursion</text>
+    <text class="accent-text" x="490" y="290" fill="#9a3412" font-size="15" font-weight="700">starves the loop</text>
+    <text class="accent-text" x="490" y="316" fill="#9a3412" font-size="13">Each spin() enqueues</text>
+    <text class="accent-text" x="490" y="337" fill="#9a3412" font-size="13">another spin() — queue 1</text>
+    <text class="accent-text" x="490" y="358" fill="#9a3412" font-size="13">never reaches empty.</text>
+    <text class="accent-text" x="490" y="379" fill="#9a3412" font-size="13">So poll never runs:</text>
+    <text class="accent-text" x="490" y="400" fill="#9a3412" font-size="13">no new I/O, no timers.</text>
+  </g>
+
+  <g font-family="system-ui, sans-serif" text-anchor="start">
+    <text class="muted" x="36" y="540" fill="#526173" font-size="13">`process.nextTick` is not a libuv phase — it has no slot in the phase wheel.</text>
+    <text class="muted" x="36" y="560" fill="#526173" font-size="13">It drains at every checkpoint instead, always before Promise / `queueMicrotask`.</text>
+  </g>
+</svg>

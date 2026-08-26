@@ -10,6 +10,14 @@
       "id": "dropdown-z-index-9999-trap",
       "title": "Why does `z-index: 9999` leave the dropdown *behind* the hero?",
       "description": "A real layout:\n\n```css\n.site-header { position: sticky; top: 0; z-index: 10; }\n.dropdown    { position: absolute; z-index: 9999; }\n.hero        { position: relative; z-index: 20; }\n```\n\n```html\n<header class=\"site-header\">\n  <nav><ul class=\"dropdown\">...</ul></nav>\n</header>\n<main>\n  <section class=\"hero\">...</section>\n</main>\n```\n\nThe `.dropdown` still renders **behind** `.hero`.",
+      "images": [
+        {
+          "src": "stacking-context-trap.svg",
+          "alt": "The root stacking context holds two children: .site-header at z-index 10, which itself contains .dropdown at z-index 9999, and .hero at z-index 20. Only 10 and 20 are compared.",
+          "caption": "Only the two root-level siblings are compared: `10` against `20`.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -81,6 +89,14 @@
       "id": "isolation-isolate-clean-fix",
       "title": "Which single declaration best contains a component's z-index?",
       "description": "A reusable `.card` has internal layers (a badge at `z-index: 5`, a menu at `z-index: 10`). Dropped into various pages, those layers sometimes poke through unrelated chrome. You want the card's z-index values to stay **self-contained**, with zero other side effects.",
+      "images": [
+        {
+          "src": "isolation-side-effects.svg",
+          "alt": "A four-row comparison. isolation: isolate creates a stacking context, establishes no containing block, and has no other side effects. position: relative with z-index 0 creates a stacking context, becomes a containing block for absolutely positioned descendants, and pins the card to level 0. transform: translateZ(0) creates a stacking context, becomes a containing block for absolutely positioned and fixed descendants, adds a GPU layer, and may blur text. overflow: hidden creates no stacking context, only a block formatting context, and clips the badge and menu.",
+          "caption": "All but `overflow: hidden` contain the layers; only `isolation: isolate` costs nothing else.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         { "text": "`isolation: isolate`", "isCorrect": true },
@@ -121,6 +137,14 @@
       "id": "negative-z-index-behind-parent",
       "title": "`z-index: -1` made the child vanish behind its parent — why?",
       "description": "```html\n<div class=\"parent\">\n  <div class=\"child\">hi</div>\n</div>\n```\n\n```css\n.parent { background: navy; }                 /* static, in normal flow */\n.child  { position: relative; z-index: -1; background: gold; }\n```\n\nThe gold child disappears behind the navy parent.",
+      "images": [
+        {
+          "src": "negative-z-index.svg",
+          "alt": "Two paint stacks side by side. Without a stacking context on .parent, the parent background paints above the negative-z child and hides it. With isolation: isolate the parent background paints first and the child sits in front of it.",
+          "caption": "`isolation: isolate` changes where the `-1` is resolved, and the child reappears.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -185,6 +209,14 @@
       "id": "stacking-paint-order-truths",
       "title": "Which statements about painting and stacking are true?",
       "description": "Select every statement that is correct.",
+      "images": [
+        {
+          "src": "paint-order.svg",
+          "alt": "The seven painting steps inside one stacking context, bottom to top: the context's own background and border, negative z-index child contexts, in-flow block-level descendants, non-positioned floats, in-flow inline content, z-index 0 and positioned auto, then positive z-index child contexts.",
+          "caption": "Step 1 precedes step 2 — a `z-index: -1` child never falls behind its own context's background.",
+          "placement": "explanation"
+        }
+      ],
       "type": "multiple-choice",
       "options": [
         {
@@ -211,6 +243,14 @@
       "id": "fixed-inside-transformed-ancestor",
       "title": "Why doesn't this `position: fixed` modal cover the viewport?",
       "description": "A full-screen modal that worked everywhere suddenly only covers one card:\n\n```css\n.card  { transform: translateY(0); }   /* added for a slide-in animation */\n.modal { position: fixed; inset: 0; }   /* meant to cover the whole viewport */\n```\n\n```html\n<div class=\"card\">\n  <div class=\"modal\">...</div>\n</div>\n```\n\nThe `.modal` is now sized and positioned inside `.card`, not the viewport.",
+      "images": [
+        {
+          "src": "fixed-containing-block.svg",
+          "alt": "Two browser windows. In the first, .card has no transform and the fixed modal with inset 0 covers the whole viewport. In the second, .card has a transform, so the same modal covers only the card.",
+          "caption": "A `transform` on `.card` makes it the containing block, so `inset: 0` measures from the card.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -252,6 +292,14 @@
       "id": "mix-blend-mode-isolation",
       "title": "What's the right fix so the caption blends **only** with the photo?",
       "description": "A caption blends onto a photo with `mix-blend-mode: multiply`. Over the photo it looks right, but where the caption overhangs the white page it multiplies against the page too and turns muddy:\n\n```css\n.caption { mix-blend-mode: multiply; }\n```\n\n```html\n<figure>\n  <img src=\"photo.jpg\" alt=\"...\">\n  <figcaption class=\"caption\">Sunset</figcaption>\n</figure>\n```",
+      "images": [
+        {
+          "src": "blend-backdrop-isolation.svg",
+          "alt": "Two paint stacks side by side, each running bottom to top from the page, to the photo, to the caption. By default the caption's backdrop covers both the photo and the page. With isolation: isolate on the figure, a group boundary encloses the caption and the photo, so the backdrop covers the photo but leaves the page outside.",
+          "caption": "`isolation: isolate` resets the backdrop at the `figure`, so the blend stops at the photo.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {

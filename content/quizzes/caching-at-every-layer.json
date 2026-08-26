@@ -71,6 +71,14 @@
     {
       "id": "private-vs-public",
       "title": "What does `Cache-Control: private` tell caches?",
+      "images": [
+        {
+          "src": "request-path.svg",
+          "alt": "A GET descends three rows: the private browser cache, the shared CDN edge, then the origin. A fresh browser copy is served with no network at all. Past max-age=60 the request reaches the edge, which is still fresh under s-maxage=600 and returns the body with Age: 200. Past 600 seconds the edge revalidates with If-None-Match: \"v7\"; a matching ETag yields 304 with no body, a differing one yields 200 with a new body and validator.",
+          "caption": "The left column is the private row; the middle column is the shared one.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -88,6 +96,14 @@
       "id": "cdn-leak-missing-private",
       "title": "Why is the CDN serving one user's data to everyone, and what's the fix?",
       "description": "An app puts each logged-in user's dashboard behind a CDN. Users start seeing *other people's* names. The origin sends:\n\n```http\nCache-Control: max-age=60\n```",
+      "images": [
+        {
+          "src": "request-path.svg",
+          "alt": "A GET descends three rows: the private browser cache, the shared CDN edge, then the origin. A fresh browser copy is served with no network at all. Past max-age=60 the request reaches the edge, which is still fresh under s-maxage=600 and returns the body with Age: 200. Past 600 seconds the edge revalidates with If-None-Match: \"v7\"; a matching ETag yields 304 with no body, a differing one yields 200 with a new body and validator.",
+          "caption": "Without `private`, the shared middle row stores the response and replays it to the next visitor.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -105,6 +121,14 @@
       "id": "s-maxage-overrides",
       "title": "How long does each cache treat this response as fresh?",
       "description": "A response is sent with `Cache-Control: max-age=60, s-maxage=600`.",
+      "images": [
+        {
+          "src": "request-path.svg",
+          "alt": "A GET descends three rows: the private browser cache, the shared CDN edge, then the origin. A fresh browser copy is served with no network at all. Past max-age=60 the request reaches the edge, which is still fresh under s-maxage=600 and returns the body with Age: 200. Past 600 seconds the edge revalidates with If-None-Match: \"v7\"; a matching ETag yields 304 with no body, a differing one yields 200 with a new body and validator.",
+          "caption": "Two deadlines, one response: 60 s for the browser row, 600 s for the edge row.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         { "text": "Browser cache: 60s; shared cache (CDN/proxy): 600s", "isCorrect": true },
@@ -119,6 +143,14 @@
       "id": "not-modified-status",
       "title": "Which numeric HTTP status lets the cache reuse its copy *without* re-sending the body?",
       "description": "A cache sends `If-None-Match` with the stored `ETag`. The representation is unchanged.",
+      "images": [
+        {
+          "src": "request-path.svg",
+          "alt": "A GET descends three rows: the private browser cache, the shared CDN edge, then the origin. A fresh browser copy is served with no network at all. Past max-age=60 the request reaches the edge, which is still fresh under s-maxage=600 and returns the body with Age: 200. Past 600 seconds the edge revalidates with If-None-Match: \"v7\"; a matching ETag yields 304 with no body, a differing one yields 200 with a new body and validator.",
+          "caption": "The bottom-left branch: the validator still matches, so no body crosses the wire.",
+          "placement": "explanation"
+        }
+      ],
       "type": "input",
       "validation": { "mode": "numeric", "acceptedAnswers": [304] },
       "explanation": "`304 Not Modified` is the whole point of validators. The origin confirms \"your copy is still good\" in a tiny headers-only response, and the cache serves the body it already has. This is why `no-cache` and `max-age=0, must-revalidate` are cheap when paired with an `ETag` or `Last-Modified`: you pay one round trip but save the payload. Contrast `200 OK` (full body re-sent) and `412 Precondition Failed` (used for write preconditions like `If-Match`, not GET revalidation).",
@@ -127,6 +159,14 @@
     {
       "id": "status-304-no-body",
       "title": "Which constraint does a correct `304 Not Modified` response obey?",
+      "images": [
+        {
+          "src": "request-path.svg",
+          "alt": "A GET descends three rows: the private browser cache, the shared CDN edge, then the origin. A fresh browser copy is served with no network at all. Past max-age=60 the request reaches the edge, which is still fresh under s-maxage=600 and returns the body with Age: 200. Past 600 seconds the edge revalidates with If-None-Match: \"v7\"; a matching ETag yields 304 with no body, a differing one yields 200 with a new body and validator.",
+          "caption": "The 304 branch carries headers only — the stored copy supplies the body.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -149,6 +189,14 @@
     {
       "id": "conditional-header-pairing",
       "title": "When a cache revalidates a stored GET response, which header pairing does it use?",
+      "images": [
+        {
+          "src": "request-path.svg",
+          "alt": "A GET descends three rows: the private browser cache, the shared CDN edge, then the origin. A fresh browser copy is served with no network at all. Past max-age=60 the request reaches the edge, which is still fresh under s-maxage=600 and returns the body with Age: 200. Past 600 seconds the edge revalidates with If-None-Match: \"v7\"; a matching ETag yields 304 with no body, a differing one yields 200 with a new body and validator.",
+          "caption": "The stored `ETag` goes back out as `If-None-Match` on the revalidation arrow.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -234,6 +282,14 @@
       "id": "swr-directive-name",
       "title": "Which directive lets a cache return a stale response *immediately* while it revalidates in the background?",
       "description": "It's a `Cache-Control` extension directive defined in RFC 5861. Write the token exactly as it appears in the header.",
+      "images": [
+        {
+          "src": "freshness-timeline.svg",
+          "alt": "A timeline of one stored response sent with max-age=600 and stale-while-revalidate=86400: a green FRESH band up to 600 seconds, an orange stale-but-inside-the-window band up to 87,000 seconds, then a dashed EXPIRED band that requires a round trip. A marker at 700 seconds falls inside the orange band. Below, four cards state what stale-while-revalidate, stale-if-error, must-revalidate and immutable each change at the boundary, and a final note gives the 10-percent-of-Date-minus-Last-Modified heuristic for a response with no freshness headers.",
+          "caption": "The orange band is the `stale-while-revalidate` window.",
+          "placement": "explanation"
+        }
+      ],
       "type": "input",
       "validation": { "mode": "text", "acceptedAnswers": ["stale-while-revalidate"] },
       "explanation": "`stale-while-revalidate=<seconds>` decouples freshness from latency: for up to N seconds *after* a response goes stale, the cache may serve the old copy instantly and kick off an async revalidation so the *next* request gets fresh data. Nobody waits on the origin. This HTTP directive is the namesake of the client-side \"SWR\" pattern (and the SWR React library). Its sibling, `stale-if-error`, covers a different failure mode — serving stale when the origin is *down* rather than merely stale.",
@@ -243,6 +299,14 @@
       "id": "swr-directive-semantics",
       "title": "What does the user experience **700 seconds** after the response was stored?",
       "description": "A response carries `Cache-Control: max-age=600, stale-while-revalidate=86400`.",
+      "images": [
+        {
+          "src": "freshness-timeline.svg",
+          "alt": "A timeline of one stored response sent with max-age=600 and stale-while-revalidate=86400: a green FRESH band up to 600 seconds, an orange stale-but-inside-the-window band up to 87,000 seconds, then a dashed EXPIRED band that requires a round trip. A marker at 700 seconds falls inside the orange band. Below, four cards state what stale-while-revalidate, stale-if-error, must-revalidate and immutable each change at the boundary, and a final note gives the 10-percent-of-Date-minus-Last-Modified heuristic for a response with no freshness headers.",
+          "caption": "The 700 s marker sits inside the orange band, not past it.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -265,6 +329,14 @@
     {
       "id": "stale-if-error",
       "title": "Which directive lets a cache keep serving a stale copy when revalidation *fails* (origin error or unreachable)?",
+      "images": [
+        {
+          "src": "freshness-timeline.svg",
+          "alt": "A timeline of one stored response sent with max-age=600 and stale-while-revalidate=86400: a green FRESH band up to 600 seconds, an orange stale-but-inside-the-window band up to 87,000 seconds, then a dashed EXPIRED band that requires a round trip. A marker at 700 seconds falls inside the orange band. Below, four cards state what stale-while-revalidate, stale-if-error, must-revalidate and immutable each change at the boundary, and a final note gives the 10-percent-of-Date-minus-Last-Modified heuristic for a response with no freshness headers.",
+          "caption": "`stale-if-error` is the failure twin of the orange band.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         { "text": "`stale-if-error`", "isCorrect": true },
@@ -278,6 +350,14 @@
     {
       "id": "must-revalidate",
       "title": "What is the practical effect of adding `must-revalidate` to `max-age=60`?",
+      "images": [
+        {
+          "src": "freshness-timeline.svg",
+          "alt": "A timeline of one stored response sent with max-age=600 and stale-while-revalidate=86400: a green FRESH band up to 600 seconds, an orange stale-but-inside-the-window band up to 87,000 seconds, then a dashed EXPIRED band that requires a round trip. A marker at 700 seconds falls inside the orange band. Below, four cards state what stale-while-revalidate, stale-if-error, must-revalidate and immutable each change at the boundary, and a final note gives the 10-percent-of-Date-minus-Last-Modified heuristic for a response with no freshness headers.",
+          "caption": "`must-revalidate` deletes the orange band: no stale serving, at all.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -298,6 +378,14 @@
       "id": "immutable-directive",
       "title": "What does `immutable` add over the year-long `max-age` alone?",
       "description": "A fingerprinted asset is served with `Cache-Control: max-age=31536000, immutable`.",
+      "images": [
+        {
+          "src": "freshness-timeline.svg",
+          "alt": "A timeline of one stored response sent with max-age=600 and stale-while-revalidate=86400: a green FRESH band up to 600 seconds, an orange stale-but-inside-the-window band up to 87,000 seconds, then a dashed EXPIRED band that requires a round trip. A marker at 700 seconds falls inside the orange band. Below, four cards state what stale-while-revalidate, stale-if-error, must-revalidate and immutable each change at the boundary, and a final note gives the 10-percent-of-Date-minus-Last-Modified heuristic for a response with no freshness headers.",
+          "caption": "`immutable` acts inside the green band, on the reload path.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -321,6 +409,14 @@
       "id": "heuristic-freshness-calc",
       "title": "For how many hours will a cache treat this response as fresh?",
       "description": "A response has **no** `Cache-Control` and **no** `Expires`, only a `Last-Modified`. The origin generated it (its `Date`) exactly **200 hours** after the resource was last modified. Use the common 10%-of-age heuristic that RFC 9111 suggests; enter a number.",
+      "images": [
+        {
+          "src": "freshness-timeline.svg",
+          "alt": "A timeline of one stored response sent with max-age=600 and stale-while-revalidate=86400: a green FRESH band up to 600 seconds, an orange stale-but-inside-the-window band up to 87,000 seconds, then a dashed EXPIRED band that requires a round trip. A marker at 700 seconds falls inside the orange band. Below, four cards state what stale-while-revalidate, stale-if-error, must-revalidate and immutable each change at the boundary, and a final note gives the 10-percent-of-Date-minus-Last-Modified heuristic for a response with no freshness headers.",
+          "caption": "The blue note: 10% of `Date` − `Last-Modified`.",
+          "placement": "explanation"
+        }
+      ],
       "type": "input",
       "validation": { "mode": "numeric", "acceptedAnswers": [20] },
       "explanation": "With no explicit freshness, a cache *may* compute a heuristic lifetime, and RFC 9111 suggests no more than a fraction of the interval since `Last-Modified`, with **10%** as the typical setting (the long-standing Apache `httpd` default). Here that interval is `Date − Last-Modified = 200 h`, so `0.10 × 200 = 20 hours`. The lesson: omitting caching headers does **not** mean \"don't cache\" — it hands the decision to opaque heuristics that can keep content far longer than you expect. Always set freshness explicitly.",
@@ -371,6 +467,14 @@
       "id": "age-header",
       "title": "What does `Age: 550` tell you?",
       "description": "A response comes back from a CDN with `Cache-Control: max-age=600` and `Age: 550`.",
+      "images": [
+        {
+          "src": "request-path.svg",
+          "alt": "A GET descends three rows: the private browser cache, the shared CDN edge, then the origin. A fresh browser copy is served with no network at all. Past max-age=60 the request reaches the edge, which is still fresh under s-maxage=600 and returns the body with Age: 200. Past 600 seconds the edge revalidates with If-None-Match: \"v7\"; a matching ETag yields 304 with no body, a differing one yields 200 with a new body and validator.",
+          "caption": "`Age: 200` against `s-maxage=600` leaves 400 s of edge freshness.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -408,6 +512,14 @@
       "id": "cache-stampede-define",
       "title": "What is the \"stampede\" that follows a hot key's expiry?",
       "description": "A very popular key expires in a Redis-backed cache. The pattern is also known as *thundering herd* or *dog-piling*.",
+      "images": [
+        {
+          "src": "stampede-and-coalescing.svg",
+          "alt": "Two panels. Without coalescing, five GET boxes standing in for 5,000 concurrent misses all arrow into one origin box marked 5,000 identical recomputations. With coalescing, the same requests arrow into a single-flight gate labelled one leader, 4,999 waiters, and a single arrow continues to an origin box marked 1 recomputation. Below, four cards name request coalescing, serving stale while revalidating, probabilistic early expiration and TTL jitter, and a final card marks max-age=0 as the opposite of a fix.",
+          "caption": "The left panel: every concurrent miss recomputes the same value.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -434,6 +546,14 @@
       "id": "cache-stampede-mitigations",
       "title": "Which techniques genuinely mitigate a cache stampede on a hot key?",
       "description": "Select **every** technique that applies.",
+      "images": [
+        {
+          "src": "stampede-and-coalescing.svg",
+          "alt": "Two panels. Without coalescing, five GET boxes standing in for 5,000 concurrent misses all arrow into one origin box marked 5,000 identical recomputations. With coalescing, the same requests arrow into a single-flight gate labelled one leader, 4,999 waiters, and a single arrow continues to an origin box marked 1 recomputation. Below, four cards name request coalescing, serving stale while revalidating, probabilistic early expiration and TTL jitter, and a final card marks max-age=0 as the opposite of a fix.",
+          "caption": "Four cards, one idea — never let N requests do the same work N times.",
+          "placement": "explanation"
+        }
+      ],
       "type": "multiple-choice",
       "options": [
         {
@@ -490,6 +610,14 @@
       "id": "request-coalescing-define",
       "title": "With request coalescing enabled, how many requests reach the origin?",
       "description": "At an edge cache, 5,000 requests for the same uncached URL arrive within a few milliseconds.",
+      "images": [
+        {
+          "src": "stampede-and-coalescing.svg",
+          "alt": "Two panels. Without coalescing, five GET boxes standing in for 5,000 concurrent misses all arrow into one origin box marked 5,000 identical recomputations. With coalescing, the same requests arrow into a single-flight gate labelled one leader, 4,999 waiters, and a single arrow continues to an origin box marked 1 recomputation. Below, four cards name request coalescing, serving stale while revalidating, probabilistic early expiration and TTL jitter, and a final card marks max-age=0 as the opposite of a fix.",
+          "caption": "The right panel: one leader fetches, 4,999 waiters share the result.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {

@@ -272,6 +272,14 @@
       "id": "pg-default-isolation-level",
       "title": "Which transaction isolation level does a stock PostgreSQL server use when you `BEGIN` without specifying one?",
       "description": "Answer with the level's name, for example `read uncommitted`.",
+      "images": [
+        {
+          "src": "postgres-isolation-levels.svg",
+          "alt": "Four PostgreSQL isolation level names against what the server actually does. READ UNCOMMITTED is accepted for compatibility and treated as READ COMMITTED. READ COMMITTED, the default, takes a fresh snapshot at the start of every statement rather than of the transaction. REPEATABLE READ is snapshot isolation: one snapshot per transaction, ruling out dirty reads, non-repeatable reads and phantoms while letting write skew and lost update through. SERIALIZABLE adds SSI, which watches for dangerous read/write structures and aborts a transaction instead of taking two-phase locks. Two cards give the SQLSTATE codes to retry on — 40001 serialization_failure and 40P01 deadlock_detected — and a closing note warns that SSI only sees transactions that are themselves SERIALIZABLE, that Oracle's SERIALIZABLE is snapshot isolation, and that MySQL's InnoDB defaults to REPEATABLE READ.",
+          "caption": "The highlighted row is what a bare `BEGIN` gives you.",
+          "placement": "explanation"
+        }
+      ],
       "type": "input",
       "validation": {
         "mode": "text",
@@ -288,6 +296,14 @@
       "id": "pg-distinct-isolation-levels",
       "title": "PostgreSQL accepts all four SQL-standard isolation level names, but how many behaviourally distinct levels does it actually implement?",
       "description": "Enter a single digit.",
+      "images": [
+        {
+          "src": "postgres-isolation-levels.svg",
+          "alt": "Four PostgreSQL isolation level names against what the server actually does. READ UNCOMMITTED is accepted for compatibility and treated as READ COMMITTED. READ COMMITTED, the default, takes a fresh snapshot at the start of every statement rather than of the transaction. REPEATABLE READ is snapshot isolation: one snapshot per transaction, ruling out dirty reads, non-repeatable reads and phantoms while letting write skew and lost update through. SERIALIZABLE adds SSI, which watches for dangerous read/write structures and aborts a transaction instead of taking two-phase locks. Two cards give the SQLSTATE codes to retry on — 40001 serialization_failure and 40P01 deadlock_detected — and a closing note warns that SSI only sees transactions that are themselves SERIALIZABLE, that Oracle's SERIALIZABLE is snapshot isolation, and that MySQL's InnoDB defaults to REPEATABLE READ.",
+          "caption": "Four rows, but the first is an alias for the second.",
+          "placement": "explanation"
+        }
+      ],
       "type": "input",
       "validation": {
         "mode": "numeric",
@@ -301,6 +317,14 @@
     {
       "id": "read-committed-snapshot-granularity",
       "title": "At `READ COMMITTED`, when is the snapshot that a query sees actually taken?",
+      "images": [
+        {
+          "src": "postgres-isolation-levels.svg",
+          "alt": "Four PostgreSQL isolation level names against what the server actually does. READ UNCOMMITTED is accepted for compatibility and treated as READ COMMITTED. READ COMMITTED, the default, takes a fresh snapshot at the start of every statement rather than of the transaction. REPEATABLE READ is snapshot isolation: one snapshot per transaction, ruling out dirty reads, non-repeatable reads and phantoms while letting write skew and lost update through. SERIALIZABLE adds SSI, which watches for dangerous read/write structures and aborts a transaction instead of taking two-phase locks. Two cards give the SQLSTATE codes to retry on — 40001 serialization_failure and 40P01 deadlock_detected — and a closing note warns that SSI only sees transactions that are themselves SERIALIZABLE, that Oracle's SERIALIZABLE is snapshot isolation, and that MySQL's InnoDB defaults to REPEATABLE READ.",
+          "caption": "Per statement, not per transaction.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -378,6 +402,14 @@
       "id": "lost-update-read-modify-write",
       "title": "Both transactions commit successfully. What is the final `balance`, and what is this anomaly called?",
       "description": "Both transactions run at `READ COMMITTED`, and `accounts.balance` starts at `100`.\n\n```sql\n-- T1                                  -- T2\nBEGIN;                                 BEGIN;\nSELECT balance FROM accounts           SELECT balance FROM accounts\n  WHERE id = 1;      -- 100              WHERE id = 1;      -- 100\n                                       -- (application computes 100 - 20)\n-- (application computes 100 - 10)\nUPDATE accounts SET balance = 90\n  WHERE id = 1;\nCOMMIT;\n                                       UPDATE accounts SET balance = 80\n                                         WHERE id = 1;\n                                       COMMIT;\n```",
+      "images": [
+        {
+          "src": "anomaly-timelines.svg",
+          "alt": "Three two-transaction timelines with time running downward, all of them committing. Lost update at READ COMMITTED: both sessions read balance 100, one writes 90 and commits, the other writes 80 and commits, leaving 80 and erasing the first change. Write skew at REPEATABLE READ: two doctors each count two colleagues on call, each concludes it is safe to leave, each updates a different row, and both commit with nobody on call. The phantom a row lock cannot hold, at READ COMMITTED: two sessions run SELECT ... FOR UPDATE, both get zero rows, both insert a booking for the same room and hour, and both commit.",
+          "caption": "The first timeline: two reads of 100, two writes, one survivor.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -404,6 +436,14 @@
       "id": "pg-repeatable-read-prevents",
       "title": "Which of these anomalies does PostgreSQL's `REPEATABLE READ` prevent?",
       "description": "Select every anomaly that this level rules out, as PostgreSQL implements it.",
+      "images": [
+        {
+          "src": "postgres-isolation-levels.svg",
+          "alt": "Four PostgreSQL isolation level names against what the server actually does. READ UNCOMMITTED is accepted for compatibility and treated as READ COMMITTED. READ COMMITTED, the default, takes a fresh snapshot at the start of every statement rather than of the transaction. REPEATABLE READ is snapshot isolation: one snapshot per transaction, ruling out dirty reads, non-repeatable reads and phantoms while letting write skew and lost update through. SERIALIZABLE adds SSI, which watches for dangerous read/write structures and aborts a transaction instead of taking two-phase locks. Two cards give the SQLSTATE codes to retry on — 40001 serialization_failure and 40P01 deadlock_detected — and a closing note warns that SSI only sees transactions that are themselves SERIALIZABLE, that Oracle's SERIALIZABLE is snapshot isolation, and that MySQL's InnoDB defaults to REPEATABLE READ.",
+          "caption": "The third row lists what it rules out — and what it does not.",
+          "placement": "explanation"
+        }
+      ],
       "type": "multiple-choice",
       "options": [
         {
@@ -434,6 +474,14 @@
       "id": "serialization-failure-sqlstate",
       "title": "Which five-character SQLSTATE code does PostgreSQL return when a transaction must be rolled back and retried because of a serialization failure?",
       "description": "Enter the five characters exactly, for example `23505`.",
+      "images": [
+        {
+          "src": "postgres-isolation-levels.svg",
+          "alt": "Four PostgreSQL isolation level names against what the server actually does. READ UNCOMMITTED is accepted for compatibility and treated as READ COMMITTED. READ COMMITTED, the default, takes a fresh snapshot at the start of every statement rather than of the transaction. REPEATABLE READ is snapshot isolation: one snapshot per transaction, ruling out dirty reads, non-repeatable reads and phantoms while letting write skew and lost update through. SERIALIZABLE adds SSI, which watches for dangerous read/write structures and aborts a transaction instead of taking two-phase locks. Two cards give the SQLSTATE codes to retry on — 40001 serialization_failure and 40P01 deadlock_detected — and a closing note warns that SSI only sees transactions that are themselves SERIALIZABLE, that Oracle's SERIALIZABLE is snapshot isolation, and that MySQL's InnoDB defaults to REPEATABLE READ.",
+          "caption": "The left-hand code card.",
+          "placement": "explanation"
+        }
+      ],
       "type": "input",
       "validation": {
         "mode": "text",
@@ -447,6 +495,14 @@
     {
       "id": "retry-40p01-deadlock",
       "title": "PostgreSQL aborts your transaction with SQLSTATE `40P01`. What happened, and what should the client do?",
+      "images": [
+        {
+          "src": "postgres-isolation-levels.svg",
+          "alt": "Four PostgreSQL isolation level names against what the server actually does. READ UNCOMMITTED is accepted for compatibility and treated as READ COMMITTED. READ COMMITTED, the default, takes a fresh snapshot at the start of every statement rather than of the transaction. REPEATABLE READ is snapshot isolation: one snapshot per transaction, ruling out dirty reads, non-repeatable reads and phantoms while letting write skew and lost update through. SERIALIZABLE adds SSI, which watches for dangerous read/write structures and aborts a transaction instead of taking two-phase locks. Two cards give the SQLSTATE codes to retry on — 40001 serialization_failure and 40P01 deadlock_detected — and a closing note warns that SSI only sees transactions that are themselves SERIALIZABLE, that Oracle's SERIALIZABLE is snapshot isolation, and that MySQL's InnoDB defaults to REPEATABLE READ.",
+          "caption": "The right-hand code card: a cycle of waits, and a retry.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -473,6 +529,14 @@
       "id": "write-skew-oncall",
       "title": "Both transactions commit and nobody is left on call. Why did snapshot isolation allow it?",
       "description": "Alice and Bob are both on call. The rule is that at least one doctor must remain on call at all times. Both feel unwell and try to go off call simultaneously, at `REPEATABLE READ` (snapshot isolation):\n\n```sql\n-- Alice                                    -- Bob\nBEGIN;                                      BEGIN;\nSELECT count(*) FROM doctors                SELECT count(*) FROM doctors\n WHERE on_call = true                        WHERE on_call = true\n   AND shift_id = 1234;   -- 2                  AND shift_id = 1234;   -- 2\n-- 2 >= 2, safe to leave                    -- 2 >= 2, safe to leave\nUPDATE doctors SET on_call = false          UPDATE doctors SET on_call = false\n WHERE name = 'Alice'                        WHERE name = 'Bob'\n   AND shift_id = 1234;                        AND shift_id = 1234;\nCOMMIT;                                     COMMIT;\n```",
+      "images": [
+        {
+          "src": "anomaly-timelines.svg",
+          "alt": "Three two-transaction timelines with time running downward, all of them committing. Lost update at READ COMMITTED: both sessions read balance 100, one writes 90 and commits, the other writes 80 and commits, leaving 80 and erasing the first change. Write skew at REPEATABLE READ: two doctors each count two colleagues on call, each concludes it is safe to leave, each updates a different row, and both commit with nobody on call. The phantom a row lock cannot hold, at READ COMMITTED: two sessions run SELECT ... FOR UPDATE, both get zero rows, both insert a booking for the same room and hour, and both commit.",
+          "caption": "The second timeline: different rows, so no write-write conflict to detect.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -498,6 +562,14 @@
     {
       "id": "first-committer-wins-blind-spot",
       "title": "Snapshot isolation's first-committer-wins rule is described as its conflict detector. What class of conflict is it structurally unable to see?",
+      "images": [
+        {
+          "src": "anomaly-timelines.svg",
+          "alt": "Three two-transaction timelines with time running downward, all of them committing. Lost update at READ COMMITTED: both sessions read balance 100, one writes 90 and commits, the other writes 80 and commits, leaving 80 and erasing the first change. Write skew at REPEATABLE READ: two doctors each count two colleagues on call, each concludes it is safe to leave, each updates a different row, and both commit with nobody on call. The phantom a row lock cannot hold, at READ COMMITTED: two sessions run SELECT ... FOR UPDATE, both get zero rows, both insert a booking for the same room and hour, and both commit.",
+          "caption": "It compares writes, and write skew never writes the same row twice.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -524,6 +596,14 @@
       "id": "ssi-dangerous-structure",
       "title": "PostgreSQL's Serializable Snapshot Isolation aborts a transaction when it spots a \"dangerous structure.\" What is that structure?",
       "description": "SSI arrived in PostgreSQL 9.1 and is what makes `SERIALIZABLE` truly serializable rather than snapshot isolation with a stricter name.",
+      "images": [
+        {
+          "src": "postgres-isolation-levels.svg",
+          "alt": "Four PostgreSQL isolation level names against what the server actually does. READ UNCOMMITTED is accepted for compatibility and treated as READ COMMITTED. READ COMMITTED, the default, takes a fresh snapshot at the start of every statement rather than of the transaction. REPEATABLE READ is snapshot isolation: one snapshot per transaction, ruling out dirty reads, non-repeatable reads and phantoms while letting write skew and lost update through. SERIALIZABLE adds SSI, which watches for dangerous read/write structures and aborts a transaction instead of taking two-phase locks. Two cards give the SQLSTATE codes to retry on — 40001 serialization_failure and 40P01 deadlock_detected — and a closing note warns that SSI only sees transactions that are themselves SERIALIZABLE, that Oracle's SERIALIZABLE is snapshot isolation, and that MySQL's InnoDB defaults to REPEATABLE READ.",
+          "caption": "The fourth row: SSI watches for the structure, then aborts.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -549,6 +629,14 @@
     {
       "id": "ssi-requires-all-serializable",
       "title": "Your reporting job runs at `SERIALIZABLE`, but the writer that updates the same rows runs at the default level. Is the reporting job still protected from serialization anomalies?",
+      "images": [
+        {
+          "src": "postgres-isolation-levels.svg",
+          "alt": "Four PostgreSQL isolation level names against what the server actually does. READ UNCOMMITTED is accepted for compatibility and treated as READ COMMITTED. READ COMMITTED, the default, takes a fresh snapshot at the start of every statement rather than of the transaction. REPEATABLE READ is snapshot isolation: one snapshot per transaction, ruling out dirty reads, non-repeatable reads and phantoms while letting write skew and lost update through. SERIALIZABLE adds SSI, which watches for dangerous read/write structures and aborts a transaction instead of taking two-phase locks. Two cards give the SQLSTATE codes to retry on — 40001 serialization_failure and 40P01 deadlock_detected — and a closing note warns that SSI only sees transactions that are themselves SERIALIZABLE, that Oracle's SERIALIZABLE is snapshot isolation, and that MySQL's InnoDB defaults to REPEATABLE READ.",
+          "caption": "The closing note — one writer at the default is enough to defeat it.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -574,6 +662,14 @@
     {
       "id": "ssi-versus-two-phase-locking",
       "title": "How does SSI's approach to serializability differ from classic two-phase locking?",
+      "images": [
+        {
+          "src": "postgres-isolation-levels.svg",
+          "alt": "Four PostgreSQL isolation level names against what the server actually does. READ UNCOMMITTED is accepted for compatibility and treated as READ COMMITTED. READ COMMITTED, the default, takes a fresh snapshot at the start of every statement rather than of the transaction. REPEATABLE READ is snapshot isolation: one snapshot per transaction, ruling out dirty reads, non-repeatable reads and phantoms while letting write skew and lost update through. SERIALIZABLE adds SSI, which watches for dangerous read/write structures and aborts a transaction instead of taking two-phase locks. Two cards give the SQLSTATE codes to retry on — 40001 serialization_failure and 40P01 deadlock_detected — and a closing note warns that SSI only sees transactions that are themselves SERIALIZABLE, that Oracle's SERIALIZABLE is snapshot isolation, and that MySQL's InnoDB defaults to REPEATABLE READ.",
+          "caption": "It aborts rather than locking.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -625,6 +721,14 @@
       "id": "for-update-cannot-lock-phantoms",
       "title": "Why does `SELECT ... FOR UPDATE` fail to prevent this double booking?",
       "description": "A booking service checks for a conflicting reservation before inserting one. Two requests for the same room and overlapping times arrive at the same moment, both at `READ COMMITTED`:\n\n```sql\nBEGIN;\nSELECT * FROM bookings\n WHERE room_id = 7\n   AND during && tstzrange('2026-09-01 10:00', '2026-09-01 11:00')\n FOR UPDATE;          -- returns 0 rows in both sessions\n\n-- both conclude the slot is free\nINSERT INTO bookings (room_id, during) VALUES (7, ...);\nCOMMIT;\n```",
+      "images": [
+        {
+          "src": "anomaly-timelines.svg",
+          "alt": "Three two-transaction timelines with time running downward, all of them committing. Lost update at READ COMMITTED: both sessions read balance 100, one writes 90 and commits, the other writes 80 and commits, leaving 80 and erasing the first change. Write skew at REPEATABLE READ: two doctors each count two colleagues on call, each concludes it is safe to leave, each updates a different row, and both commit with nobody on call. The phantom a row lock cannot hold, at READ COMMITTED: two sessions run SELECT ... FOR UPDATE, both get zero rows, both insert a booking for the same room and hour, and both commit.",
+          "caption": "The third timeline: both `SELECT`s locked nothing at all.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -743,6 +847,14 @@
       "id": "choose-the-right-guard",
       "title": "Which of these approaches, applied correctly, actually prevent the double booking?",
       "description": "Two concurrent transactions each check that room 7 is free for an overlapping time range, then `INSERT` a booking. Assume `READ COMMITTED` unless the option says otherwise. Select every approach that closes the hole.",
+      "images": [
+        {
+          "src": "anomaly-timelines.svg",
+          "alt": "Three two-transaction timelines with time running downward, all of them committing. Lost update at READ COMMITTED: both sessions read balance 100, one writes 90 and commits, the other writes 80 and commits, leaving 80 and erasing the first change. Write skew at REPEATABLE READ: two doctors each count two colleagues on call, each concludes it is safe to leave, each updates a different row, and both commit with nobody on call. The phantom a row lock cannot hold, at READ COMMITTED: two sessions run SELECT ... FOR UPDATE, both get zero rows, both insert a booking for the same room and hour, and both commit.",
+          "caption": "The third timeline is what any correct guard has to prevent.",
+          "placement": "explanation"
+        }
+      ],
       "type": "multiple-choice",
       "options": [
         {
@@ -772,6 +884,14 @@
     {
       "id": "oracle-serializable-is-snapshot-isolation",
       "title": "Oracle's `SERIALIZABLE` isolation level: what does it actually implement?",
+      "images": [
+        {
+          "src": "postgres-isolation-levels.svg",
+          "alt": "Four PostgreSQL isolation level names against what the server actually does. READ UNCOMMITTED is accepted for compatibility and treated as READ COMMITTED. READ COMMITTED, the default, takes a fresh snapshot at the start of every statement rather than of the transaction. REPEATABLE READ is snapshot isolation: one snapshot per transaction, ruling out dirty reads, non-repeatable reads and phantoms while letting write skew and lost update through. SERIALIZABLE adds SSI, which watches for dangerous read/write structures and aborts a transaction instead of taking two-phase locks. Two cards give the SQLSTATE codes to retry on — 40001 serialization_failure and 40P01 deadlock_detected — and a closing note warns that SSI only sees transactions that are themselves SERIALIZABLE, that Oracle's SERIALIZABLE is snapshot isolation, and that MySQL's InnoDB defaults to REPEATABLE READ.",
+          "caption": "The same name, one rung lower.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -798,6 +918,14 @@
       "id": "mysql-default-isolation-level",
       "title": "Which isolation level does MySQL's InnoDB engine use by default?",
       "description": "Answer with the level's name, for example `read committed`.",
+      "images": [
+        {
+          "src": "postgres-isolation-levels.svg",
+          "alt": "Four PostgreSQL isolation level names against what the server actually does. READ UNCOMMITTED is accepted for compatibility and treated as READ COMMITTED. READ COMMITTED, the default, takes a fresh snapshot at the start of every statement rather than of the transaction. REPEATABLE READ is snapshot isolation: one snapshot per transaction, ruling out dirty reads, non-repeatable reads and phantoms while letting write skew and lost update through. SERIALIZABLE adds SSI, which watches for dangerous read/write structures and aborts a transaction instead of taking two-phase locks. Two cards give the SQLSTATE codes to retry on — 40001 serialization_failure and 40P01 deadlock_detected — and a closing note warns that SSI only sees transactions that are themselves SERIALIZABLE, that Oracle's SERIALIZABLE is snapshot isolation, and that MySQL's InnoDB defaults to REPEATABLE READ.",
+          "caption": "A different default from PostgreSQL's.",
+          "placement": "explanation"
+        }
+      ],
       "type": "input",
       "validation": {
         "mode": "text",

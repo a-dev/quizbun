@@ -1,0 +1,147 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="740" viewBox="0 0 720 740">
+  <style>
+    /* An &lt;img&gt;-embedded SVG cannot see the page's `data-theme`, but it does
+       inherit the embedding document's `color-scheme`, so `prefers-color-scheme`
+       tracks the site theme including an explicit toggle. The presentation
+       attributes below stay as the light fallback for renderers without CSS. */
+    svg {
+      --panel: #f5f7fb;
+      --title: #20242c;
+      --muted: #526173;
+      --edge: #64748b;
+      --card: #ffffff;
+      --ctx-fill: #dbeafe;
+      --ctx-edge: #2563eb;
+      --ctx-label: #172554;
+      --accent-fill: #ffedd5;
+      --accent-edge: #c2410c;
+      --accent-text: #9a3412;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      svg {
+        --panel: #1a1f27;
+        --title: #e6eaf2;
+        --muted: #9aa8bd;
+        --edge: #8b9bb4;
+        --card: #252b35;
+        --ctx-fill: #1e3a5f;
+        --ctx-edge: #60a5fa;
+        --ctx-label: #dbeafe;
+        --accent-fill: #3a2416;
+        --accent-edge: #fb923c;
+        --accent-text: #fdba74;
+      }
+    }
+
+    .panel-bg { fill: var(--panel); }
+    .title { fill: var(--title); }
+    .muted { fill: var(--muted); }
+    .field { fill: var(--ctx-fill); stroke: var(--ctx-edge); }
+    .field-label { fill: var(--ctx-label); }
+    .mask-field { fill: var(--accent-fill); stroke: var(--accent-edge); }
+    .mask-label { fill: var(--accent-text); }
+    .optional { fill: var(--panel); stroke: var(--edge); }
+    .optional-label { fill: var(--muted); }
+    .accent-text { fill: var(--accent-text); }
+    .example-box { fill: var(--accent-fill); stroke: var(--accent-edge); }
+  </style>
+
+  <rect class="panel-bg" width="720" height="740" rx="20" fill="#f5f7fb" />
+
+  <text class="title" x="36" y="40" fill="#20242c" font-family="system-ui, sans-serif" font-size="20" font-weight="700">
+    The WebSocket frame header (RFC 6455)
+  </text>
+  <text class="muted" x="36" y="64" fill="#526173" font-family="system-ui, sans-serif" font-size="14">
+    Two bytes are always present. Everything below them is conditional or variable-length.
+  </text>
+
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" text-anchor="middle">
+    <text class="muted" x="40" y="100" fill="#526173" font-size="10.5">bit</text>
+    <text class="muted" x="144" y="100" fill="#526173" font-size="10.5">0</text>
+    <text class="muted" x="216" y="100" fill="#526173" font-size="10.5">1</text>
+    <text class="muted" x="288" y="100" fill="#526173" font-size="10.5">2</text>
+    <text class="muted" x="360" y="100" fill="#526173" font-size="10.5">3</text>
+    <text class="muted" x="540" y="100" fill="#526173" font-size="10.5">4–7</text>
+  </g>
+
+  <g font-family="system-ui, sans-serif" text-anchor="middle">
+    <text class="muted" x="40" y="146" fill="#526173" font-size="12" font-weight="700">byte 0</text>
+
+    <rect class="field" x="108" y="108" width="72" height="64" fill="#dbeafe" stroke="#2563eb" stroke-width="2" />
+    <text class="field-label" x="144" y="140" fill="#172554" font-size="13" font-weight="700">FIN</text>
+    <text class="muted" x="144" y="158" fill="#526173" font-size="10">1 bit</text>
+
+    <rect class="field" x="180" y="108" width="72" height="64" fill="#dbeafe" stroke="#2563eb" stroke-width="2" />
+    <text class="field-label" x="216" y="140" fill="#172554" font-size="12" font-weight="700">RSV1</text>
+    <text class="muted" x="216" y="158" fill="#526173" font-size="9.5">usually 0</text>
+
+    <rect class="field" x="252" y="108" width="72" height="64" fill="#dbeafe" stroke="#2563eb" stroke-width="2" />
+    <text class="field-label" x="288" y="140" fill="#172554" font-size="12" font-weight="700">RSV2</text>
+    <text class="muted" x="288" y="158" fill="#526173" font-size="9.5">usually 0</text>
+
+    <rect class="field" x="324" y="108" width="72" height="64" fill="#dbeafe" stroke="#2563eb" stroke-width="2" />
+    <text class="field-label" x="360" y="140" fill="#172554" font-size="12" font-weight="700">RSV3</text>
+    <text class="muted" x="360" y="158" fill="#526173" font-size="9.5">usually 0</text>
+
+    <rect class="field" x="396" y="108" width="288" height="64" fill="#dbeafe" stroke="#2563eb" stroke-width="2" />
+    <text class="field-label" x="540" y="140" fill="#172554" font-size="14" font-weight="700">opcode</text>
+    <text class="muted" x="540" y="158" fill="#526173" font-size="10.5">4 bits — see registry below</text>
+  </g>
+
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" text-anchor="middle">
+    <text class="muted" x="144" y="184" fill="#526173" font-size="10.5">0</text>
+    <text class="muted" x="432" y="184" fill="#526173" font-size="10.5">1–7</text>
+  </g>
+
+  <g font-family="system-ui, sans-serif" text-anchor="middle">
+    <text class="muted" x="40" y="230" fill="#526173" font-size="12" font-weight="700">byte 1</text>
+
+    <rect class="mask-field" x="108" y="192" width="72" height="64" fill="#ffedd5" stroke="#c2410c" stroke-width="2" />
+    <text class="mask-label" x="144" y="224" fill="#9a3412" font-size="13" font-weight="700">MASK</text>
+    <text class="mask-label" x="144" y="242" fill="#9a3412" font-size="10">1 bit</text>
+
+    <rect class="field" x="180" y="192" width="504" height="64" fill="#dbeafe" stroke="#2563eb" stroke-width="2" />
+    <text class="field-label" x="432" y="224" fill="#172554" font-size="14" font-weight="700">payload len</text>
+    <text class="muted" x="432" y="242" fill="#526173" font-size="10.5">0–125 = literal length · 126 / 127 = escape</text>
+  </g>
+
+  <text class="muted" x="36" y="290" fill="#526173" font-family="system-ui, sans-serif" font-size="13" font-weight="600">
+    Extended payload length — only present when `payload len` signals an escape:
+  </text>
+
+  <g font-family="system-ui, sans-serif">
+    <rect class="optional" x="36" y="302" width="308" height="86" rx="12" fill="#f5f7fb" stroke="#64748b" stroke-width="2" stroke-dasharray="6 5" />
+    <text class="mask-label" x="56" y="330" fill="#9a3412" font-size="14" font-weight="700">payload len = 126</text>
+    <text class="muted" x="56" y="352" fill="#526173" font-size="12">next 2 bytes = 16-bit</text>
+    <text class="muted" x="56" y="370" fill="#526173" font-size="12">length (up to 65,535)</text>
+
+    <rect class="optional" x="376" y="302" width="308" height="86" rx="12" fill="#f5f7fb" stroke="#64748b" stroke-width="2" stroke-dasharray="6 5" />
+    <text class="mask-label" x="396" y="330" fill="#9a3412" font-size="14" font-weight="700">payload len = 127</text>
+    <text class="muted" x="396" y="352" fill="#526173" font-size="12">next 8 bytes = 64-bit</text>
+    <text class="muted" x="396" y="370" fill="#526173" font-size="12">length</text>
+  </g>
+
+  <g font-family="system-ui, sans-serif">
+    <rect class="optional" x="36" y="410" width="648" height="70" rx="12" fill="#f5f7fb" stroke="#64748b" stroke-width="2" stroke-dasharray="6 5" />
+    <text class="optional-label" x="56" y="438" fill="#526173" font-size="14" font-weight="700">Masking key — 4 bytes (32 bits)</text>
+    <text class="muted" x="56" y="458" fill="#526173" font-size="12">present only when MASK = 1 — mandatory client→server, forbidden server→client</text>
+  </g>
+
+  <g font-family="system-ui, sans-serif">
+    <rect class="optional" x="36" y="498" width="648" height="70" rx="12" fill="#f5f7fb" stroke="#64748b" stroke-width="2" stroke-dasharray="6 5" />
+    <text class="optional-label" x="56" y="526" fill="#526173" font-size="14" font-weight="700">Payload data — 0 to 2⁶⁴−1 bytes</text>
+    <text class="muted" x="56" y="546" fill="#526173" font-size="12">if masked: payload[i] XOR masking-key[i mod 4], byte by byte</text>
+  </g>
+
+  <g font-family="system-ui, sans-serif">
+    <rect class="example-box" x="36" y="586" width="648" height="94" rx="12" fill="#ffedd5" stroke="#c2410c" stroke-width="2" />
+    <text class="accent-text" x="56" y="612" fill="#9a3412" font-size="14" font-weight="700">Worked example — header bytes 0x81 0x85</text>
+    <text class="muted" x="56" y="634" fill="#526173" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="12">0x81 = 1000 0001 → FIN=1, RSV=000, opcode=0x1 (text)</text>
+    <text class="muted" x="56" y="654" fill="#526173" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="12">0x85 = 1000 0101 → MASK=1, payload len=5 (literal, no escape)</text>
+  </g>
+
+  <text class="muted" x="36" y="712" fill="#526173" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="12">
+    opcode registry — 0x0 continuation · 0x1 text · 0x2 binary · 0x8 close · 0x9 ping · 0xA pong
+  </text>
+</svg>

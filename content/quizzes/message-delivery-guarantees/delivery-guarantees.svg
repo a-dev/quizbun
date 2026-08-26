@@ -1,0 +1,145 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="552" viewBox="0 0 720 552">
+  <style>
+    /* An &lt;img&gt;-embedded SVG cannot see the page's `data-theme`, but it does
+       inherit the embedding document's `color-scheme`, so `prefers-color-scheme`
+       tracks the site theme including an explicit toggle. The presentation
+       attributes below stay as the light fallback for renderers without CSS. */
+    svg {
+      --panel: #f5f7fb;
+      --title: #20242c;
+      --muted: #526173;
+      --edge: #64748b;
+      --card: #ffffff;
+      --ok-fill: #dcfce7;
+      --ok-edge: #16a34a;
+      --ok-text: #14532d;
+      --info-fill: #dbeafe;
+      --info-edge: #2563eb;
+      --info-text: #172554;
+      --accent-fill: #ffedd5;
+      --accent-edge: #c2410c;
+      --accent-text: #9a3412;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      svg {
+        --panel: #1a1f27;
+        --title: #e6eaf2;
+        --muted: #9aa8bd;
+        --edge: #8b9bb4;
+        --card: #252b35;
+        --ok-fill: #14321f;
+        --ok-edge: #4ade80;
+        --ok-text: #bbf7d0;
+        --info-fill: #1e3a5f;
+        --info-edge: #60a5fa;
+        --info-text: #dbeafe;
+        --accent-fill: #3a2416;
+        --accent-edge: #fb923c;
+        --accent-text: #fdba74;
+      }
+    }
+
+    .panel { fill: var(--panel); }
+    .title { fill: var(--title); }
+    .muted { fill: var(--muted); }
+    .card { fill: var(--card); stroke: var(--edge); }
+    .edge-line { stroke: var(--edge); }
+    .ok-box { fill: var(--ok-fill); stroke: var(--ok-edge); }
+    .ok-text { fill: var(--ok-text); }
+    .info-box { fill: var(--info-fill); stroke: var(--info-edge); }
+    .info-text { fill: var(--info-text); }
+    .accent-box { fill: var(--accent-fill); stroke: var(--accent-edge); }
+    .accent-text { fill: var(--accent-text); }
+    .accent-line { stroke: var(--accent-edge); }
+  </style>
+
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="var(--edge)" fill-rule="evenodd" />
+    </marker>
+  </defs>
+
+  <rect class="panel" width="720" height="552" rx="20" fill="#f5f7fb" />
+
+  <text class="title" x="36" y="40" fill="#20242c" font-family="system-ui, sans-serif" font-size="20" font-weight="700">
+    Three guarantees, one lost acknowledgment
+  </text>
+  <text class="muted" x="36" y="64" fill="#526173" font-family="system-ui, sans-serif" font-size="14">
+    Nothing is garbled. An ack simply fails to arrive — and that is enough.
+  </text>
+
+  <g fill="none" class="edge-line" stroke="#64748b" stroke-width="2">
+    <path d="M240,116 L478,116" marker-end="url(#arrow)" />
+  </g>
+  <g fill="none" class="accent-line" stroke="#c2410c" stroke-width="2" stroke-dasharray="6 4">
+    <path d="M478,142 L242,142" marker-end="url(#arrow)" />
+  </g>
+  <g fill="none" class="accent-line" stroke="#c2410c" stroke-width="2.6" stroke-linecap="round">
+    <path d="M352,134 L368,150 M368,134 L352,150" />
+  </g>
+
+  <g font-family="system-ui, sans-serif" text-anchor="middle">
+    <rect class="card" x="36" y="100" width="200" height="56" rx="10" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <text class="title" x="136" y="134" fill="#20242c" font-size="15" font-weight="700">sender</text>
+    <rect class="card" x="484" y="100" width="200" height="56" rx="10" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <text class="title" x="584" y="134" fill="#20242c" font-size="15" font-weight="700">receiver</text>
+    <text class="muted" x="360" y="110" fill="#526173" font-size="11.5">message — delivered and processed</text>
+    <text class="accent-text" x="360" y="168" fill="#9a3412" font-size="11.5" font-weight="700">acknowledgment — lost on the way back</text>
+  </g>
+
+  <g font-family="system-ui, sans-serif" text-anchor="start">
+    <text class="title" x="36" y="196" fill="#20242c" font-size="13" font-weight="700">The sender cannot tell a lost message from a lost ack, so it has exactly two options: retry, or don't.</text>
+
+    <text class="title" x="36" y="230" fill="#20242c" font-size="15" font-weight="700">What the receiver ends up with</text>
+
+    <rect class="card" x="36" y="242" width="648" height="72" rx="12" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <text class="title" x="52" y="268" fill="#20242c" font-size="14" font-weight="700">At-most-once</text>
+    <text class="muted" x="52" y="288" fill="#526173" font-size="11.5">send once, never retry —</text>
+    <text class="muted" x="52" y="304" fill="#526173" font-size="11.5">a lost message is simply gone</text>
+
+    <rect class="card" x="36" y="322" width="648" height="72" rx="12" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <text class="title" x="52" y="348" fill="#20242c" font-size="14" font-weight="700">At-least-once</text>
+    <text class="muted" x="52" y="368" fill="#526173" font-size="11.5">retry until acked —</text>
+    <text class="muted" x="52" y="384" fill="#526173" font-size="11.5">a lost ack buys a second copy</text>
+
+    <rect class="ok-box" x="36" y="402" width="648" height="72" rx="12" fill="#dcfce7" stroke="#16a34a" stroke-width="2" />
+    <text class="ok-text" x="52" y="428" fill="#14532d" font-size="14" font-weight="700">Exactly-once processing</text>
+    <text class="ok-text" x="52" y="448" fill="#14532d" font-size="11.5">at-least-once delivery, plus a</text>
+    <text class="ok-text" x="52" y="464" fill="#14532d" font-size="11.5">dedup key held by the receiver</text>
+  </g>
+
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" text-anchor="middle" font-size="15" font-weight="700">
+    <rect class="card" x="330" y="262" width="64" height="32" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <text class="title" x="362" y="284" fill="#20242c">1</text>
+    <rect class="card" x="402" y="262" width="64" height="32" rx="8" fill="none" stroke="#64748b" stroke-width="2" stroke-dasharray="5 4" />
+    <text class="muted" x="434" y="283" fill="#526173" font-size="11" font-family="system-ui, sans-serif">lost</text>
+    <rect class="card" x="474" y="262" width="64" height="32" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <text class="title" x="506" y="284" fill="#20242c">3</text>
+
+    <rect class="card" x="330" y="342" width="64" height="32" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <text class="title" x="362" y="364" fill="#20242c">1</text>
+    <rect class="card" x="402" y="342" width="64" height="32" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <text class="title" x="434" y="364" fill="#20242c">2</text>
+    <rect class="accent-box" x="474" y="342" width="64" height="32" rx="8" fill="#ffedd5" stroke="#c2410c" stroke-width="2" />
+    <text class="accent-text" x="506" y="364" fill="#9a3412">2</text>
+    <rect class="card" x="546" y="342" width="64" height="32" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <text class="title" x="578" y="364" fill="#20242c">3</text>
+
+    <rect class="card" x="330" y="422" width="64" height="32" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <text class="title" x="362" y="444" fill="#20242c">1</text>
+    <rect class="card" x="402" y="422" width="64" height="32" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <text class="title" x="434" y="444" fill="#20242c">2</text>
+    <rect class="card" x="474" y="422" width="64" height="32" rx="8" fill="none" stroke="#64748b" stroke-width="2" stroke-dasharray="5 4" />
+    <text class="muted" x="506" y="437" fill="#526173" font-size="10.5" font-family="system-ui, sans-serif">2 again</text>
+    <text class="muted" x="506" y="449" fill="#526173" font-size="10.5" font-family="system-ui, sans-serif">ignored</text>
+    <rect class="card" x="546" y="422" width="64" height="32" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <text class="title" x="578" y="444" fill="#20242c">3</text>
+  </g>
+
+  <g font-family="system-ui, sans-serif" text-anchor="start">
+    <rect class="info-box" x="36" y="486" width="648" height="52" rx="12" fill="#dbeafe" stroke="#2563eb" stroke-width="2" />
+    <text class="info-text" x="52" y="508" fill="#172554" font-size="12.5" font-weight="700">Two Generals' Problem: over a lossy link no finite exchange makes both sides certain.</text>
+    <text class="info-text" x="52" y="527" fill="#172554" font-size="12.5">“Exactly-once semantics” is the green lane — dedup and transactional bookkeeping — not a repeal of that.</text>
+  </g>
+</svg>

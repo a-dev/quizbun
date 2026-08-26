@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="444" viewBox="0 0 720 444">
+  <style>
+    /* An &lt;img&gt;-embedded SVG cannot see the page's `data-theme`, but it does
+       inherit the embedding document's `color-scheme`, so `prefers-color-scheme`
+       tracks the site theme including an explicit toggle. The presentation
+       attributes below stay as the light fallback for renderers without CSS. */
+    svg {
+      --panel: #f5f7fb;
+      --title: #20242c;
+      --muted: #526173;
+      --edge: #64748b;
+      --card: #ffffff;
+      --ctx-fill: #dbeafe;
+      --ctx-edge: #2563eb;
+      --ctx-label: #172554;
+      --accent: #c2410c;
+      --accent-text: #9a3412;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      svg {
+        --panel: #1a1f27;
+        --title: #e6eaf2;
+        --muted: #9aa8bd;
+        --edge: #8b9bb4;
+        --card: #252b35;
+        --ctx-fill: #1e3a5f;
+        --ctx-edge: #60a5fa;
+        --ctx-label: #dbeafe;
+        --accent: #fb923c;
+        --accent-text: #fdba74;
+      }
+    }
+
+    .panel { fill: var(--panel); }
+    .title { fill: var(--title); }
+    .muted { fill: var(--muted); }
+    .edge { stroke: var(--edge); }
+    .card { fill: var(--card); stroke: var(--edge); }
+    .ctx { fill: var(--ctx-fill); stroke: var(--ctx-edge); }
+    .ctx-label { fill: var(--ctx-label); }
+    .accent-text { fill: var(--accent-text); }
+    .accent { stroke: var(--accent); }
+  </style>
+
+  <rect class="panel" width="720" height="444" rx="20" fill="#f5f7fb" />
+
+  <text class="title" x="36" y="44" fill="#20242c" font-family="system-ui, sans-serif" font-size="20" font-weight="700">
+    z-index compares siblings inside one context
+  </text>
+  <text class="muted" x="36" y="68" fill="#526173" font-family="system-ui, sans-serif" font-size="14">
+    The dropdown's 9999 is never compared with the hero's 20.
+  </text>
+
+  <g font-family="system-ui, sans-serif" text-anchor="start">
+    <rect class="edge" x="36" y="86" width="648" height="248" rx="16" fill="none" stroke="#64748b" stroke-width="2" stroke-dasharray="7 6" />
+    <text class="muted" x="54" y="110" fill="#526173" font-size="13" font-weight="600">root stacking context</text>
+
+    <rect class="ctx" x="56" y="124" width="336" height="192" rx="12" fill="#dbeafe" stroke="#2563eb" stroke-width="2" />
+    <text class="ctx-label" x="74" y="152" fill="#172554" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="16" font-weight="700">.site-header</text>
+    <text class="muted" x="74" y="174" fill="#526173" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="13">position: sticky</text>
+    <text class="accent-text" x="74" y="196" fill="#9a3412" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="15" font-weight="700">z-index: 10</text>
+
+    <rect class="card" x="74" y="210" width="300" height="90" rx="10" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <text class="title" x="92" y="240" fill="#20242c" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="15" font-weight="700">.dropdown</text>
+    <text class="title" x="92" y="264" fill="#20242c" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="15" font-weight="700">z-index: 9999</text>
+    <text class="muted" x="92" y="286" fill="#526173" font-size="12">top — but only inside the header</text>
+
+    <rect class="ctx" x="412" y="124" width="252" height="192" rx="12" fill="#dbeafe" stroke="#2563eb" stroke-width="2" />
+    <text class="ctx-label" x="430" y="152" fill="#172554" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="16" font-weight="700">.hero</text>
+    <text class="muted" x="430" y="174" fill="#526173" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="13">position: relative</text>
+    <text class="accent-text" x="430" y="196" fill="#9a3412" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="15" font-weight="700">z-index: 20</text>
+    <text class="muted" x="430" y="242" fill="#526173" font-size="13">paints above the entire</text>
+    <text class="muted" x="430" y="262" fill="#526173" font-size="13">header subtree</text>
+
+    <path class="accent" d="M182 200H404" fill="none" stroke="#c2410c" stroke-width="3" stroke-linecap="round" stroke-dasharray="6 6" />
+
+    <text class="accent-text" x="36" y="368" fill="#9a3412" font-size="16" font-weight="700">Compared at the root: 10 vs 20 — the hero wins.</text>
+    <text class="muted" x="36" y="396" fill="#526173" font-size="14">9999 only orders siblings inside .site-header.</text>
+    <text class="title" x="36" y="422" fill="#20242c" font-size="14" font-weight="600">Fix: raise .site-header to z-index: 30.</text>
+  </g>
+</svg>

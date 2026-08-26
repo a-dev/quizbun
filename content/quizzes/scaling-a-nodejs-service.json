@@ -36,6 +36,14 @@
       "id": "offload-cpu-work-tool",
       "title": "Which tool idiomatically moves CPU-bound work off the event loop?",
       "description": "An endpoint resizes uploaded images **synchronously** with a pure-JS library. Under load, even unrelated endpoints — including a trivial `/health` check — become slow and start timing out. You want to keep this work inside the same Node process but stop it from freezing everything else.",
+      "images": [
+        {
+          "src": "threads-and-workers.svg",
+          "alt": "Inside one Node process, a wide main-thread bar holds your JavaScript and the event loop — exactly one of them — above four libuv pool threads that take fs, crypto, dns and zlib but never your own JavaScript. A note says a synchronous loop over 5e9 iterations holds the one thread that runs handlers, so every other request, /health included, queues behind it. Two cards compare cluster — separate processes and memory sharing one listening port, talking by message passing — with worker_threads — one process, several threads, each with its own event loop and memory shareable through SharedArrayBuffer. A closing line notes that cluster defaults to round-robin on Linux, the primary handing each accepted connection to a worker.",
+          "caption": "CPU work belongs on a thread with its own event loop.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -62,6 +70,14 @@
       "id": "cluster-vs-worker-threads",
       "title": "Which statements about `cluster` vs. `worker_threads` are true?",
       "description": "Both let one Node app use more of the machine, yet they share very different things — memory, event loops, a listening port. Select every statement that is **true** about how they differ.",
+      "images": [
+        {
+          "src": "threads-and-workers.svg",
+          "alt": "Inside one Node process, a wide main-thread bar holds your JavaScript and the event loop — exactly one of them — above four libuv pool threads that take fs, crypto, dns and zlib but never your own JavaScript. A note says a synchronous loop over 5e9 iterations holds the one thread that runs handlers, so every other request, /health included, queues behind it. Two cards compare cluster — separate processes and memory sharing one listening port, talking by message passing — with worker_threads — one process, several threads, each with its own event loop and memory shareable through SharedArrayBuffer. A closing line notes that cluster defaults to round-robin on Linux, the primary handing each accepted connection to a worker.",
+          "caption": "Separate processes below, separate threads beside them.",
+          "placement": "explanation"
+        }
+      ],
       "type": "multiple-choice",
       "options": [
         {
@@ -92,6 +108,14 @@
       "id": "cluster-scheduling-policy",
       "title": "How does `cluster` distribute incoming TCP connections by default?",
       "description": "You run the `cluster` module on Linux with 4 workers and the **default** configuration.",
+      "images": [
+        {
+          "src": "threads-and-workers.svg",
+          "alt": "Inside one Node process, a wide main-thread bar holds your JavaScript and the event loop — exactly one of them — above four libuv pool threads that take fs, crypto, dns and zlib but never your own JavaScript. A note says a synchronous loop over 5e9 iterations holds the one thread that runs handlers, so every other request, /health included, queues behind it. Two cards compare cluster — separate processes and memory sharing one listening port, talking by message passing — with worker_threads — one process, several threads, each with its own event loop and memory shareable through SharedArrayBuffer. A closing line notes that cluster defaults to round-robin on Linux, the primary handing each accepted connection to a worker.",
+          "caption": "The closing line: the primary accepts, then hands off.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -174,6 +198,14 @@
       "id": "graceful-shutdown-sigterm",
       "title": "What should a Node process do on `SIGTERM` to shut down gracefully?",
       "description": "Your orchestrator asks a Node service to stop by sending `SIGTERM`, then force-kills it with `SIGKILL` after a grace period.\n\n```js\nprocess.on('SIGTERM', () => {\n  server.close(() => {   // stop taking new connections; fires once in-flight requests drain\n    pool.end();          // release DB connections, flush logs, etc.\n    process.exit(0);\n  });\n});\n```",
+      "images": [
+        {
+          "src": "graceful-shutdown.svg",
+          "alt": "Five numbered steps from SIGTERM to exit: SIGTERM arrives, and it is neither SIGINT nor the unhandleable SIGKILL; fail the readiness probe first so the Service drops the Pod from its endpoints and new traffic stops; call server.close() to stop accepting connections while in-flight requests finish; cut the idle keep-alive sockets, highlighted, because server.close() waits for every socket and an idle keep-alive socket never ends; then release database pools and queues and exit 0 inside the grace period. Two cards contrast a failing liveness probe, where the kubelet kills and restarts the container, with a failing readiness probe, where the Pod keeps running but leaves the Service's endpoint list.",
+          "caption": "The whole sequence, in the order that produces zero failed requests.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -200,6 +232,14 @@
       "id": "keepalive-drain-hang",
       "title": "Why does `server.close()` hang even with no requests in flight?",
       "description": "A service handles `SIGTERM` by calling `server.close()` and exiting in its callback. Yet in production the process frequently hangs until the orchestrator force-kills it — even when no requests are actually being processed.",
+      "images": [
+        {
+          "src": "graceful-shutdown.svg",
+          "alt": "Five numbered steps from SIGTERM to exit: SIGTERM arrives, and it is neither SIGINT nor the unhandleable SIGKILL; fail the readiness probe first so the Service drops the Pod from its endpoints and new traffic stops; call server.close() to stop accepting connections while in-flight requests finish; cut the idle keep-alive sockets, highlighted, because server.close() waits for every socket and an idle keep-alive socket never ends; then release database pools and queues and exit 0 inside the grace period. Two cards contrast a failing liveness probe, where the kubelet kills and restarts the container, with a failing readiness probe, where the Pod keeps running but leaves the Service's endpoint list.",
+          "caption": "Step 4 is the trap: an idle socket is still a socket.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -226,6 +266,14 @@
       "id": "liveness-vs-readiness",
       "title": "How do failing liveness and readiness probes differ in Kubernetes?",
       "description": "Both probes watch the same container, but the kubelet reacts to a failure of each in very different ways. Focus on the key *behavioral* difference.",
+      "images": [
+        {
+          "src": "graceful-shutdown.svg",
+          "alt": "Five numbered steps from SIGTERM to exit: SIGTERM arrives, and it is neither SIGINT nor the unhandleable SIGKILL; fail the readiness probe first so the Service drops the Pod from its endpoints and new traffic stops; call server.close() to stop accepting connections while in-flight requests finish; cut the idle keep-alive sockets, highlighted, because server.close() waits for every socket and an idle keep-alive socket never ends; then release database pools and queues and exit 0 inside the grace period. Two cards contrast a failing liveness probe, where the kubelet kills and restarts the container, with a failing readiness probe, where the Pod keeps running but leaves the Service's endpoint list.",
+          "caption": "One probe restarts the container; the other only removes it from traffic.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -252,6 +300,14 @@
       "id": "drain-before-close-ordering",
       "title": "What should a Pod do first when it receives `SIGTERM`?",
       "description": "You're chasing **zero** failed requests during a rolling deploy.",
+      "images": [
+        {
+          "src": "graceful-shutdown.svg",
+          "alt": "Five numbered steps from SIGTERM to exit: SIGTERM arrives, and it is neither SIGINT nor the unhandleable SIGKILL; fail the readiness probe first so the Service drops the Pod from its endpoints and new traffic stops; call server.close() to stop accepting connections while in-flight requests finish; cut the idle keep-alive sockets, highlighted, because server.close() waits for every socket and an idle keep-alive socket never ends; then release database pools and queues and exit 0 inside the grace period. Two cards contrast a failing liveness probe, where the kubelet kills and restarts the container, with a failing readiness probe, where the Pod keeps running but leaves the Service's endpoint list.",
+          "caption": "Readiness comes before `server.close()`, not after.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -275,6 +331,14 @@
       "id": "single-thread-blocks-all",
       "title": "While one `/report` request runs, what happens to other requests?",
       "description": "This handler runs on a single Node instance — no `cluster`, no `worker_threads`:\n\n```js\napp.get('/report', (req, res) => {\n  let total = 0;\n  for (let i = 0; i < 5e9; i++) total += i;  // several seconds of pure CPU\n  res.json({ total });\n});\n```\n\nOther requests — more `/report` calls and requests to unrelated routes alike — keep arriving at the **same instance**.",
+      "images": [
+        {
+          "src": "threads-and-workers.svg",
+          "alt": "Inside one Node process, a wide main-thread bar holds your JavaScript and the event loop — exactly one of them — above four libuv pool threads that take fs, crypto, dns and zlib but never your own JavaScript. A note says a synchronous loop over 5e9 iterations holds the one thread that runs handlers, so every other request, /health included, queues behind it. Two cards compare cluster — separate processes and memory sharing one listening port, talking by message passing — with worker_threads — one process, several threads, each with its own event loop and memory shareable through SharedArrayBuffer. A closing line notes that cluster defaults to round-robin on Linux, the primary handing each accepted connection to a worker.",
+          "caption": "One main thread runs every handler; a blocking loop owns it.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -301,6 +365,14 @@
       "id": "libuv-threadpool-size",
       "title": "How many threads does libuv's thread pool have by default?",
       "description": "People say \"Node is single-threaded,\" yet libuv keeps a small pool of background threads for work like `fs` and `crypto`. Assume `UV_THREADPOOL_SIZE` is unset.",
+      "images": [
+        {
+          "src": "threads-and-workers.svg",
+          "alt": "Inside one Node process, a wide main-thread bar holds your JavaScript and the event loop — exactly one of them — above four libuv pool threads that take fs, crypto, dns and zlib but never your own JavaScript. A note says a synchronous loop over 5e9 iterations holds the one thread that runs handlers, so every other request, /health included, queues behind it. Two cards compare cluster — separate processes and memory sharing one listening port, talking by message passing — with worker_threads — one process, several threads, each with its own event loop and memory shareable through SharedArrayBuffer. A closing line notes that cluster defaults to round-robin on Linux, the primary handing each accepted connection to a worker.",
+          "caption": "The pool row, drawn at its default size.",
+          "placement": "explanation"
+        }
+      ],
       "type": "input",
       "validation": { "mode": "numeric", "acceptedAnswers": [4] },
       "explanation": "libuv's default thread-pool size is **4** (configurable via the `UV_THREADPOOL_SIZE` environment variable, up to 1024 in current Node). The pool backs APIs that have no native async OS primitive: file-system operations, `dns.lookup()`, parts of `crypto` (`pbkdf2`, `scrypt`, `randomBytes`, …), and `zlib`.\n\nTwo things make this number a frequent source of confusion:\n1. **Network I/O does not use the pool.** Sockets are handled by the OS event-notification mechanism (epoll/kqueue/IOCP), so thousands of concurrent connections don't consume the 4 threads.\n2. **The pool never runs *your* JavaScript.** So enlarging it can't unblock a CPU-bound JS function — that's the job of `worker_threads`. The pool's size only matters when many threadpool-backed tasks (heavy `fs`/`crypto`) run at once.",
@@ -310,6 +382,14 @@
       "id": "graceful-shutdown-signal",
       "title": "Which signal asks a container to shut down gracefully?",
       "description": "Kubernetes, `docker stop`, and most orchestrators terminate a container by first sending one specific POSIX signal, waiting out a grace period, and only then sending `SIGKILL`. Give the signal's name, e.g. `SIGxxx`.",
+      "images": [
+        {
+          "src": "graceful-shutdown.svg",
+          "alt": "Five numbered steps from SIGTERM to exit: SIGTERM arrives, and it is neither SIGINT nor the unhandleable SIGKILL; fail the readiness probe first so the Service drops the Pod from its endpoints and new traffic stops; call server.close() to stop accepting connections while in-flight requests finish; cut the idle keep-alive sockets, highlighted, because server.close() waits for every socket and an idle keep-alive socket never ends; then release database pools and queues and exit 0 inside the grace period. Two cards contrast a failing liveness probe, where the kubelet kills and restarts the container, with a failing readiness probe, where the Pod keeps running but leaves the Service's endpoint list.",
+          "caption": "Step 1 — and the one signal that cannot be handled.",
+          "placement": "explanation"
+        }
+      ],
       "type": "input",
       "validation": { "mode": "text", "acceptedAnswers": ["SIGTERM", "TERM", "15"] },
       "explanation": "The graceful-stop signal is **`SIGTERM`** (signal number 15). `docker stop` and Kubernetes send it first, wait out the grace period (`terminationGracePeriodSeconds`, default **30s**), and only then send **`SIGKILL`** (signal 9) — which **cannot be caught, blocked, or ignored** and ends the process instantly.\n\nThat's why graceful shutdown hangs off a `process.on('SIGTERM', …)` handler: it's your one chance to stop accepting connections, drain in-flight requests, and release resources before the hard kill lands. (For comparison, `SIGINT` is what Ctrl-C sends in an interactive terminal — useful in dev, but not what orchestrators use.)",

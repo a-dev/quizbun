@@ -1,0 +1,159 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="550" viewBox="0 0 720 550">
+  <style>
+    /* An &lt;img&gt;-embedded SVG cannot see the page's `data-theme`, but it does
+       inherit the embedding document's `color-scheme`, so `prefers-color-scheme`
+       tracks the site theme including an explicit toggle. The presentation
+       attributes below stay as the light fallback for renderers without CSS. */
+    svg {
+      --panel: #f5f7fb;
+      --sub: #e9edf4;
+      --title: #20242c;
+      --muted: #526173;
+      --edge: #64748b;
+      --card: #ffffff;
+      --ok-fill: #dcfce7;
+      --ok-edge: #16a34a;
+      --ok-text: #14532d;
+      --accent-fill: #ffedd5;
+      --accent-edge: #c2410c;
+      --accent-text: #9a3412;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      svg {
+        --panel: #1a1f27;
+        --sub: #222834;
+        --title: #e6eaf2;
+        --muted: #9aa8bd;
+        --edge: #8b9bb4;
+        --card: #252b35;
+        --ok-fill: #14321f;
+        --ok-edge: #4ade80;
+        --ok-text: #bbf7d0;
+        --accent-fill: #3a2416;
+        --accent-edge: #fb923c;
+        --accent-text: #fdba74;
+      }
+    }
+
+    .panel { fill: var(--panel); }
+    .sub { fill: var(--sub); }
+    .title { fill: var(--title); }
+    .muted { fill: var(--muted); }
+    .card { fill: var(--card); stroke: var(--edge); }
+    .edge-line { stroke: var(--edge); }
+    .ok-box { fill: var(--ok-fill); stroke: var(--ok-edge); }
+    .ok-text { fill: var(--ok-text); }
+    .ok-line { stroke: var(--ok-edge); }
+    .accent-box { fill: var(--accent-fill); stroke: var(--accent-edge); }
+    .accent-text { fill: var(--accent-text); }
+    .accent-line { stroke: var(--accent-edge); }
+  </style>
+
+  <defs>
+    <marker id="arrow-accent" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="var(--accent-edge)" fill-rule="evenodd" />
+    </marker>
+    <marker id="arrow-ok" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="var(--ok-edge)" fill-rule="evenodd" />
+    </marker>
+  </defs>
+
+  <rect class="panel" width="720" height="550" rx="20" fill="#f5f7fb" />
+
+  <text class="title" x="36" y="40" fill="#20242c" font-family="system-ui, sans-serif" font-size="20" font-weight="700">
+    The instant a hot key expires
+  </text>
+  <text class="muted" x="36" y="64" fill="#526173" font-family="system-ui, sans-serif" font-size="14">
+    5 000 requests for the same URL arrive within a few milliseconds. All of them miss.
+  </text>
+
+  <rect class="sub" x="36" y="84" width="312" height="228" rx="14" fill="#e9edf4" />
+  <rect class="sub" x="372" y="84" width="312" height="228" rx="14" fill="#e9edf4" />
+
+  <g fill="none" class="accent-line" stroke="#c2410c" stroke-width="1.6">
+    <path d="M92,170 L182,222" marker-end="url(#arrow-accent)" />
+    <path d="M142,170 L187,222" marker-end="url(#arrow-accent)" />
+    <path d="M192,170 L192,222" marker-end="url(#arrow-accent)" />
+    <path d="M242,170 L197,222" marker-end="url(#arrow-accent)" />
+    <path d="M292,170 L202,222" marker-end="url(#arrow-accent)" />
+  </g>
+
+  <g fill="none" class="ok-line" stroke="#16a34a" stroke-width="1.6">
+    <path d="M428,170 L518,182" marker-end="url(#arrow-ok)" />
+    <path d="M478,170 L523,182" marker-end="url(#arrow-ok)" />
+    <path d="M528,170 L528,182" marker-end="url(#arrow-ok)" />
+    <path d="M578,170 L533,182" marker-end="url(#arrow-ok)" />
+    <path d="M628,170 L538,182" marker-end="url(#arrow-ok)" />
+    <path d="M528,220 L528,222" marker-end="url(#arrow-ok)" />
+  </g>
+
+  <g font-family="system-ui, sans-serif" text-anchor="middle">
+    <text class="accent-text" x="192" y="110" fill="#9a3412" font-size="14.5" font-weight="700">Without coalescing</text>
+    <text class="ok-text" x="528" y="110" fill="#14532d" font-size="14.5" font-weight="700">With coalescing (single-flight)</text>
+
+    <g font-size="11">
+      <rect class="card" x="72" y="126" width="40" height="44" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.5" />
+      <rect class="card" x="122" y="126" width="40" height="44" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.5" />
+      <rect class="card" x="172" y="126" width="40" height="44" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.5" />
+      <rect class="card" x="222" y="126" width="40" height="44" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.5" />
+      <rect class="card" x="272" y="126" width="40" height="44" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.5" />
+      <text class="muted" x="92" y="153" fill="#526173">GET</text>
+      <text class="muted" x="142" y="153" fill="#526173">GET</text>
+      <text class="muted" x="192" y="153" fill="#526173">GET</text>
+      <text class="muted" x="242" y="153" fill="#526173">GET</text>
+      <text class="muted" x="292" y="147" fill="#526173">GET</text>
+      <text class="muted" x="292" y="161" fill="#526173">×4996</text>
+
+      <rect class="card" x="408" y="126" width="40" height="44" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.5" />
+      <rect class="card" x="458" y="126" width="40" height="44" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.5" />
+      <rect class="card" x="508" y="126" width="40" height="44" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.5" />
+      <rect class="card" x="558" y="126" width="40" height="44" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.5" />
+      <rect class="card" x="608" y="126" width="40" height="44" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.5" />
+      <text class="muted" x="428" y="153" fill="#526173">GET</text>
+      <text class="muted" x="478" y="153" fill="#526173">GET</text>
+      <text class="muted" x="528" y="153" fill="#526173">GET</text>
+      <text class="muted" x="578" y="153" fill="#526173">GET</text>
+      <text class="muted" x="628" y="147" fill="#526173">GET</text>
+      <text class="muted" x="628" y="161" fill="#526173">×4996</text>
+    </g>
+
+    <rect class="ok-box" x="418" y="184" width="220" height="36" rx="9" fill="#dcfce7" stroke="#16a34a" stroke-width="2" />
+    <text class="ok-text" x="528" y="200" fill="#14532d" font-size="12.5" font-weight="700">one leader, 4 999 waiters</text>
+    <text class="ok-text" x="528" y="214" fill="#14532d" font-size="11">the single response fans back out</text>
+
+    <rect class="accent-box" x="92" y="224" width="200" height="52" rx="10" fill="#ffedd5" stroke="#c2410c" stroke-width="2" />
+    <text class="accent-text" x="192" y="246" fill="#9a3412" font-size="13.5" font-weight="700">Origin / database</text>
+    <text class="accent-text" x="192" y="264" fill="#9a3412" font-size="11.5">5 000 identical recomputations</text>
+
+    <rect class="card" x="428" y="224" width="200" height="52" rx="10" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <text class="title" x="528" y="246" fill="#20242c" font-size="13.5" font-weight="700">Origin / database</text>
+    <text class="muted" x="528" y="264" fill="#526173" font-size="11.5">1 recomputation</text>
+
+    <text class="accent-text" x="192" y="298" fill="#9a3412" font-size="12" font-weight="700">The backend saturates exactly when traffic peaks.</text>
+    <text class="ok-text" x="528" y="298" fill="#14532d" font-size="12" font-weight="700">N requests never do the same work N times.</text>
+  </g>
+
+  <g font-family="system-ui, sans-serif" text-anchor="start">
+    <text class="title" x="36" y="346" fill="#20242c" font-size="15" font-weight="700">Four ways to collapse the duplicate work</text>
+
+    <rect class="card" x="36" y="358" width="316" height="54" rx="12" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <text class="title" x="52" y="382" fill="#20242c" font-size="13.5" font-weight="700">Request coalescing / single-flight</text>
+    <text class="muted" x="52" y="400" fill="#526173" font-size="11.5">identical concurrent misses share one fetch</text>
+
+    <rect class="card" x="368" y="358" width="316" height="54" rx="12" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <text class="title" x="384" y="382" fill="#20242c" font-size="13.5" font-weight="700">Serve stale while revalidating</text>
+    <text class="muted" x="384" y="400" fill="#526173" font-size="11.5">the old value answers; one worker refreshes</text>
+
+    <rect class="card" x="36" y="422" width="316" height="54" rx="12" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <text class="title" x="52" y="446" fill="#20242c" font-size="13.5" font-weight="700">Probabilistic early expiration</text>
+    <text class="muted" x="52" y="464" fill="#526173" font-size="11.5">one request refreshes just before expiry</text>
+
+    <rect class="card" x="368" y="422" width="316" height="54" rx="12" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <text class="title" x="384" y="446" fill="#20242c" font-size="13.5" font-weight="700">TTL jitter</text>
+    <text class="muted" x="384" y="464" fill="#526173" font-size="11.5">random lifetimes so keys don't expire together</text>
+
+    <rect class="accent-box" x="36" y="486" width="648" height="42" rx="12" fill="#ffedd5" stroke="#c2410c" stroke-width="2" />
+    <text class="accent-text" x="52" y="512" fill="#9a3412" font-size="13.5" font-weight="700"><tspan font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">max-age=0</tspan> is the opposite of a fix: it makes every request a permanent stampede.</text>
+  </g>
+</svg>

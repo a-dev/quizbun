@@ -10,6 +10,14 @@
       "id": "rq-why-refetch",
       "title": "Why did React Query refetch this?",
       "description": "A component reads `useQuery({ queryKey: ['user', 7], queryFn })` with TanStack Query's **default** options. On mount you instantly see the previously cached user, then a network request fires and the data refreshes. The query key never changed.",
+      "images": [
+        {
+          "src": "query-lifecycle.svg",
+          "alt": "One TanStack Query entry with two independent clocks. The staleTime bar shows a zero-width FRESH band followed by a wide STALE band where the cached value still renders instantly and a background refetch is allowed. The gcTime bar shows ACTIVE, with at least one mounted observer and never garbage-collected, next to a dashed INACTIVE box where the entry is removed five minutes after the last observer unmounts. A card lists the three default refetch triggers — refetchOnMount, refetchOnWindowFocus, refetchOnReconnect — and notes that merely reading the cached value is not one of them.",
+          "caption": "A zero-width FRESH band means the cached data was already stale on mount.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -36,6 +44,14 @@
       "id": "staletime-vs-gctime",
       "title": "What correctly distinguishes `staleTime` from `gcTime`?",
       "description": "In TanStack Query v5, `gcTime` is the option formerly called `cacheTime`.",
+      "images": [
+        {
+          "src": "query-lifecycle.svg",
+          "alt": "One TanStack Query entry with two independent clocks. The staleTime bar shows a zero-width FRESH band followed by a wide STALE band where the cached value still renders instantly and a background refetch is allowed. The gcTime bar shows ACTIVE, with at least one mounted observer and never garbage-collected, next to a dashed INACTIVE box where the entry is removed five minutes after the last observer unmounts. A card lists the three default refetch triggers — refetchOnMount, refetchOnWindowFocus, refetchOnReconnect — and notes that merely reading the cached value is not one of them.",
+          "caption": "Two bars, two clocks: freshness on top, retention below.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -62,6 +78,14 @@
       "id": "lru-which-eviction",
       "title": "Which key does the LRU cache evict when `put('D', 4)` runs?",
       "description": "An LRU cache with **capacity 3** processes this sequence (touching a key moves it to the most-recently-used end):\n\n```js\nput('A', 1);\nput('B', 2);\nput('C', 3);\nget('A');\nput('D', 4); // capacity exceeded — one key is evicted\n```",
+      "images": [
+        {
+          "src": "lru-list.svg",
+          "alt": "An LRU cache of capacity 3. A row of hash-map cells for \"A\", \"B\" and \"C\" points down at three doubly linked nodes A, B and C joined by two-headed prev/next arrows, with the LRU end on the left and the MRU end on the right. A note says O(1) splicing needs both links. Below, three steps: after put A, put B and put C the order is A, B, C; get('A') moves A to the MRU end leaving B, C, A; put('D',4) exceeds capacity, so the LRU end B is evicted and the order becomes C, A, D.",
+          "caption": "Step three: the LRU end after `get('A')` is `B`.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -88,6 +112,14 @@
       "id": "lru-doubly-linked-list",
       "title": "Why does an LRU cache's list need to be **doubly** linked?",
       "description": "The textbook O(1) LRU cache pairs a hash map (key → node) with a linked list that orders nodes by recency.",
+      "images": [
+        {
+          "src": "lru-list.svg",
+          "alt": "An LRU cache of capacity 3. A row of hash-map cells for \"A\", \"B\" and \"C\" points down at three doubly linked nodes A, B and C joined by two-headed prev/next arrows, with the LRU end on the left and the MRU end on the right. A note says O(1) splicing needs both links. Below, three steps: after put A, put B and put C the order is A, B, C; get('A') moves A to the MRU end leaving B, C, A; put('D',4) exceeds capacity, so the LRU end B is evicted and the order becomes C, A, D.",
+          "caption": "The two-headed arrows are the point: both links, or no O(1) splice.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -139,6 +171,14 @@
       "id": "lru-impl-true-statements",
       "title": "Which statements correctly describe a hash map + doubly linked list LRU cache?",
       "description": "Select **all** that apply.",
+      "images": [
+        {
+          "src": "lru-list.svg",
+          "alt": "An LRU cache of capacity 3. A row of hash-map cells for \"A\", \"B\" and \"C\" points down at three doubly linked nodes A, B and C joined by two-headed prev/next arrows, with the LRU end on the left and the MRU end on the right. A note says O(1) splicing needs both links. Below, three steps: after put A, put B and put C the order is A, B, C; get('A') moves A to the MRU end leaving B, C, A; put('D',4) exceeds capacity, so the LRU end B is evicted and the order becomes C, A, D.",
+          "caption": "Map cells for lookup, list order for recency, LRU end for eviction.",
+          "placement": "explanation"
+        }
+      ],
       "type": "multiple-choice",
       "options": [
         {
@@ -190,6 +230,14 @@
       "id": "rq-refetch-triggers",
       "title": "What makes TanStack Query refetch a stale query?",
       "description": "Assume **default** options and a query that is currently stale. Select all that apply.",
+      "images": [
+        {
+          "src": "query-lifecycle.svg",
+          "alt": "One TanStack Query entry with two independent clocks. The staleTime bar shows a zero-width FRESH band followed by a wide STALE band where the cached value still renders instantly and a background refetch is allowed. The gcTime bar shows ACTIVE, with at least one mounted observer and never garbage-collected, next to a dashed INACTIVE box where the entry is removed five minutes after the last observer unmounts. A card lists the three default refetch triggers — refetchOnMount, refetchOnWindowFocus, refetchOnReconnect — and notes that merely reading the cached value is not one of them.",
+          "caption": "The three chips are the defaults; reading the cache is not among them.",
+          "placement": "explanation"
+        }
+      ],
       "type": "multiple-choice",
       "options": [
         {
@@ -242,6 +290,14 @@
       "id": "default-gctime-minutes",
       "title": "After how many minutes is an inactive query garbage-collected?",
       "description": "TanStack Query v5 with default settings; an **inactive** query is one with no mounted observers. Enter the number of minutes.",
+      "images": [
+        {
+          "src": "query-lifecycle.svg",
+          "alt": "One TanStack Query entry with two independent clocks. The staleTime bar shows a zero-width FRESH band followed by a wide STALE band where the cached value still renders instantly and a background refetch is allowed. The gcTime bar shows ACTIVE, with at least one mounted observer and never garbage-collected, next to a dashed INACTIVE box where the entry is removed five minutes after the last observer unmounts. A card lists the three default refetch triggers — refetchOnMount, refetchOnWindowFocus, refetchOnReconnect — and notes that merely reading the cached value is not one of them.",
+          "caption": "The dashed INACTIVE box carries the `gcTime` countdown.",
+          "placement": "explanation"
+        }
+      ],
       "type": "input",
       "validation": {
         "mode": "numeric",

@@ -1,0 +1,110 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="530" viewBox="0 0 720 530">
+  <style>
+    /* An &lt;img&gt;-embedded SVG cannot see the page's `data-theme`, but it does
+       inherit the embedding document's `color-scheme`, so `prefers-color-scheme`
+       tracks the site theme including an explicit toggle. The presentation
+       attributes below stay as the light fallback for renderers without CSS. */
+    svg {
+      --panel: #f5f7fb;
+      --title: #20242c;
+      --muted: #526173;
+      --edge: #64748b;
+      --card: #ffffff;
+      --ok-fill: #dcfce7;
+      --ok-edge: #16a34a;
+      --ok-text: #14532d;
+      --info-fill: #dbeafe;
+      --info-edge: #2563eb;
+      --info-text: #172554;
+      --accent-fill: #ffedd5;
+      --accent-edge: #c2410c;
+      --accent-text: #9a3412;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      svg {
+        --panel: #1a1f27;
+        --title: #e6eaf2;
+        --muted: #9aa8bd;
+        --edge: #8b9bb4;
+        --card: #252b35;
+        --ok-fill: #14321f;
+        --ok-edge: #4ade80;
+        --ok-text: #bbf7d0;
+        --info-fill: #1e3a5f;
+        --info-edge: #60a5fa;
+        --info-text: #dbeafe;
+        --accent-fill: #3a2416;
+        --accent-edge: #fb923c;
+        --accent-text: #fdba74;
+      }
+    }
+
+    .panel { fill: var(--panel); }
+    .title { fill: var(--title); }
+    .muted { fill: var(--muted); }
+    .card { fill: var(--card); stroke: var(--edge); }
+    .edge-line { stroke: var(--edge); }
+    .ok-box { fill: var(--ok-fill); stroke: var(--ok-edge); }
+    .ok-text { fill: var(--ok-text); }
+    .info-box { fill: var(--info-fill); stroke: var(--info-edge); }
+    .info-text { fill: var(--info-text); }
+    .accent-box { fill: var(--accent-fill); stroke: var(--accent-edge); }
+    .accent-text { fill: var(--accent-text); }
+    .accent-line { stroke: var(--accent-edge); }
+  </style>
+
+  <defs>
+    <marker id="arrow-ok" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="var(--ok-edge)" fill-rule="evenodd" />
+    </marker>
+  </defs>
+
+  <rect class="panel" width="720" height="530" rx="20" fill="#f5f7fb" />
+
+  <text class="title" x="36" y="40" fill="#20242c" font-family="system-ui, sans-serif" font-size="20" font-weight="700">
+    OFFSET walks. Keyset seeks.
+  </text>
+  <text class="muted" x="36" y="64" fill="#526173" font-family="system-ui, sans-serif" font-size="14">
+    Twenty rows per page, ordered by <tspan font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">created_at DESC, id DESC</tspan>. You want page 5 000.
+  </text>
+
+  <g font-family="system-ui, sans-serif">
+    <text class="title" x="36" y="98" fill="#20242c" font-size="13.5" font-weight="700" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">LIMIT 20 OFFSET 99980</text>
+
+    <rect class="accent-box" x="36" y="108" width="576" height="46" rx="10" fill="#ffedd5" stroke="#c2410c" stroke-width="2" />
+    <text class="accent-text" x="324" y="130" fill="#9a3412" font-size="13" font-weight="700" text-anchor="middle">99 980 rows read, ordered — and then discarded</text>
+    <text class="accent-text" x="324" y="147" fill="#9a3412" font-size="11" text-anchor="middle">the server still pays for every one of them</text>
+
+    <rect class="ok-box" x="616" y="108" width="68" height="46" rx="10" fill="#dcfce7" stroke="#16a34a" stroke-width="2" />
+    <text class="ok-text" x="650" y="136" fill="#14532d" font-size="12" font-weight="700" text-anchor="middle">the 20</text>
+
+    <text class="muted" x="36" y="176" fill="#526173" font-size="12">Page 1 is instant and page 5 000 is not, because the work grows with the page number.</text>
+
+    <text class="title" x="36" y="212" fill="#20242c" font-size="13.5" font-weight="700">Keyset — carry the last row forward instead of a page number</text>
+
+    <rect class="card" x="36" y="222" width="648" height="64" rx="10" fill="#ffffff" stroke="#64748b" stroke-width="2" stroke-dasharray="5 4" />
+    <text class="muted" x="252" y="243" fill="#526173" font-size="12" text-anchor="middle">the index leads straight here — nothing before the cursor is touched</text>
+
+    <rect class="ok-box" x="464" y="248" width="212" height="32" rx="8" fill="#dcfce7" stroke="#16a34a" stroke-width="2" />
+    <text class="ok-text" x="570" y="269" fill="#14532d" font-size="12" font-weight="700" text-anchor="middle">the next 20, from the cursor</text>
+  </g>
+
+  <g fill="none" class="ok-line" stroke="#16a34a" stroke-width="2.2">
+    <path d="M52,264 L456,264" marker-end="url(#arrow-ok)" stroke="#16a34a" />
+  </g>
+
+  <g font-family="system-ui, sans-serif">
+    <rect class="info-box" x="36" y="304" width="648" height="60" rx="12" fill="#dbeafe" stroke="#2563eb" stroke-width="2" />
+    <text class="info-text" x="52" y="328" fill="#172554" font-size="12.5" font-weight="700" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">WHERE (created_at, id) &lt; ('2026-03-01 10:00:00', 8412)</text>
+    <text class="info-text" x="52" y="350" fill="#172554" font-size="12.5" font-weight="700" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">ORDER BY created_at DESC, id DESC LIMIT 20</text>
+
+    <text class="muted" x="36" y="386" fill="#526173" font-size="12">One row-wise comparison, not <tspan font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">created_at &lt; … AND id &lt; …</tspan> — that second form drops rows it should keep.</text>
+
+    <rect class="card" x="36" y="402" width="648" height="104" rx="12" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <text class="title" x="52" y="426" fill="#20242c" font-size="13.5" font-weight="700">What keyset pagination needs to be both correct and fast</text>
+    <text class="muted" x="52" y="448" fill="#526173" font-size="12">A total order: a tie-break column, so two rows sharing a timestamp still sort deterministically.</text>
+    <text class="muted" x="52" y="468" fill="#526173" font-size="12">An index on exactly those columns, in that order and in that direction.</text>
+    <text class="muted" x="52" y="488" fill="#526173" font-size="12">A cursor carried forward from the last row — which is why it cannot jump to an arbitrary page.</text>
+  </g>
+</svg>

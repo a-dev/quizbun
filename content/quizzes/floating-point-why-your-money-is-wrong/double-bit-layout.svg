@@ -1,0 +1,123 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="360" viewBox="0 0 720 360">
+  <style>
+    /* An &lt;img&gt;-embedded SVG cannot see the page's `data-theme`, but it does
+       inherit the embedding document's `color-scheme`, so `prefers-color-scheme`
+       tracks the site theme including an explicit toggle. The presentation
+       attributes below stay as the light fallback for renderers without CSS. */
+    svg {
+      --panel: #f5f7fb;
+      --title: #20242c;
+      --muted: #526173;
+      --edge: #64748b;
+      --sign-fill: #ffedd5;
+      --sign-edge: #c2410c;
+      --sign-label: #9a3412;
+      --exp-fill: #dbeafe;
+      --exp-edge: #2563eb;
+      --exp-label: #172554;
+      --mant-fill: #dcfce7;
+      --mant-edge: #16a34a;
+      --mant-label: #14532d;
+      --accent-text: #9a3412;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      svg {
+        --panel: #1a1f27;
+        --title: #e6eaf2;
+        --muted: #9aa8bd;
+        --edge: #8b9bb4;
+        --sign-fill: #3a2416;
+        --sign-edge: #fb923c;
+        --sign-label: #fdba74;
+        --exp-fill: #1e3a5f;
+        --exp-edge: #60a5fa;
+        --exp-label: #dbeafe;
+        --mant-fill: #103822;
+        --mant-edge: #4ade80;
+        --mant-label: #bbf7d0;
+        --accent-text: #fdba74;
+      }
+    }
+
+    .panel { fill: var(--panel); }
+    .title { fill: var(--title); }
+    .muted { fill: var(--muted); }
+    .edge-line { stroke: var(--edge); }
+    .sign-box { fill: var(--sign-fill); stroke: var(--sign-edge); }
+    .sign-label { fill: var(--sign-label); }
+    .exp-box { fill: var(--exp-fill); stroke: var(--exp-edge); }
+    .exp-label { fill: var(--exp-label); }
+    .mant-box { fill: var(--mant-fill); stroke: var(--mant-edge); }
+    .mant-label { fill: var(--mant-label); }
+    .accent-text { fill: var(--accent-text); }
+  </style>
+
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="var(--edge)" fill-rule="evenodd" />
+    </marker>
+  </defs>
+
+  <rect class="panel" width="720" height="360" rx="20" fill="#f5f7fb" />
+
+  <text class="title" x="36" y="40" fill="#20242c" font-family="system-ui, sans-serif" font-size="20" font-weight="700">
+    The 64 bits behind every JavaScript number
+  </text>
+  <text class="muted" x="36" y="64" fill="#526173" font-family="system-ui, sans-serif" font-size="14">
+    IEEE 754 double precision — sign, biased exponent, mantissa.
+  </text>
+
+  <g font-family="system-ui, sans-serif">
+    <text class="sign-label" x="44" y="90" fill="#9a3412" font-size="13" font-weight="700">sign</text>
+    <text class="muted" x="44" y="106" fill="#526173" font-size="11">1 bit: 0 = positive, 1 = negative</text>
+    <line class="edge-line" x1="48.75" y1="110" x2="48.75" y2="116" stroke="#64748b" stroke-width="1.6" marker-end="url(#arrow)" />
+
+    <rect class="sign-box" x="44" y="118" width="9.5" height="40" fill="#ffedd5" stroke="#c2410c" stroke-width="1.5" />
+    <rect class="exp-box" x="53.5" y="118" width="104.5" height="40" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5" />
+    <rect class="mant-box" x="158" y="118" width="494" height="40" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5" />
+
+    <g class="edge-line" stroke="#64748b" stroke-width="1" opacity="0.5">
+      <line x1="91.5" y1="118" x2="91.5" y2="158" />
+      <line x1="129.5" y1="118" x2="129.5" y2="158" />
+      <line x1="234" y1="118" x2="234" y2="158" />
+      <line x1="310" y1="118" x2="310" y2="158" />
+      <line x1="386" y1="118" x2="386" y2="158" />
+      <line x1="462" y1="118" x2="462" y2="158" />
+      <line x1="538" y1="118" x2="538" y2="158" />
+      <line x1="614" y1="118" x2="614" y2="158" />
+    </g>
+
+    <g class="muted" fill="#526173" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="10.5">
+      <text x="48.75" y="172" text-anchor="middle">63</text>
+      <text x="57" y="172" text-anchor="start">62</text>
+      <text x="155" y="172" text-anchor="end">52</text>
+      <text x="161" y="172" text-anchor="start">51</text>
+      <text x="649" y="172" text-anchor="end">0</text>
+    </g>
+
+    <g class="edge-line" stroke="#64748b" stroke-width="1.4">
+      <line x1="53.5" y1="184" x2="158" y2="184" />
+      <line x1="53.5" y1="178" x2="53.5" y2="184" />
+      <line x1="158" y1="178" x2="158" y2="184" />
+      <line x1="158" y1="184" x2="652" y2="184" />
+      <line x1="652" y1="178" x2="652" y2="184" />
+    </g>
+
+    <text class="exp-label" x="105.75" y="206" fill="#172554" text-anchor="middle" font-size="12" font-weight="700">exponent</text>
+    <text class="muted" x="105.75" y="222" fill="#526173" text-anchor="middle" font-size="10">11 bits, biased +1023</text>
+
+    <text class="mant-label" x="405" y="206" fill="#14532d" text-anchor="middle" font-size="14" font-weight="700">mantissa</text>
+    <text class="muted" x="405" y="224" fill="#526173" text-anchor="middle" font-size="12.5">52 bits + 1 implicit leading bit = 53 bits of precision</text>
+
+    <text class="title" x="360" y="260" fill="#20242c" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="14.5" font-weight="700">
+      value = (−1)^sign × 1.mantissa₂ × 2^(exponent − 1023)
+    </text>
+  </g>
+
+  <g font-family="system-ui, sans-serif" text-anchor="start">
+    <rect class="sign-box" x="36" y="280" width="14" height="14" rx="3" transform="rotate(45 43 287)" fill="#ffedd5" stroke="#c2410c" stroke-width="2" />
+    <text class="accent-text" x="60" y="292" fill="#9a3412" font-size="14" font-weight="700">Mantissa bits are the precision budget, and 1/10 repeats forever in binary.</text>
+    <text class="muted" x="36" y="316" fill="#526173" font-size="13">52 stored + 1 implicit leading bit = 53 bits total — enough to number every integer 0…2⁵³ exactly.</text>
+  </g>
+</svg>

@@ -1,0 +1,118 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="584" viewBox="0 0 720 584">
+  <style>
+    /* An &lt;img&gt;-embedded SVG cannot see the page's `data-theme`, but it does
+       inherit the embedding document's `color-scheme`, so `prefers-color-scheme`
+       tracks the site theme including an explicit toggle. The presentation
+       attributes below stay as the light fallback for renderers without CSS. */
+    svg {
+      --panel: #f5f7fb;
+      --title: #20242c;
+      --muted: #526173;
+      --edge: #64748b;
+      --card: #ffffff;
+      --ok-fill: #dcfce7;
+      --ok-edge: #16a34a;
+      --ok-text: #14532d;
+      --info-fill: #dbeafe;
+      --info-edge: #2563eb;
+      --info-text: #172554;
+      --accent-fill: #ffedd5;
+      --accent-edge: #c2410c;
+      --accent-text: #9a3412;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      svg {
+        --panel: #1a1f27;
+        --title: #e6eaf2;
+        --muted: #9aa8bd;
+        --edge: #8b9bb4;
+        --card: #252b35;
+        --ok-fill: #14321f;
+        --ok-edge: #4ade80;
+        --ok-text: #bbf7d0;
+        --info-fill: #1e3a5f;
+        --info-edge: #60a5fa;
+        --info-text: #dbeafe;
+        --accent-fill: #3a2416;
+        --accent-edge: #fb923c;
+        --accent-text: #fdba74;
+      }
+    }
+
+    .panel { fill: var(--panel); }
+    .title { fill: var(--title); }
+    .muted { fill: var(--muted); }
+    .card { fill: var(--card); stroke: var(--edge); }
+    .edge-line { stroke: var(--edge); }
+    .ok-box { fill: var(--ok-fill); stroke: var(--ok-edge); }
+    .ok-text { fill: var(--ok-text); }
+    .info-box { fill: var(--info-fill); stroke: var(--info-edge); }
+    .info-text { fill: var(--info-text); }
+    .accent-box { fill: var(--accent-fill); stroke: var(--accent-edge); }
+    .accent-text { fill: var(--accent-text); }
+    .accent-line { stroke: var(--accent-edge); }
+  </style>
+
+  <rect class="panel" width="720" height="584" rx="20" fill="#f5f7fb" />
+
+  <text class="title" x="36" y="40" fill="#20242c" font-family="system-ui, sans-serif" font-size="20" font-weight="700">
+    The life of one stored response
+  </text>
+  <text class="muted" x="36" y="64" fill="#526173" font-family="system-ui, sans-serif" font-size="14">
+    <tspan font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">Cache-Control: max-age=600, stale-while-revalidate=86400</tspan> — axis not to scale
+  </text>
+
+  <g font-family="system-ui, sans-serif" text-anchor="middle">
+    <rect class="ok-box" x="36" y="92" width="216" height="58" rx="10" fill="#dcfce7" stroke="#16a34a" stroke-width="2" />
+    <text class="ok-text" x="144" y="115" fill="#14532d" font-size="14" font-weight="700">FRESH</text>
+    <text class="ok-text" x="144" y="135" fill="#14532d" font-size="12">served instantly, no network</text>
+
+    <rect class="accent-box" x="256" y="92" width="332" height="58" rx="10" fill="#ffedd5" stroke="#c2410c" stroke-width="2" />
+    <text class="accent-text" x="422" y="115" fill="#9a3412" font-size="14" font-weight="700">STALE, INSIDE THE WINDOW</text>
+    <text class="accent-text" x="422" y="135" fill="#9a3412" font-size="12">served instantly; refreshed in the background</text>
+
+    <rect class="card" x="592" y="92" width="92" height="58" rx="10" fill="#ffffff" stroke="#64748b" stroke-width="2" stroke-dasharray="5 4" />
+    <text class="muted" x="638" y="113" fill="#526173" font-size="13" font-weight="700">EXPIRED</text>
+    <text class="muted" x="638" y="129" fill="#526173" font-size="10.5">round trip</text>
+    <text class="muted" x="638" y="142" fill="#526173" font-size="10.5">before use</text>
+
+    <g font-size="11.5">
+      <text class="muted" x="36" y="170" fill="#526173" text-anchor="start">t = 0</text>
+      <text class="muted" x="36" y="185" fill="#526173" text-anchor="start">stored</text>
+      <text class="muted" x="254" y="170" fill="#526173">600 s</text>
+      <text class="muted" x="254" y="185" fill="#526173" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">max-age</text>
+      <text class="muted" x="590" y="170" fill="#526173">87 000 s</text>
+      <text class="muted" x="590" y="185" fill="#526173">600 + 86 400</text>
+    </g>
+  </g>
+
+  <g fill="none" class="accent-line" stroke="#c2410c" stroke-width="2.2">
+    <path d="M300,86 L300,156" />
+  </g>
+  <text class="accent-text" x="300" y="80" fill="#9a3412" font-family="system-ui, sans-serif" font-size="12.5" font-weight="700" text-anchor="middle">t = 700 s</text>
+
+  <g font-family="system-ui, sans-serif" text-anchor="start">
+    <text class="title" x="36" y="228" fill="#20242c" font-size="15" font-weight="700">What each extra directive changes at the boundary</text>
+
+    <rect class="card" x="36" y="244" width="648" height="54" rx="12" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <text class="title" x="52" y="268" fill="#20242c" font-size="14" font-weight="700" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">stale-while-revalidate=86400</text>
+    <text class="muted" x="52" y="287" fill="#526173" font-size="12">Draws the orange band: past 600 s the wait is still zero, and one background fetch renews the copy.</text>
+
+    <rect class="card" x="36" y="308" width="648" height="54" rx="12" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <text class="title" x="52" y="332" fill="#20242c" font-size="14" font-weight="700" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">stale-if-error=120</text>
+    <text class="muted" x="52" y="351" fill="#526173" font-size="12">The failure twin: if revalidation errors or times out, the last good copy answers instead.</text>
+
+    <rect class="card" x="36" y="372" width="648" height="54" rx="12" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <text class="title" x="52" y="396" fill="#20242c" font-size="14" font-weight="700" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">must-revalidate</text>
+    <text class="muted" x="52" y="415" fill="#526173" font-size="12">Deletes the orange band: past 600 s the copy is usable only if revalidation succeeds, else 504.</text>
+
+    <rect class="card" x="36" y="436" width="648" height="54" rx="12" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <text class="title" x="52" y="460" fill="#20242c" font-size="14" font-weight="700" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">immutable</text>
+    <text class="muted" x="52" y="479" fill="#526173" font-size="12">Only meaningful inside the green band: even a Reload skips the conditional request.</text>
+
+    <rect class="info-box" x="36" y="500" width="648" height="60" rx="12" fill="#dbeafe" stroke="#2563eb" stroke-width="2" />
+    <text class="info-text" x="52" y="524" fill="#172554" font-size="14" font-weight="700">No green band declared at all?</text>
+    <text class="info-text" x="52" y="544" fill="#172554" font-size="12">With no <tspan font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">Cache-Control</tspan> and no <tspan font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">Expires</tspan>, a cache may invent one: 10% of (<tspan font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">Date</tspan> − <tspan font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">Last-Modified</tspan>). 200 h → 20 h.</text>
+  </g>
+</svg>

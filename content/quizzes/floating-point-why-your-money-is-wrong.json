@@ -17,6 +17,14 @@
       "id": "point-one-plus-point-two",
       "title": "What does `0.1 + 0.2` evaluate to in JavaScript?",
       "description": "Type the value the engine actually prints, every digit of it.\n\n```js\nconsole.log(0.1 + 0.2);\n// ?\n```",
+      "images": [
+        {
+          "src": "tenths-in-binary.svg",
+          "alt": "0.1 written out in binary as a chip sequence: 0001, then 1001 repeating forever, with a dashed cut line marking where the double's 52 mantissa bits stop and the value rounds up to 0.1000000000000000055511151231257827021181583404541015625.",
+          "caption": "`0.1` and `0.2` both round up when stored, which is why their sum overshoots `0.3`.",
+          "placement": "explanation"
+        }
+      ],
       "type": "input",
       "validation": {
         "mode": "numeric",
@@ -30,6 +38,20 @@
     {
       "id": "why-tenths-are-not-exact",
       "title": "Why can a double hold `0.5` exactly but not `0.1`?",
+      "images": [
+        {
+          "src": "double-bit-layout.svg",
+          "alt": "The 64 bits of a double laid out as a bit grid: 1 sign bit, an 11-bit biased exponent, and a 52-bit mantissa, with the formula value equals minus one to the sign times 1.mantissa times 2 to the exponent minus 1023.",
+          "caption": "The exponent shifts the binary point; the mantissa bits are the finite budget `1/10` can't fit into.",
+          "placement": "explanation"
+        },
+        {
+          "src": "tenths-in-binary.svg",
+          "alt": "0.1 written out in binary as a chip sequence: 0001, then 1001 repeating forever, with a dashed cut line marking where the double's 52 mantissa bits stop and the value rounds up to 0.1000000000000000055511151231257827021181583404541015625.",
+          "caption": "`1/10` repeats forever in binary, the same way `1/3` repeats forever in decimal.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -81,6 +103,14 @@
     {
       "id": "one-ulp-away",
       "title": "How far apart are `0.1 + 0.2` and `0.3` on the double number line?",
+      "images": [
+        {
+          "src": "number-line-gaps.svg",
+          "alt": "Four number-line panels showing the gap between representable doubles widening with magnitude: near 0.3 the ULP is about 5.6 times 10 to the minus 17, near 2 to the 52 the ULP is 1, at 2 to the 53 the ULP becomes 2 and 2 to the 53 plus 1 collides with 2 to the 53, and by 2 to the 60 the ULP is 256.",
+          "caption": "Near 0.3 the gap between doubles is about 5.6 × 10⁻¹⁷ — `0.1 + 0.2` lands exactly one slot over.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -132,6 +162,14 @@
     {
       "id": "exact-value-of-point-one",
       "title": "What does `(0.1).toFixed(20)` return?",
+      "images": [
+        {
+          "src": "tenths-in-binary.svg",
+          "alt": "0.1 written out in binary as a chip sequence: 0001, then 1001 repeating forever, with a dashed cut line marking where the double's 52 mantissa bits stop and the value rounds up to 0.1000000000000000055511151231257827021181583404541015625.",
+          "caption": "The double nearest `0.1` terminates, because every double is a finite binary fraction — it just takes 53 bits to say.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -364,6 +402,14 @@
       "id": "max-safe-integer-value",
       "title": "What is the value of `Number.MAX_SAFE_INTEGER`?",
       "description": "Type the integer, with no separators.",
+      "images": [
+        {
+          "src": "double-bit-layout.svg",
+          "alt": "The 64 bits of a double laid out as a bit grid: 1 sign bit, an 11-bit biased exponent, and a 52-bit mantissa, with the formula value equals minus one to the sign times 1.mantissa times 2 to the exponent minus 1023.",
+          "caption": "52 stored mantissa bits plus 1 implicit leading bit is 53 bits of precision — enough to number every integer 0…2⁵³.",
+          "placement": "explanation"
+        }
+      ],
       "type": "input",
       "validation": {
         "mode": "numeric",
@@ -377,6 +423,20 @@
     {
       "id": "why-max-safe-is-two-to-53-minus-one",
       "title": "`2 ** 53` is stored exactly, so why is `Number.MAX_SAFE_INTEGER` one less than it?",
+      "images": [
+        {
+          "src": "double-bit-layout.svg",
+          "alt": "The 64 bits of a double laid out as a bit grid: 1 sign bit, an 11-bit biased exponent, and a 52-bit mantissa, with the formula value equals minus one to the sign times 1.mantissa times 2 to the exponent minus 1023.",
+          "caption": "52 stored bits plus 1 implicit leading bit is 53 bits of precision — the 52-bit claim is off by that leading bit.",
+          "placement": "explanation"
+        },
+        {
+          "src": "number-line-gaps.svg",
+          "alt": "Four number-line panels showing the gap between representable doubles widening with magnitude: near 0.3 the ULP is about 5.6 times 10 to the minus 17, near 2 to the 52 the ULP is 1, at 2 to the 53 the ULP becomes 2 and 2 to the 53 plus 1 collides with 2 to the 53, and by 2 to the 60 the ULP is 256.",
+          "caption": "At `2 ** 53` the spacing between neighbouring doubles becomes 2 — `2 ** 53 + 1` collapses onto `2 ** 53`.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -403,6 +463,14 @@
       "id": "gaps-not-size",
       "title": "Which statements about doubles above `Number.MAX_SAFE_INTEGER` are true?",
       "description": "The constant says something about spacing, not about a ceiling.",
+      "images": [
+        {
+          "src": "number-line-gaps.svg",
+          "alt": "Four number-line panels showing the gap between representable doubles widening with magnitude: near 0.3 the ULP is about 5.6 times 10 to the minus 17, near 2 to the 52 the ULP is 1, at 2 to the 53 the ULP becomes 2 and 2 to the 53 plus 1 collides with 2 to the 53, and by 2 to the 60 the ULP is 256.",
+          "caption": "By `2 ** 60` neighbouring doubles sit 256 apart — exact values, just far fewer of them.",
+          "placement": "explanation"
+        }
+      ],
       "type": "multiple-choice",
       "options": [
         {

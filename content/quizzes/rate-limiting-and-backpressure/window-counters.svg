@@ -1,0 +1,111 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="532" viewBox="0 0 720 532">
+  <style>
+    /* An &lt;img&gt;-embedded SVG cannot see the page's `data-theme`, but it does
+       inherit the embedding document's `color-scheme`, so `prefers-color-scheme`
+       tracks the site theme including an explicit toggle. The presentation
+       attributes below stay as the light fallback for renderers without CSS. */
+    svg {
+      --panel: #f5f7fb;
+      --title: #20242c;
+      --muted: #526173;
+      --edge: #64748b;
+      --card: #ffffff;
+      --info-fill: #dbeafe;
+      --info-edge: #2563eb;
+      --info-text: #172554;
+      --accent-fill: #ffedd5;
+      --accent-edge: #c2410c;
+      --accent-text: #9a3412;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      svg {
+        --panel: #1a1f27;
+        --title: #e6eaf2;
+        --muted: #9aa8bd;
+        --edge: #8b9bb4;
+        --card: #252b35;
+        --info-fill: #1e3a5f;
+        --info-edge: #60a5fa;
+        --info-text: #dbeafe;
+        --accent-fill: #3a2416;
+        --accent-edge: #fb923c;
+        --accent-text: #fdba74;
+      }
+    }
+
+    .panel { fill: var(--panel); }
+    .title { fill: var(--title); }
+    .muted { fill: var(--muted); }
+    .card { fill: var(--card); stroke: var(--edge); }
+    .edge-line { stroke: var(--edge); }
+    .info-box { fill: var(--info-fill); stroke: var(--info-edge); }
+    .info-text { fill: var(--info-text); }
+    .accent-box { fill: var(--accent-fill); stroke: var(--accent-edge); }
+    .accent-text { fill: var(--accent-text); }
+    .accent-line { stroke: var(--accent-edge); }
+  </style>
+
+  <rect class="panel" width="720" height="532" rx="20" fill="#f5f7fb" />
+
+  <text class="title" x="36" y="40" fill="#20242c" font-family="system-ui, sans-serif" font-size="20" font-weight="700">
+    Counting requests in a window
+  </text>
+  <text class="muted" x="36" y="64" fill="#526173" font-family="system-ui, sans-serif" font-size="14">
+    The limit in both halves: 100 requests per minute.
+  </text>
+
+  <g font-family="system-ui, sans-serif">
+    <text class="title" x="36" y="96" fill="#20242c" font-size="15" font-weight="700">Fixed window — the counter resets on the wall clock</text>
+
+    <rect class="card" x="36" y="108" width="312" height="56" rx="10" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <rect class="card" x="372" y="108" width="312" height="56" rx="10" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <text class="muted" x="52" y="130" fill="#526173" font-size="12">counter: 100 / 100</text>
+    <text class="muted" x="668" y="130" fill="#526173" font-size="12" text-anchor="end">counter: 100 / 100</text>
+
+    <rect class="accent-box" x="252" y="120" width="88" height="34" rx="8" fill="#ffedd5" stroke="#c2410c" stroke-width="2" />
+    <text class="accent-text" x="296" y="141" fill="#9a3412" font-size="12.5" font-weight="700" text-anchor="middle">100 reqs</text>
+    <rect class="accent-box" x="380" y="120" width="88" height="34" rx="8" fill="#ffedd5" stroke="#c2410c" stroke-width="2" />
+    <text class="accent-text" x="424" y="141" fill="#9a3412" font-size="12.5" font-weight="700" text-anchor="middle">100 reqs</text>
+
+    <text class="muted" x="192" y="182" fill="#526173" font-size="11.5" text-anchor="middle">the 12:00 window · sent at 12:00:59.9</text>
+    <text class="muted" x="528" y="182" fill="#526173" font-size="11.5" text-anchor="middle">the 12:01 window · sent at 12:01:00.1</text>
+
+    <rect class="accent-box" x="36" y="194" width="648" height="44" rx="12" fill="#ffedd5" stroke="#c2410c" stroke-width="2" />
+    <text class="accent-text" x="52" y="221" fill="#9a3412" font-size="13" font-weight="700">Each batch is legal in its own window, so ≈200 requests land in ≈1 second — twice the rate.</text>
+
+    <text class="title" x="36" y="272" fill="#20242c" font-size="15" font-weight="700">Sliding-window counter — one weighted estimate from two integers</text>
+  </g>
+
+  <rect class="card" x="115" y="310" width="300" height="74" rx="10" fill="none" stroke="#64748b" stroke-width="1.8" stroke-dasharray="5 4" />
+
+  <g font-family="system-ui, sans-serif">
+    <rect class="card" x="36" y="326" width="300" height="44" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <text class="title" x="186" y="344" fill="#20242c" font-size="12.5" font-weight="700" text-anchor="middle">previous window</text>
+    <text class="muted" x="186" y="361" fill="#526173" font-size="11.5" text-anchor="middle">80 requests</text>
+
+    <rect class="card" x="340" y="326" width="300" height="44" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <text class="title" x="490" y="344" fill="#20242c" font-size="12.5" font-weight="700" text-anchor="middle">current window</text>
+    <text class="muted" x="490" y="361" fill="#526173" font-size="11.5" text-anchor="middle">20 logged so far</text>
+
+    <text class="muted" x="121" y="324" fill="#526173" font-size="10.5">the trailing 60 s</text>
+  </g>
+
+  <g fill="none" class="accent-line" stroke="#c2410c" stroke-width="2.2">
+    <path d="M415,302 L415,388" />
+  </g>
+  <text class="accent-text" x="415" y="296" fill="#9a3412" font-family="system-ui, sans-serif" font-size="12" font-weight="700" text-anchor="middle">now — 15 s into the window</text>
+
+  <g font-family="system-ui, sans-serif">
+    <rect class="info-box" x="36" y="400" width="648" height="42" rx="12" fill="#dbeafe" stroke="#2563eb" stroke-width="2" />
+    <text class="info-text" x="360" y="427" fill="#172554" font-size="14" font-weight="700" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">estimate = 20 + 80 × (60 − 15) / 60 = 80</text>
+
+    <rect class="card" x="36" y="458" width="316" height="56" rx="12" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <text class="title" x="52" y="482" fill="#20242c" font-size="13.5" font-weight="700">Sliding-window log</text>
+    <text class="muted" x="52" y="501" fill="#526173" font-size="11.5">one timestamp per request: exact, O(n) per key</text>
+
+    <rect class="card" x="368" y="458" width="316" height="56" rx="12" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <text class="title" x="384" y="482" fill="#20242c" font-size="13.5" font-weight="700">Sliding-window counter</text>
+    <text class="muted" x="384" y="501" fill="#526173" font-size="11.5">two integers per key: approximate, O(1)</text>
+  </g>
+</svg>

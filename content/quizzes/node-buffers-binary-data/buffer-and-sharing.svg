@@ -1,0 +1,125 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="512" viewBox="0 0 720 512">
+  <style>
+    /* An &lt;img&gt;-embedded SVG cannot see the page's `data-theme`, but it does
+       inherit the embedding document's `color-scheme`, so `prefers-color-scheme`
+       tracks the site theme including an explicit toggle. The presentation
+       attributes below stay as the light fallback for renderers without CSS. */
+    svg {
+      --panel: #f5f7fb;
+      --title: #20242c;
+      --muted: #526173;
+      --edge: #64748b;
+      --card: #ffffff;
+      --ok-fill: #dcfce7;
+      --ok-edge: #16a34a;
+      --ok-text: #14532d;
+      --info-fill: #dbeafe;
+      --info-edge: #2563eb;
+      --info-text: #172554;
+      --accent-fill: #ffedd5;
+      --accent-edge: #c2410c;
+      --accent-text: #9a3412;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      svg {
+        --panel: #1a1f27;
+        --title: #e6eaf2;
+        --muted: #9aa8bd;
+        --edge: #8b9bb4;
+        --card: #252b35;
+        --ok-fill: #14321f;
+        --ok-edge: #4ade80;
+        --ok-text: #bbf7d0;
+        --info-fill: #1e3a5f;
+        --info-edge: #60a5fa;
+        --info-text: #dbeafe;
+        --accent-fill: #3a2416;
+        --accent-edge: #fb923c;
+        --accent-text: #fdba74;
+      }
+    }
+
+    .panel { fill: var(--panel); }
+    .title { fill: var(--title); }
+    .muted { fill: var(--muted); }
+    .card { fill: var(--card); stroke: var(--edge); }
+    .edge-line { stroke: var(--edge); }
+    .ok-box { fill: var(--ok-fill); stroke: var(--ok-edge); }
+    .ok-text { fill: var(--ok-text); }
+    .info-box { fill: var(--info-fill); stroke: var(--info-edge); }
+    .info-text { fill: var(--info-text); }
+    .accent-box { fill: var(--accent-fill); stroke: var(--accent-edge); }
+    .accent-text { fill: var(--accent-text); }
+    .accent-line { stroke: var(--accent-edge); }
+  </style>
+
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="var(--edge)" fill-rule="evenodd" />
+    </marker>
+  </defs>
+
+  <rect class="panel" width="720" height="512" rx="20" fill="#f5f7fb" />
+
+  <text class="title" x="36" y="40" fill="#20242c" font-family="system-ui, sans-serif" font-size="20" font-weight="700">
+    Buffer, Uint8Array, and who owns the bytes
+  </text>
+  <text class="muted" x="36" y="64" fill="#526173" font-family="system-ui, sans-serif" font-size="14">
+    One class extends the other; several operations point at memory that already exists.
+  </text>
+
+  <g fill="none" class="edge-line" stroke="#64748b" stroke-width="2">
+    <path d="M360,142 L360,162" marker-start="url(#arrow)" />
+  </g>
+
+  <g font-family="system-ui, sans-serif">
+    <rect class="card" x="36" y="94" width="648" height="48" rx="12" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <text class="title" x="52" y="124" fill="#20242c" font-size="14" font-weight="700"><tspan font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">Uint8Array</tspan> — the standard built-in, present in browsers too</text>
+
+    <rect class="info-box" x="36" y="164" width="648" height="62" rx="12" fill="#dbeafe" stroke="#2563eb" stroke-width="2" />
+    <text class="info-text" x="52" y="190" fill="#172554" font-size="14" font-weight="700"><tspan font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">Buffer</tspan> — a Node global that extends it</text>
+    <text class="info-text" x="52" y="211" fill="#172554" font-size="12">and adds what the standard lacks: <tspan font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">readInt32BE</tspan>, <tspan font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">write</tspan>, <tspan font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">toString('hex')</tspan>.</text>
+
+    <text class="muted" x="36" y="252" fill="#526173" font-size="12.5"><tspan font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">buf instanceof Uint8Array</tspan> is true. The reverse is not: a plain Uint8Array is no Buffer.</text>
+
+    <text class="title" x="36" y="288" fill="#20242c" font-size="15" font-weight="700">One region of memory, two references</text>
+    <text class="muted" x="36" y="308" fill="#526173" font-size="12" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">buf</text>
+  </g>
+
+  <g fill="none" class="edge-line" stroke="#64748b" stroke-width="2">
+    <path d="M36,314 L36,320 M36,314 L676,314 M676,314 L676,320" />
+  </g>
+
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" text-anchor="middle" font-size="16" font-weight="700">
+    <rect class="accent-box" x="36" y="324" width="100" height="44" rx="8" fill="#ffedd5" stroke="#c2410c" stroke-width="2" />
+    <text class="accent-text" x="86" y="353" fill="#9a3412">48</text>
+    <rect class="accent-box" x="144" y="324" width="100" height="44" rx="8" fill="#ffedd5" stroke="#c2410c" stroke-width="2" />
+    <text class="accent-text" x="194" y="353" fill="#9a3412">65</text>
+    <rect class="card" x="252" y="324" width="100" height="44" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <text class="title" x="302" y="353" fill="#20242c">6C</text>
+    <rect class="card" x="360" y="324" width="100" height="44" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <text class="title" x="410" y="353" fill="#20242c">6C</text>
+    <rect class="card" x="468" y="324" width="100" height="44" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <text class="title" x="518" y="353" fill="#20242c">6F</text>
+    <rect class="card" x="576" y="324" width="100" height="44" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <text class="title" x="626" y="353" fill="#20242c">21</text>
+  </g>
+
+  <g fill="none" class="accent-line" stroke="#c2410c" stroke-width="2">
+    <path d="M36,378 L36,372 M36,378 L244,378 M244,378 L244,372" />
+  </g>
+
+  <g font-family="system-ui, sans-serif">
+    <text class="accent-text" x="36" y="396" fill="#9a3412" font-size="12" font-weight="700" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">buf.subarray(0, 2)</text>
+    <text class="muted" x="196" y="396" fill="#526173" font-size="12">— not a copy. A write through either reference is visible through the other.</text>
+
+    <rect class="ok-box" x="36" y="414" width="316" height="62" rx="12" fill="#dcfce7" stroke="#16a34a" stroke-width="2" />
+    <text class="ok-text" x="52" y="438" fill="#14532d" font-size="13.5" font-weight="700">Shares the same bytes</text>
+    <text class="ok-text" x="52" y="459" fill="#14532d" font-size="12" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">buf.subarray(0,2) · Buffer.from(ab)</text>
+
+    <rect class="card" x="368" y="414" width="316" height="62" rx="12" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <text class="title" x="384" y="438" fill="#20242c" font-size="13.5" font-weight="700">Allocates and copies</text>
+    <text class="muted" x="384" y="459" fill="#526173" font-size="11" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">Buffer.concat([a,b]) · new Uint8Array(buf)</text>
+  </g>
+</svg>

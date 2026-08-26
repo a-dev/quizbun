@@ -86,6 +86,14 @@
       "id": "simple-post-still-mutates",
       "title": "A form-style cross-origin POST changes server state, but the response has no CORS headers. What happens?",
       "description": "Assume the request uses `Content-Type: application/x-www-form-urlencoded` and no non-safelisted headers.",
+      "images": [
+        {
+          "src": "preflight-vs-simple-request.svg",
+          "alt": "Two sequence diagrams comparing a simple cross-origin request, which goes straight to the server and only gates whether JavaScript may read the response, against a preflighted request, where the browser first sends an OPTIONS request asking permission, then sends the real request once permission is granted, and that real response still needs its own CORS headers to be readable.",
+          "caption": "The top diagram — the request always goes out; CORS only decides whether JS can read what comes back.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -142,6 +150,14 @@
       "id": "requests-without-preflight",
       "title": "Which cross-origin requests can avoid a CORS preflight?",
       "description": "Assume every header value meets the CORS safelist limits.",
+      "images": [
+        {
+          "src": "preflight-vs-simple-request.svg",
+          "alt": "Two sequence diagrams comparing a simple cross-origin request, which goes straight to the server and only gates whether JavaScript may read the response, against a preflighted request, where the browser first sends an OPTIONS request asking permission, then sends the real request once permission is granted, and that real response still needs its own CORS headers to be readable.",
+          "caption": "The top diagram's single GET — no OPTIONS round trip before it.",
+          "placement": "explanation"
+        }
+      ],
       "type": "multiple-choice",
       "options": [
         {
@@ -171,6 +187,14 @@
     {
       "id": "preflight-wire-shape",
       "title": "Which request matches the preflight for a `PATCH` with `Content-Type` and `X-Trace-Id`?",
+      "images": [
+        {
+          "src": "preflight-vs-simple-request.svg",
+          "alt": "Two sequence diagrams comparing a simple cross-origin request, which goes straight to the server and only gates whether JavaScript may read the response, against a preflighted request, where the browser first sends an OPTIONS request asking permission, then sends the real request once permission is granted, and that real response still needs its own CORS headers to be readable.",
+          "caption": "The bottom diagram's first arrow — the exact OPTIONS request this question describes.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -196,6 +220,14 @@
     {
       "id": "preflight-has-no-session-cookie",
       "title": "Will a CORS preflight include the user's session cookie?",
+      "images": [
+        {
+          "src": "preflight-vs-simple-request.svg",
+          "alt": "Two sequence diagrams comparing a simple cross-origin request, which goes straight to the server and only gates whether JavaScript may read the response, against a preflighted request, where the browser first sends an OPTIONS request asking permission, then sends the real request once permission is granted, and that real response still needs its own CORS headers to be readable.",
+          "caption": "The note under the bottom diagram's second arrow — the preflight's credentials mode is always same-origin.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -272,6 +304,14 @@
     {
       "id": "actual-response-needs-cors-too",
       "title": "A preflight succeeds, then the actual `PATCH` returns `500` without `Access-Control-Allow-Origin`. What can browser JavaScript observe?",
+      "images": [
+        {
+          "src": "preflight-vs-simple-request.svg",
+          "alt": "Two sequence diagrams comparing a simple cross-origin request, which goes straight to the server and only gates whether JavaScript may read the response, against a preflighted request, where the browser first sends an OPTIONS request asking permission, then sends the real request once permission is granted, and that real response still needs its own CORS headers to be readable.",
+          "caption": "The bottom diagram's last arrow and the callout below it — exactly this scenario.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {

@@ -10,6 +10,14 @@
       "id": "sse-comment-line",
       "title": "In an SSE stream, what does a line beginning with a colon (`:`) do?",
       "description": "For example, a server periodically writing `: keep-alive` followed by a blank line.",
+      "images": [
+        {
+          "src": "event-anatomy.svg",
+          "alt": "An annotated SSE event stream: a heartbeat comment line that dispatches nothing, then a named `price` event whose `event`, `id`, two `data` lines joined by a newline, and `retry` fields accumulate until a blank line flushes and dispatches them, with a callout of the field-parsing rules below.",
+          "caption": "The top card — a lone `: keep-alive` comment, discarded by the parser.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -36,6 +44,14 @@
       "id": "sse-multiline-data",
       "title": "A single SSE event contains two `data:` lines. How is the payload delivered to the client?",
       "description": "The event has `data: line1` then `data: line2`, then a blank line.",
+      "images": [
+        {
+          "src": "event-anatomy.svg",
+          "alt": "An annotated SSE event stream: a heartbeat comment line that dispatches nothing, then a named `price` event whose `event`, `id`, two `data` lines joined by a newline, and `retry` fields accumulate until a blank line flushes and dispatches them, with a callout of the field-parsing rules below.",
+          "caption": "The `data: line1` / `data: line2` card — each line appends its value plus a line feed to the buffer.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -62,6 +78,14 @@
       "id": "sse-dispatch-blank-line",
       "title": "What part of the SSE wire format signals \"this event is complete — dispatch it now\"?",
       "description": "Two words. It's what separates one event's fields from the next event's.",
+      "images": [
+        {
+          "src": "event-anatomy.svg",
+          "alt": "An annotated SSE event stream: a heartbeat comment line that dispatches nothing, then a named `price` event whose `event`, `id`, two `data` lines joined by a newline, and `retry` fields accumulate until a blank line flushes and dispatches them, with a callout of the field-parsing rules below.",
+          "caption": "The final `(blank line) → DISPATCH` card — it flushes the accumulated fields into one event.",
+          "placement": "explanation"
+        }
+      ],
       "type": "input",
       "validation": {
         "mode": "text",
@@ -81,6 +105,14 @@
       "id": "sse-default-event-type",
       "title": "Your server sends events tagged `event: price`, but the client's `onmessage` handler never fires. Why?",
       "description": "The connection is open and bytes are arriving — yet `onmessage` stays silent.",
+      "images": [
+        {
+          "src": "event-anatomy.svg",
+          "alt": "An annotated SSE event stream: a heartbeat comment line that dispatches nothing, then a named `price` event whose `event`, `id`, two `data` lines joined by a newline, and `retry` fields accumulate until a blank line flushes and dispatches them, with a callout of the field-parsing rules below.",
+          "caption": "The `event: price` card — naming the type routes it away from `onmessage`.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -107,6 +139,14 @@
       "id": "sse-field-parsing",
       "title": "Which statements about SSE field parsing are correct?",
       "description": "Select every true statement about how each line is interpreted.",
+      "images": [
+        {
+          "src": "event-anatomy.svg",
+          "alt": "An annotated SSE event stream: a heartbeat comment line that dispatches nothing, then a named `price` event whose `event`, `id`, two `data` lines joined by a newline, and `retry` fields accumulate until a blank line flushes and dispatches them, with a callout of the field-parsing rules below.",
+          "caption": "The \"Field parsing rules\" callout at the bottom — the exact rules this question is testing.",
+          "placement": "explanation"
+        }
+      ],
       "type": "multiple-choice",
       "options": [
         {
@@ -133,6 +173,14 @@
       "id": "sse-retry-field",
       "title": "What does a `retry: 10000` line do, and what's the constraint on its value?",
       "description": "A line that isn't `event`, `data`, or `id`.",
+      "images": [
+        {
+          "src": "event-anatomy.svg",
+          "alt": "An annotated SSE event stream: a heartbeat comment line that dispatches nothing, then a named `price` event whose `event`, `id`, two `data` lines joined by a newline, and `retry` fields accumulate until a blank line flushes and dispatches them, with a callout of the field-parsing rules below.",
+          "caption": "The `retry: 5000` card — it tunes the client's future reconnect delay, nothing else.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -197,6 +245,14 @@
       "id": "sse-id-persistence",
       "title": "An event sets `id: 42`. The next event has no `id:` line. If the client reconnects after that second event, what `Last-Event-ID` does it send?",
       "description": "Think about whether the last event ID is per-event or sticky.",
+      "images": [
+        {
+          "src": "event-anatomy.svg",
+          "alt": "An annotated SSE event stream: a heartbeat comment line that dispatches nothing, then a named `price` event whose `event`, `id`, two `data` lines joined by a newline, and `retry` fields accumulate until a blank line flushes and dispatches them, with a callout of the field-parsing rules below.",
+          "caption": "The `id: 42` card — it sticks around across later events until another `id:` replaces it.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -249,6 +305,14 @@
       "id": "sse-keepalive-comments",
       "title": "Why do SSE servers periodically send a comment line (e.g. `: ping`) even when there's no real data to deliver?",
       "description": "Think about a connection that stays quiet for minutes at a time.",
+      "images": [
+        {
+          "src": "event-anatomy.svg",
+          "alt": "An annotated SSE event stream: a heartbeat comment line that dispatches nothing, then a named `price` event whose `event`, `id`, two `data` lines joined by a newline, and `retry` fields accumulate until a blank line flushes and dispatches them, with a callout of the field-parsing rules below.",
+          "caption": "The `: keep-alive` comment at the top — bytes that keep a quiet connection from being reaped.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {

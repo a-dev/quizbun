@@ -1,0 +1,103 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="618" viewBox="0 0 720 618">
+  <style>
+    /* An &lt;img&gt;-embedded SVG cannot see the page's `data-theme`, but it does
+       inherit the embedding document's `color-scheme`, so `prefers-color-scheme`
+       tracks the site theme including an explicit toggle. The presentation
+       attributes below stay as the light fallback for renderers without CSS. */
+    svg {
+      --panel: #f5f7fb;
+      --title: #20242c;
+      --muted: #526173;
+      --edge: #64748b;
+      --card: #ffffff;
+      --info-fill: #dbeafe;
+      --info-edge: #2563eb;
+      --info-text: #172554;
+      --accent-fill: #ffedd5;
+      --accent-edge: #c2410c;
+      --accent-text: #9a3412;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      svg {
+        --panel: #1a1f27;
+        --title: #e6eaf2;
+        --muted: #9aa8bd;
+        --edge: #8b9bb4;
+        --card: #252b35;
+        --info-fill: #1e3a5f;
+        --info-edge: #60a5fa;
+        --info-text: #dbeafe;
+        --accent-fill: #3a2416;
+        --accent-edge: #fb923c;
+        --accent-text: #fdba74;
+      }
+    }
+
+    .panel { fill: var(--panel); }
+    .title { fill: var(--title); }
+    .muted { fill: var(--muted); }
+    .card { fill: var(--card); stroke: var(--edge); }
+    .info-box { fill: var(--info-fill); stroke: var(--info-edge); }
+    .info-text { fill: var(--info-text); }
+    .accent-box { fill: var(--accent-fill); stroke: var(--accent-edge); }
+    .accent-text { fill: var(--accent-text); }
+  </style>
+
+  <rect class="panel" width="720" height="618" rx="20" fill="#f5f7fb" />
+
+  <text class="title" x="36" y="40" fill="#20242c" font-family="system-ui, sans-serif" font-size="20" font-weight="700">
+    One mutation, from tap to server
+  </text>
+  <text class="muted" x="36" y="64" fill="#526173" font-family="system-ui, sans-serif" font-size="14">
+    The network is not a precondition here. It is a step that may happen much later.
+  </text>
+
+  <g font-family="system-ui, sans-serif" text-anchor="start">
+    <rect class="card" x="36" y="88" width="648" height="54" rx="12" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <circle class="card" cx="66" cy="115" r="15" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <text class="title" x="66" y="120" fill="#20242c" font-size="14" font-weight="700" text-anchor="middle">1</text>
+    <text class="title" x="96" y="112" fill="#20242c" font-size="13.5" font-weight="700">Apply the change optimistically</text>
+    <text class="muted" x="96" y="130" fill="#526173" font-size="11.5">the UI updates now — which commits you to handling the failure case later</text>
+    <rect class="card" x="36" y="150" width="648" height="54" rx="12" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <circle class="card" cx="66" cy="177" r="15" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <text class="title" x="66" y="182" fill="#20242c" font-size="14" font-weight="700" text-anchor="middle">2</text>
+    <text class="title" x="96" y="174" fill="#20242c" font-size="13.5" font-weight="700">Queue the mutation locally, with an idempotency key</text>
+    <text class="muted" x="96" y="192" fill="#526173" font-size="11.5">IndexedDB, not localStorage; the key is what makes a later replay safe to accept twice</text>
+    <rect class="card" x="36" y="212" width="648" height="54" rx="12" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <circle class="card" cx="66" cy="239" r="15" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <text class="title" x="66" y="244" fill="#20242c" font-size="14" font-weight="700" text-anchor="middle">3</text>
+    <text class="title" x="96" y="236" fill="#20242c" font-size="13.5" font-weight="700">Try to send it</text>
+    <text class="muted" x="96" y="254" fill="#526173" font-size="11.5">attempt the request and let it fail — a truthful failure beats a hopeful precondition</text>
+    <rect class="accent-box" x="36" y="274" width="648" height="54" rx="12" fill="#ffedd5" stroke="#c2410c" stroke-width="2" />
+    <circle class="accent-box" cx="66" cy="301" r="15" fill="#ffedd5" stroke="#c2410c" stroke-width="2" />
+    <text class="accent-text" x="66" y="306" fill="#9a3412" font-size="14" font-weight="700" text-anchor="middle">4</text>
+    <text class="accent-text" x="96" y="298" fill="#9a3412" font-size="13.5" font-weight="700">If it fails, register a Background Sync tag</text>
+    <text class="accent-text" x="96" y="316" fill="#9a3412" font-size="11.5">the browser replays the request once connectivity returns, even after the tab is closed</text>
+    <rect class="card" x="36" y="336" width="648" height="54" rx="12" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <circle class="card" cx="66" cy="363" r="15" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <text class="title" x="66" y="368" fill="#20242c" font-size="14" font-weight="700" text-anchor="middle">5</text>
+    <text class="title" x="96" y="360" fill="#20242c" font-size="13.5" font-weight="700">On rejection, roll back</text>
+    <text class="muted" x="96" y="378" fill="#526173" font-size="11.5">revert the optimistic change and tell the user; the promise made in step 1 comes due here</text>
+    <rect class="card" x="36" y="406" width="316" height="94" rx="12" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <text class="title" x="52" y="430" fill="#20242c" font-size="13" font-weight="700">Inside a service worker</text>
+    <text class="muted" x="52" y="452" fill="#526173" font-size="11.5">The Cache API and IndexedDB, both asynchronous.</text>
+    <text class="muted" x="52" y="469" fill="#526173" font-size="11.5">No localStorage and no document.cookie — there</text>
+    <text class="muted" x="52" y="486" fill="#526173" font-size="11.5">is no window in a worker context.</text>
+    <rect class="accent-box" x="368" y="406" width="316" height="94" rx="12" fill="#ffedd5" stroke="#c2410c" stroke-width="2" />
+    <text class="accent-text" x="384" y="430" fill="#9a3412" font-size="13" font-weight="700">Transactions auto-commit</text>
+    <text class="accent-text" x="384" y="452" fill="#9a3412" font-size="11.5">An IndexedDB transaction closes as soon as it has</text>
+    <text class="accent-text" x="384" y="469" fill="#9a3412" font-size="11.5">no pending request. Await an unrelated fetch and</text>
+    <text class="accent-text" x="384" y="486" fill="#9a3412" font-size="11.5">the next add throws TransactionInactiveError.</text>
+    <rect class="card" x="36" y="512" width="316" height="94" rx="12" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <text class="title" x="52" y="536" fill="#20242c" font-size="13" font-weight="700">Stored is not the same as safe</text>
+    <text class="muted" x="52" y="558" fill="#526173" font-size="11.5">By default the browser may evict what you wrote</text>
+    <text class="muted" x="52" y="575" fill="#526173" font-size="11.5">when storage runs short. Ask for persistence with</text>
+    <text class="muted" x="52" y="592" fill="#526173" font-size="11.5">navigator.storage.persist().</text>
+    <rect class="accent-box" x="368" y="512" width="316" height="94" rx="12" fill="#ffedd5" stroke="#c2410c" stroke-width="2" />
+    <text class="accent-text" x="384" y="536" fill="#9a3412" font-size="13" font-weight="700">navigator.onLine is weak</text>
+    <text class="accent-text" x="384" y="558" fill="#9a3412" font-size="11.5">True only means the device has a network</text>
+    <text class="accent-text" x="384" y="575" fill="#9a3412" font-size="11.5">interface. It says nothing about whether your</text>
+    <text class="accent-text" x="384" y="592" fill="#9a3412" font-size="11.5">server, or the internet, can be reached.</text>
+  </g>
+</svg>
