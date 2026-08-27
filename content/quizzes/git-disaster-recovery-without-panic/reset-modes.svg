@@ -1,0 +1,93 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="436" viewBox="0 0 720 436">
+  <style>
+    /* An &lt;img&gt;-embedded SVG cannot see the page's `data-theme`, but it does
+       inherit the embedding document's `color-scheme`, so `prefers-color-scheme`
+       tracks the site theme including an explicit toggle. The presentation
+       attributes below stay as the light fallback for renderers without CSS. */
+    svg {
+      --panel: #f5f7fb;
+      --title: #20242c;
+      --muted: #526173;
+      --edge: #64748b;
+      --card: #ffffff;
+      --ok-fill: #dcfce7;
+      --ok-edge: #16a34a;
+      --ok-text: #15803d;
+      --warn-fill: #ffedd5;
+      --warn-edge: #ea580c;
+      --warn-text: #9a3412;
+      --danger-fill: #fee2e2;
+      --danger-edge: #dc2626;
+      --danger-text: #b91c1c;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      svg {
+        --panel: #1a1f27;
+        --title: #e6eaf2;
+        --muted: #9aa8bd;
+        --edge: #8b9bb4;
+        --card: #252b35;
+        --ok-fill: #14321f;
+        --ok-edge: #4ade80;
+        --ok-text: #86efac;
+        --warn-fill: #3a2211;
+        --warn-edge: #fb923c;
+        --warn-text: #fdba74;
+        --danger-fill: #3f1414;
+        --danger-edge: #f87171;
+        --danger-text: #fca5a5;
+      }
+    }
+
+    .panel { fill: var(--panel); }
+    .title { fill: var(--title); }
+    .muted { fill: var(--muted); }
+    .card { fill: var(--card); stroke: var(--edge); }
+    .ok-box { fill: var(--ok-fill); stroke: var(--ok-edge); }
+    .ok-text { fill: var(--ok-text); }
+    .warn-text { fill: var(--warn-text); }
+    .danger-box { fill: var(--danger-fill); stroke: var(--danger-edge); }
+    .danger-text { fill: var(--danger-text); }
+  </style>
+
+  <rect class="panel" width="720" height="436" rx="20" fill="#f5f7fb" />
+
+  <text class="title" x="36" y="44" fill="#20242c" font-family="system-ui, sans-serif" font-size="20" font-weight="700">
+    git reset --mode: how far back does it reach?
+  </text>
+  <text class="muted" x="36" y="68" fill="#526173" font-family="system-ui, sans-serif" font-size="14">
+    Every mode moves the branch. The modes differ in what else they touch.
+  </text>
+
+  <g font-family="system-ui, sans-serif">
+    <text class="muted" x="294" y="100" fill="#526173" font-size="12" font-weight="700" text-anchor="middle">HEAD (branch)</text>
+    <text class="muted" x="450" y="100" fill="#526173" font-size="12" font-weight="700" text-anchor="middle">Index (staged)</text>
+    <text class="muted" x="606" y="100" fill="#526173" font-size="12" font-weight="700" text-anchor="middle">Working tree</text>
+
+    <rect class="card" x="36" y="114" width="648" height="64" rx="10" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <text class="title" x="52" y="140" fill="#20242c" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="14" font-weight="700">--soft</text>
+    <text class="muted" x="52" y="160" fill="#526173" font-size="12">touches only the branch pointer</text>
+    <text class="title" x="294" y="150" fill="#20242c" font-size="14" font-weight="700" text-anchor="middle">moved</text>
+    <text class="ok-text" x="450" y="150" fill="#15803d" font-size="14" font-weight="700" text-anchor="middle">unchanged</text>
+    <text class="ok-text" x="606" y="150" fill="#15803d" font-size="14" font-weight="700" text-anchor="middle">unchanged</text>
+
+    <rect class="card" x="36" y="186" width="648" height="64" rx="10" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <text class="title" x="52" y="212" fill="#20242c" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="14" font-weight="700">--mixed</text>
+    <text class="muted" x="52" y="232" fill="#526173" font-size="12">the default when no mode is given</text>
+    <text class="title" x="294" y="222" fill="#20242c" font-size="14" font-weight="700" text-anchor="middle">moved</text>
+    <text class="warn-text" x="450" y="222" fill="#9a3412" font-size="14" font-weight="700" text-anchor="middle">reset to target</text>
+    <text class="ok-text" x="606" y="222" fill="#15803d" font-size="14" font-weight="700" text-anchor="middle">unchanged</text>
+
+    <rect class="danger-box" x="36" y="258" width="648" height="64" rx="10" fill="#fee2e2" stroke="#dc2626" stroke-width="2.5" />
+    <text class="title" x="52" y="284" fill="#20242c" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="14" font-weight="700">--hard</text>
+    <text class="danger-text" x="52" y="304" fill="#b91c1c" font-size="12" font-weight="700">can discard uncommitted work</text>
+    <text class="title" x="294" y="294" fill="#20242c" font-size="14" font-weight="700" text-anchor="middle">moved</text>
+    <text class="warn-text" x="450" y="294" fill="#9a3412" font-size="14" font-weight="700" text-anchor="middle">reset to target</text>
+    <text class="danger-text" x="606" y="294" fill="#b91c1c" font-size="14" font-weight="700" text-anchor="middle">reset to target</text>
+
+    <text class="title" x="36" y="352" fill="#20242c" font-size="14" font-weight="700">Each mode does everything the one above it does, plus more.</text>
+    <text class="danger-text" x="36" y="376" fill="#b91c1c" font-size="14" font-weight="700">Only --hard rewrites files on disk — the only mode that can lose edits Git</text>
+    <text class="danger-text" x="36" y="396" fill="#b91c1c" font-size="14" font-weight="700">never stored as a commit.</text>
+  </g>
+</svg>

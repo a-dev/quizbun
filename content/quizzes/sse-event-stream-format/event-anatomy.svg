@@ -1,0 +1,113 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="840" viewBox="0 0 720 840">
+  <style>
+    /* An &lt;img&gt;-embedded SVG cannot see the page's `data-theme`, but it does
+       inherit the embedding document's `color-scheme`, so `prefers-color-scheme`
+       tracks the site theme including an explicit toggle. The presentation
+       attributes below stay as the light fallback for renderers without CSS. */
+    svg {
+      --panel: #f5f7fb;
+      --title: #20242c;
+      --muted: #526173;
+      --edge: #64748b;
+      --card: #ffffff;
+      --ctx-fill: #dbeafe;
+      --ctx-edge: #2563eb;
+      --ctx-label: #172554;
+      --accent-fill: #ffedd5;
+      --accent-edge: #c2410c;
+      --accent-text: #9a3412;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      svg {
+        --panel: #1a1f27;
+        --title: #e6eaf2;
+        --muted: #9aa8bd;
+        --edge: #8b9bb4;
+        --card: #252b35;
+        --ctx-fill: #1e3a5f;
+        --ctx-edge: #60a5fa;
+        --ctx-label: #dbeafe;
+        --accent-fill: #3a2416;
+        --accent-edge: #fb923c;
+        --accent-text: #fdba74;
+      }
+    }
+
+    .panel-bg { fill: var(--panel); }
+    .title { fill: var(--title); }
+    .muted { fill: var(--muted); }
+    .field { fill: var(--ctx-fill); stroke: var(--ctx-edge); }
+    .field-label { fill: var(--ctx-label); }
+    .optional { fill: var(--panel); stroke: var(--edge); }
+    .optional-label { fill: var(--muted); }
+    .dispatch { fill: var(--accent-fill); stroke: var(--accent-edge); }
+    .accent-text { fill: var(--accent-text); }
+    .example-box { fill: var(--accent-fill); stroke: var(--accent-edge); }
+  </style>
+
+  <rect class="panel-bg" width="720" height="840" rx="20" fill="#f5f7fb" />
+
+  <text class="title" x="36" y="40" fill="#20242c" font-family="system-ui, sans-serif" font-size="20" font-weight="700">
+    The SSE wire format, one event at a time
+  </text>
+  <text class="muted" x="36" y="64" fill="#526173" font-family="system-ui, sans-serif" font-size="14">
+    Every line is `field: value`. A blank line flushes whatever is buffered into one dispatched event.
+  </text>
+
+  <g font-family="system-ui, sans-serif">
+    <rect class="optional" x="36" y="96" width="648" height="60" rx="12" fill="#f5f7fb" stroke="#64748b" stroke-width="2" stroke-dasharray="6 5" />
+    <text class="optional-label" x="56" y="122" fill="#526173" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="14" font-weight="700">: keep-alive</text>
+    <text class="muted" x="56" y="144" fill="#526173" font-size="12">Comment — starts with `:`; the parser discards it. Servers send these as a heartbeat.</text>
+  </g>
+
+  <g font-family="system-ui, sans-serif">
+    <rect class="optional" x="36" y="170" width="648" height="40" rx="10" fill="#f5f7fb" stroke="#64748b" stroke-width="2" stroke-dasharray="6 5" />
+    <text class="optional-label" x="56" y="195" fill="#526173" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="13" font-weight="700">(blank line)</text>
+    <text class="muted" x="220" y="195" fill="#526173" font-size="12">— buffer is empty, so no event fires. A lone heartbeat dispatches nothing.</text>
+  </g>
+
+  <g font-family="system-ui, sans-serif">
+    <rect class="field" x="36" y="224" width="648" height="74" rx="12" fill="#dbeafe" stroke="#2563eb" stroke-width="2" />
+    <text class="field-label" x="56" y="252" fill="#172554" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="14" font-weight="700">event: price</text>
+    <text class="muted" x="56" y="273" fill="#526173" font-size="12">Names this event's type. Only a matching `addEventListener("price", …)` sees it —</text>
+    <text class="muted" x="56" y="291" fill="#526173" font-size="12">`onmessage` listens only for the default type, `message`.</text>
+  </g>
+
+  <g font-family="system-ui, sans-serif">
+    <rect class="field" x="36" y="312" width="648" height="74" rx="12" fill="#dbeafe" stroke="#2563eb" stroke-width="2" />
+    <text class="field-label" x="56" y="340" fill="#172554" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="14" font-weight="700">id: 42</text>
+    <text class="muted" x="56" y="361" fill="#526173" font-size="12">Updates the sticky last-event-id. It carries forward to later events until another</text>
+    <text class="muted" x="56" y="379" fill="#526173" font-size="12">`id:` changes it, and is replayed as `Last-Event-ID` if the client reconnects.</text>
+  </g>
+
+  <g font-family="system-ui, sans-serif">
+    <rect class="field" x="36" y="400" width="648" height="100" rx="12" fill="#dbeafe" stroke="#2563eb" stroke-width="2" />
+    <text class="field-label" x="56" y="424" fill="#172554" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="13.5" font-weight="700">data: line1</text>
+    <text class="field-label" x="56" y="446" fill="#172554" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="13.5" font-weight="700">data: line2</text>
+    <text class="muted" x="56" y="466" fill="#526173" font-size="11.5">↓ each `data:` line appends its value plus a line feed to the buffer</text>
+    <text class="accent-text" x="56" y="490" fill="#9a3412" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="13" font-weight="700">event.data === "line1\nline2"</text>
+  </g>
+
+  <g font-family="system-ui, sans-serif">
+    <rect class="field" x="36" y="514" width="648" height="74" rx="12" fill="#dbeafe" stroke="#2563eb" stroke-width="2" />
+    <text class="field-label" x="56" y="542" fill="#172554" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="14" font-weight="700">retry: 5000</text>
+    <text class="muted" x="56" y="563" fill="#526173" font-size="12">Tunes the client's future reconnect delay to 5000 ms. The value must be ASCII</text>
+    <text class="muted" x="56" y="581" fill="#526173" font-size="12">digits only — a non-numeric value is ignored and the previous delay stands.</text>
+  </g>
+
+  <g font-family="system-ui, sans-serif">
+    <rect class="dispatch" x="36" y="602" width="648" height="48" rx="10" fill="#ffedd5" stroke="#c2410c" stroke-width="2" />
+    <text class="accent-text" x="56" y="631" fill="#9a3412" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="14" font-weight="700">(blank line) → DISPATCH</text>
+    <text class="muted" x="330" y="631" fill="#526173" font-size="12">flushes event / id / data / retry above into one event and fires it now.</text>
+  </g>
+
+  <g font-family="system-ui, sans-serif">
+    <rect class="example-box" x="36" y="670" width="648" height="140" rx="12" fill="#ffedd5" stroke="#c2410c" stroke-width="2" />
+    <text class="accent-text" x="56" y="696" fill="#9a3412" font-size="14" font-weight="700">Field parsing rules</text>
+    <text class="muted" x="56" y="720" fill="#526173" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="12">`data:hi` and `data: hi` both → "hi" — exactly one leading space is stripped</text>
+    <text class="muted" x="56" y="742" fill="#526173" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="12">field names other than event/data/id/retry are silently ignored</text>
+    <text class="muted" x="56" y="764" fill="#526173" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="12">a line with no colon is a field name with an empty-string value</text>
+    <text class="muted" x="56" y="786" fill="#526173" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="12">no backslash continuation — repeat `data:` to send multiple lines</text>
+  </g>
+</svg>

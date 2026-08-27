@@ -1,0 +1,141 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="710" viewBox="0 0 720 710">
+  <style>
+    /* An &lt;img&gt;-embedded SVG cannot see the page's `data-theme`, but it does
+       inherit the embedding document's `color-scheme`, so `prefers-color-scheme`
+       tracks the site theme including an explicit toggle. The presentation
+       attributes below stay as the light fallback for renderers without CSS. */
+    svg {
+      --panel: #f5f7fb;
+      --title: #20242c;
+      --muted: #526173;
+      --edge: #64748b;
+      --card: #ffffff;
+      --ctx-fill: #dbeafe;
+      --ctx-edge: #2563eb;
+      --ctx-label: #172554;
+      --accent-fill: #ffedd5;
+      --accent-edge: #c2410c;
+      --accent-text: #9a3412;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      svg {
+        --panel: #1a1f27;
+        --title: #e6eaf2;
+        --muted: #9aa8bd;
+        --edge: #8b9bb4;
+        --card: #252b35;
+        --ctx-fill: #1e3a5f;
+        --ctx-edge: #60a5fa;
+        --ctx-label: #dbeafe;
+        --accent-fill: #3a2416;
+        --accent-edge: #fb923c;
+        --accent-text: #fdba74;
+      }
+    }
+
+    .panel-bg { fill: var(--panel); }
+    .title { fill: var(--title); }
+    .muted { fill: var(--muted); }
+    .edge-line { stroke: var(--edge); }
+    .layer { fill: var(--ctx-fill); stroke: var(--ctx-edge); }
+    .layer-label { fill: var(--ctx-label); }
+    .accent-layer { fill: var(--accent-fill); stroke: var(--accent-edge); }
+    .accent-label { fill: var(--accent-text); }
+    .accent-text { fill: var(--accent-text); }
+    .quiet-layer { fill: var(--panel); stroke: var(--edge); }
+    .quiet-label { fill: var(--muted); }
+    .node { fill: var(--card); stroke: var(--edge); }
+    .example-box { fill: var(--accent-fill); stroke: var(--accent-edge); }
+  </style>
+
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="var(--edge)" fill-rule="evenodd" />
+    </marker>
+  </defs>
+
+  <rect class="panel-bg" width="720" height="710" rx="20" fill="#f5f7fb" />
+
+  <text class="title" x="36" y="40" fill="#20242c" font-family="system-ui, sans-serif" font-size="20" font-weight="700">
+    Two stacks, two topologies
+  </text>
+  <text class="muted" x="36" y="64" fill="#526173" font-family="system-ui, sans-serif" font-size="14">
+    WebSocket rides TCP, client ↔ server. A WebRTC data channel rides SCTP-over-DTLS-over-UDP, peer ↔ peer.
+  </text>
+
+  <g font-family="system-ui, sans-serif" text-anchor="middle">
+    <text class="muted" x="190" y="88" fill="#526173" font-size="13" font-weight="700">WebSocket</text>
+    <text class="muted" x="530" y="88" fill="#526173" font-size="13" font-weight="700">WebRTC data channel</text>
+
+    <rect class="layer" x="40" y="96" width="300" height="52" rx="10" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5" />
+    <text class="layer-label" x="190" y="118" fill="#172554" font-size="13" font-weight="700">Application</text>
+    <text class="muted" x="190" y="136" fill="#526173" font-size="10.5">send() / onmessage</text>
+
+    <rect class="layer" x="380" y="96" width="300" height="52" rx="10" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5" />
+    <text class="layer-label" x="530" y="118" fill="#172554" font-size="13" font-weight="700">Application</text>
+    <text class="muted" x="530" y="136" fill="#526173" font-size="10.5">RTCDataChannel.send() / onmessage</text>
+
+    <rect class="layer" x="40" y="156" width="300" height="52" rx="10" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5" />
+    <text class="layer-label" x="190" y="178" fill="#172554" font-size="13" font-weight="700">WebSocket framing</text>
+    <text class="muted" x="190" y="196" fill="#526173" font-size="10.5">opcode: text (0x1) / binary (0x2)</text>
+
+    <rect class="layer" x="380" y="156" width="300" height="52" rx="10" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5" />
+    <text class="layer-label" x="530" y="178" fill="#172554" font-size="13" font-weight="700">SCTP</text>
+    <text class="muted" x="530" y="196" fill="#526173" font-size="10.5">multiplexed, configurable reliability &amp; ordering</text>
+
+    <rect class="accent-layer" x="40" y="216" width="300" height="52" rx="10" fill="#ffedd5" stroke="#c2410c" stroke-width="1.5" />
+    <text class="accent-label" x="190" y="238" fill="#9a3412" font-size="13" font-weight="700">TLS</text>
+    <text class="accent-label" x="190" y="256" fill="#9a3412" font-size="10.5">wss:// — optional (ws:// is legal)</text>
+
+    <rect class="accent-layer" x="380" y="216" width="300" height="52" rx="10" fill="#ffedd5" stroke="#c2410c" stroke-width="1.5" />
+    <text class="accent-label" x="530" y="238" fill="#9a3412" font-size="13" font-weight="700">DTLS</text>
+    <text class="accent-label" x="530" y="256" fill="#9a3412" font-size="10.5">mandatory — no plaintext mode</text>
+
+    <rect class="layer" x="40" y="276" width="300" height="52" rx="10" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5" />
+    <text class="layer-label" x="190" y="298" fill="#172554" font-size="13" font-weight="700">TCP</text>
+    <text class="muted" x="190" y="316" fill="#526173" font-size="10.5">always reliable, always ordered</text>
+
+    <rect class="layer" x="380" y="276" width="300" height="52" rx="10" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5" />
+    <text class="layer-label" x="530" y="298" fill="#172554" font-size="13" font-weight="700">UDP</text>
+    <text class="muted" x="530" y="316" fill="#526173" font-size="10.5">message-oriented, no reliability of its own</text>
+
+    <rect class="quiet-layer" x="40" y="336" width="300" height="44" rx="10" fill="#f5f7fb" stroke="#64748b" stroke-width="1.5" stroke-dasharray="4 3" />
+    <text class="quiet-label" x="190" y="363" fill="#526173" font-size="12">IP</text>
+
+    <rect class="quiet-layer" x="380" y="336" width="300" height="44" rx="10" fill="#f5f7fb" stroke="#64748b" stroke-width="1.5" stroke-dasharray="4 3" />
+    <text class="quiet-label" x="530" y="363" fill="#526173" font-size="11">IP · ICE (STUN/TURN) finds the path</text>
+  </g>
+
+  <g font-family="system-ui, sans-serif" text-anchor="middle">
+    <text class="muted" x="190" y="414" fill="#526173" font-size="13" font-weight="700">Always client ↔ server</text>
+    <rect class="node" x="60" y="430" width="100" height="40" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.5" />
+    <text class="layer-label" x="110" y="454" fill="#172554" font-size="12" font-weight="700">Client</text>
+    <rect class="node" x="220" y="430" width="100" height="40" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.5" />
+    <text class="layer-label" x="270" y="454" fill="#172554" font-size="12" font-weight="700">Server</text>
+    <line x1="162" y1="450" x2="218" y2="450" class="edge-line" stroke="#64748b" stroke-width="2" marker-end="url(#arrow)" marker-start="url(#arrow)" />
+    <text class="muted" x="190" y="494" fill="#526173" font-size="11.5">Every message passes through the server.</text>
+
+    <text class="muted" x="530" y="414" fill="#526173" font-size="13" font-weight="700">Peer ↔ peer, direct</text>
+    <rect class="node" x="400" y="430" width="100" height="40" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.5" />
+    <text class="layer-label" x="450" y="454" fill="#172554" font-size="12" font-weight="700">Peer A</text>
+    <rect class="node" x="560" y="430" width="100" height="40" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.5" />
+    <text class="layer-label" x="610" y="454" fill="#172554" font-size="12" font-weight="700">Peer B</text>
+    <line x1="502" y1="450" x2="558" y2="450" class="edge-line" stroke="#64748b" stroke-width="2" marker-end="url(#arrow)" marker-start="url(#arrow)" />
+    <text class="muted" x="530" y="494" fill="#526173" font-size="11.5">Data flows directly — no server relay once connected.</text>
+
+    <line x1="450" y1="470" x2="480" y2="536" class="edge-line" stroke="#64748b" stroke-width="1.5" stroke-dasharray="4 3" />
+    <line x1="610" y1="470" x2="580" y2="536" class="edge-line" stroke="#64748b" stroke-width="1.5" stroke-dasharray="4 3" />
+    <rect class="node" x="460" y="536" width="140" height="40" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.5" stroke-dasharray="4 3" />
+    <text class="quiet-label" x="530" y="554" fill="#526173" font-size="11" font-weight="700">Signaling server</text>
+    <text class="muted" x="530" y="570" fill="#526173" font-size="9.5">(often a WebSocket)</text>
+    <text class="muted" x="530" y="596" fill="#526173" font-size="11">WebRTC defines no signaling protocol — apps bootstrap SDP/ICE this way.</text>
+  </g>
+
+  <g font-family="system-ui, sans-serif">
+    <rect class="example-box" x="36" y="620" width="648" height="76" rx="12" fill="#ffedd5" stroke="#c2410c" stroke-width="2" />
+    <text class="accent-text" x="56" y="644" fill="#9a3412" font-size="13" font-weight="700">Key contrast</text>
+    <text class="muted" x="56" y="664" fill="#526173" font-size="12">Reliability is fixed for WebSocket (TCP's reliable + ordered); a data channel's is tunable per channel.</text>
+    <text class="muted" x="56" y="684" fill="#526173" font-size="12">Encryption is mandatory for WebRTC's DTLS — WebSocket's TLS is the one that's optional (ws:// is legal).</text>
+  </g>
+</svg>

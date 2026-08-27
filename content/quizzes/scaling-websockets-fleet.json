@@ -10,6 +10,14 @@
       "id": "ws-sticky-sessions",
       "title": "You put 3 WebSocket servers behind a per-request round-robin load balancer, and connections keep breaking. Why — and what's the fix?",
       "description": "Contrast a long-lived WebSocket with an ordinary stateless HTTP request.",
+      "images": [
+        {
+          "src": "fleet-fanout.svg",
+          "alt": "Three WebSocket servers side by side. The sending client's socket lives on server A, the receiving client's on server C, and server B holds neither. Server A publishes to a shared pub/sub bus — a Redis channel, NATS or equivalent — spanning all three, and B and C each deliver to the sockets they hold. A note says that without the bus, server A can reach only server A's clients. Two cards follow: ways to pin a client to one backend — hashing the source IP, an affinity cookie, balancing the connection rather than each request — and state no single process can own — presence, room membership, anything a second server also has to see. A closing warning: losing one server holding 50,000 sockets sends all 50,000 reconnecting at once onto the survivors, so reconnect with backoff and jitter.",
+          "caption": "A socket lives on exactly one of these three boxes.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -36,6 +44,14 @@
       "id": "ws-pubsub-fanout",
       "title": "Clients are spread across 3 WebSocket servers. A message from a user on server A must reach a recipient connected to server B. What architecture solves this?",
       "description": "Server A's process holds only its own sockets — not B's.",
+      "images": [
+        {
+          "src": "fleet-fanout.svg",
+          "alt": "Three WebSocket servers side by side. The sending client's socket lives on server A, the receiving client's on server C, and server B holds neither. Server A publishes to a shared pub/sub bus — a Redis channel, NATS or equivalent — spanning all three, and B and C each deliver to the sockets they hold. A note says that without the bus, server A can reach only server A's clients. Two cards follow: ways to pin a client to one backend — hashing the source IP, an affinity cookie, balancing the connection rather than each request — and state no single process can own — presence, room membership, anything a second server also has to see. A closing warning: losing one server holding 50,000 sockets sends all 50,000 reconnecting at once onto the survivors, so reconnect with backoff and jitter.",
+          "caption": "A publishes; every server delivers to its own sockets.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -62,6 +78,14 @@
       "id": "ws-buffered-amount",
       "title": "Which read-only `WebSocket` property reports how many bytes you've queued with `send()` that haven't yet gone out to the network?",
       "description": "It's your signal that the consumer is falling behind. Give the property name.",
+      "images": [
+        {
+          "src": "slow-consumer-and-fanout.svg",
+          "alt": "A send path: your server calls ws.send(frame), the unsent bytes queue in the server's own memory as bufferedAmount, and a client on a slow link drains slower than the server produces. A warning card notes that ignoring that number lets one slow client grow it without bound until the process dies. Two green cards give the strategies for a live feed — coalesce, keeping only the newest cursor position and replacing the one still waiting, or drop and disconnect, shedding frames past a threshold. Two blue cards give the arithmetic: 5 × 100,000 = 500,000 individual sends per second, and one connection costs one file descriptor, with ulimit -n capping a single box.",
+          "caption": "The middle box is the queue, and it has a name.",
+          "placement": "explanation"
+        }
+      ],
       "type": "input",
       "validation": {
         "mode": "text",
@@ -79,6 +103,14 @@
       "id": "ws-presence-facts",
       "title": "Which statements about tracking presence (who's online) across a WebSocket fleet are correct?",
       "description": "Select every true statement.",
+      "images": [
+        {
+          "src": "fleet-fanout.svg",
+          "alt": "Three WebSocket servers side by side. The sending client's socket lives on server A, the receiving client's on server C, and server B holds neither. Server A publishes to a shared pub/sub bus — a Redis channel, NATS or equivalent — spanning all three, and B and C each deliver to the sockets they hold. A note says that without the bus, server A can reach only server A's clients. Two cards follow: ways to pin a client to one backend — hashing the source IP, an affinity cookie, balancing the connection rather than each request — and state no single process can own — presence, room membership, anything a second server also has to see. A closing warning: losing one server holding 50,000 sockets sends all 50,000 reconnecting at once onto the survivors, so reconnect with backoff and jitter.",
+          "caption": "Presence is in the right-hand card for a reason.",
+          "placement": "explanation"
+        }
+      ],
       "type": "multiple-choice",
       "options": [
         {
@@ -105,6 +137,14 @@
       "id": "ws-slow-consumer-memory",
       "title": "You broadcast a fast stream, and one client is on a slow network. If you ignore its outbound buffer, what happens on the server?",
       "description": "Where do the bytes a slow client hasn't received yet actually live?",
+      "images": [
+        {
+          "src": "slow-consumer-and-fanout.svg",
+          "alt": "A send path: your server calls ws.send(frame), the unsent bytes queue in the server's own memory as bufferedAmount, and a client on a slow link drains slower than the server produces. A warning card notes that ignoring that number lets one slow client grow it without bound until the process dies. Two green cards give the strategies for a live feed — coalesce, keeping only the newest cursor position and replacing the one still waiting, or drop and disconnect, shedding frames past a threshold. Two blue cards give the arithmetic: 5 × 100,000 = 500,000 individual sends per second, and one connection costs one file descriptor, with ulimit -n capping a single box.",
+          "caption": "Unsent bytes sit on the server side of the link.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -131,6 +171,14 @@
       "id": "ws-reconnect-storm",
       "title": "A WebSocket server holding 50,000 connections crashes, and every client tries to reconnect at once. What's the risk and the mitigation?",
       "description": "Think about the load the surviving servers suddenly absorb.",
+      "images": [
+        {
+          "src": "fleet-fanout.svg",
+          "alt": "Three WebSocket servers side by side. The sending client's socket lives on server A, the receiving client's on server C, and server B holds neither. Server A publishes to a shared pub/sub bus — a Redis channel, NATS or equivalent — spanning all three, and B and C each deliver to the sockets they hold. A note says that without the bus, server A can reach only server A's clients. Two cards follow: ways to pin a client to one backend — hashing the source IP, an affinity cookie, balancing the connection rather than each request — and state no single process can own — presence, room membership, anything a second server also has to see. A closing warning: losing one server holding 50,000 sockets sends all 50,000 reconnecting at once onto the survivors, so reconnect with backoff and jitter.",
+          "caption": "The closing line: 50 000 sockets have to land somewhere.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -157,6 +205,14 @@
       "id": "http-vs-ws-scaling",
       "title": "Why is a stateless HTTP API generally easier to scale horizontally than a WebSocket service?",
       "description": "Consider what each request/connection needs from the server that handles it.",
+      "images": [
+        {
+          "src": "fleet-fanout.svg",
+          "alt": "Three WebSocket servers side by side. The sending client's socket lives on server A, the receiving client's on server C, and server B holds neither. Server A publishes to a shared pub/sub bus — a Redis channel, NATS or equivalent — spanning all three, and B and C each deliver to the sockets they hold. A note says that without the bus, server A can reach only server A's clients. Two cards follow: ways to pin a client to one backend — hashing the source IP, an affinity cookie, balancing the connection rather than each request — and state no single process can own — presence, room membership, anything a second server also has to see. A closing warning: losing one server holding 50,000 sockets sends all 50,000 reconnecting at once onto the survivors, so reconnect with backoff and jitter.",
+          "caption": "A stateless request needs none of this.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -183,6 +239,14 @@
       "id": "ws-fanout-math",
       "title": "You broadcast 5 messages per second to 100,000 connected clients. How many individual sends per second is that across the fleet?",
       "description": "Each broadcast message must be delivered to every connected client. Give a single number.",
+      "images": [
+        {
+          "src": "slow-consumer-and-fanout.svg",
+          "alt": "A send path: your server calls ws.send(frame), the unsent bytes queue in the server's own memory as bufferedAmount, and a client on a slow link drains slower than the server produces. A warning card notes that ignoring that number lets one slow client grow it without bound until the process dies. Two green cards give the strategies for a live feed — coalesce, keeping only the newest cursor position and replacing the one still waiting, or drop and disconnect, shedding frames past a threshold. Two blue cards give the arithmetic: 5 × 100,000 = 500,000 individual sends per second, and one connection costs one file descriptor, with ulimit -n capping a single box.",
+          "caption": "Messages per second times connections.",
+          "placement": "explanation"
+        }
+      ],
       "type": "input",
       "validation": {
         "mode": "numeric",
@@ -195,6 +259,14 @@
       "id": "ws-sticky-mechanisms",
       "title": "Which are valid ways to keep a client's WebSocket traffic pinned to a single backend?",
       "description": "Select every approach that actually works.",
+      "images": [
+        {
+          "src": "fleet-fanout.svg",
+          "alt": "Three WebSocket servers side by side. The sending client's socket lives on server A, the receiving client's on server C, and server B holds neither. Server A publishes to a shared pub/sub bus — a Redis channel, NATS or equivalent — spanning all three, and B and C each deliver to the sockets they hold. A note says that without the bus, server A can reach only server A's clients. Two cards follow: ways to pin a client to one backend — hashing the source IP, an affinity cookie, balancing the connection rather than each request — and state no single process can own — presence, room membership, anything a second server also has to see. A closing warning: losing one server holding 50,000 sockets sends all 50,000 reconnecting at once onto the survivors, so reconnect with backoff and jitter.",
+          "caption": "The left card lists the three that actually pin a connection.",
+          "placement": "explanation"
+        }
+      ],
       "type": "multiple-choice",
       "options": [
         {
@@ -221,6 +293,14 @@
       "id": "ws-fd-per-connection",
       "title": "What OS-level resource does each open WebSocket consume on the server, and why does it cap one machine's connection count?",
       "description": "Think about what the kernel hands you for every accepted connection.",
+      "images": [
+        {
+          "src": "slow-consumer-and-fanout.svg",
+          "alt": "A send path: your server calls ws.send(frame), the unsent bytes queue in the server's own memory as bufferedAmount, and a client on a slow link drains slower than the server produces. A warning card notes that ignoring that number lets one slow client grow it without bound until the process dies. Two green cards give the strategies for a live feed — coalesce, keeping only the newest cursor position and replacing the one still waiting, or drop and disconnect, shedding frames past a threshold. Two blue cards give the arithmetic: 5 × 100,000 = 500,000 individual sends per second, and one connection costs one file descriptor, with ulimit -n capping a single box.",
+          "caption": "One socket, one descriptor, one hard ceiling.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -247,6 +327,14 @@
       "id": "ws-drop-coalesce-strategy",
       "title": "For a live data feed (say, cursor positions in a collaborative app), how should you handle a client whose send buffer is backing up?",
       "description": "Does every queued frame still matter once a newer one exists?",
+      "images": [
+        {
+          "src": "slow-consumer-and-fanout.svg",
+          "alt": "A send path: your server calls ws.send(frame), the unsent bytes queue in the server's own memory as bufferedAmount, and a client on a slow link drains slower than the server produces. A warning card notes that ignoring that number lets one slow client grow it without bound until the process dies. Two green cards give the strategies for a live feed — coalesce, keeping only the newest cursor position and replacing the one still waiting, or drop and disconnect, shedding frames past a threshold. Two blue cards give the arithmetic: 5 × 100,000 = 500,000 individual sends per second, and one connection costs one file descriptor, with ulimit -n capping a single box.",
+          "caption": "Two green cards: replace the stale frame, or shed it.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {

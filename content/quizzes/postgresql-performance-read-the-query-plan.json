@@ -19,6 +19,14 @@
       "id": "plan-cost-numbers",
       "title": "In `cost=0.29..8.31`, what do the two numbers mean?",
       "description": "```\nIndex Scan using orders_pkey on orders  (cost=0.29..8.31 rows=1 width=48)\n  Index Cond: (id = 42)\n```",
+      "images": [
+        {
+          "src": "plan-tree-anatomy.svg",
+          "alt": "One EXPLAIN ANALYZE plan tree with five numbered callouts. A Nested Loop over a Seq Scan on orders and an Index Scan on items, showing cost, rows, width, actual time, actual rows, loops, a Filter, Rows Removed by Filter and a Buffers line. The callouts read: cost=0.29..8.31 is startup cost then total cost, in planner units and never milliseconds; rows=14 with loops=620 means actual rows is a per-loop average, so the node returned 8,680 rows in all; Rows Removed by Filter: 419380 means the scan read those rows and threw them away, so the predicate belongs in the index; Buffers: shared hit=142 read=88231 means 142 pages came from shared buffers and 88,231 did not; and an estimate of 6 rows against 620 actual means to start at the deepest node whose estimate is furthest off, since every node above inherited the error.",
+          "caption": "Callout 1 — and neither number is a time.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -45,6 +53,14 @@
       "id": "loops-are-averages",
       "title": "How many rows did the inner index scan return in total?",
       "description": "```\nNested Loop  (actual time=0.028..3.114 rows=250 loops=1)\n  ->  Seq Scan on customers  (actual time=0.008..0.041 rows=25 loops=1)\n  ->  Index Scan using orders_customer_id_idx on orders\n        (actual time=0.005..0.010 rows=10 loops=25)\n        Index Cond: (customer_id = customers.id)\n```\n\nEnter the total number of rows the index scan produced across all of its executions.",
+      "images": [
+        {
+          "src": "plan-tree-anatomy.svg",
+          "alt": "One EXPLAIN ANALYZE plan tree with five numbered callouts. A Nested Loop over a Seq Scan on orders and an Index Scan on items, showing cost, rows, width, actual time, actual rows, loops, a Filter, Rows Removed by Filter and a Buffers line. The callouts read: cost=0.29..8.31 is startup cost then total cost, in planner units and never milliseconds; rows=14 with loops=620 means actual rows is a per-loop average, so the node returned 8,680 rows in all; Rows Removed by Filter: 419380 means the scan read those rows and threw them away, so the predicate belongs in the index; Buffers: shared hit=142 read=88231 means 142 pages came from shared buffers and 88,231 did not; and an estimate of 6 rows against 620 actual means to start at the deepest node whose estimate is furthest off, since every node above inherited the error.",
+          "caption": "Callout 2: multiply by `loops` to get the total.",
+          "placement": "explanation"
+        }
+      ],
       "type": "input",
       "validation": {
         "mode": "numeric",
@@ -57,6 +73,14 @@
       "id": "index-cond-vs-filter",
       "title": "What does the large `Rows Removed by Filter` count tell you here?",
       "description": "```\nIndex Scan using events_tenant_id_idx on events\n  (actual time=0.031..184.702 rows=12 loops=1)\n  Index Cond: (tenant_id = 7)\n  Filter: (event_type = 'signup'::text)\n  Rows Removed by Filter: 418322\n```",
+      "images": [
+        {
+          "src": "plan-tree-anatomy.svg",
+          "alt": "One EXPLAIN ANALYZE plan tree with five numbered callouts. A Nested Loop over a Seq Scan on orders and an Index Scan on items, showing cost, rows, width, actual time, actual rows, loops, a Filter, Rows Removed by Filter and a Buffers line. The callouts read: cost=0.29..8.31 is startup cost then total cost, in planner units and never milliseconds; rows=14 with loops=620 means actual rows is a per-loop average, so the node returned 8,680 rows in all; Rows Removed by Filter: 419380 means the scan read those rows and threw them away, so the predicate belongs in the index; Buffers: shared hit=142 read=88231 means 142 pages came from shared buffers and 88,231 did not; and an estimate of 6 rows against 620 actual means to start at the deepest node whose estimate is furthest off, since every node above inherited the error.",
+          "caption": "Callout 3: rows the scan read and then threw away.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -327,6 +351,14 @@
       "id": "find-the-misestimate",
       "title": "Which node in this plan should you fix first?",
       "description": "```\nNested Loop  (cost=0.86..1290.42 rows=3 width=72)\n             (actual time=0.094..9418.552 rows=41230 loops=1)\n  ->  Index Scan using shipments_carrier_idx on shipments s\n        (cost=0.43..612.10 rows=3 width=40)\n        (actual time=0.041..38.117 rows=41230 loops=1)\n        Index Cond: (carrier_id = 12)\n        Filter: (status = 'in_transit'::text)\n  ->  Index Scan using events_shipment_id_idx on events e\n        (cost=0.43..226.09 rows=1 width=40)\n        (actual time=0.198..0.222 rows=1 loops=41230)\n        Index Cond: (shipment_id = s.id)\n```",
+      "images": [
+        {
+          "src": "plan-tree-anatomy.svg",
+          "alt": "One EXPLAIN ANALYZE plan tree with five numbered callouts. A Nested Loop over a Seq Scan on orders and an Index Scan on items, showing cost, rows, width, actual time, actual rows, loops, a Filter, Rows Removed by Filter and a Buffers line. The callouts read: cost=0.29..8.31 is startup cost then total cost, in planner units and never milliseconds; rows=14 with loops=620 means actual rows is a per-loop average, so the node returned 8,680 rows in all; Rows Removed by Filter: 419380 means the scan read those rows and threw them away, so the predicate belongs in the index; Buffers: shared hit=142 read=88231 means 142 pages came from shared buffers and 88,231 did not; and an estimate of 6 rows against 620 actual means to start at the deepest node whose estimate is furthest off, since every node above inherited the error.",
+          "caption": "Callout 5: the deepest node whose estimate is furthest off.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -435,6 +467,14 @@
       "id": "offset-pagination-cost",
       "title": "Why does page 5,000 of this listing take vastly longer than page 1?",
       "description": "```sql\nSELECT id, title, created_at\nFROM articles\nORDER BY created_at DESC\nLIMIT 20 OFFSET 99980;\n```\n\nThere is an index on `created_at`.",
+      "images": [
+        {
+          "src": "offset-vs-keyset.svg",
+          "alt": "Two pagination strategies for page 5,000 of a list ordered by created_at DESC, id DESC. With LIMIT 20 OFFSET 99980, a long bar shows 99,980 rows read, ordered and then discarded before the twenty that are returned, so the work grows with the page number. With keyset pagination, an arrow runs straight to the cursor position and reads the next twenty, touching nothing before it. The predicate is the row-wise comparison WHERE (created_at, id) < ('2026-03-01 10:00:00', 8412) ORDER BY created_at DESC, id DESC LIMIT 20, not created_at < … AND id < …, which drops rows it should keep. A closing card lists the requirements: a total order with a tie-break column, an index on exactly those columns in that order and direction, and a cursor carried forward from the last row, which is why it cannot jump to an arbitrary page.",
+          "caption": "The top bar is what page 5 000 costs before it returns anything.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -461,6 +501,14 @@
       "id": "keyset-pagination-predicate",
       "title": "Which `WHERE` clause correctly fetches the page after the row `('2026-03-01 10:00:00', 8412)`?",
       "description": "The listing is ordered by `ORDER BY created_at DESC, id DESC`, `created_at` is not unique, and there is an index on `(created_at, id)`. The last row of the previous page had `created_at = '2026-03-01 10:00:00'` and `id = 8412`.",
+      "images": [
+        {
+          "src": "offset-vs-keyset.svg",
+          "alt": "Two pagination strategies for page 5,000 of a list ordered by created_at DESC, id DESC. With LIMIT 20 OFFSET 99980, a long bar shows 99,980 rows read, ordered and then discarded before the twenty that are returned, so the work grows with the page number. With keyset pagination, an arrow runs straight to the cursor position and reads the next twenty, touching nothing before it. The predicate is the row-wise comparison WHERE (created_at, id) < ('2026-03-01 10:00:00', 8412) ORDER BY created_at DESC, id DESC LIMIT 20, not created_at < … AND id < …, which drops rows it should keep. A closing card lists the requirements: a total order with a tie-break column, an index on exactly those columns in that order and direction, and a cursor carried forward from the last row, which is why it cannot jump to an arbitrary page.",
+          "caption": "The row-wise comparison, not a pair of separate ones.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -487,6 +535,14 @@
       "id": "keyset-pagination-requirements",
       "title": "What does keyset pagination require to be both correct and fast?",
       "description": "Select every requirement that genuinely applies.",
+      "images": [
+        {
+          "src": "offset-vs-keyset.svg",
+          "alt": "Two pagination strategies for page 5,000 of a list ordered by created_at DESC, id DESC. With LIMIT 20 OFFSET 99980, a long bar shows 99,980 rows read, ordered and then discarded before the twenty that are returned, so the work grows with the page number. With keyset pagination, an arrow runs straight to the cursor position and reads the next twenty, touching nothing before it. The predicate is the row-wise comparison WHERE (created_at, id) < ('2026-03-01 10:00:00', 8412) ORDER BY created_at DESC, id DESC LIMIT 20, not created_at < … AND id < …, which drops rows it should keep. A closing card lists the requirements: a total order with a tie-break column, an index on exactly those columns in that order and direction, and a cursor carried forward from the last row, which is why it cannot jump to an arbitrary page.",
+          "caption": "Three conditions, and losing any one of them breaks it.",
+          "placement": "explanation"
+        }
+      ],
       "type": "multiple-choice",
       "options": [
         {
@@ -677,6 +733,14 @@
       "id": "buffers-hit-vs-read",
       "title": "What does `Buffers: shared hit=142 read=88231` tell you?",
       "description": "```\nSeq Scan on invoices  (actual time=0.019..1284.771 rows=2100000 loops=1)\n  Buffers: shared hit=142 read=88231\n```",
+      "images": [
+        {
+          "src": "plan-tree-anatomy.svg",
+          "alt": "One EXPLAIN ANALYZE plan tree with five numbered callouts. A Nested Loop over a Seq Scan on orders and an Index Scan on items, showing cost, rows, width, actual time, actual rows, loops, a Filter, Rows Removed by Filter and a Buffers line. The callouts read: cost=0.29..8.31 is startup cost then total cost, in planner units and never milliseconds; rows=14 with loops=620 means actual rows is a per-loop average, so the node returned 8,680 rows in all; Rows Removed by Filter: 419380 means the scan read those rows and threw them away, so the predicate belongs in the index; Buffers: shared hit=142 read=88231 means 142 pages came from shared buffers and 88,231 did not; and an estimate of 6 rows against 620 actual means to start at the deepest node whose estimate is furthest off, since every node above inherited the error.",
+          "caption": "Callout 4: cached pages against pages fetched.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {

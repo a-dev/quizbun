@@ -1,0 +1,101 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="510" viewBox="0 0 720 510">
+  <style>
+    /* An &lt;img&gt;-embedded SVG cannot see the page's `data-theme`, but it does
+       inherit the embedding document's `color-scheme`, so `prefers-color-scheme`
+       tracks the site theme including an explicit toggle. The presentation
+       attributes below stay as the light fallback for renderers without CSS. */
+    svg {
+      --panel: #f5f7fb;
+      --title: #20242c;
+      --muted: #526173;
+      --edge: #64748b;
+      --card: #ffffff;
+      --ok-fill: #dcfce7;
+      --ok-edge: #16a34a;
+      --ok-text: #14532d;
+      --accent-fill: #ffedd5;
+      --accent-edge: #c2410c;
+      --accent-text: #9a3412;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      svg {
+        --panel: #1a1f27;
+        --title: #e6eaf2;
+        --muted: #9aa8bd;
+        --edge: #8b9bb4;
+        --card: #252b35;
+        --ok-fill: #14321f;
+        --ok-edge: #4ade80;
+        --ok-text: #bbf7d0;
+        --accent-fill: #3a2416;
+        --accent-edge: #fb923c;
+        --accent-text: #fdba74;
+      }
+    }
+
+    .panel { fill: var(--panel); }
+    .title { fill: var(--title); }
+    .muted { fill: var(--muted); }
+    .card { fill: var(--card); stroke: var(--edge); }
+    .ok-box { fill: var(--ok-fill); stroke: var(--ok-edge); }
+    .ok-text { fill: var(--ok-text); }
+    .accent-box { fill: var(--accent-fill); stroke: var(--accent-edge); }
+    .accent-text { fill: var(--accent-text); }
+  </style>
+
+  <rect class="panel" width="720" height="510" rx="20" fill="#f5f7fb" />
+
+  <text class="title" x="36" y="40" fill="#20242c" font-family="system-ui, sans-serif" font-size="20" font-weight="700">
+    What busts the build cache
+  </text>
+  <text class="muted" x="36" y="64" fill="#526173" font-family="system-ui, sans-serif" font-size="14">
+    A layer's cache dies when its key changes — and so does every layer above it.
+  </text>
+
+  <g font-family="system-ui, sans-serif">
+    <rect class="accent-box" x="36" y="88" width="316" height="184" rx="12" fill="#ffedd5" stroke="#c2410c" stroke-width="2" />
+    <text class="accent-text" x="52" y="112" fill="#9a3412" font-size="13.5" font-weight="700">Source first</text>
+    <text class="accent-text" x="52" y="140" fill="#9a3412" font-size="12" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">FROM node:22-slim</text>
+    <text class="accent-text" x="52" y="158" fill="#9a3412" font-size="12" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">COPY . /app</text>
+    <text class="accent-text" x="52" y="176" fill="#9a3412" font-size="12" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">RUN npm ci</text>
+    <text class="accent-text" x="52" y="212" fill="#9a3412" font-size="11.5">Editing any file changes the COPY layer,</text>
+    <text class="accent-text" x="52" y="228" fill="#9a3412" font-size="11.5">and every layer above it is invalidated —</text>
+    <text class="accent-text" x="52" y="244" fill="#9a3412" font-size="11.5">so the install runs again on every build,</text>
+    <text class="accent-text" x="52" y="260" fill="#9a3412" font-size="11.5">even when no dependency changed.</text>
+
+    <rect class="ok-box" x="368" y="88" width="316" height="184" rx="12" fill="#dcfce7" stroke="#16a34a" stroke-width="2" />
+    <text class="ok-text" x="384" y="112" fill="#14532d" font-size="13.5" font-weight="700">Dependencies first</text>
+    <text class="ok-text" x="384" y="140" fill="#14532d" font-size="12" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">FROM node:22-slim</text>
+    <text class="ok-text" x="384" y="158" fill="#14532d" font-size="12" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">COPY package*.json /app/</text>
+    <text class="ok-text" x="384" y="176" fill="#14532d" font-size="12" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">RUN npm ci</text>
+    <text class="ok-text" x="384" y="194" fill="#14532d" font-size="12" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">COPY . /app</text>
+    <text class="ok-text" x="384" y="222" fill="#14532d" font-size="11.5">A source edit now changes only the last</text>
+    <text class="ok-text" x="384" y="238" fill="#14532d" font-size="11.5">layer. The install stays cached until a</text>
+    <text class="ok-text" x="384" y="254" fill="#14532d" font-size="11.5">manifest actually changes.</text>
+
+    <rect class="card" x="36" y="290" width="316" height="96" rx="12" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <text class="title" x="52" y="314" fill="#20242c" font-size="13" font-weight="700">A <tspan font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">COPY</tspan>'s key is the file itself</text>
+    <text class="muted" x="52" y="334" fill="#526173" font-size="11.5">Its content, plus metadata such as mode and</text>
+    <text class="muted" x="52" y="350" fill="#526173" font-size="11.5">ownership. Touching a file to change only its</text>
+    <text class="muted" x="52" y="366" fill="#526173" font-size="11.5">modification time invalidates nothing.</text>
+
+    <rect class="card" x="368" y="290" width="316" height="96" rx="12" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <text class="title" x="384" y="314" fill="#20242c" font-size="13" font-weight="700">A <tspan font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">RUN</tspan>'s key is the command string</text>
+    <text class="muted" x="384" y="334" fill="#526173" font-size="11.5">Nothing more. A lone <tspan font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">apt-get update</tspan> matches</text>
+    <text class="muted" x="384" y="350" fill="#526173" font-size="11.5">last week's and reuses a stale index — put it</text>
+    <text class="muted" x="384" y="366" fill="#526173" font-size="11.5">in the same <tspan font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">RUN</tspan> as the install.</text>
+
+    <rect class="card" x="36" y="402" width="316" height="90" rx="12" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <text class="title" x="52" y="426" fill="#20242c" font-size="13" font-weight="700" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">--mount=type=secret</text>
+    <text class="muted" x="52" y="446" fill="#526173" font-size="11.5">Keeps the value out of the image and out of</text>
+    <text class="muted" x="52" y="462" fill="#526173" font-size="11.5">the cache key — which also means rotating a</text>
+    <text class="muted" x="52" y="478" fill="#526173" font-size="11.5">secret does not invalidate that step.</text>
+
+    <rect class="card" x="368" y="402" width="316" height="90" rx="12" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <text class="title" x="384" y="426" fill="#20242c" font-size="13" font-weight="700" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">--mount=type=cache</text>
+    <text class="muted" x="384" y="446" fill="#526173" font-size="11.5">Needs BuildKit, and what the mount holds is</text>
+    <text class="muted" x="384" y="462" fill="#526173" font-size="11.5">never part of the resulting image — treat it</text>
+    <text class="muted" x="384" y="478" fill="#526173" font-size="11.5">as a speed-up that may simply be empty.</text>
+  </g>
+</svg>

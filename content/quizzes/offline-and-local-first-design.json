@@ -10,6 +10,14 @@
       "id": "stale-while-revalidate-strategy",
       "title": "Which caching strategy serves the cached response instantly, then refreshes the cache in the background?",
       "description": "A news feed needs to paint instantly on every visit, but you also want the content to be reasonably fresh the *next* time it loads.",
+      "images": [
+        {
+          "src": "offline-write-path.svg",
+          "alt": "Five steps for one offline mutation. Apply the change optimistically, which commits you to handling the failure case later. Queue the mutation locally with an idempotency key, in IndexedDB rather than localStorage, since the key is what makes a later replay safe. Try to send it, letting the request fail truthfully. If it fails, register a Background Sync tag so the browser replays the request when connectivity returns, even after the tab is closed. On rejection, roll back the optimistic change and tell the user. Four cards follow: inside a service worker only the Cache API and IndexedDB are available, with no localStorage or document.cookie; an IndexedDB transaction auto-commits as soon as it has no pending request, so awaiting an unrelated fetch makes the next add throw TransactionInactiveError; stored data may still be evicted unless you call navigator.storage.persist(); and navigator.onLine being true only means the device has a network interface.",
+          "caption": "Serve from cache now, refresh behind it for next time.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -36,6 +44,14 @@
       "id": "service-worker-storage-apis",
       "title": "Which storage APIs can code inside a service worker use directly?",
       "description": "A service worker runs off the main thread in a worker context — there is no `window` and no `document`, and synchronous, main-thread-only APIs are unavailable.",
+      "images": [
+        {
+          "src": "offline-write-path.svg",
+          "alt": "Five steps for one offline mutation. Apply the change optimistically, which commits you to handling the failure case later. Queue the mutation locally with an idempotency key, in IndexedDB rather than localStorage, since the key is what makes a later replay safe. Try to send it, letting the request fail truthfully. If it fails, register a Background Sync tag so the browser replays the request when connectivity returns, even after the tab is closed. On rejection, roll back the optimistic change and tell the user. Four cards follow: inside a service worker only the Cache API and IndexedDB are available, with no localStorage or document.cookie; an IndexedDB transaction auto-commits as soon as it has no pending request, so awaiting an unrelated fetch makes the next add throw TransactionInactiveError; stored data may still be evicted unless you call navigator.storage.persist(); and navigator.onLine being true only means the device has a network interface.",
+          "caption": "Two asynchronous stores, and no `window`.",
+          "placement": "explanation"
+        }
+      ],
       "type": "multiple-choice",
       "options": [
         {
@@ -62,6 +78,14 @@
       "id": "indexeddb-transaction-auto-commit",
       "title": "Why does this IndexedDB write throw `TransactionInactiveError`?",
       "description": "The intent is to fetch some data and store it in an outbox object store within a single transaction:\n\n```js\nconst tx = db.transaction('outbox', 'readwrite');\nconst store = tx.objectStore('outbox');\n\nconst res = await fetch('/api/sync'); // await something unrelated to IndexedDB\nstore.add(await res.json());          // throws: TransactionInactiveError\n```",
+      "images": [
+        {
+          "src": "offline-write-path.svg",
+          "alt": "Five steps for one offline mutation. Apply the change optimistically, which commits you to handling the failure case later. Queue the mutation locally with an idempotency key, in IndexedDB rather than localStorage, since the key is what makes a later replay safe. Try to send it, letting the request fail truthfully. If it fails, register a Background Sync tag so the browser replays the request when connectivity returns, even after the tab is closed. On rejection, roll back the optimistic change and tell the user. Four cards follow: inside a service worker only the Cache API and IndexedDB are available, with no localStorage or document.cookie; an IndexedDB transaction auto-commits as soon as it has no pending request, so awaiting an unrelated fetch makes the next add throw TransactionInactiveError; stored data may still be evicted unless you call navigator.storage.persist(); and navigator.onLine being true only means the device has a network interface.",
+          "caption": "The transaction is already gone by the time `add` runs.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -88,6 +112,14 @@
       "id": "indexeddb-default-durability",
       "title": "By default, is the data your app writes to IndexedDB safe from the browser deleting it?",
       "description": "Your offline-first app keeps the user's *only* copy of their not-yet-synced work in IndexedDB.",
+      "images": [
+        {
+          "src": "offline-write-path.svg",
+          "alt": "Five steps for one offline mutation. Apply the change optimistically, which commits you to handling the failure case later. Queue the mutation locally with an idempotency key, in IndexedDB rather than localStorage, since the key is what makes a later replay safe. Try to send it, letting the request fail truthfully. If it fails, register a Background Sync tag so the browser replays the request when connectivity returns, even after the tab is closed. On rejection, roll back the optimistic change and tell the user. Four cards follow: inside a service worker only the Cache API and IndexedDB are available, with no localStorage or document.cookie; an IndexedDB transaction auto-commits as soon as it has no pending request, so awaiting an unrelated fetch makes the next add throw TransactionInactiveError; stored data may still be evicted unless you call navigator.storage.persist(); and navigator.onLine being true only means the device has a network interface.",
+          "caption": "Best-effort until you ask for persistence.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -114,6 +146,14 @@
       "id": "optimistic-update-rollback",
       "title": "What does an optimistic UI update commit you to handling?",
       "description": "A todo app writes a new item into local state and renders it immediately, before the server has confirmed the create.",
+      "images": [
+        {
+          "src": "offline-write-path.svg",
+          "alt": "Five steps for one offline mutation. Apply the change optimistically, which commits you to handling the failure case later. Queue the mutation locally with an idempotency key, in IndexedDB rather than localStorage, since the key is what makes a later replay safe. Try to send it, letting the request fail truthfully. If it fails, register a Background Sync tag so the browser replays the request when connectivity returns, even after the tab is closed. On rejection, roll back the optimistic change and tell the user. Four cards follow: inside a service worker only the Cache API and IndexedDB are available, with no localStorage or document.cookie; an IndexedDB transaction auto-commits as soon as it has no pending request, so awaiting an unrelated fetch makes the next add throw TransactionInactiveError; stored data may still be evicted unless you call navigator.storage.persist(); and navigator.onLine being true only means the device has a network interface.",
+          "caption": "Step 1 and step 5 are the same promise, made and paid.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -140,6 +180,14 @@
       "id": "replay-idempotency-key",
       "title": "What one-word term names the dedup key for replaying queued mutations?",
       "description": "When the device reconnects, your outbox replays a `POST` that may have *already* succeeded server-side before the connection dropped. To let the server recognize the retry and avoid creating a duplicate resource, the client attaches a unique **______** key.\n\nThe term is also the property an operation has when applying it twice has the same effect as applying it once.",
+      "images": [
+        {
+          "src": "offline-write-path.svg",
+          "alt": "Five steps for one offline mutation. Apply the change optimistically, which commits you to handling the failure case later. Queue the mutation locally with an idempotency key, in IndexedDB rather than localStorage, since the key is what makes a later replay safe. Try to send it, letting the request fail truthfully. If it fails, register a Background Sync tag so the browser replays the request when connectivity returns, even after the tab is closed. On rejection, roll back the optimistic change and tell the user. Four cards follow: inside a service worker only the Cache API and IndexedDB are available, with no localStorage or document.cookie; an IndexedDB transaction auto-commits as soon as it has no pending request, so awaiting an unrelated fetch makes the next add throw TransactionInactiveError; stored data may still be evicted unless you call navigator.storage.persist(); and navigator.onLine being true only means the device has a network interface.",
+          "caption": "Step 2: the key travels with the queued mutation.",
+          "placement": "explanation"
+        }
+      ],
       "type": "input",
       "validation": {
         "mode": "text",
@@ -152,6 +200,14 @@
       "id": "background-sync-deferred-replay",
       "title": "Which API defers a failed request until the browser regains connectivity — even after the page has closed?",
       "description": "You want a queued message to send the moment the device is back online, without the user having to reopen the app.",
+      "images": [
+        {
+          "src": "offline-write-path.svg",
+          "alt": "Five steps for one offline mutation. Apply the change optimistically, which commits you to handling the failure case later. Queue the mutation locally with an idempotency key, in IndexedDB rather than localStorage, since the key is what makes a later replay safe. Try to send it, letting the request fail truthfully. If it fails, register a Background Sync tag so the browser replays the request when connectivity returns, even after the tab is closed. On rejection, roll back the optimistic change and tell the user. Four cards follow: inside a service worker only the Cache API and IndexedDB are available, with no localStorage or document.cookie; an IndexedDB transaction auto-commits as soon as it has no pending request, so awaiting an unrelated fetch makes the next add throw TransactionInactiveError; stored data may still be evicted unless you call navigator.storage.persist(); and navigator.onLine being true only means the device has a network interface.",
+          "caption": "Step 4 survives the tab being closed.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -178,6 +234,14 @@
       "id": "last-write-wins-risk",
       "title": "What is the fundamental risk of Last-Write-Wins conflict resolution?",
       "description": "Two clients edit the same record while offline. On sync, the write carrying the newer timestamp is kept and the other is dropped.",
+      "images": [
+        {
+          "src": "conflict-resolution.svg",
+          "alt": "Three approaches to concurrent edits. Last-write-wins lets one timestamp decide and discards the loser's change silently, with clock skew picking the winner. Version vectors are per-node counters that detect whether two versions are causally ordered or genuinely concurrent — detection only, never a merge. CRDTs provide a merge that is commutative, associative and idempotent, so replicas that saw the same updates converge whatever order those arrived in. A worked G-Counter merge follows: replicaA holds A 5, B 2, C 0 for a value of 7; replicaB holds A 1, B 7, C 4 for a value of 12; the element-wise maximum gives A 5, B 7, C 4, and the merged value is 16. A closing line notes that converging is not the same as being right.",
+          "caption": "The left card: a silent discard, decided by a clock.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -204,6 +268,14 @@
       "id": "version-vector-detect-vs-resolve",
       "title": "What does a version vector (vector clock) actually give you?",
       "description": "Each replica carries a per-node counter map alongside the value it stores.",
+      "images": [
+        {
+          "src": "conflict-resolution.svg",
+          "alt": "Three approaches to concurrent edits. Last-write-wins lets one timestamp decide and discards the loser's change silently, with clock skew picking the winner. Version vectors are per-node counters that detect whether two versions are causally ordered or genuinely concurrent — detection only, never a merge. CRDTs provide a merge that is commutative, associative and idempotent, so replicas that saw the same updates converge whatever order those arrived in. A worked G-Counter merge follows: replicaA holds A 5, B 2, C 0 for a value of 7; replicaB holds A 1, B 7, C 4 for a value of 12; the element-wise maximum gives A 5, B 7, C 4, and the merged value is 16. A closing line notes that converging is not the same as being right.",
+          "caption": "The middle card detects; it does not merge.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -230,6 +302,14 @@
       "id": "crdt-properties",
       "title": "Which statements about CRDTs are true?",
       "description": "CRDT stands for **Conflict-free Replicated Data Type** — the data structures behind collaborative, coordination-free sync.",
+      "images": [
+        {
+          "src": "conflict-resolution.svg",
+          "alt": "Three approaches to concurrent edits. Last-write-wins lets one timestamp decide and discards the loser's change silently, with clock skew picking the winner. Version vectors are per-node counters that detect whether two versions are causally ordered or genuinely concurrent — detection only, never a merge. CRDTs provide a merge that is commutative, associative and idempotent, so replicas that saw the same updates converge whatever order those arrived in. A worked G-Counter merge follows: replicaA holds A 5, B 2, C 0 for a value of 7; replicaB holds A 1, B 7, C 4 for a value of 12; the element-wise maximum gives A 5, B 7, C 4, and the merged value is 16. A closing line notes that converging is not the same as being right.",
+          "caption": "The right card names the three merge properties.",
+          "placement": "explanation"
+        }
+      ],
       "type": "multiple-choice",
       "options": [
         {
@@ -256,6 +336,14 @@
       "id": "g-counter-merge-value",
       "title": "After the two replicas merge, what value does the G-Counter report?",
       "description": "A **G-Counter** is a state-based CRDT: each replica keeps a map of per-node counts and increments only its *own* entry; the counter's value is the **sum** of all entries, and two states merge by taking the **element-wise maximum** of their maps.\n\nTwo replicas are about to sync:\n\n```json\n{\n  \"replicaA\": { \"A\": 5, \"B\": 2, \"C\": 0 },\n  \"replicaB\": { \"A\": 1, \"B\": 7, \"C\": 4 }\n}\n```\n\nEnter a single integer.",
+      "images": [
+        {
+          "src": "conflict-resolution.svg",
+          "alt": "Three approaches to concurrent edits. Last-write-wins lets one timestamp decide and discards the loser's change silently, with clock skew picking the winner. Version vectors are per-node counters that detect whether two versions are causally ordered or genuinely concurrent — detection only, never a merge. CRDTs provide a merge that is commutative, associative and idempotent, so replicas that saw the same updates converge whatever order those arrived in. A worked G-Counter merge follows: replicaA holds A 5, B 2, C 0 for a value of 7; replicaB holds A 1, B 7, C 4 for a value of 12; the element-wise maximum gives A 5, B 7, C 4, and the merged value is 16. A closing line notes that converging is not the same as being right.",
+          "caption": "Element-wise maximum, then sum the row.",
+          "placement": "explanation"
+        }
+      ],
       "type": "input",
       "validation": {
         "mode": "numeric",
@@ -268,6 +356,14 @@
       "id": "navigator-online-guarantee",
       "title": "What does `navigator.onLine === true` actually guarantee?",
       "description": "Your sync code checks `navigator.onLine` before deciding whether to flush the outbox.",
+      "images": [
+        {
+          "src": "offline-write-path.svg",
+          "alt": "Five steps for one offline mutation. Apply the change optimistically, which commits you to handling the failure case later. Queue the mutation locally with an idempotency key, in IndexedDB rather than localStorage, since the key is what makes a later replay safe. Try to send it, letting the request fail truthfully. If it fails, register a Background Sync tag so the browser replays the request when connectivity returns, even after the tab is closed. On rejection, roll back the optimistic change and tell the user. Four cards follow: inside a service worker only the Cache API and IndexedDB are available, with no localStorage or document.cookie; an IndexedDB transaction auto-commits as soon as it has no pending request, so awaiting an unrelated fetch makes the next add throw TransactionInactiveError; stored data may still be evicted unless you call navigator.storage.persist(); and navigator.onLine being true only means the device has a network interface.",
+          "caption": "An interface, and nothing beyond it.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {

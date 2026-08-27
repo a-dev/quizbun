@@ -1,0 +1,106 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="520" viewBox="0 0 720 520">
+  <style>
+    /* An &lt;img&gt;-embedded SVG cannot see the page's `data-theme`, but it does
+       inherit the embedding document's `color-scheme`, so `prefers-color-scheme`
+       tracks the site theme including an explicit toggle. The presentation
+       attributes below stay as the light fallback for renderers without CSS. */
+    svg {
+      --panel: #f5f7fb;
+      --title: #20242c;
+      --muted: #526173;
+      --edge: #64748b;
+      --card: #ffffff;
+      --info-fill: #dbeafe;
+      --info-edge: #2563eb;
+      --info-text: #172554;
+      --accent-fill: #ffedd5;
+      --accent-edge: #c2410c;
+      --accent-text: #9a3412;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      svg {
+        --panel: #1a1f27;
+        --title: #e6eaf2;
+        --muted: #9aa8bd;
+        --edge: #8b9bb4;
+        --card: #252b35;
+        --info-fill: #1e3a5f;
+        --info-edge: #60a5fa;
+        --info-text: #dbeafe;
+        --accent-fill: #3a2416;
+        --accent-edge: #fb923c;
+        --accent-text: #fdba74;
+      }
+    }
+
+    .panel { fill: var(--panel); }
+    .title { fill: var(--title); }
+    .muted { fill: var(--muted); }
+    .card { fill: var(--card); stroke: var(--edge); }
+    .edge-line { stroke: var(--edge); }
+    .info-box { fill: var(--info-fill); stroke: var(--info-edge); }
+    .info-text { fill: var(--info-text); }
+    .accent-box { fill: var(--accent-fill); stroke: var(--accent-edge); }
+    .accent-text { fill: var(--accent-text); }
+  </style>
+
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="var(--edge)" fill-rule="evenodd" />
+    </marker>
+  </defs>
+
+  <rect class="panel" width="720" height="520" rx="20" fill="#f5f7fb" />
+
+  <text class="title" x="36" y="40" fill="#20242c" font-family="system-ui, sans-serif" font-size="20" font-weight="700">
+    The stream classes, and the methods you implement
+  </text>
+  <text class="muted" x="36" y="64" fill="#526173" font-family="system-ui, sans-serif" font-size="14">
+    Read the arrows as “extends”.
+  </text>
+
+  <g fill="none" class="edge-line" stroke="#64748b" stroke-width="2">
+    <path d="M186,152 L186,172" marker-end="url(#arrow)" />
+    <path d="M534,152 L534,172" marker-end="url(#arrow)" />
+    <path d="M360,216 L360,236" marker-end="url(#arrow)" />
+  </g>
+
+  <g font-family="system-ui, sans-serif" text-anchor="middle">
+    <rect class="card" x="36" y="96" width="300" height="56" rx="10" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <text class="title" x="186" y="120" fill="#20242c" font-size="15" font-weight="700">Readable</text>
+    <text class="muted" x="186" y="139" fill="#526173" font-size="11.5">a source you pull chunks out of</text>
+
+    <rect class="card" x="384" y="96" width="300" height="56" rx="10" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <text class="title" x="534" y="120" fill="#20242c" font-size="15" font-weight="700">Writable</text>
+    <text class="muted" x="534" y="139" fill="#526173" font-size="11.5">a sink you push chunks into</text>
+
+    <rect class="card" x="36" y="176" width="648" height="40" rx="10" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <text class="title" x="360" y="202" fill="#20242c" font-size="15" font-weight="700">Duplex <tspan class="muted" fill="#526173" font-size="12" font-weight="400">— one object with a readable side and a writable side</tspan></text>
+
+    <rect class="info-box" x="36" y="240" width="648" height="40" rx="10" fill="#dbeafe" stroke="#2563eb" stroke-width="2" />
+    <text class="info-text" x="360" y="266" fill="#172554" font-size="15" font-weight="700">Transform <tspan font-size="12" font-weight="400">— a Duplex whose readable side is derived from its writable side</tspan></text>
+  </g>
+
+  <g font-family="system-ui, sans-serif" text-anchor="start">
+    <text class="title" x="36" y="318" fill="#20242c" font-size="15" font-weight="700">The underscore methods are yours to implement, never to call</text>
+
+    <rect class="card" x="36" y="330" width="316" height="58" rx="12" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <text class="title" x="52" y="354" fill="#20242c" font-size="13" font-weight="700" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">_read(size)</text>
+    <text class="muted" x="52" y="373" fill="#526173" font-size="11.5">Readable: push data when Node asks for it</text>
+
+    <rect class="card" x="368" y="330" width="316" height="58" rx="12" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <text class="title" x="384" y="354" fill="#20242c" font-size="13" font-weight="700" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">_write(chunk, enc, cb)</text>
+    <text class="muted" x="384" y="373" fill="#526173" font-size="11.5">Writable: consume one chunk, then call cb</text>
+
+    <rect class="card" x="36" y="400" width="316" height="58" rx="12" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <text class="title" x="52" y="424" fill="#20242c" font-size="13" font-weight="700" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">_transform(chunk, enc, cb)</text>
+    <text class="muted" x="52" y="443" fill="#526173" font-size="11.5">Transform: push 0, 1 or many outputs per input</text>
+
+    <rect class="accent-box" x="368" y="400" width="316" height="58" rx="12" fill="#ffedd5" stroke="#c2410c" stroke-width="2" />
+    <text class="accent-text" x="384" y="424" fill="#9a3412" font-size="13" font-weight="700" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">_flush(cb)</text>
+    <text class="accent-text" x="384" y="443" fill="#9a3412" font-size="11.5">Transform: one last push after the final chunk</text>
+
+    <text class="muted" x="36" y="486" fill="#526173" font-size="12.5">You call <tspan font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">read()</tspan>, <tspan font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">write()</tspan> and <tspan font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">pipe()</tspan>. Node calls the underscore versions on your behalf, and <tspan font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">_flush</tspan> runs before <tspan font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">'end'</tspan>.</text>
+  </g>
+</svg>

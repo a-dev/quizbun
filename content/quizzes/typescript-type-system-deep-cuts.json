@@ -140,6 +140,14 @@
       "id": "unknown-must-be-narrowed",
       "title": "Which line fails to compile?",
       "description": "```ts\nfunction probe(a: any, u: unknown) {\n  a.foo.bar();      // Line 1\n  u.foo;            // Line 2\n}\n```",
+      "images": [
+        {
+          "src": "assignability-lattice.svg",
+          "alt": "An assignability lattice where each arrow means “is assignable to”. unknown sits at the top, labelled the top type, with arrows rising into it from string, number and an object type; never sits at the bottom, labelled the bottom type, with arrows rising from it into each of those three. Two side panels: any opts out of the lattice — everything is assignable to any and any is assignable back to everything except never, so it is a hole rather than a top; and void is a promise to ignore — a void return type means the caller will discard whatever comes back, so a function that returns a value is assignable to a callback typed to return void. A closing table lists where never appears unwritten: string & number, \"a\" & \"b\", { x: 1 } & { x: 2 } where only the property collapses, a fully narrowed union in a default branch, and a function that always throws.",
+          "caption": "unknown accepts everything and lets you do nothing; never has nothing and fits everywhere.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -166,6 +174,14 @@
       "id": "unknown-is-the-top-type",
       "title": "Which type is the type-safe *top type* of TypeScript?",
       "description": "The top type accepts a value of any other type, yet permits no operations on it until you narrow.",
+      "images": [
+        {
+          "src": "assignability-lattice.svg",
+          "alt": "An assignability lattice where each arrow means “is assignable to”. unknown sits at the top, labelled the top type, with arrows rising into it from string, number and an object type; never sits at the bottom, labelled the bottom type, with arrows rising from it into each of those three. Two side panels: any opts out of the lattice — everything is assignable to any and any is assignable back to everything except never, so it is a hole rather than a top; and void is a promise to ignore — a void return type means the caller will discard whatever comes back, so a function that returns a value is assignable to a callback typed to return void. A closing table lists where never appears unwritten: string & number, \"a\" & \"b\", { x: 1 } & { x: 2 } where only the property collapses, a fully narrowed union in a default branch, and a function that always throws.",
+          "caption": "unknown accepts everything and lets you do nothing; never has nothing and fits everywhere.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -192,6 +208,14 @@
       "id": "void-return-accepts-value",
       "title": "Does this compile?",
       "description": "```ts\nconst out: number[] = [];\n[1, 2, 3].forEach((n) => out.push(n));\n```\nThe `forEach` callback type is `(value: number, ...) => void`, but `Array.prototype.push` returns a `number` (the new length).",
+      "images": [
+        {
+          "src": "assignability-lattice.svg",
+          "alt": "An assignability lattice where each arrow means “is assignable to”. unknown sits at the top, labelled the top type, with arrows rising into it from string, number and an object type; never sits at the bottom, labelled the bottom type, with arrows rising from it into each of those three. Two side panels: any opts out of the lattice — everything is assignable to any and any is assignable back to everything except never, so it is a hole rather than a top; and void is a promise to ignore — a void return type means the caller will discard whatever comes back, so a function that returns a value is assignable to a callback typed to return void. A closing table lists where never appears unwritten: string & number, \"a\" & \"b\", { x: 1 } & { x: 2 } where only the property collapses, a fully narrowed union in a default branch, and a function that always throws.",
+          "caption": "unknown accepts everything and lets you do nothing; never has nothing and fits everywhere.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -218,6 +242,14 @@
       "id": "never-assignable-to-everything",
       "title": "Is the assignment to `name` a type error?",
       "description": "```ts\nfunction fail(msg: string): never {\n  throw new Error(msg);\n}\n\nconst name: string = fail(\"boom\");\n```",
+      "images": [
+        {
+          "src": "assignability-lattice.svg",
+          "alt": "An assignability lattice where each arrow means “is assignable to”. unknown sits at the top, labelled the top type, with arrows rising into it from string, number and an object type; never sits at the bottom, labelled the bottom type, with arrows rising from it into each of those three. Two side panels: any opts out of the lattice — everything is assignable to any and any is assignable back to everything except never, so it is a hole rather than a top; and void is a promise to ignore — a void return type means the caller will discard whatever comes back, so a function that returns a value is assignable to a callback typed to return void. A closing table lists where never appears unwritten: string & number, \"a\" & \"b\", { x: 1 } & { x: 2 } where only the property collapses, a fully narrowed union in a default branch, and a function that always throws.",
+          "caption": "unknown accepts everything and lets you do nothing; never has nothing and fits everywhere.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -244,6 +276,14 @@
       "id": "intersection-string-and-number",
       "title": "Reduce the intersection: what single type is `string & number`?",
       "description": "Fill in the result of `type T = string & number;` — answer with one lowercase word.",
+      "images": [
+        {
+          "src": "assignability-lattice.svg",
+          "alt": "An assignability lattice where each arrow means “is assignable to”. unknown sits at the top, labelled the top type, with arrows rising into it from string, number and an object type; never sits at the bottom, labelled the bottom type, with arrows rising from it into each of those three. Two side panels: any opts out of the lattice — everything is assignable to any and any is assignable back to everything except never, so it is a hole rather than a top; and void is a promise to ignore — a void return type means the caller will discard whatever comes back, so a function that returns a value is assignable to a callback typed to return void. A closing table lists where never appears unwritten: string & number, \"a\" & \"b\", { x: 1 } & { x: 2 } where only the property collapses, a fully narrowed union in a default branch, and a function that always throws.",
+          "caption": "unknown accepts everything and lets you do nothing; never has nothing and fits everywhere.",
+          "placement": "explanation"
+        }
+      ],
       "type": "input",
       "validation": {
         "mode": "text",
@@ -256,6 +296,14 @@
       "id": "where-never-appears",
       "title": "Where does `never` (not `any`) silently show up?",
       "description": "Select every snippet whose described type is `never`.",
+      "images": [
+        {
+          "src": "assignability-lattice.svg",
+          "alt": "An assignability lattice where each arrow means “is assignable to”. unknown sits at the top, labelled the top type, with arrows rising into it from string, number and an object type; never sits at the bottom, labelled the bottom type, with arrows rising from it into each of those three. Two side panels: any opts out of the lattice — everything is assignable to any and any is assignable back to everything except never, so it is a hole rather than a top; and void is a promise to ignore — a void return type means the caller will discard whatever comes back, so a function that returns a value is assignable to a callback typed to return void. A closing table lists where never appears unwritten: string & number, \"a\" & \"b\", { x: 1 } & { x: 2 } where only the property collapses, a fully narrowed union in a default branch, and a function that always throws.",
+          "caption": "unknown accepts everything and lets you do nothing; never has nothing and fits everywhere.",
+          "placement": "explanation"
+        }
+      ],
       "type": "multiple-choice",
       "options": [
         {
@@ -282,6 +330,14 @@
       "id": "excess-property-check-fresh-literal",
       "title": "Which assignment errors on the extra `z` property?",
       "description": "```ts\ntype Point = { x: number; y: number };\n\nconst a: Point = { x: 1, y: 2, z: 3 };   // Line A\n\nconst tmp = { x: 1, y: 2, z: 3 };\nconst b: Point = tmp;                      // Line B\n```",
+      "images": [
+        {
+          "src": "widening-and-freshness.svg",
+          "alt": "A table of what TypeScript infers and why: let a = \"hi\" gives string because a let can be reassigned; const b = \"hi\" gives the literal \"hi\"; const c = { mode: \"dark\" } gives { mode: string } because the property is still mutable; the same object with as const gives { readonly mode: \"dark\" }; const pair = [3, 4] gives number[]; and [3, 4] as const gives readonly [3, 4]. A note says const freezes the binding, never the object behind it. A second panel shows excess-property checking: assigning a fresh literal with an extra property straight into a typed slot errors, while assigning it to a variable first and then to the typed slot compiles, because the freshness is gone. A third panel compares an annotation (validates, loses precision), an as assertion (no validation, asserts whatever you wrote) and satisfies (validates and keeps the inferred type).",
+          "caption": "const freezes the binding, not the object — which is why only the primitive keeps its literal type.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -386,6 +442,14 @@
       "id": "object-property-widening",
       "title": "What is the type of `config.mode`?",
       "description": "```ts\nconst config = { mode: \"dark\" };\n// hover config.mode -> ???\n```",
+      "images": [
+        {
+          "src": "widening-and-freshness.svg",
+          "alt": "A table of what TypeScript infers and why: let a = \"hi\" gives string because a let can be reassigned; const b = \"hi\" gives the literal \"hi\"; const c = { mode: \"dark\" } gives { mode: string } because the property is still mutable; the same object with as const gives { readonly mode: \"dark\" }; const pair = [3, 4] gives number[]; and [3, 4] as const gives readonly [3, 4]. A note says const freezes the binding, never the object behind it. A second panel shows excess-property checking: assigning a fresh literal with an extra property straight into a typed slot errors, while assigning it to a variable first and then to the typed slot compiles, because the freshness is gone. A third panel compares an annotation (validates, loses precision), an as assertion (no validation, asserts whatever you wrote) and satisfies (validates and keeps the inferred type).",
+          "caption": "const freezes the binding, not the object — which is why only the primitive keeps its literal type.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -412,6 +476,14 @@
       "id": "let-vs-const-widening",
       "title": "What are the inferred types of `a` and `b`?",
       "description": "```ts\nconst a = \"hello\";\nlet b = \"hello\";\n```",
+      "images": [
+        {
+          "src": "widening-and-freshness.svg",
+          "alt": "A table of what TypeScript infers and why: let a = \"hi\" gives string because a let can be reassigned; const b = \"hi\" gives the literal \"hi\"; const c = { mode: \"dark\" } gives { mode: string } because the property is still mutable; the same object with as const gives { readonly mode: \"dark\" }; const pair = [3, 4] gives number[]; and [3, 4] as const gives readonly [3, 4]. A note says const freezes the binding, never the object behind it. A second panel shows excess-property checking: assigning a fresh literal with an extra property straight into a typed slot errors, while assigning it to a variable first and then to the typed slot compiles, because the freshness is gone. A third panel compares an annotation (validates, loses precision), an as assertion (no validation, asserts whatever you wrote) and satisfies (validates and keeps the inferred type).",
+          "caption": "const freezes the binding, not the object — which is why only the primitive keeps its literal type.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -438,6 +510,14 @@
       "id": "as-const-array-tuple",
       "title": "What is the type of `pair`?",
       "description": "```ts\nconst pair = [3, 4] as const;\n```",
+      "images": [
+        {
+          "src": "widening-and-freshness.svg",
+          "alt": "A table of what TypeScript infers and why: let a = \"hi\" gives string because a let can be reassigned; const b = \"hi\" gives the literal \"hi\"; const c = { mode: \"dark\" } gives { mode: string } because the property is still mutable; the same object with as const gives { readonly mode: \"dark\" }; const pair = [3, 4] gives number[]; and [3, 4] as const gives readonly [3, 4]. A note says const freezes the binding, never the object behind it. A second panel shows excess-property checking: assigning a fresh literal with an extra property straight into a typed slot errors, while assigning it to a variable first and then to the typed slot compiles, because the freshness is gone. A third panel compares an annotation (validates, loses precision), an as assertion (no validation, asserts whatever you wrote) and satisfies (validates and keeps the inferred type).",
+          "caption": "const freezes the binding, not the object — which is why only the primitive keeps its literal type.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -464,6 +544,14 @@
       "id": "satisfies-vs-annotation-vs-cast",
       "title": "Which keeps the precise inferred type *and* validates against the constraint?",
       "description": "```ts\ntype Color = \"red\" | \"green\" | \"blue\";\n\n// A) const theme: Record<string, Color> = { primary: \"blue\" };\n// B) const theme = { primary: \"blue\" } satisfies Record<string, Color>;\n// C) const theme = { primary: \"blue\" } as Record<string, Color>;\n```\nGoal: `theme.primary` should keep type `\"blue\"`, and a typo like `\"bleu\"` must be rejected.",
+      "images": [
+        {
+          "src": "widening-and-freshness.svg",
+          "alt": "A table of what TypeScript infers and why: let a = \"hi\" gives string because a let can be reassigned; const b = \"hi\" gives the literal \"hi\"; const c = { mode: \"dark\" } gives { mode: string } because the property is still mutable; the same object with as const gives { readonly mode: \"dark\" }; const pair = [3, 4] gives number[]; and [3, 4] as const gives readonly [3, 4]. A note says const freezes the binding, never the object behind it. A second panel shows excess-property checking: assigning a fresh literal with an extra property straight into a typed slot errors, while assigning it to a variable first and then to the typed slot compiles, because the freshness is gone. A third panel compares an annotation (validates, loses precision), an as assertion (no validation, asserts whatever you wrote) and satisfies (validates and keeps the inferred type).",
+          "caption": "const freezes the binding, not the object — which is why only the primitive keeps its literal type.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -490,6 +578,14 @@
       "id": "as-const-phrase",
       "title": "Which assertion makes `[3, 4]` infer as a readonly tuple `readonly [3, 4]`?",
       "description": "Answer with the two-word TypeScript assertion you append to the literal.",
+      "images": [
+        {
+          "src": "widening-and-freshness.svg",
+          "alt": "A table of what TypeScript infers and why: let a = \"hi\" gives string because a let can be reassigned; const b = \"hi\" gives the literal \"hi\"; const c = { mode: \"dark\" } gives { mode: string } because the property is still mutable; the same object with as const gives { readonly mode: \"dark\" }; const pair = [3, 4] gives number[]; and [3, 4] as const gives readonly [3, 4]. A note says const freezes the binding, never the object behind it. A second panel shows excess-property checking: assigning a fresh literal with an extra property straight into a typed slot errors, while assigning it to a variable first and then to the typed slot compiles, because the freshness is gone. A third panel compares an annotation (validates, loses precision), an as assertion (no validation, asserts whatever you wrote) and satisfies (validates and keeps the inferred type).",
+          "caption": "const freezes the binding, not the object — which is why only the primitive keeps its literal type.",
+          "placement": "explanation"
+        }
+      ],
       "type": "input",
       "validation": {
         "mode": "text",

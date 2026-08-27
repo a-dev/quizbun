@@ -10,6 +10,14 @@
       "id": "token-bucket-vs-leaky-bucket",
       "title": "Token bucket vs. leaky bucket: which one lets traffic burst?",
       "description": "Both algorithms cap the long-run average rate, but they shape short-term traffic differently.",
+      "images": [
+        {
+          "src": "bucket-algorithms.svg",
+          "alt": "Two buckets side by side. The token bucket holds twenty tokens, refills at five per second, and spends one token per request; a full bucket admits twenty requests at once, after which the five-per-second refill is the cap. The leaky bucket takes a bursty input into a queue with a steady drain, absorbing bursts rather than passing them on and dropping overflow past capacity. A closing note: the token bucket meters what may enter, the leaky bucket meters what may leave.",
+          "caption": "Bursts allowed on the left; a constant drain on the right.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -36,6 +44,14 @@
       "id": "token-bucket-max-burst",
       "title": "How many requests succeed in that first instantaneous burst?",
       "description": "A token bucket holds at most **20** tokens and refills at **5** tokens per second; each request costs 1 token. After the bucket has sat idle long enough to fill completely, a client suddenly fires many requests at once.",
+      "images": [
+        {
+          "src": "bucket-algorithms.svg",
+          "alt": "Two buckets side by side. The token bucket holds twenty tokens, refills at five per second, and spends one token per request; a full bucket admits twenty requests at once, after which the five-per-second refill is the cap. The leaky bucket takes a bursty input into a queue with a steady drain, absorbing bursts rather than passing them on and dropping overflow past capacity. A closing note: the token bucket meters what may enter, the leaky bucket meters what may leave.",
+          "caption": "Twenty tokens in the bucket, one spent per request.",
+          "placement": "explanation"
+        }
+      ],
       "type": "input",
       "validation": {
         "mode": "numeric",
@@ -47,6 +63,14 @@
       "id": "fixed-window-boundary-burst",
       "title": "What does the fixed-window limiter do with these 200 requests?",
       "description": "A fixed-window limiter allows **100 requests per minute**, counted against wall-clock minutes (the counter resets at `:00`). A client sends 100 requests at `12:00:59.9` and another 100 at `12:01:00.1`.",
+      "images": [
+        {
+          "src": "window-counters.svg",
+          "alt": "Two window schemes at a limit of 100 requests per minute. Under a fixed window, one batch of 100 sits at the end of the 12:00 window and another at the start of the 12:01 window, so about 200 requests are admitted in about a second. Under a sliding-window counter, a previous window of 80 requests and a current window of 20 are read through a trailing-60-second frame drawn 15 seconds into the current window, giving estimate = 20 + 80 × (60 − 15) / 60 = 80. Two cards contrast the log, one timestamp per request and exact at O(n) per key, with the counter, two integers per key and approximate at O(1).",
+          "caption": "Two legal batches, one second apart, across the reset.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -73,6 +97,14 @@
       "id": "sliding-window-counter-estimate",
       "title": "What is the estimated request count for the trailing 60 seconds?",
       "description": "A sliding-window-*counter* limiter uses 60-second windows. Right now you are **15 seconds** into the current window. The **previous** window saw **80** requests; the **current** window has logged **20** so far.\n\nUse the standard weighted estimate `estimate = current + previous × (window − elapsed) / window`; round to the nearest whole request.",
+      "images": [
+        {
+          "src": "window-counters.svg",
+          "alt": "Two window schemes at a limit of 100 requests per minute. Under a fixed window, one batch of 100 sits at the end of the 12:00 window and another at the start of the 12:01 window, so about 200 requests are admitted in about a second. Under a sliding-window counter, a previous window of 80 requests and a current window of 20 are read through a trailing-60-second frame drawn 15 seconds into the current window, giving estimate = 20 + 80 × (60 − 15) / 60 = 80. Two cards contrast the log, one timestamp per request and exact at O(n) per key, with the counter, two integers per key and approximate at O(1).",
+          "caption": "The trailing frame covers 45 s of the previous window and 15 s of this one.",
+          "placement": "explanation"
+        }
+      ],
       "type": "input",
       "validation": {
         "mode": "numeric",
@@ -85,6 +117,14 @@
       "id": "sliding-window-log-vs-counter",
       "title": "What's the difference between a sliding-window log and counter?",
       "description": "You must hold per-key limiter state for tens of millions of API keys in Redis, and you're choosing between two sliding-window implementations.",
+      "images": [
+        {
+          "src": "window-counters.svg",
+          "alt": "Two window schemes at a limit of 100 requests per minute. Under a fixed window, one batch of 100 sits at the end of the 12:00 window and another at the start of the 12:01 window, so about 200 requests are admitted in about a second. Under a sliding-window counter, a previous window of 80 requests and a current window of 20 are read through a trailing-60-second frame drawn 15 seconds into the current window, giving estimate = 20 + 80 × (60 − 15) / 60 = 80. Two cards contrast the log, one timestamp per request and exact at O(n) per key, with the counter, two integers per key and approximate at O(1).",
+          "caption": "One timestamp per request, or two integers per key.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -137,6 +177,14 @@
       "id": "429-vs-503-overload",
       "title": "429 vs. 503: which says \"it's you,\" which says \"it's me\"?",
       "description": "A gateway must reject traffic in two different situations: (a) one client blew past its own per-key quota, and (b) the whole upstream is overloaded and shedding load for everyone.",
+      "images": [
+        {
+          "src": "backoff-and-jitter.svg",
+          "alt": "Five backoff steps for base 100 ms with no jitter: attempt 0 at 100 ms, then 200, 400, 800, and attempt 4 highlighted at 1600 ms. Below, two lanes: without jitter every client's retry falls on a single instant, marked thundering herd; with jitter the same marks spread across the interval. Two cards separate 429 Too Many Requests, meaning this client is over its own quota, from 503 Service Unavailable, meaning the upstream is shedding load for everyone, and a note says Retry-After takes only delay-seconds or an HTTP-date.",
+          "caption": "It's you, or it's me.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -163,6 +211,14 @@
       "id": "retry-after-valid-values",
       "title": "Which are valid `Retry-After` values?",
       "description": "Per RFC 9110 §10.2.3, `Retry-After`'s value is **either** an HTTP-date **or** a non-negative number of seconds. Select **all** that a spec-compliant server may send.",
+      "images": [
+        {
+          "src": "backoff-and-jitter.svg",
+          "alt": "Five backoff steps for base 100 ms with no jitter: attempt 0 at 100 ms, then 200, 400, 800, and attempt 4 highlighted at 1600 ms. Below, two lanes: without jitter every client's retry falls on a single instant, marked thundering herd; with jitter the same marks spread across the interval. Two cards separate 429 Too Many Requests, meaning this client is over its own quota, from 503 Service Unavailable, meaning the upstream is shedding load for everyone, and a note says Retry-After takes only delay-seconds or an HTTP-date.",
+          "caption": "Two forms, and only two.",
+          "placement": "explanation"
+        }
+      ],
       "type": "multiple-choice",
       "options": [
         {
@@ -189,6 +245,14 @@
       "id": "exponential-backoff-delay",
       "title": "What is the delay, in milliseconds, before the retry at `attempt = 4`?",
       "description": "A client retries on `429` with exponential backoff and **no** jitter: `delay = base × 2^attempt`, where `base = 100` ms and `attempt` starts at `0` for the first retry. The server keeps returning `429`.",
+      "images": [
+        {
+          "src": "backoff-and-jitter.svg",
+          "alt": "Five backoff steps for base 100 ms with no jitter: attempt 0 at 100 ms, then 200, 400, 800, and attempt 4 highlighted at 1600 ms. Below, two lanes: without jitter every client's retry falls on a single instant, marked thundering herd; with jitter the same marks spread across the interval. Two cards separate 429 Too Many Requests, meaning this client is over its own quota, from 503 Service Unavailable, meaning the upstream is shedding load for everyone, and a note says Retry-After takes only delay-seconds or an HTTP-date.",
+          "caption": "The fifth chip: `100 × 2⁴`.",
+          "placement": "explanation"
+        }
+      ],
       "type": "input",
       "validation": {
         "mode": "numeric",
@@ -201,6 +265,14 @@
       "id": "why-jitter-in-backoff",
       "title": "Which statements about adding jitter to backoff are correct?",
       "description": "After a spike of `429`/`503` responses, thousands of clients all retry with exponential backoff. Adding *jitter* randomizes each client's delay. Select **all** that apply.",
+      "images": [
+        {
+          "src": "backoff-and-jitter.svg",
+          "alt": "Five backoff steps for base 100 ms with no jitter: attempt 0 at 100 ms, then 200, 400, 800, and attempt 4 highlighted at 1600 ms. Below, two lanes: without jitter every client's retry falls on a single instant, marked thundering herd; with jitter the same marks spread across the interval. Two cards separate 429 Too Many Requests, meaning this client is over its own quota, from 503 Service Unavailable, meaning the upstream is shedding load for everyone, and a note says Retry-After takes only delay-seconds or an HTTP-date.",
+          "caption": "The two lanes carry the same load; only its shape differs.",
+          "placement": "explanation"
+        }
+      ],
       "type": "multiple-choice",
       "options": [
         {
@@ -227,6 +299,14 @@
       "id": "thundering-herd-term",
       "title": "What is the common two-word name for this synchronized-retry problem?",
       "description": "Many clients fail at the same moment, all wait the *same* fixed backoff, then retry in a single synchronized wave that knocks the server over again just as it recovers — repeating the cycle. Adding jitter is the standard cure.",
+      "images": [
+        {
+          "src": "backoff-and-jitter.svg",
+          "alt": "Five backoff steps for base 100 ms with no jitter: attempt 0 at 100 ms, then 200, 400, 800, and attempt 4 highlighted at 1600 ms. Below, two lanes: without jitter every client's retry falls on a single instant, marked thundering herd; with jitter the same marks spread across the interval. Two cards separate 429 Too Many Requests, meaning this client is over its own quota, from 503 Service Unavailable, meaning the upstream is shedding load for everyone, and a note says Retry-After takes only delay-seconds or an HTTP-date.",
+          "caption": "The spike in the top lane is the herd.",
+          "placement": "explanation"
+        }
+      ],
       "type": "input",
       "validation": {
         "mode": "text",
@@ -238,6 +318,14 @@
       "id": "writable-write-returns-false",
       "title": "What does a `false` return from `writable.write()` mean?",
       "description": "You're piping a fast source into a slower Node.js writable by hand:\n\n```js\nfor (const chunk of source) {\n  const ok = writable.write(chunk);\n  if (!ok) {\n    // ...?\n  }\n}\n```",
+      "images": [
+        {
+          "src": "pipe-backpressure.svg",
+          "alt": "A pipe from a Readable created by createReadStream to a slow Writable HTTP response, with the writable's internal queue drawn between them as a fill bar against a dashed highWaterMark line. Two panels follow. When the queue is at or above the mark, write(chunk) returns false — the chunk is still accepted and queued — and pipe() calls readable.pause(). When the queue drains below the mark, the 'drain' event fires and pipe() calls readable.resume(). A closing note says ignoring the false only queues more chunks in memory until RSS kills the process, so backpressure guards memory rather than the socket or the disk, and that objectMode counts objects, making the default mark 16 objects instead of 16 KB.",
+          "caption": "`false` means the queue is above the mark — the chunk was still accepted.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -264,6 +352,14 @@
       "id": "ignoring-backpressure-oom",
       "title": "What happens when the source far outpaces the slow socket?",
       "description": "A service reads a huge file (or a fast upstream) and writes every chunk to a slow destination — a throttled socket — never checking the return value:\n\n```js\nfor await (const chunk of fastSource) {\n  slowSocket.write(chunk); // return value ignored\n}\n```",
+      "images": [
+        {
+          "src": "pipe-backpressure.svg",
+          "alt": "A pipe from a Readable created by createReadStream to a slow Writable HTTP response, with the writable's internal queue drawn between them as a fill bar against a dashed highWaterMark line. Two panels follow. When the queue is at or above the mark, write(chunk) returns false — the chunk is still accepted and queued — and pipe() calls readable.pause(). When the queue drains below the mark, the 'drain' event fires and pipe() calls readable.resume(). A closing note says ignoring the false only queues more chunks in memory until RSS kills the process, so backpressure guards memory rather than the socket or the disk, and that objectMode counts objects, making the default mark 16 objects instead of 16 KB.",
+          "caption": "With nothing pausing the source, the queue in the middle is the only thing that grows.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {

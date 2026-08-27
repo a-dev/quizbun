@@ -1,0 +1,97 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="484" viewBox="0 0 720 484">
+  <style>
+    /* An &lt;img&gt;-embedded SVG cannot see the page's `data-theme`, but it does
+       inherit the embedding document's `color-scheme`, so `prefers-color-scheme`
+       tracks the site theme including an explicit toggle. The presentation
+       attributes below stay as the light fallback for renderers without CSS. */
+    svg {
+      --panel: #f5f7fb;
+      --title: #20242c;
+      --muted: #526173;
+      --edge: #64748b;
+      --card: #ffffff;
+      --ctx-fill: #dbeafe;
+      --ctx-edge: #2563eb;
+      --ctx-label: #172554;
+      --accent-fill: #ffedd5;
+      --accent-edge: #c2410c;
+      --accent-text: #9a3412;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      svg {
+        --panel: #1a1f27;
+        --title: #e6eaf2;
+        --muted: #9aa8bd;
+        --edge: #8b9bb4;
+        --card: #252b35;
+        --ctx-fill: #1e3a5f;
+        --ctx-edge: #60a5fa;
+        --ctx-label: #dbeafe;
+        --accent-fill: #3a2416;
+        --accent-edge: #fb923c;
+        --accent-text: #fdba74;
+      }
+    }
+
+    .panel { fill: var(--panel); }
+    .title { fill: var(--title); }
+    .muted { fill: var(--muted); }
+    .card { fill: var(--card); stroke: var(--edge); }
+    .ctx { fill: var(--ctx-fill); stroke: var(--ctx-edge); }
+    .ctx-label { fill: var(--ctx-label); }
+    .accent-box { fill: var(--accent-fill); stroke: var(--accent-edge); }
+    .accent-text { fill: var(--accent-text); }
+  </style>
+
+  <rect class="panel" width="720" height="484" rx="20" fill="#f5f7fb" />
+
+  <text class="title" x="36" y="44" fill="#20242c" font-family="system-ui, sans-serif" font-size="20" font-weight="700">
+    Paint order inside one stacking context
+  </text>
+  <text class="muted" x="36" y="68" fill="#526173" font-family="system-ui, sans-serif" font-size="14">
+    Painted bottom to top. Blue rows are child stacking contexts.
+  </text>
+
+  <g font-family="system-ui, sans-serif" text-anchor="start">
+    <rect class="ctx" x="52" y="92" width="632" height="40" rx="8" fill="#dbeafe" stroke="#2563eb" stroke-width="2" />
+    <rect class="card" x="64" y="100" width="26" height="24" rx="6" fill="#ffffff" stroke="#64748b" stroke-width="1.5" />
+    <text class="title" x="77" y="117" fill="#20242c" font-size="14" font-weight="700" text-anchor="middle">7</text>
+    <text class="ctx-label" x="106" y="118" fill="#172554" font-size="15">child stacking contexts with a positive z-index</text>
+    <text class="muted" x="668" y="118" fill="#526173" font-size="12" font-weight="700" text-anchor="end">top</text>
+
+    <rect class="ctx" x="52" y="138" width="632" height="40" rx="8" fill="#dbeafe" stroke="#2563eb" stroke-width="2" />
+    <rect class="card" x="64" y="146" width="26" height="24" rx="6" fill="#ffffff" stroke="#64748b" stroke-width="1.5" />
+    <text class="title" x="77" y="163" fill="#20242c" font-size="14" font-weight="700" text-anchor="middle">6</text>
+    <text class="ctx-label" x="106" y="164" fill="#172554" font-size="15">z-index: 0, and positioned elements at z-index: auto</text>
+
+    <rect class="card" x="52" y="184" width="632" height="40" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <rect class="card" x="64" y="192" width="26" height="24" rx="6" fill="#ffffff" stroke="#64748b" stroke-width="1.5" />
+    <text class="title" x="77" y="209" fill="#20242c" font-size="14" font-weight="700" text-anchor="middle">5</text>
+    <text class="title" x="106" y="210" fill="#20242c" font-size="15">in-flow inline-level content</text>
+
+    <rect class="card" x="52" y="230" width="632" height="40" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <rect class="card" x="64" y="238" width="26" height="24" rx="6" fill="#ffffff" stroke="#64748b" stroke-width="1.5" />
+    <text class="title" x="77" y="255" fill="#20242c" font-size="14" font-weight="700" text-anchor="middle">4</text>
+    <text class="title" x="106" y="256" fill="#20242c" font-size="15">non-positioned floats</text>
+
+    <rect class="card" x="52" y="276" width="632" height="40" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <rect class="card" x="64" y="284" width="26" height="24" rx="6" fill="#ffffff" stroke="#64748b" stroke-width="1.5" />
+    <text class="title" x="77" y="301" fill="#20242c" font-size="14" font-weight="700" text-anchor="middle">3</text>
+    <text class="title" x="106" y="302" fill="#20242c" font-size="15">in-flow, non-positioned block-level descendants</text>
+
+    <rect class="ctx" x="52" y="322" width="632" height="40" rx="8" fill="#dbeafe" stroke="#2563eb" stroke-width="2" />
+    <rect class="card" x="64" y="330" width="26" height="24" rx="6" fill="#ffffff" stroke="#64748b" stroke-width="1.5" />
+    <text class="title" x="77" y="347" fill="#20242c" font-size="14" font-weight="700" text-anchor="middle">2</text>
+    <text class="ctx-label" x="106" y="348" fill="#172554" font-size="15">child stacking contexts with a negative z-index</text>
+
+    <rect class="accent-box" x="52" y="368" width="632" height="40" rx="8" fill="#ffedd5" stroke="#c2410c" stroke-width="2" />
+    <rect class="card" x="64" y="376" width="26" height="24" rx="6" fill="#ffffff" stroke="#64748b" stroke-width="1.5" />
+    <text class="title" x="77" y="393" fill="#20242c" font-size="14" font-weight="700" text-anchor="middle">1</text>
+    <text class="accent-text" x="106" y="394" fill="#9a3412" font-size="15" font-weight="700">this context's own background and border</text>
+    <text class="muted" x="668" y="394" fill="#526173" font-size="12" font-weight="700" text-anchor="end">bottom</text>
+
+    <text class="accent-text" x="36" y="440" fill="#9a3412" font-size="14" font-weight="700">Step 1 comes before step 2: a z-index: -1 child paints in front of</text>
+    <text class="accent-text" x="36" y="462" fill="#9a3412" font-size="14" font-weight="700">this context's own background — never behind it.</text>
+  </g>
+</svg>

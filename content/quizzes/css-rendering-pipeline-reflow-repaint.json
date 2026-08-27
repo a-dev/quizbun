@@ -10,6 +10,14 @@
       "id": "pipeline-order",
       "title": "What is the correct order of the browser's rendering pipeline?",
       "description": "After JavaScript has run and the DOM and styles are ready, the browser turns them into pixels in four main steps.",
+      "images": [
+        {
+          "src": "pipeline-entry-points.svg",
+          "alt": "A four-stage pipeline: Style, Layout, Paint, Composite, connected left to right. Below it, three rows show where each property class enters: layout properties (width, top, font-weight) enter at Layout and run Layout, Paint, and Composite; paint-only properties (background-color, color, box-shadow) skip Layout and enter at Paint, running Paint and Composite; composite-only properties (transform, opacity) skip both and enter at Composite, running only Composite.",
+          "caption": "Style always runs first; what happens after it depends on what changed.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -36,6 +44,14 @@
       "id": "style-step-role",
       "title": "What does the **Style** (Recalculate Style) step actually compute?",
       "description": "DevTools shows a *Recalculate Style* event before any layout work.",
+      "images": [
+        {
+          "src": "pipeline-entry-points.svg",
+          "alt": "A four-stage pipeline: Style, Layout, Paint, Composite, connected left to right. Below it, three rows show where each property class enters: layout properties (width, top, font-weight) enter at Layout and run Layout, Paint, and Composite; paint-only properties (background-color, color, box-shadow) skip Layout and enter at Paint, running Paint and Composite; composite-only properties (transform, opacity) skip both and enter at Composite, running only Composite.",
+          "caption": "Style resolves computed values for every property — it never decides where a box sits.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -62,6 +78,14 @@
       "id": "width-animation-full-pipeline",
       "title": "Which pipeline steps must run on each frame of the `width` transition?",
       "description": "```css\n.panel {\n  width: 200px;\n  transition: width 300ms;\n}\n.panel:hover {\n  width: 400px;\n}\n```\n\nOn hover, `width` changes on every frame of the transition.",
+      "images": [
+        {
+          "src": "pipeline-entry-points.svg",
+          "alt": "A four-stage pipeline: Style, Layout, Paint, Composite, connected left to right. Below it, three rows show where each property class enters: layout properties (width, top, font-weight) enter at Layout and run Layout, Paint, and Composite; paint-only properties (background-color, color, box-shadow) skip Layout and enter at Paint, running Paint and Composite; composite-only properties (transform, opacity) skip both and enter at Composite, running only Composite.",
+          "caption": "`width` is a layout property: it enters at Layout and drags Paint and Composite behind it.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -100,6 +124,14 @@
       "id": "repaint-without-reflow",
       "title": "Which change triggers a **repaint** but *no* reflow?",
       "description": "Each change below is applied to a button that keeps exactly the same size and position.",
+      "images": [
+        {
+          "src": "pipeline-entry-points.svg",
+          "alt": "A four-stage pipeline: Style, Layout, Paint, Composite, connected left to right. Below it, three rows show where each property class enters: layout properties (width, top, font-weight) enter at Layout and run Layout, Paint, and Composite; paint-only properties (background-color, color, box-shadow) skip Layout and enter at Paint, running Paint and Composite; composite-only properties (transform, opacity) skip both and enter at Composite, running only Composite.",
+          "caption": "`background-color` enters at Paint — Layout is skipped entirely.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -126,6 +158,14 @@
       "id": "which-trigger-layout",
       "title": "Which of these property changes force a **Layout (reflow)**?",
       "description": "A reflow means the browser must recompute size or position — not merely repaint. Select **all** that apply.",
+      "images": [
+        {
+          "src": "pipeline-entry-points.svg",
+          "alt": "A four-stage pipeline: Style, Layout, Paint, Composite, connected left to right. Below it, three rows show where each property class enters: layout properties (width, top, font-weight) enter at Layout and run Layout, Paint, and Composite; paint-only properties (background-color, color, box-shadow) skip Layout and enter at Paint, running Paint and Composite; composite-only properties (transform, opacity) skip both and enter at Composite, running only Composite.",
+          "caption": "`height`, positioned `top`, and `font-weight` all enter at Layout; `color`, `visibility`, and `transform` don't.",
+          "placement": "explanation"
+        }
+      ],
       "type": "multiple-choice",
       "options": [
         {
@@ -159,6 +199,14 @@
     {
       "id": "why-transform-opacity-cheap",
       "title": "Why are `transform` and `opacity` the two 'cheap' properties to animate?",
+      "images": [
+        {
+          "src": "pipeline-entry-points.svg",
+          "alt": "A four-stage pipeline: Style, Layout, Paint, Composite, connected left to right. Below it, three rows show where each property class enters: layout properties (width, top, font-weight) enter at Layout and run Layout, Paint, and Composite; paint-only properties (background-color, color, box-shadow) skip Layout and enter at Paint, running Paint and Composite; composite-only properties (transform, opacity) skip both and enter at Composite, running only Composite.",
+          "caption": "`transform` and `opacity` enter the pipeline at Composite — Layout and Paint never run.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -185,6 +233,14 @@
       "id": "top-vs-translate",
       "title": "Which way of sliding the card 100px down is cheaper per frame, and why?",
       "description": "```css\n/* A: animate the box's position */\n.card-a { position: relative; top: 0; transition: top 200ms; }\n.card-a:hover { top: 100px; }\n\n/* B: animate a transform */\n.card-b { transform: translateY(0); transition: transform 200ms; }\n.card-b:hover { transform: translateY(100px); }\n```\n\nBoth move the card the same distance on screen.",
+      "images": [
+        {
+          "src": "pipeline-entry-points.svg",
+          "alt": "A four-stage pipeline: Style, Layout, Paint, Composite, connected left to right. Below it, three rows show where each property class enters: layout properties (width, top, font-weight) enter at Layout and run Layout, Paint, and Composite; paint-only properties (background-color, color, box-shadow) skip Layout and enter at Paint, running Paint and Composite; composite-only properties (transform, opacity) skip both and enter at Composite, running only Composite.",
+          "caption": "`top` enters at Layout and pays for all three stages; `translateY` enters at Composite and pays for one.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -336,6 +392,14 @@
       "id": "pipeline-truths-capstone",
       "title": "Which statements about the rendering pipeline are true?",
       "description": "Select every correct statement.",
+      "images": [
+        {
+          "src": "pipeline-entry-points.svg",
+          "alt": "A four-stage pipeline: Style, Layout, Paint, Composite, connected left to right. Below it, three rows show where each property class enters: layout properties (width, top, font-weight) enter at Layout and run Layout, Paint, and Composite; paint-only properties (background-color, color, box-shadow) skip Layout and enter at Paint, running Paint and Composite; composite-only properties (transform, opacity) skip both and enter at Composite, running only Composite.",
+          "caption": "You can skip stages from the front of the pipeline, never from the back.",
+          "placement": "explanation"
+        }
+      ],
       "type": "multiple-choice",
       "options": [
         {

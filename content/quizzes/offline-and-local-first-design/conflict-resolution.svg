@@ -1,0 +1,124 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="472" viewBox="0 0 720 472">
+  <style>
+    /* An &lt;img&gt;-embedded SVG cannot see the page's `data-theme`, but it does
+       inherit the embedding document's `color-scheme`, so `prefers-color-scheme`
+       tracks the site theme including an explicit toggle. The presentation
+       attributes below stay as the light fallback for renderers without CSS. */
+    svg {
+      --panel: #f5f7fb;
+      --title: #20242c;
+      --muted: #526173;
+      --edge: #64748b;
+      --card: #ffffff;
+      --ok-fill: #dcfce7;
+      --ok-edge: #16a34a;
+      --ok-text: #14532d;
+      --info-fill: #dbeafe;
+      --info-edge: #2563eb;
+      --info-text: #172554;
+      --accent-fill: #ffedd5;
+      --accent-edge: #c2410c;
+      --accent-text: #9a3412;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      svg {
+        --panel: #1a1f27;
+        --title: #e6eaf2;
+        --muted: #9aa8bd;
+        --edge: #8b9bb4;
+        --card: #252b35;
+        --ok-fill: #14321f;
+        --ok-edge: #4ade80;
+        --ok-text: #bbf7d0;
+        --info-fill: #1e3a5f;
+        --info-edge: #60a5fa;
+        --info-text: #dbeafe;
+        --accent-fill: #3a2416;
+        --accent-edge: #fb923c;
+        --accent-text: #fdba74;
+      }
+    }
+
+    .panel { fill: var(--panel); }
+    .title { fill: var(--title); }
+    .muted { fill: var(--muted); }
+    .card { fill: var(--card); stroke: var(--edge); }
+    .ok-box { fill: var(--ok-fill); stroke: var(--ok-edge); }
+    .ok-text { fill: var(--ok-text); }
+    .info-box { fill: var(--info-fill); stroke: var(--info-edge); }
+    .info-text { fill: var(--info-text); }
+    .accent-box { fill: var(--accent-fill); stroke: var(--accent-edge); }
+    .accent-text { fill: var(--accent-text); }
+  </style>
+
+  <rect class="panel" width="720" height="472" rx="20" fill="#f5f7fb" />
+
+  <text class="title" x="36" y="40" fill="#20242c" font-family="system-ui, sans-serif" font-size="20" font-weight="700">
+    Three answers to “both sides changed it”
+  </text>
+  <text class="muted" x="36" y="64" fill="#526173" font-family="system-ui, sans-serif" font-size="14">
+    They do different jobs. Only one of them merges, and even that one cannot read minds.
+  </text>
+
+  <g font-family="system-ui, sans-serif">
+    <rect class="accent-box" x="36" y="88" width="208" height="126" rx="12" fill="#ffedd5" stroke="#c2410c" stroke-width="2" />
+    <text class="accent-text" x="52" y="112" fill="#9a3412" font-size="13" font-weight="700">Last-write-wins</text>
+    <text class="accent-text" x="52" y="134" fill="#9a3412" font-size="11">One timestamp decides, and</text>
+    <text class="accent-text" x="52" y="150" fill="#9a3412" font-size="11">the loser's change is thrown</text>
+    <text class="accent-text" x="52" y="166" fill="#9a3412" font-size="11">away silently. Nobody is told</text>
+    <text class="accent-text" x="52" y="182" fill="#9a3412" font-size="11">that data was lost, and clock</text>
+    <text class="accent-text" x="52" y="198" fill="#9a3412" font-size="11">skew picks the winner.</text>
+
+    <rect class="info-box" x="256" y="88" width="208" height="126" rx="12" fill="#dbeafe" stroke="#2563eb" stroke-width="2" />
+    <text class="info-text" x="272" y="112" fill="#172554" font-size="13" font-weight="700">Version vectors</text>
+    <text class="info-text" x="272" y="134" fill="#172554" font-size="11">Per-node counters that tell</text>
+    <text class="info-text" x="272" y="150" fill="#172554" font-size="11">you whether two versions are</text>
+    <text class="info-text" x="272" y="166" fill="#172554" font-size="11">causally ordered or genuinely</text>
+    <text class="info-text" x="272" y="182" fill="#172554" font-size="11">concurrent. Detection only —</text>
+    <text class="info-text" x="272" y="198" fill="#172554" font-size="11">they never merge for you.</text>
+
+    <rect class="ok-box" x="476" y="88" width="208" height="126" rx="12" fill="#dcfce7" stroke="#16a34a" stroke-width="2" />
+    <text class="ok-text" x="492" y="112" fill="#14532d" font-size="13" font-weight="700">CRDTs</text>
+    <text class="ok-text" x="492" y="134" fill="#14532d" font-size="11">A merge that is commutative,</text>
+    <text class="ok-text" x="492" y="150" fill="#14532d" font-size="11">associative and idempotent, so</text>
+    <text class="ok-text" x="492" y="166" fill="#14532d" font-size="11">replicas that saw the same</text>
+    <text class="ok-text" x="492" y="182" fill="#14532d" font-size="11">updates converge whatever the</text>
+    <text class="ok-text" x="492" y="198" fill="#14532d" font-size="11">order they arrived in.</text>
+
+    <text class="title" x="36" y="248" fill="#20242c" font-size="15" font-weight="700">A G-Counter merging: element-wise maximum, then sum</text>
+    <text class="muted" x="36" y="268" fill="#526173" font-size="12">Each replica increments only its own entry, so a maximum can never lose an increment.</text>
+  </g>
+
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">
+    <rect class="card" x="36" y="280" width="648" height="132" rx="12" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <text class="muted" x="220" y="304" fill="#526173" font-size="11.5" font-weight="700" text-anchor="middle">A</text>
+    <text class="muted" x="340" y="304" fill="#526173" font-size="11.5" font-weight="700" text-anchor="middle">B</text>
+    <text class="muted" x="460" y="304" fill="#526173" font-size="11.5" font-weight="700" text-anchor="middle">C</text>
+    <text class="muted" x="600" y="304" fill="#526173" font-size="11.5" font-weight="700" text-anchor="middle">value</text>
+
+    <text class="title" x="56" y="332" fill="#20242c" font-size="12.5">replicaA</text>
+    <text class="title" x="220" y="332" fill="#20242c" font-size="14" text-anchor="middle">5</text>
+    <text class="title" x="340" y="332" fill="#20242c" font-size="14" text-anchor="middle">2</text>
+    <text class="title" x="460" y="332" fill="#20242c" font-size="14" text-anchor="middle">0</text>
+    <text class="muted" x="600" y="332" fill="#526173" font-size="14" text-anchor="middle">7</text>
+
+    <text class="title" x="56" y="362" fill="#20242c" font-size="12.5">replicaB</text>
+    <text class="title" x="220" y="362" fill="#20242c" font-size="14" text-anchor="middle">1</text>
+    <text class="title" x="340" y="362" fill="#20242c" font-size="14" text-anchor="middle">7</text>
+    <text class="title" x="460" y="362" fill="#20242c" font-size="14" text-anchor="middle">4</text>
+    <text class="muted" x="600" y="362" fill="#526173" font-size="14" text-anchor="middle">12</text>
+
+    <rect class="ok-box" x="48" y="374" width="624" height="28" rx="7" fill="#dcfce7" stroke="#16a34a" stroke-width="2" />
+    <text class="ok-text" x="56" y="393" fill="#14532d" font-size="12.5" font-weight="700">merged</text>
+    <text class="ok-text" x="220" y="394" fill="#14532d" font-size="14" font-weight="700" text-anchor="middle">5</text>
+    <text class="ok-text" x="340" y="394" fill="#14532d" font-size="14" font-weight="700" text-anchor="middle">7</text>
+    <text class="ok-text" x="460" y="394" fill="#14532d" font-size="14" font-weight="700" text-anchor="middle">4</text>
+    <text class="ok-text" x="600" y="394" fill="#14532d" font-size="15" font-weight="700" text-anchor="middle">16</text>
+  </g>
+
+  <g font-family="system-ui, sans-serif">
+    <text class="accent-text" x="36" y="430" fill="#9a3412" font-size="12.5" font-weight="700">Converging is not the same as being right: every replica agrees on the result,</text>
+    <text class="accent-text" x="36" y="450" fill="#9a3412" font-size="12.5" font-weight="700">and it may still not be what anyone actually meant.</text>
+  </g>
+</svg>

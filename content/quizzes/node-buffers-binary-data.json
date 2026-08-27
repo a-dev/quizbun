@@ -10,6 +10,14 @@
       "id": "buffer-extends-uint8array",
       "title": "`Buffer` is a subclass of which built-in JavaScript typed array?",
       "description": "Name the standard typed array that Node's `Buffer` extends, so that every Buffer is also an instance of it.",
+      "images": [
+        {
+          "src": "buffer-and-sharing.svg",
+          "alt": "A box for Uint8Array, the standard built-in, with an extends arrow up from a box for Buffer, the Node global that adds readInt32BE, write and toString('hex'), plus a note that buf instanceof Uint8Array holds while the reverse does not. Below, one six-byte region is bracketed twice: buf spans all six bytes, buf.subarray(0, 2) spans the first two, and a note says a write through either reference is visible through the other. Two cards separate operations that share the same bytes — buf.subarray and Buffer.from(arrayBuffer) — from those that allocate and copy, Buffer.concat and new Uint8Array(buf).",
+          "caption": "The arrow points at the class Buffer extends.",
+          "placement": "explanation"
+        }
+      ],
       "type": "input",
       "validation": {
         "mode": "text",
@@ -22,6 +30,14 @@
       "id": "arraybuffer-needs-a-view",
       "title": "What is an `ArrayBuffer`, and how do you read the bytes inside it?",
       "description": "You write `const ab = new ArrayBuffer(8)`. How do you access the individual bytes?",
+      "images": [
+        {
+          "src": "bytes-and-views.svg",
+          "alt": "An ArrayBuffer of eight bytes — 00 00 00 01 01 00 00 00 — drawn as eight cells, with a Uint8Array view of eight single-byte elements beneath it and a Uint32Array view of two elements, each spanning four bytes. Two cards read the same bytes both ways: bytes 0 to 3 give readUInt32BE 1 and readUInt32LE 16,777,216; bytes 4 to 7 give the mirror image. A closing note says endianness is only the order a view assembles bytes in, and that four bytes per element is why new Uint32Array(4).byteLength is 16.",
+          "caption": "The top row has no accessors of its own; the rows beneath it are the views.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -48,6 +64,14 @@
       "id": "uint32array-bytelength",
       "title": "What is `new Uint32Array(4).byteLength`?",
       "description": "Four 32-bit unsigned integers. Give the total number of *bytes* the typed array occupies.",
+      "images": [
+        {
+          "src": "bytes-and-views.svg",
+          "alt": "An ArrayBuffer of eight bytes — 00 00 00 01 01 00 00 00 — drawn as eight cells, with a Uint8Array view of eight single-byte elements beneath it and a Uint32Array view of two elements, each spanning four bytes. Two cards read the same bytes both ways: bytes 0 to 3 give readUInt32BE 1 and readUInt32LE 16,777,216; bytes 4 to 7 give the mirror image. A closing note says endianness is only the order a view assembles bytes in, and that four bytes per element is why new Uint32Array(4).byteLength is 16.",
+          "caption": "Four bytes per element, every time.",
+          "placement": "explanation"
+        }
+      ],
       "type": "input",
       "validation": {
         "mode": "numeric",
@@ -60,6 +84,14 @@
       "id": "buffer-vs-uint8array",
       "title": "Which statements about `Buffer` versus `Uint8Array` are correct?",
       "description": "Select every true statement about how Node's `Buffer` relates to the standard `Uint8Array`.",
+      "images": [
+        {
+          "src": "buffer-and-sharing.svg",
+          "alt": "A box for Uint8Array, the standard built-in, with an extends arrow up from a box for Buffer, the Node global that adds readInt32BE, write and toString('hex'), plus a note that buf instanceof Uint8Array holds while the reverse does not. Below, one six-byte region is bracketed twice: buf spans all six bytes, buf.subarray(0, 2) spans the first two, and a note says a write through either reference is visible through the other. Two cards separate operations that share the same bytes — buf.subarray and Buffer.from(arrayBuffer) — from those that allocate and copy, Buffer.concat and new Uint8Array(buf).",
+          "caption": "One direction of `instanceof` holds; the other does not.",
+          "placement": "explanation"
+        }
+      ],
       "type": "multiple-choice",
       "options": [
         {
@@ -86,6 +118,14 @@
       "id": "utf8-bytelength-cafe",
       "title": "How many bytes is the string `café` in UTF-8?",
       "description": "Give the result of `Buffer.byteLength('café', 'utf8')` — the number of bytes, not the number of characters.",
+      "images": [
+        {
+          "src": "utf8-and-chunks.svg",
+          "alt": "The string café drawn as four character cells over five UTF-8 byte cells — 63, 61, 66, and C3 A9 for é — so Buffer.byteLength('café','utf8') is 5. A dashed boundary then splits the stream between C3 and A9: chunk one decodes to 'caf' plus a replacement character, chunk two to a replacement character alone. A green card gives the fix — concatenate the bytes with Buffer.concat, or decode through StringDecoder — and an orange card notes that data += chunk does the same to every chunk of a binary file, collapsing invalid bytes to the replacement character irreversibly.",
+          "caption": "Four cells above, five below.",
+          "placement": "explanation"
+        }
+      ],
       "type": "input",
       "validation": {
         "mode": "numeric",
@@ -110,6 +150,14 @@
       "id": "string-concat-corrupts-binary",
       "title": "Reading a binary file, you write `let data = ''` then `stream.on('data', c => data += c)`. Why is the result corrupted?",
       "description": "You accumulate raw binary chunks into a string with `+=` instead of collecting Buffers. What goes wrong?",
+      "images": [
+        {
+          "src": "utf8-and-chunks.svg",
+          "alt": "The string café drawn as four character cells over five UTF-8 byte cells — 63, 61, 66, and C3 A9 for é — so Buffer.byteLength('café','utf8') is 5. A dashed boundary then splits the stream between C3 and A9: chunk one decodes to 'caf' plus a replacement character, chunk two to a replacement character alone. A green card gives the fix — concatenate the bytes with Buffer.concat, or decode through StringDecoder — and an orange card notes that data += chunk does the same to every chunk of a binary file, collapsing invalid bytes to the replacement character irreversibly.",
+          "caption": "Every chunk goes through the same lossy decode.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -136,6 +184,14 @@
       "id": "multibyte-split-across-chunks",
       "title": "Decoding a UTF-8 stream as `chunk.toString()` per chunk sometimes yields `�`. Why?",
       "description": "Each chunk is decoded on its own and the resulting strings are concatenated. A multi-byte character can land exactly on a chunk boundary.",
+      "images": [
+        {
+          "src": "utf8-and-chunks.svg",
+          "alt": "The string café drawn as four character cells over five UTF-8 byte cells — 63, 61, 66, and C3 A9 for é — so Buffer.byteLength('café','utf8') is 5. A dashed boundary then splits the stream between C3 and A9: chunk one decodes to 'caf' plus a replacement character, chunk two to a replacement character alone. A green card gives the fix — concatenate the bytes with Buffer.concat, or decode through StringDecoder — and an orange card notes that data += chunk does the same to every chunk of a binary file, collapsing invalid bytes to the replacement character irreversibly.",
+          "caption": "The dashed line falls inside `é`.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -188,6 +244,14 @@
       "id": "endianness-same-bytes",
       "title": "The bytes `00 00 00 01` read as a 32-bit integer give `1` one way and `16777216` the other. What causes the difference?",
       "description": "Same four bytes, two different numbers. What determines which value you get?",
+      "images": [
+        {
+          "src": "bytes-and-views.svg",
+          "alt": "An ArrayBuffer of eight bytes — 00 00 00 01 01 00 00 00 — drawn as eight cells, with a Uint8Array view of eight single-byte elements beneath it and a Uint32Array view of two elements, each spanning four bytes. Two cards read the same bytes both ways: bytes 0 to 3 give readUInt32BE 1 and readUInt32LE 16,777,216; bytes 4 to 7 give the mirror image. A closing note says endianness is only the order a view assembles bytes in, and that four bytes per element is why new Uint32Array(4).byteLength is 16.",
+          "caption": "Same four bytes, two assembly orders.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -214,6 +278,14 @@
       "id": "share-vs-copy-memory",
       "title": "Which of these operations return something that *shares* memory with the source rather than copying it?",
       "description": "Sharing memory means a write through one reference is visible through the other. Select every operation that shares.",
+      "images": [
+        {
+          "src": "buffer-and-sharing.svg",
+          "alt": "A box for Uint8Array, the standard built-in, with an extends arrow up from a box for Buffer, the Node global that adds readInt32BE, write and toString('hex'), plus a note that buf instanceof Uint8Array holds while the reverse does not. Below, one six-byte region is bracketed twice: buf spans all six bytes, buf.subarray(0, 2) spans the first two, and a note says a write through either reference is visible through the other. Two cards separate operations that share the same bytes — buf.subarray and Buffer.from(arrayBuffer) — from those that allocate and copy, Buffer.concat and new Uint8Array(buf).",
+          "caption": "Two brackets over one region — and two cards for which is which.",
+          "placement": "explanation"
+        }
+      ],
       "type": "multiple-choice",
       "options": [
         {

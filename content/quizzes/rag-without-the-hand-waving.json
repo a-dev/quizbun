@@ -9,6 +9,14 @@
     {
       "id": "original-rag-two-memories",
       "title": "What two kinds of memory did the original RAG model combine?",
+      "images": [
+        {
+          "src": "rag-pipeline.svg",
+          "alt": "One RAG request drawn as two rows of stages. An offline ingestion row runs source docs, chunk, embed passages and index, with the index labelled non-parametric memory and a note that a source edit which never reaches the index is an ingestion bug. A query-time row sends the user query into two parallel branches — dense approximate nearest neighbours over stored vectors, and lexical BM25 for exact codes, names and ids — which merge in an RRF fuse box computing 1 / (60 + rank), then a cross-encoder rerank of the top n, then a prompt, a generator labelled parametric memory, and an answer with citations. A footer names the metric for each stage, and a closing strip reads: a reranker only reorders the candidates it was handed.",
+          "caption": "Passages are encoded ahead of time; only the query is encoded at request time.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -35,6 +43,14 @@
       "id": "rag-architecture-claims",
       "title": "Which statements describe the original RAG design?",
       "description": "Select all that apply. Your answer must include every correct choice.",
+      "images": [
+        {
+          "src": "rag-pipeline.svg",
+          "alt": "One RAG request drawn as two rows of stages. An offline ingestion row runs source docs, chunk, embed passages and index, with the index labelled non-parametric memory and a note that a source edit which never reaches the index is an ingestion bug. A query-time row sends the user query into two parallel branches — dense approximate nearest neighbours over stored vectors, and lexical BM25 for exact codes, names and ids — which merge in an RRF fuse box computing 1 / (60 + rank), then a cross-encoder rerank of the top n, then a prompt, a generator labelled parametric memory, and an answer with citations. A footer names the metric for each stage, and a closing strip reads: a reranker only reorders the candidates it was handed.",
+          "caption": "Passages are encoded ahead of time; only the query is encoded at request time.",
+          "placement": "explanation"
+        }
+      ],
       "type": "multiple-choice",
       "options": [
         {
@@ -61,6 +77,14 @@
       "id": "chunk-boundary-negation",
       "title": "A chunk splits a refund rule from its exception. What should you fix first?",
       "description": "The policy says: \"Refunds are allowed within 30 days, unless the license key has been activated.\" Retrieval returns only the permissive clause.",
+      "images": [
+        {
+          "src": "chunking-boundaries.svg",
+          "alt": "Three panels about chunking. The first splits “Refunds are allowed within 30 days, unless the license key has been activated.” at a character count, leaving a highlighted chunk holding only the permissive clause and a greyed chunk holding the exception, then shows a fixed version where one self-contained unit carries both. The second lays out four retrieval units — whole document, section, passage, proposition — noting that one unit means one vector. The third draws three overlapping fixed windows with the shared regions framed, listing what overlap buys (a boundary fact appears in both neighbours) against what it costs (the same text is indexed twice, so results can be near-duplicates), and noting that overlap finds no semantic boundaries and changes no embedding dimension.",
+          "caption": "The chunk is the unit of retrieval, so a split rule is a rule that can no longer be found whole.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -86,6 +110,14 @@
     {
       "id": "retrieval-unit-granularity",
       "title": "Why can whole-document chunks work poorly for clause-level questions?",
+      "images": [
+        {
+          "src": "chunking-boundaries.svg",
+          "alt": "Three panels about chunking. The first splits “Refunds are allowed within 30 days, unless the license key has been activated.” at a character count, leaving a highlighted chunk holding only the permissive clause and a greyed chunk holding the exception, then shows a fixed version where one self-contained unit carries both. The second lays out four retrieval units — whole document, section, passage, proposition — noting that one unit means one vector. The third draws three overlapping fixed windows with the shared regions framed, listing what overlap buys (a boundary fact appears in both neighbours) against what it costs (the same text is indexed twice, so results can be near-duplicates), and noting that overlap finds no semantic boundaries and changes no embedding dimension.",
+          "caption": "The chunk is the unit of retrieval, so a split rule is a rule that can no longer be found whole.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -112,6 +144,14 @@
       "id": "chunk-overlap-tradeoffs",
       "title": "What can fixed-window chunk overlap change?",
       "description": "Select all that apply. Your answer must include every correct choice.",
+      "images": [
+        {
+          "src": "chunking-boundaries.svg",
+          "alt": "Three panels about chunking. The first splits “Refunds are allowed within 30 days, unless the license key has been activated.” at a character count, leaving a highlighted chunk holding only the permissive clause and a greyed chunk holding the exception, then shows a fixed version where one self-contained unit carries both. The second lays out four retrieval units — whole document, section, passage, proposition — noting that one unit means one vector. The third draws three overlapping fixed windows with the shared regions framed, listing what overlap buys (a boundary fact appears in both neighbours) against what it costs (the same text is indexed twice, so results can be near-duplicates), and noting that overlap finds no semantic boundaries and changes no embedding dimension.",
+          "caption": "The chunk is the unit of retrieval, so a split rule is a rule that can no longer be found whole.",
+          "placement": "explanation"
+        }
+      ],
       "type": "multiple-choice",
       "options": [
         {
@@ -137,6 +177,14 @@
     {
       "id": "dual-encoder-indexing",
       "title": "Why are dual encoders useful for first-stage retrieval over a large corpus?",
+      "images": [
+        {
+          "src": "rag-pipeline.svg",
+          "alt": "One RAG request drawn as two rows of stages. An offline ingestion row runs source docs, chunk, embed passages and index, with the index labelled non-parametric memory and a note that a source edit which never reaches the index is an ingestion bug. A query-time row sends the user query into two parallel branches — dense approximate nearest neighbours over stored vectors, and lexical BM25 for exact codes, names and ids — which merge in an RRF fuse box computing 1 / (60 + rank), then a cross-encoder rerank of the top n, then a prompt, a generator labelled parametric memory, and an answer with citations. A footer names the metric for each stage, and a closing strip reads: a reranker only reorders the candidates it was handed.",
+          "caption": "Passages are encoded ahead of time; only the query is encoded at request time.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -188,6 +236,14 @@
       "id": "exact-identifier-hybrid-retrieval",
       "title": "Dense retrieval misses an exact error code. What should you add?",
       "description": "Dense search finds conceptually related troubleshooting pages but misses the runbook that contains the exact code.",
+      "images": [
+        {
+          "src": "rag-pipeline.svg",
+          "alt": "One RAG request drawn as two rows of stages. An offline ingestion row runs source docs, chunk, embed passages and index, with the index labelled non-parametric memory and a note that a source edit which never reaches the index is an ingestion bug. A query-time row sends the user query into two parallel branches — dense approximate nearest neighbours over stored vectors, and lexical BM25 for exact codes, names and ids — which merge in an RRF fuse box computing 1 / (60 + rank), then a cross-encoder rerank of the top n, then a prompt, a generator labelled parametric memory, and an answer with citations. A footer names the metric for each stage, and a closing strip reads: a reranker only reorders the candidates it was handed.",
+          "caption": "Passages are encoded ahead of time; only the query is encoded at request time.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -239,6 +295,14 @@
       "id": "recall-at-five-calculation",
       "title": "Three of four relevant chunks appear in the top five results. What is recall@5?",
       "description": "Enter a number from `0` to `1`.",
+      "images": [
+        {
+          "src": "ranking-and-fusion.svg",
+          "alt": "Three panels on ranking. The first shows a BM25 result list scored 18.4 down to 6.2 beside a dense vector list scored 0.83 down to 0.71, then the reciprocal-rank fusion of doc-A: 1 / (60 + 4) + 1 / (60 + 1) = 0.01563 + 0.01639 = 0.03202, with a note that ranks are comparable by construction so no normalization is needed. The second shows five result slots, three marked relevant and two not, plus a fourth relevant chunk stranded at rank 23, and the arithmetic recall@5 = 3 relevant found / 4 relevant total = 0.75. The third lists what raising k from 5 to 50 trades: recall can rise, distractors arrive, and context is spent.",
+          "caption": "RRF reads ranks, never raw scores. Recall counts the relevant set, never the results returned.",
+          "placement": "explanation"
+        }
+      ],
       "type": "input",
       "validation": {
         "mode": "numeric",
@@ -251,6 +315,20 @@
       "id": "more-top-k-not-guaranteed-better",
       "title": "Why might increasing retrieval `k` from 5 to 50 make an answer worse?",
       "description": "The system sends every retrieved passage to the generator.",
+      "images": [
+        {
+          "src": "ranking-and-fusion.svg",
+          "alt": "Three panels on ranking. The first shows a BM25 result list scored 18.4 down to 6.2 beside a dense vector list scored 0.83 down to 0.71, then the reciprocal-rank fusion of doc-A: 1 / (60 + 4) + 1 / (60 + 1) = 0.01563 + 0.01639 = 0.03202, with a note that ranks are comparable by construction so no normalization is needed. The second shows five result slots, three marked relevant and two not, plus a fourth relevant chunk stranded at rank 23, and the arithmetic recall@5 = 3 relevant found / 4 relevant total = 0.75. The third lists what raising k from 5 to 50 trades: recall can rise, distractors arrive, and context is spent.",
+          "caption": "RRF reads ranks, never raw scores. Recall counts the relevant set, never the results returned.",
+          "placement": "explanation"
+        },
+        {
+          "src": "context-placement.svg",
+          "alt": "Two panels. The first spends an 8,192-token combined budget as one bar: 2,100 tokens of instructions and query, five retrieved chunks of 900 each, a 1,200-token answer reserve, and a thin remaining sliver labelled 392 tokens left, with the arithmetic 2,100 + (5 × 900) + 1,200 = 7,800 and 8,192 − 7,800 = 392. The second plots the Lost in the Middle shape — accuracy against the position of the relevant passage among twenty, high at the first and last positions and lowest in the middle, with the dip marked — beside the same five chunks in prompt order, the first and last marked read reliably and the third marked buried. A closing strip reads: fitting inside the window is a capacity fact, not a promise that every detail is used.",
+          "caption": "Every chunk added is taken from somewhere, and where it lands changes how well it is read.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -277,6 +355,14 @@
       "id": "rrf-score-calculation",
       "title": "With a rank constant of 60, what RRF score do ranks 1 and 4 produce?",
       "description": "Use `score = 1 / (60 + rank1) + 1 / (60 + rank2)`. Enter a decimal rounded to five places.",
+      "images": [
+        {
+          "src": "ranking-and-fusion.svg",
+          "alt": "Three panels on ranking. The first shows a BM25 result list scored 18.4 down to 6.2 beside a dense vector list scored 0.83 down to 0.71, then the reciprocal-rank fusion of doc-A: 1 / (60 + 4) + 1 / (60 + 1) = 0.01563 + 0.01639 = 0.03202, with a note that ranks are comparable by construction so no normalization is needed. The second shows five result slots, three marked relevant and two not, plus a fourth relevant chunk stranded at rank 23, and the arithmetic recall@5 = 3 relevant found / 4 relevant total = 0.75. The third lists what raising k from 5 to 50 trades: recall can rise, distractors arrive, and context is spent.",
+          "caption": "RRF reads ranks, never raw scores. Recall counts the relevant set, never the results returned.",
+          "placement": "explanation"
+        }
+      ],
       "type": "input",
       "validation": {
         "mode": "numeric",
@@ -289,6 +375,14 @@
     {
       "id": "rrf-uses-ranks",
       "title": "Why can RRF combine BM25 and vector rankings without normalizing their raw scores?",
+      "images": [
+        {
+          "src": "ranking-and-fusion.svg",
+          "alt": "Three panels on ranking. The first shows a BM25 result list scored 18.4 down to 6.2 beside a dense vector list scored 0.83 down to 0.71, then the reciprocal-rank fusion of doc-A: 1 / (60 + 4) + 1 / (60 + 1) = 0.01563 + 0.01639 = 0.03202, with a note that ranks are comparable by construction so no normalization is needed. The second shows five result slots, three marked relevant and two not, plus a fourth relevant chunk stranded at rank 23, and the arithmetic recall@5 = 3 relevant found / 4 relevant total = 0.75. The third lists what raising k from 5 to 50 trades: recall can rise, distractors arrive, and context is spent.",
+          "caption": "RRF reads ranks, never raw scores. Recall counts the relevant set, never the results returned.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -314,6 +408,14 @@
     {
       "id": "reranking-pipeline-design",
       "title": "Where should an expensive query-passage reranker run?",
+      "images": [
+        {
+          "src": "rag-pipeline.svg",
+          "alt": "One RAG request drawn as two rows of stages. An offline ingestion row runs source docs, chunk, embed passages and index, with the index labelled non-parametric memory and a note that a source edit which never reaches the index is an ingestion bug. A query-time row sends the user query into two parallel branches — dense approximate nearest neighbours over stored vectors, and lexical BM25 for exact codes, names and ids — which merge in an RRF fuse box computing 1 / (60 + rank), then a cross-encoder rerank of the top n, then a prompt, a generator labelled parametric memory, and an answer with citations. A footer names the metric for each stage, and a closing strip reads: a reranker only reorders the candidates it was handed.",
+          "caption": "Passages are encoded ahead of time; only the query is encoded at request time.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -339,6 +441,14 @@
     {
       "id": "reranker-candidate-ceiling",
       "title": "The retriever drops the only supporting passage. Can the reranker recover it?",
+      "images": [
+        {
+          "src": "rag-pipeline.svg",
+          "alt": "One RAG request drawn as two rows of stages. An offline ingestion row runs source docs, chunk, embed passages and index, with the index labelled non-parametric memory and a note that a source edit which never reaches the index is an ingestion bug. A query-time row sends the user query into two parallel branches — dense approximate nearest neighbours over stored vectors, and lexical BM25 for exact codes, names and ids — which merge in an RRF fuse box computing 1 / (60 + rank), then a cross-encoder rerank of the top n, then a prompt, a generator labelled parametric memory, and an answer with citations. A footer names the metric for each stage, and a closing strip reads: a reranker only reorders the candidates it was handed.",
+          "caption": "Passages are encoded ahead of time; only the query is encoded at request time.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -364,6 +474,14 @@
     {
       "id": "lost-in-the-middle",
       "title": "What did the \"Lost in the Middle\" experiments find?",
+      "images": [
+        {
+          "src": "context-placement.svg",
+          "alt": "Two panels. The first spends an 8,192-token combined budget as one bar: 2,100 tokens of instructions and query, five retrieved chunks of 900 each, a 1,200-token answer reserve, and a thin remaining sliver labelled 392 tokens left, with the arithmetic 2,100 + (5 × 900) + 1,200 = 7,800 and 8,192 − 7,800 = 392. The second plots the Lost in the Middle shape — accuracy against the position of the relevant passage among twenty, high at the first and last positions and lowest in the middle, with the dip marked — beside the same five chunks in prompt order, the first and last marked read reliably and the third marked buried. A closing strip reads: fitting inside the window is a capacity fact, not a promise that every detail is used.",
+          "caption": "Every chunk added is taken from somewhere, and where it lands changes how well it is read.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -390,6 +508,14 @@
       "id": "context-budget-arithmetic",
       "title": "How many tokens remain in this context budget?",
       "description": "The combined input-output limit is `8,192` tokens. Instructions and the query use `2,100`; five chunks use `900` each; and the answer reserves `1,200`. Enter the maximum number of additional tokens that fit.",
+      "images": [
+        {
+          "src": "context-placement.svg",
+          "alt": "Two panels. The first spends an 8,192-token combined budget as one bar: 2,100 tokens of instructions and query, five retrieved chunks of 900 each, a 1,200-token answer reserve, and a thin remaining sliver labelled 392 tokens left, with the arithmetic 2,100 + (5 × 900) + 1,200 = 7,800 and 8,192 − 7,800 = 392. The second plots the Lost in the Middle shape — accuracy against the position of the relevant passage among twenty, high at the first and last positions and lowest in the middle, with the dip marked — beside the same five chunks in prompt order, the first and last marked read reliably and the third marked buried. A closing strip reads: fitting inside the window is a capacity fact, not a promise that every detail is used.",
+          "caption": "Every chunk added is taken from somewhere, and where it lands changes how well it is read.",
+          "placement": "explanation"
+        }
+      ],
       "type": "input",
       "validation": {
         "mode": "numeric",
@@ -478,6 +604,14 @@
       "id": "evaluate-rag-components",
       "title": "Which parts of a RAG pipeline should be evaluated separately?",
       "description": "Select all that apply. Your answer must include every correct choice.",
+      "images": [
+        {
+          "src": "rag-pipeline.svg",
+          "alt": "One RAG request drawn as two rows of stages. An offline ingestion row runs source docs, chunk, embed passages and index, with the index labelled non-parametric memory and a note that a source edit which never reaches the index is an ingestion bug. A query-time row sends the user query into two parallel branches — dense approximate nearest neighbours over stored vectors, and lexical BM25 for exact codes, names and ids — which merge in an RRF fuse box computing 1 / (60 + rank), then a cross-encoder rerank of the top n, then a prompt, a generator labelled parametric memory, and an answer with citations. A footer names the metric for each stage, and a closing strip reads: a reranker only reorders the candidates it was handed.",
+          "caption": "Passages are encoded ahead of time; only the query is encoded at request time.",
+          "placement": "explanation"
+        }
+      ],
       "type": "multiple-choice",
       "options": [
         {
@@ -529,6 +663,14 @@
       "id": "stale-index-failure",
       "title": "Retrieval returns an outdated policy after the source changes. What should you fix?",
       "description": "The source document was updated, but the old chunk and embedding are still in the index.",
+      "images": [
+        {
+          "src": "rag-pipeline.svg",
+          "alt": "One RAG request drawn as two rows of stages. An offline ingestion row runs source docs, chunk, embed passages and index, with the index labelled non-parametric memory and a note that a source edit which never reaches the index is an ingestion bug. A query-time row sends the user query into two parallel branches — dense approximate nearest neighbours over stored vectors, and lexical BM25 for exact codes, names and ids — which merge in an RRF fuse box computing 1 / (60 + rank), then a cross-encoder rerank of the top n, then a prompt, a generator labelled parametric memory, and an answer with citations. A footer names the metric for each stage, and a closing strip reads: a reranker only reorders the candidates it was handed.",
+          "caption": "Passages are encoded ahead of time; only the query is encoded at request time.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {

@@ -1,0 +1,134 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="490" viewBox="0 0 720 490">
+  <style>
+    /* An &lt;img&gt;-embedded SVG cannot see the page's `data-theme`, but it does
+       inherit the embedding document's `color-scheme`, so `prefers-color-scheme`
+       tracks the site theme including an explicit toggle. The presentation
+       attributes below stay as the light fallback for renderers without CSS. */
+    svg {
+      --panel: #f5f7fb;
+      --title: #20242c;
+      --muted: #526173;
+      --edge: #64748b;
+      --card: #ffffff;
+      --ok-fill: #dcfce7;
+      --ok-edge: #16a34a;
+      --ok-text: #14532d;
+      --info-fill: #dbeafe;
+      --info-edge: #2563eb;
+      --info-text: #172554;
+      --accent-fill: #ffedd5;
+      --accent-edge: #c2410c;
+      --accent-text: #9a3412;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      svg {
+        --panel: #1a1f27;
+        --title: #e6eaf2;
+        --muted: #9aa8bd;
+        --edge: #8b9bb4;
+        --card: #252b35;
+        --ok-fill: #14321f;
+        --ok-edge: #4ade80;
+        --ok-text: #bbf7d0;
+        --info-fill: #1e3a5f;
+        --info-edge: #60a5fa;
+        --info-text: #dbeafe;
+        --accent-fill: #3a2416;
+        --accent-edge: #fb923c;
+        --accent-text: #fdba74;
+      }
+    }
+
+    .panel { fill: var(--panel); }
+    .title { fill: var(--title); }
+    .muted { fill: var(--muted); }
+    .card { fill: var(--card); stroke: var(--edge); }
+    .edge-line { stroke: var(--edge); }
+    .ok-line { stroke: var(--ok-edge); }
+    .ok-text { fill: var(--ok-text); }
+    .info-box { fill: var(--info-fill); stroke: var(--info-edge); }
+    .info-text { fill: var(--info-text); }
+    .accent-box { fill: var(--accent-fill); stroke: var(--accent-edge); }
+    .accent-text { fill: var(--accent-text); }
+    .accent-line { stroke: var(--accent-edge); }
+  </style>
+
+  <rect class="panel" width="720" height="490" rx="20" fill="#f5f7fb" />
+
+  <text class="title" x="36" y="40" fill="#20242c" font-family="system-ui, sans-serif" font-size="20" font-weight="700">
+    Backing off without starting a herd
+  </text>
+  <text class="muted" x="36" y="64" fill="#526173" font-family="system-ui, sans-serif" font-size="14">
+    <tspan font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">delay = base × 2^attempt</tspan>, with <tspan font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">base = 100</tspan> ms and no jitter.
+  </text>
+
+  <g font-family="system-ui, sans-serif" text-anchor="middle">
+    <rect class="card" x="36" y="88" width="120" height="58" rx="10" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <text class="muted" x="96" y="110" fill="#526173" font-size="11.5">attempt 0</text>
+    <text class="title" x="96" y="132" fill="#20242c" font-size="16" font-weight="700">100 ms</text>
+
+    <rect class="card" x="168" y="88" width="120" height="58" rx="10" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <text class="muted" x="228" y="110" fill="#526173" font-size="11.5">attempt 1</text>
+    <text class="title" x="228" y="132" fill="#20242c" font-size="16" font-weight="700">200 ms</text>
+
+    <rect class="card" x="300" y="88" width="120" height="58" rx="10" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <text class="muted" x="360" y="110" fill="#526173" font-size="11.5">attempt 2</text>
+    <text class="title" x="360" y="132" fill="#20242c" font-size="16" font-weight="700">400 ms</text>
+
+    <rect class="card" x="432" y="88" width="120" height="58" rx="10" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <text class="muted" x="492" y="110" fill="#526173" font-size="11.5">attempt 3</text>
+    <text class="title" x="492" y="132" fill="#20242c" font-size="16" font-weight="700">800 ms</text>
+
+    <rect class="accent-box" x="564" y="88" width="120" height="58" rx="10" fill="#ffedd5" stroke="#c2410c" stroke-width="2" />
+    <text class="accent-text" x="624" y="110" fill="#9a3412" font-size="11.5">attempt 4</text>
+    <text class="accent-text" x="624" y="132" fill="#9a3412" font-size="16" font-weight="700">1600 ms</text>
+  </g>
+
+  <text class="title" x="36" y="178" fill="#20242c" font-family="system-ui, sans-serif" font-size="15" font-weight="700">
+    Now let thousands of clients fail at the same moment
+  </text>
+
+  <g font-family="system-ui, sans-serif">
+    <rect class="card" x="36" y="190" width="648" height="64" rx="12" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <text class="title" x="52" y="220" fill="#20242c" font-size="13.5" font-weight="700">no jitter</text>
+    <text class="muted" x="52" y="238" fill="#526173" font-size="11.5">one fixed delay</text>
+    <text class="accent-text" x="420" y="208" fill="#9a3412" font-size="11.5" font-weight="700" text-anchor="middle">thundering herd</text>
+
+    <rect class="card" x="36" y="264" width="648" height="64" rx="12" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <text class="title" x="52" y="294" fill="#20242c" font-size="13.5" font-weight="700">with jitter</text>
+    <text class="muted" x="52" y="312" fill="#526173" font-size="11.5">randomized delay</text>
+    <text class="ok-text" x="430" y="282" fill="#14532d" font-size="11.5" font-weight="700" text-anchor="middle">the same load, smeared across the interval</text>
+  </g>
+
+  <g fill="none" class="edge-line" stroke="#64748b" stroke-width="1.5">
+    <path d="M196,242 L664,242" />
+    <path d="M196,316 L664,316" />
+  </g>
+
+  <g fill="none" class="accent-line" stroke="#c2410c" stroke-width="2" stroke-linecap="round">
+    <path d="M410,216 L410,242" /><path d="M413,216 L413,242" /><path d="M416,216 L416,242" />
+    <path d="M419,216 L419,242" /><path d="M422,216 L422,242" /><path d="M425,216 L425,242" />
+    <path d="M428,216 L428,242" /><path d="M431,216 L431,242" />
+  </g>
+
+  <g fill="none" class="ok-line" stroke="#16a34a" stroke-width="2" stroke-linecap="round">
+    <path d="M228,296 L228,316" /><path d="M281,296 L281,316" /><path d="M327,296 L327,316" />
+    <path d="M369,296 L369,316" /><path d="M404,296 L404,316" /><path d="M451,296 L451,316" />
+    <path d="M496,296 L496,316" /><path d="M534,296 L534,316" /><path d="M583,296 L583,316" />
+    <path d="M627,296 L627,316" />
+  </g>
+
+  <g font-family="system-ui, sans-serif">
+    <rect class="card" x="36" y="352" width="316" height="58" rx="12" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <text class="title" x="52" y="376" fill="#20242c" font-size="13.5" font-weight="700">429 Too Many Requests</text>
+    <text class="muted" x="52" y="395" fill="#526173" font-size="11.5">this client is over its own quota — it's you</text>
+
+    <rect class="card" x="368" y="352" width="316" height="58" rx="12" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <text class="title" x="384" y="376" fill="#20242c" font-size="13.5" font-weight="700">503 Service Unavailable</text>
+    <text class="muted" x="384" y="395" fill="#526173" font-size="11.5">the upstream is shedding for everyone — it's me</text>
+
+    <rect class="info-box" x="36" y="424" width="648" height="46" rx="12" fill="#dbeafe" stroke="#2563eb" stroke-width="2" />
+    <text class="info-text" x="52" y="452" fill="#172554" font-size="13"><tspan font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-weight="700">Retry-After</tspan> takes two forms only: <tspan font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">120</tspan> (delay-seconds) or an HTTP-date. No duration strings.</text>
+  </g>
+</svg>

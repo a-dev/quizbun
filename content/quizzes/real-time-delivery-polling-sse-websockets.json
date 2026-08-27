@@ -10,6 +10,14 @@
       "id": "short-vs-long-polling-latency",
       "title": "Short polling vs. long polling: where does the latency go?",
       "description": "A client must learn about server-side events. It **short-polls** a `/events` endpoint on a fixed 10-second timer. An event is produced 100 ms after a poll returns empty.",
+      "images": [
+        {
+          "src": "request-response-timeline.svg",
+          "alt": "A timeline comparing four transports against the same moment a server-side event occurs: short polling waits out its fixed interval before its next request happens to catch it; long polling holds a request open and answers within about one round trip; Server-Sent Events pushes the event immediately over its already-open connection; and WebSocket sends it immediately over its open full-duplex connection.",
+          "caption": "Top two lanes: short polling's fixed-interval requests vs. long polling's held-open request, both against the same event.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -126,6 +134,14 @@
       "id": "choose-sse-over-websockets",
       "title": "Which of these are genuine reasons to choose SSE over WebSockets?",
       "description": "You are picking a transport for a server-driven feature. Select **every** one that applies.",
+      "images": [
+        {
+          "src": "request-response-timeline.svg",
+          "alt": "A timeline comparing four transports against the same moment a server-side event occurs: short polling waits out its fixed interval before its next request happens to catch it; long polling holds a request open and answers within about one round trip; Server-Sent Events pushes the event immediately over its already-open connection; and WebSocket sends it immediately over its open full-duplex connection.",
+          "caption": "The SSE lane — the event is pushed the instant it exists, over the one connection already open.",
+          "placement": "explanation"
+        }
+      ],
       "type": "multiple-choice",
       "options": [
         {

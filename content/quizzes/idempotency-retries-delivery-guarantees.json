@@ -10,6 +10,14 @@
       "id": "at-least-once-duplicates",
       "title": "Which delivery guarantee does this broker behavior describe?",
       "description": "A message broker keeps redelivering a message until the consumer acknowledges it. If an acknowledgment is lost in transit, the broker sends the same message again.",
+      "images": [
+        {
+          "src": "delivery-guarantees.svg",
+          "alt": "A sender and a receiver: the message is delivered and processed, but the acknowledgment is lost on the way back, so the sender cannot tell a lost message from a lost ack and has exactly two options — retry or don't. Three lanes then show what the receiver ends up with. At-most-once sends once and never retries, so the receiver holds 1, a gap marked lost, and 3. At-least-once retries until acked, so the receiver holds 1, 2, a highlighted duplicate 2, and 3. Exactly-once processing adds a dedup key at the receiver, so the second copy of 2 arrives but is ignored. A closing note states the Two Generals' Problem — over a lossy link no finite exchange makes both sides certain — and that exactly-once semantics is the third lane rather than a repeal of that result.",
+          "caption": "Redelivery until acked is the middle lane.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         { "text": "At-least-once", "isCorrect": true },
@@ -24,6 +32,14 @@
       "id": "exactly-once-in-practice",
       "title": "Which design delivers the achievable version of 'exactly-once'?",
       "description": "A senior engineer says: 'Exactly-once *delivery* is impossible, but exactly-once *processing* is achievable.'",
+      "images": [
+        {
+          "src": "delivery-guarantees.svg",
+          "alt": "A sender and a receiver: the message is delivered and processed, but the acknowledgment is lost on the way back, so the sender cannot tell a lost message from a lost ack and has exactly two options — retry or don't. Three lanes then show what the receiver ends up with. At-most-once sends once and never retries, so the receiver holds 1, a gap marked lost, and 3. At-least-once retries until acked, so the receiver holds 1, 2, a highlighted duplicate 2, and 3. Exactly-once processing adds a dedup key at the receiver, so the second copy of 2 arrives but is ignored. A closing note states the Two Generals' Problem — over a lossy link no finite exchange makes both sides certain — and that exactly-once semantics is the third lane rather than a repeal of that result.",
+          "caption": "At-least-once plus dedup — the green lane.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -50,6 +66,14 @@
       "id": "two-generals-proves",
       "title": "What does the Two Generals' Problem establish?",
       "description": "Two allied generals must attack at the same time to win, but can only coordinate via messengers who might be captured crossing enemy territory.",
+      "images": [
+        {
+          "src": "delivery-guarantees.svg",
+          "alt": "A sender and a receiver: the message is delivered and processed, but the acknowledgment is lost on the way back, so the sender cannot tell a lost message from a lost ack and has exactly two options — retry or don't. Three lanes then show what the receiver ends up with. At-most-once sends once and never retries, so the receiver holds 1, a gap marked lost, and 3. At-least-once retries until acked, so the receiver holds 1, 2, a highlighted duplicate 2, and 3. Exactly-once processing adds a dedup key at the receiver, so the second copy of 2 arrives but is ignored. A closing note states the Two Generals' Problem — over a lossy link no finite exchange makes both sides certain — and that exactly-once semantics is the third lane rather than a repeal of that result.",
+          "caption": "The closing note states exactly what it establishes.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -76,6 +100,14 @@
       "id": "idempotent-http-methods",
       "title": "Which HTTP methods are idempotent?",
       "description": "Per RFC 9110, an *idempotent* method is one where making the identical request many times has the same effect on server state as making it once. Select **all** that apply.",
+      "images": [
+        {
+          "src": "idempotency-key.svg",
+          "alt": "Five steps. A client sends POST /charges with Idempotency-Key: abc-123, a key it generates itself, one per logical operation. The charge succeeds and the server stores the key alongside the response. The connection then drops before the response arrives, leaving the client unsure whether it charged the customer. The client retries the identical request with the same key, and the server finds the key and replays the stored response, charging nothing. A card lists what the record must carry: the stored response, a request fingerprint so the same key with a different body is rejected, and an expiry, since past a 24-hour window the key counts as new. Six chips name the methods that are idempotent by definition in RFC 9110 — GET, HEAD, PUT, DELETE, OPTIONS, TRACE — with POST absent.",
+          "caption": "Six chips, straight from RFC 9110.",
+          "placement": "explanation"
+        }
+      ],
       "type": "multiple-choice",
       "options": [
         { "text": "`GET`", "isCorrect": true },
@@ -91,6 +123,14 @@
       "id": "idempotency-key-retry-flow",
       "title": "What should the server do when the same idempotency key arrives again?",
       "description": "A mobile app sends `POST /charges` with header `Idempotency-Key: abc-123`. The charge succeeds, but the response is lost to a dropped connection, so the app retries with the **same** key. The server has already processed `abc-123`.",
+      "images": [
+        {
+          "src": "idempotency-key.svg",
+          "alt": "Five steps. A client sends POST /charges with Idempotency-Key: abc-123, a key it generates itself, one per logical operation. The charge succeeds and the server stores the key alongside the response. The connection then drops before the response arrives, leaving the client unsure whether it charged the customer. The client retries the identical request with the same key, and the server finds the key and replays the stored response, charging nothing. A card lists what the record must carry: the stored response, a request fingerprint so the same key with a different body is rejected, and an expiry, since past a 24-hour window the key counts as new. Six chips name the methods that are idempotent by definition in RFC 9110 — GET, HEAD, PUT, DELETE, OPTIONS, TRACE — with POST absent.",
+          "caption": "Step 5: find the key, replay the response, charge nothing.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -117,6 +157,14 @@
       "id": "idempotency-key-requirements",
       "title": "Which statements about a correct idempotency-key design are true?",
       "description": "A team is adding idempotency keys to a payments API. Select **all** that apply.",
+      "images": [
+        {
+          "src": "idempotency-key.svg",
+          "alt": "Five steps. A client sends POST /charges with Idempotency-Key: abc-123, a key it generates itself, one per logical operation. The charge succeeds and the server stores the key alongside the response. The connection then drops before the response arrives, leaving the client unsure whether it charged the customer. The client retries the identical request with the same key, and the server finds the key and replays the stored response, charging nothing. A card lists what the record must carry: the stored response, a request fingerprint so the same key with a different body is rejected, and an expiry, since past a 24-hour window the key counts as new. Six chips name the methods that are idempotent by definition in RFC 9110 — GET, HEAD, PUT, DELETE, OPTIONS, TRACE — with POST absent.",
+          "caption": "The card at the bottom is the whole contract.",
+          "placement": "explanation"
+        }
+      ],
       "type": "multiple-choice",
       "options": [
         {
@@ -152,6 +200,14 @@
       "id": "why-jitter",
       "title": "Why add jitter to backoff?",
       "description": "A thousand clients all fail against an overloaded service at the same instant. Each uses identical exponential backoff.",
+      "images": [
+        {
+          "src": "backoff-and-jitter.svg",
+          "alt": "Five backoff steps for base 100 ms with no jitter: attempt 0 at 100 ms, then 200, 400, 800, and attempt 4 highlighted at 1600 ms. Below, two lanes: without jitter every client's retry falls on a single instant, marked thundering herd; with jitter the same marks spread across the interval. Two cards separate 429 Too Many Requests, meaning this client is over its own quota, from 503 Service Unavailable, meaning the upstream is shedding load for everyone, and a note says Retry-After takes only delay-seconds or an HTTP-date.",
+          "caption": "The two lanes carry the same load; only its shape differs.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -195,6 +251,14 @@
       "id": "safe-to-retry-blindly",
       "title": "Which request is safe to retry blindly?",
       "description": "Your HTTP client auto-retries on a network timeout, with **no** idempotency key. \"Inherently safe\" means repeating the request cannot change server state more than the first call did.",
+      "images": [
+        {
+          "src": "idempotency-key.svg",
+          "alt": "Five steps. A client sends POST /charges with Idempotency-Key: abc-123, a key it generates itself, one per logical operation. The charge succeeds and the server stores the key alongside the response. The connection then drops before the response arrives, leaving the client unsure whether it charged the customer. The client retries the identical request with the same key, and the server finds the key and replays the stored response, charging nothing. A card lists what the record must carry: the stored response, a request fingerprint so the same key with a different body is rejected, and an expiry, since past a 24-hour window the key counts as new. Six chips name the methods that are idempotent by definition in RFC 9110 — GET, HEAD, PUT, DELETE, OPTIONS, TRACE — with POST absent.",
+          "caption": "Without a key, only the six chips are safe on their own.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         { "text": "`GET /orders/42` — fetch an order's current status", "isCorrect": true },
@@ -212,6 +276,14 @@
       "id": "dedup-window-expiry",
       "title": "What's the most likely outcome of retrying 30 hours later?",
       "description": "An API stores idempotency keys for **24 hours** to deduplicate retries. A client's request fails, its phone stays offline, and it finally retries the *same* charge **30 hours** later with the same key.",
+      "images": [
+        {
+          "src": "idempotency-key.svg",
+          "alt": "Five steps. A client sends POST /charges with Idempotency-Key: abc-123, a key it generates itself, one per logical operation. The charge succeeds and the server stores the key alongside the response. The connection then drops before the response arrives, leaving the client unsure whether it charged the customer. The client retries the identical request with the same key, and the server finds the key and replays the stored response, charging nothing. A card lists what the record must carry: the stored response, a request fingerprint so the same key with a different body is rejected, and an expiry, since past a 24-hour window the key counts as new. Six chips name the methods that are idempotent by definition in RFC 9110 — GET, HEAD, PUT, DELETE, OPTIONS, TRACE — with POST absent.",
+          "caption": "Past the window the stored record is gone, so the key reads as new.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {

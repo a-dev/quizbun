@@ -1,0 +1,136 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="460" viewBox="0 0 720 460">
+  <style>
+    /* An &lt;img&gt;-embedded SVG cannot see the page's `data-theme`, but it does
+       inherit the embedding document's `color-scheme`, so `prefers-color-scheme`
+       tracks the site theme including an explicit toggle. The presentation
+       attributes below stay as the light fallback for renderers without CSS. */
+    svg {
+      --panel: #f5f7fb;
+      --title: #20242c;
+      --muted: #526173;
+      --edge: #64748b;
+      --card: #ffffff;
+      --delay-fill: #ffedd5;
+      --delay-edge: #c2410c;
+      --delay-text: #9a3412;
+      --proc-fill: #dbeafe;
+      --proc-edge: #2563eb;
+      --proc-text: #172554;
+      --pres-fill: #dcfce7;
+      --pres-edge: #16a34a;
+      --pres-text: #15803d;
+      --task-fill: #e2e8f0;
+      --task-edge: #475569;
+      --task-text: #1e293b;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      svg {
+        --panel: #1a1f27;
+        --title: #e6eaf2;
+        --muted: #9aa8bd;
+        --edge: #8b9bb4;
+        --card: #252b35;
+        --delay-fill: #3a2416;
+        --delay-edge: #fb923c;
+        --delay-text: #fdba74;
+        --proc-fill: #1e3a5f;
+        --proc-edge: #60a5fa;
+        --proc-text: #dbeafe;
+        --pres-fill: #14321f;
+        --pres-edge: #4ade80;
+        --pres-text: #86efac;
+        --task-fill: #2b3441;
+        --task-edge: #94a3b8;
+        --task-text: #e2e8f0;
+      }
+    }
+
+    .panel-bg { fill: var(--panel); }
+    .title { fill: var(--title); }
+    .muted { fill: var(--muted); }
+    .edge-line { stroke: var(--edge); }
+    .card { fill: var(--card); stroke: var(--edge); }
+    .delay-box { fill: var(--delay-fill); stroke: var(--delay-edge); }
+    .delay-text { fill: var(--delay-text); }
+    .proc-box { fill: var(--proc-fill); stroke: var(--proc-edge); }
+    .proc-text { fill: var(--proc-text); }
+    .pres-box { fill: var(--pres-fill); stroke: var(--pres-edge); }
+    .pres-text { fill: var(--pres-text); }
+    .task-box { fill: var(--task-fill); stroke: var(--task-edge); }
+    .task-text { fill: var(--task-text); }
+  </style>
+
+  <rect class="panel-bg" width="720" height="460" rx="20" fill="#f5f7fb" />
+
+  <text class="title" x="36" y="40" fill="#20242c" font-family="system-ui, sans-serif" font-size="20" font-weight="700">
+    INP is measured from input to the next painted frame
+  </text>
+  <text class="muted" x="36" y="64" fill="#526173" font-family="system-ui, sans-serif" font-size="14">
+    Three phases, back to back. Later async work — a network response — is not included.
+  </text>
+
+  <g font-family="system-ui, sans-serif" font-size="11.5" font-weight="700" text-anchor="middle">
+    <line class="edge-line" x1="101" y1="106" x2="101" y2="140" stroke="#64748b" stroke-width="1.5" stroke-dasharray="3 3" />
+    <text class="delay-text" x="101" y="100" fill="#9a3412">input delay</text>
+
+    <line class="edge-line" x1="360" y1="106" x2="360" y2="140" stroke="#64748b" stroke-width="1.5" stroke-dasharray="3 3" />
+    <text class="proc-text" x="360" y="100" fill="#172554">processing duration</text>
+
+    <line class="edge-line" x1="619" y1="106" x2="619" y2="140" stroke="#64748b" stroke-width="1.5" stroke-dasharray="3 3" />
+    <text class="pres-text" x="619" y="100" fill="#15803d">presentation delay</text>
+  </g>
+
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="14" font-weight="700" text-anchor="middle">
+    <rect class="delay-box" x="36" y="140" width="130" height="60" fill="#ffedd5" stroke="#c2410c" stroke-width="2" />
+    <text class="delay-text" x="101" y="176" fill="#9a3412">40 ms</text>
+
+    <rect class="proc-box" x="166" y="140" width="389" height="60" fill="#dbeafe" stroke="#2563eb" stroke-width="2" />
+    <text class="proc-text" x="360" y="176" fill="#172554">120 ms</text>
+
+    <rect class="pres-box" x="555" y="140" width="129" height="60" fill="#dcfce7" stroke="#16a34a" stroke-width="2" />
+    <text class="pres-text" x="619" y="176" fill="#15803d" font-size="12.5">40 ms</text>
+  </g>
+
+  <text class="muted" x="36" y="222" fill="#526173" font-family="system-ui, sans-serif" font-size="12.5">
+    = 200 ms INP — right at the boundary between "good" and "needs improvement."
+  </text>
+
+  <line x1="36" y1="246" x2="684" y2="246" stroke="#64748b" stroke-width="1" stroke-dasharray="2 4" />
+
+  <text class="title" x="36" y="278" fill="#20242c" font-family="system-ui, sans-serif" font-size="15" font-weight="700">
+    An unrelated 300 ms task can inflate input delay
+  </text>
+
+  <g font-family="system-ui, sans-serif" font-size="11" font-weight="700" text-anchor="middle">
+    <line x1="166" y1="292" x2="166" y2="402" stroke="#64748b" stroke-width="1.5" stroke-dasharray="3 3" />
+    <text class="title" x="166" y="286" fill="#20242c">tap: "Add to cart"</text>
+  </g>
+
+  <g font-family="system-ui, sans-serif">
+    <text class="muted" x="36" y="300" fill="#526173" font-size="11" font-weight="700">main thread</text>
+    <rect class="task-box" x="36" y="306" width="389" height="32" rx="6" fill="#e2e8f0" stroke="#475569" stroke-width="2" />
+    <text class="task-text" x="230" y="327" fill="#1e293b" font-size="12" text-anchor="middle">unrelated task (e.g. analytics)</text>
+
+    <text class="muted" x="36" y="356" fill="#526173" font-size="11" font-weight="700">this interaction</text>
+    <rect class="delay-box" x="166" y="362" width="259" height="32" rx="6" fill="#ffedd5" stroke="#c2410c" stroke-width="2" stroke-dasharray="5 4" />
+    <text class="delay-text" x="295" y="383" fill="#9a3412" font-size="11.5" text-anchor="middle">input delay — waits for the main thread</text>
+    <rect class="proc-box" x="425" y="362" width="52" height="32" fill="#dbeafe" stroke="#2563eb" stroke-width="2" />
+    <rect class="pres-box" x="477" y="362" width="51" height="32" fill="#dcfce7" stroke="#16a34a" stroke-width="2" />
+    <text class="title" x="540" y="383" fill="#20242c" font-size="11" text-anchor="start">← frame shown</text>
+  </g>
+
+  <line class="edge-line" x1="36" y1="414" x2="684" y2="414" stroke="#64748b" stroke-width="2" />
+  <g class="edge-line" stroke="#64748b" stroke-width="2">
+    <line x1="36" y1="410" x2="36" y2="418" />
+    <line x1="166" y1="410" x2="166" y2="418" />
+    <line x1="425" y1="410" x2="425" y2="418" />
+    <line x1="684" y1="410" x2="684" y2="418" />
+  </g>
+  <g class="muted" fill="#526173" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="10.5" text-anchor="middle">
+    <text x="36" y="434">0 ms</text>
+    <text x="166" y="434">100 ms</text>
+    <text x="425" y="434">300 ms</text>
+    <text x="684" y="434">500 ms</text>
+  </g>
+</svg>

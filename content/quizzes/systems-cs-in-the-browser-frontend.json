@@ -10,6 +10,14 @@
     {
       "id": "diff-what-problem",
       "title": "The Virtual DOM is often sold as a performance trick. From a CS standpoint, what problem is React's reconciler actually solving?",
+      "images": [
+        {
+          "src": "reconciliation-keys.svg",
+          "alt": "Two lists of two inputs where “hi” has been typed into the first, with a third item prepended. Under key={index}, lines show React matching by position: the node that held A is reused for X and keeps the typed text, the node that held B is reused for A, and a brand-new node is mounted at the end. Under key={item.id}, X is an unseen key so one new node mounts at the top while A and B keep their own DOM nodes, focus and text and are simply reordered. Side panels note that changing an element's type at the same position tears down the whole old subtree and mounts a new one, that React's two heuristics are “different types produce different trees” and “keys mark stable children”, and that the general tree-diff problem is about O(n cubed) while React's level-by-level single pass is O(n).",
+          "caption": "Position-matched keys reuse the wrong node, and the typed text stays behind in it.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -35,6 +43,14 @@
     {
       "id": "diff-on3-to-on",
       "title": "The best known algorithms for the general tree-diff problem run in about **O(n³)**. How does React get reconciliation down to **O(n)**?",
+      "images": [
+        {
+          "src": "reconciliation-keys.svg",
+          "alt": "Two lists of two inputs where “hi” has been typed into the first, with a third item prepended. Under key={index}, lines show React matching by position: the node that held A is reused for X and keeps the typed text, the node that held B is reused for A, and a brand-new node is mounted at the end. Under key={item.id}, X is an unseen key so one new node mounts at the top while A and B keep their own DOM nodes, focus and text and are simply reordered. Side panels note that changing an element's type at the same position tears down the whole old subtree and mounts a new one, that React's two heuristics are “different types produce different trees” and “keys mark stable children”, and that the general tree-diff problem is about O(n cubed) while React's level-by-level single pass is O(n).",
+          "caption": "Position-matched keys reuse the wrong node, and the typed text stays behind in it.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -60,6 +76,14 @@
     {
       "id": "diff-type-change-teardown",
       "title": "Between two renders, an element at the same position changes type — a `<div>` becomes a `<span>`. What does React do?",
+      "images": [
+        {
+          "src": "reconciliation-keys.svg",
+          "alt": "Two lists of two inputs where “hi” has been typed into the first, with a third item prepended. Under key={index}, lines show React matching by position: the node that held A is reused for X and keeps the typed text, the node that held B is reused for A, and a brand-new node is mounted at the end. Under key={item.id}, X is an unseen key so one new node mounts at the top while A and B keep their own DOM nodes, focus and text and are simply reordered. Side panels note that changing an element's type at the same position tears down the whole old subtree and mounts a new one, that React's two heuristics are “different types produce different trees” and “keys mark stable children”, and that the general tree-diff problem is about O(n cubed) while React's level-by-level single pass is O(n).",
+          "caption": "Position-matched keys reuse the wrong node, and the typed text stays behind in it.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -85,6 +109,14 @@
     {
       "id": "diff-prepend-index-key",
       "title": "You render a list of `<input>`s with `key={index}`. The user types into the **first** input, then you **prepend** a new item to the array. What does the user observe?",
+      "images": [
+        {
+          "src": "reconciliation-keys.svg",
+          "alt": "Two lists of two inputs where “hi” has been typed into the first, with a third item prepended. Under key={index}, lines show React matching by position: the node that held A is reused for X and keeps the typed text, the node that held B is reused for A, and a brand-new node is mounted at the end. Under key={item.id}, X is an unseen key so one new node mounts at the top while A and B keep their own DOM nodes, focus and text and are simply reordered. Side panels note that changing an element's type at the same position tears down the whole old subtree and mounts a new one, that React's two heuristics are “different types produce different trees” and “keys mark stable children”, and that the general tree-diff problem is about O(n cubed) while React's level-by-level single pass is O(n).",
+          "caption": "Position-matched keys reuse the wrong node, and the typed text stays behind in it.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -110,6 +142,14 @@
     {
       "id": "diff-prepend-stable-key",
       "title": "Same list, but now `key={item.id}` with stable ids. You **prepend** a new item. What actually mounts?",
+      "images": [
+        {
+          "src": "reconciliation-keys.svg",
+          "alt": "Two lists of two inputs where “hi” has been typed into the first, with a third item prepended. Under key={index}, lines show React matching by position: the node that held A is reused for X and keeps the typed text, the node that held B is reused for A, and a brand-new node is mounted at the end. Under key={item.id}, X is an unseen key so one new node mounts at the top while A and B keep their own DOM nodes, focus and text and are simply reordered. Side panels note that changing an element's type at the same position tears down the whole old subtree and mounts a new one, that React's two heuristics are “different types produce different trees” and “keys mark stable children”, and that the general tree-diff problem is about O(n cubed) while React's level-by-level single pass is O(n).",
+          "caption": "Position-matched keys reuse the wrong node, and the typed text stays behind in it.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -160,6 +200,14 @@
     {
       "id": "diff-keys-true",
       "title": "Which statements about React **keys** are true? Select all that apply.",
+      "images": [
+        {
+          "src": "reconciliation-keys.svg",
+          "alt": "Two lists of two inputs where “hi” has been typed into the first, with a third item prepended. Under key={index}, lines show React matching by position: the node that held A is reused for X and keeps the typed text, the node that held B is reused for A, and a brand-new node is mounted at the end. Under key={item.id}, X is an unseen key so one new node mounts at the top while A and B keep their own DOM nodes, focus and text and are simply reordered. Side panels note that changing an element's type at the same position tears down the whole old subtree and mounts a new one, that React's two heuristics are “different types produce different trees” and “keys mark stable children”, and that the general tree-diff problem is about O(n cubed) while React's level-by-level single pass is O(n).",
+          "caption": "Position-matched keys reuse the wrong node, and the typed text stays behind in it.",
+          "placement": "explanation"
+        }
+      ],
       "type": "multiple-choice",
       "options": [
         {
@@ -189,6 +237,14 @@
     {
       "id": "diff-heuristics-true",
       "title": "React's O(n) reconciliation rests on deliberately *unsound* heuristics. Which of these are assumptions React really makes? Select all that apply.",
+      "images": [
+        {
+          "src": "reconciliation-keys.svg",
+          "alt": "Two lists of two inputs where “hi” has been typed into the first, with a third item prepended. Under key={index}, lines show React matching by position: the node that held A is reused for X and keeps the typed text, the node that held B is reused for A, and a brand-new node is mounted at the end. Under key={item.id}, X is an unseen key so one new node mounts at the top while A and B keep their own DOM nodes, focus and text and are simply reordered. Side panels note that changing an element's type at the same position tears down the whole old subtree and mounts a new one, that React's two heuristics are “different types produce different trees” and “keys mark stable children”, and that the general tree-diff problem is about O(n cubed) while React's level-by-level single pass is O(n).",
+          "caption": "Position-matched keys reuse the wrong node, and the typed text stays behind in it.",
+          "placement": "explanation"
+        }
+      ],
       "type": "multiple-choice",
       "options": [
         {
@@ -218,6 +274,14 @@
     {
       "id": "diff-index-key-symptoms",
       "title": "An app uses `key={index}` for a **reorderable** list of rows, each holding local state (an open/closed toggle, a focused input). Which bugs are plausible? Select all that apply.",
+      "images": [
+        {
+          "src": "reconciliation-keys.svg",
+          "alt": "Two lists of two inputs where “hi” has been typed into the first, with a third item prepended. Under key={index}, lines show React matching by position: the node that held A is reused for X and keeps the typed text, the node that held B is reused for A, and a brand-new node is mounted at the end. Under key={item.id}, X is an unseen key so one new node mounts at the top while A and B keep their own DOM nodes, focus and text and are simply reordered. Side panels note that changing an element's type at the same position tears down the whole old subtree and mounts a new one, that React's two heuristics are “different types produce different trees” and “keys mark stable children”, and that the general tree-diff problem is about O(n cubed) while React's level-by-level single pass is O(n).",
+          "caption": "Position-matched keys reuse the wrong node, and the typed text stays behind in it.",
+          "placement": "explanation"
+        }
+      ],
       "type": "multiple-choice",
       "options": [
         {
@@ -248,6 +312,14 @@
       "id": "diff-on3-exponent",
       "title": "The state-of-the-art algorithms for the general tree-diff problem run in roughly O(n^k) time, and React's reconciliation docs cite that exponent as the reason it uses heuristics instead. What integer is k?",
       "description": "Answer with a single digit.",
+      "images": [
+        {
+          "src": "reconciliation-keys.svg",
+          "alt": "Two lists of two inputs where “hi” has been typed into the first, with a third item prepended. Under key={index}, lines show React matching by position: the node that held A is reused for X and keeps the typed text, the node that held B is reused for A, and a brand-new node is mounted at the end. Under key={item.id}, X is an unseen key so one new node mounts at the top while A and B keep their own DOM nodes, focus and text and are simply reordered. Side panels note that changing an element's type at the same position tears down the whole old subtree and mounts a new one, that React's two heuristics are “different types produce different trees” and “keys mark stable children”, and that the general tree-diff problem is about O(n cubed) while React's level-by-level single pass is O(n).",
+          "caption": "Position-matched keys reuse the wrong node, and the typed text stays behind in it.",
+          "placement": "explanation"
+        }
+      ],
       "type": "input",
       "validation": {
         "mode": "numeric",
@@ -259,6 +331,14 @@
     {
       "id": "loop-microtask-drain",
       "title": "After the currently running task finishes, how does the event loop treat the **microtask** queue?",
+      "images": [
+        {
+          "src": "event-loop-columns.svg",
+          "alt": "A worked example and the loop's shape. Four lines — log(1), a setTimeout logging 4 with delay 0, a resolved promise's .then logging 3, and log(2) — produce 1, 2, 3, 4, explained in three moves: the script is itself a task and runs to the end, then the stack empties and the microtask checkpoint drains, then the loop takes one task off the task queue. Below, one iteration drawn left to right: one task run to completion, the microtask checkpoint that drains to empty including newly queued ones, requestAnimationFrame callbacks just before paint, render (style, layout, paint), and leftover idle time for requestIdleCallback, with an arrow looping back to the next iteration. Three cards list what belongs where: microtasks are .then/.catch/.finally, await continuations, queueMicrotask and MutationObserver, with process.nextTick draining first in Node; tasks are setTimeout/setInterval, DOM events, I/O callbacks, postMessage and MessageChannel, plus setImmediate in Node; requestAnimationFrame and requestIdleCallback belong to neither queue. Two closing notes contrast a self-queueing microtask, which freezes the tab because the checkpoint never ends, with a self-rescheduling setTimeout, which yields to render every run and is clamped to about 4 ms after five levels of nesting.",
+          "caption": "A task, then the whole microtask queue, then a chance to paint — in that order, every time.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -284,6 +364,14 @@
     {
       "id": "loop-promise-before-timeout",
       "title": "`Promise.resolve().then(f)` and `setTimeout(g, 0)` both mean \"do this later.\" Which runs first, and why?",
+      "images": [
+        {
+          "src": "event-loop-columns.svg",
+          "alt": "A worked example and the loop's shape. Four lines — log(1), a setTimeout logging 4 with delay 0, a resolved promise's .then logging 3, and log(2) — produce 1, 2, 3, 4, explained in three moves: the script is itself a task and runs to the end, then the stack empties and the microtask checkpoint drains, then the loop takes one task off the task queue. Below, one iteration drawn left to right: one task run to completion, the microtask checkpoint that drains to empty including newly queued ones, requestAnimationFrame callbacks just before paint, render (style, layout, paint), and leftover idle time for requestIdleCallback, with an arrow looping back to the next iteration. Three cards list what belongs where: microtasks are .then/.catch/.finally, await continuations, queueMicrotask and MutationObserver, with process.nextTick draining first in Node; tasks are setTimeout/setInterval, DOM events, I/O callbacks, postMessage and MessageChannel, plus setImmediate in Node; requestAnimationFrame and requestIdleCallback belong to neither queue. Two closing notes contrast a self-queueing microtask, which freezes the tab because the checkpoint never ends, with a self-rescheduling setTimeout, which yields to render every run and is clamped to about 4 ms after five levels of nesting.",
+          "caption": "A task, then the whole microtask queue, then a chance to paint — in that order, every time.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -309,6 +397,14 @@
     {
       "id": "loop-raf-position",
       "title": "Where does a `requestAnimationFrame` callback sit relative to microtasks and `setTimeout`?",
+      "images": [
+        {
+          "src": "event-loop-columns.svg",
+          "alt": "A worked example and the loop's shape. Four lines — log(1), a setTimeout logging 4 with delay 0, a resolved promise's .then logging 3, and log(2) — produce 1, 2, 3, 4, explained in three moves: the script is itself a task and runs to the end, then the stack empties and the microtask checkpoint drains, then the loop takes one task off the task queue. Below, one iteration drawn left to right: one task run to completion, the microtask checkpoint that drains to empty including newly queued ones, requestAnimationFrame callbacks just before paint, render (style, layout, paint), and leftover idle time for requestIdleCallback, with an arrow looping back to the next iteration. Three cards list what belongs where: microtasks are .then/.catch/.finally, await continuations, queueMicrotask and MutationObserver, with process.nextTick draining first in Node; tasks are setTimeout/setInterval, DOM events, I/O callbacks, postMessage and MessageChannel, plus setImmediate in Node; requestAnimationFrame and requestIdleCallback belong to neither queue. Two closing notes contrast a self-queueing microtask, which freezes the tab because the checkpoint never ends, with a self-rescheduling setTimeout, which yields to render every run and is clamped to about 4 ms after five levels of nesting.",
+          "caption": "A task, then the whole microtask queue, then a chance to paint — in that order, every time.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -334,6 +430,14 @@
     {
       "id": "loop-ric-position",
       "title": "What sets `requestIdleCallback` apart from `setTimeout` and `requestAnimationFrame`?",
+      "images": [
+        {
+          "src": "event-loop-columns.svg",
+          "alt": "A worked example and the loop's shape. Four lines — log(1), a setTimeout logging 4 with delay 0, a resolved promise's .then logging 3, and log(2) — produce 1, 2, 3, 4, explained in three moves: the script is itself a task and runs to the end, then the stack empties and the microtask checkpoint drains, then the loop takes one task off the task queue. Below, one iteration drawn left to right: one task run to completion, the microtask checkpoint that drains to empty including newly queued ones, requestAnimationFrame callbacks just before paint, render (style, layout, paint), and leftover idle time for requestIdleCallback, with an arrow looping back to the next iteration. Three cards list what belongs where: microtasks are .then/.catch/.finally, await continuations, queueMicrotask and MutationObserver, with process.nextTick draining first in Node; tasks are setTimeout/setInterval, DOM events, I/O callbacks, postMessage and MessageChannel, plus setImmediate in Node; requestAnimationFrame and requestIdleCallback belong to neither queue. Two closing notes contrast a self-queueing microtask, which freezes the tab because the checkpoint never ends, with a self-rescheduling setTimeout, which yields to render every run and is clamped to about 4 ms after five levels of nesting.",
+          "caption": "A task, then the whole microtask queue, then a chance to paint — in that order, every time.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -359,6 +463,14 @@
     {
       "id": "loop-microtask-starvation",
       "title": "Why can an endlessly self-rescheduling **microtask** freeze the page, while an endlessly self-rescheduling `setTimeout` does not?",
+      "images": [
+        {
+          "src": "event-loop-columns.svg",
+          "alt": "A worked example and the loop's shape. Four lines — log(1), a setTimeout logging 4 with delay 0, a resolved promise's .then logging 3, and log(2) — produce 1, 2, 3, 4, explained in three moves: the script is itself a task and runs to the end, then the stack empties and the microtask checkpoint drains, then the loop takes one task off the task queue. Below, one iteration drawn left to right: one task run to completion, the microtask checkpoint that drains to empty including newly queued ones, requestAnimationFrame callbacks just before paint, render (style, layout, paint), and leftover idle time for requestIdleCallback, with an arrow looping back to the next iteration. Three cards list what belongs where: microtasks are .then/.catch/.finally, await continuations, queueMicrotask and MutationObserver, with process.nextTick draining first in Node; tasks are setTimeout/setInterval, DOM events, I/O callbacks, postMessage and MessageChannel, plus setImmediate in Node; requestAnimationFrame and requestIdleCallback belong to neither queue. Two closing notes contrast a self-queueing microtask, which freezes the tab because the checkpoint never ends, with a self-rescheduling setTimeout, which yields to render every run and is clamped to about 4 ms after five levels of nesting.",
+          "caption": "A task, then the whole microtask queue, then a chance to paint — in that order, every time.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -384,6 +496,14 @@
     {
       "id": "loop-microtask-sources",
       "title": "Which of these schedule a **microtask** (rather than a macrotask)? Select all that apply.",
+      "images": [
+        {
+          "src": "event-loop-columns.svg",
+          "alt": "A worked example and the loop's shape. Four lines — log(1), a setTimeout logging 4 with delay 0, a resolved promise's .then logging 3, and log(2) — produce 1, 2, 3, 4, explained in three moves: the script is itself a task and runs to the end, then the stack empties and the microtask checkpoint drains, then the loop takes one task off the task queue. Below, one iteration drawn left to right: one task run to completion, the microtask checkpoint that drains to empty including newly queued ones, requestAnimationFrame callbacks just before paint, render (style, layout, paint), and leftover idle time for requestIdleCallback, with an arrow looping back to the next iteration. Three cards list what belongs where: microtasks are .then/.catch/.finally, await continuations, queueMicrotask and MutationObserver, with process.nextTick draining first in Node; tasks are setTimeout/setInterval, DOM events, I/O callbacks, postMessage and MessageChannel, plus setImmediate in Node; requestAnimationFrame and requestIdleCallback belong to neither queue. Two closing notes contrast a self-queueing microtask, which freezes the tab because the checkpoint never ends, with a self-rescheduling setTimeout, which yields to render every run and is clamped to about 4 ms after five levels of nesting.",
+          "caption": "A task, then the whole microtask queue, then a chance to paint — in that order, every time.",
+          "placement": "explanation"
+        }
+      ],
       "type": "multiple-choice",
       "options": [
         {
@@ -442,6 +562,14 @@
     {
       "id": "loop-event-loop-true",
       "title": "Which statements about the browser event loop are true? Select all that apply.",
+      "images": [
+        {
+          "src": "event-loop-columns.svg",
+          "alt": "A worked example and the loop's shape. Four lines — log(1), a setTimeout logging 4 with delay 0, a resolved promise's .then logging 3, and log(2) — produce 1, 2, 3, 4, explained in three moves: the script is itself a task and runs to the end, then the stack empties and the microtask checkpoint drains, then the loop takes one task off the task queue. Below, one iteration drawn left to right: one task run to completion, the microtask checkpoint that drains to empty including newly queued ones, requestAnimationFrame callbacks just before paint, render (style, layout, paint), and leftover idle time for requestIdleCallback, with an arrow looping back to the next iteration. Three cards list what belongs where: microtasks are .then/.catch/.finally, await continuations, queueMicrotask and MutationObserver, with process.nextTick draining first in Node; tasks are setTimeout/setInterval, DOM events, I/O callbacks, postMessage and MessageChannel, plus setImmediate in Node; requestAnimationFrame and requestIdleCallback belong to neither queue. Two closing notes contrast a self-queueing microtask, which freezes the tab because the checkpoint never ends, with a self-rescheduling setTimeout, which yields to render every run and is clamped to about 4 ms after five levels of nesting.",
+          "caption": "A task, then the whole microtask queue, then a chance to paint — in that order, every time.",
+          "placement": "explanation"
+        }
+      ],
       "type": "multiple-choice",
       "options": [
         {
@@ -472,6 +600,14 @@
       "id": "loop-predict-count",
       "title": "Predict the output. How many lines are logged **before** `\"setTimeout\"` appears?",
       "description": "```js\nconsole.log(\"script start\");\nsetTimeout(() => console.log(\"setTimeout\"), 0);\nPromise.resolve()\n  .then(() => console.log(\"promise1\"))\n  .then(() => console.log(\"promise2\"));\nconsole.log(\"script end\");\n```",
+      "images": [
+        {
+          "src": "event-loop-columns.svg",
+          "alt": "A worked example and the loop's shape. Four lines — log(1), a setTimeout logging 4 with delay 0, a resolved promise's .then logging 3, and log(2) — produce 1, 2, 3, 4, explained in three moves: the script is itself a task and runs to the end, then the stack empties and the microtask checkpoint drains, then the loop takes one task off the task queue. Below, one iteration drawn left to right: one task run to completion, the microtask checkpoint that drains to empty including newly queued ones, requestAnimationFrame callbacks just before paint, render (style, layout, paint), and leftover idle time for requestIdleCallback, with an arrow looping back to the next iteration. Three cards list what belongs where: microtasks are .then/.catch/.finally, await continuations, queueMicrotask and MutationObserver, with process.nextTick draining first in Node; tasks are setTimeout/setInterval, DOM events, I/O callbacks, postMessage and MessageChannel, plus setImmediate in Node; requestAnimationFrame and requestIdleCallback belong to neither queue. Two closing notes contrast a self-queueing microtask, which freezes the tab because the checkpoint never ends, with a self-rescheduling setTimeout, which yields to render every run and is clamped to about 4 ms after five levels of nesting.",
+          "caption": "A task, then the whole microtask queue, then a chance to paint — in that order, every time.",
+          "placement": "explanation"
+        }
+      ],
       "type": "input",
       "validation": {
         "mode": "numeric",
@@ -484,6 +620,14 @@
       "id": "loop-predict-order",
       "title": "Predict the output. Type the four numbers in the exact order they are logged, with no spaces (e.g. `1234`).",
       "description": "```js\nconsole.log(\"1\");\nqueueMicrotask(() => console.log(\"2\"));\nPromise.resolve().then(() => console.log(\"3\"));\nconsole.log(\"4\");\n```",
+      "images": [
+        {
+          "src": "event-loop-columns.svg",
+          "alt": "A worked example and the loop's shape. Four lines — log(1), a setTimeout logging 4 with delay 0, a resolved promise's .then logging 3, and log(2) — produce 1, 2, 3, 4, explained in three moves: the script is itself a task and runs to the end, then the stack empties and the microtask checkpoint drains, then the loop takes one task off the task queue. Below, one iteration drawn left to right: one task run to completion, the microtask checkpoint that drains to empty including newly queued ones, requestAnimationFrame callbacks just before paint, render (style, layout, paint), and leftover idle time for requestIdleCallback, with an arrow looping back to the next iteration. Three cards list what belongs where: microtasks are .then/.catch/.finally, await continuations, queueMicrotask and MutationObserver, with process.nextTick draining first in Node; tasks are setTimeout/setInterval, DOM events, I/O callbacks, postMessage and MessageChannel, plus setImmediate in Node; requestAnimationFrame and requestIdleCallback belong to neither queue. Two closing notes contrast a self-queueing microtask, which freezes the tab because the checkpoint never ends, with a self-rescheduling setTimeout, which yields to render every run and is clamped to about 4 ms after five levels of nesting.",
+          "caption": "A task, then the whole microtask queue, then a chance to paint — in that order, every time.",
+          "placement": "explanation"
+        }
+      ],
       "type": "input",
       "validation": {
         "mode": "text",
@@ -495,6 +639,14 @@
     {
       "id": "race-out-of-order",
       "title": "A search box fires a request on every keystroke. The user types `react`. Results for `rea` sometimes appear *after* results for `react`, overwriting them. What is the root cause?",
+      "images": [
+        {
+          "src": "stale-response-race.svg",
+          "alt": "A timeline of two searches. The request for “rea” is sent at t = 0 and arrives at t = 5; the request for “react” is sent at t = 1 and arrives at t = 3. The results box shows react's results from t = 3, then rea's results from t = 5 — the older query overwriting the newer one. Three fix panels follow: an ignore flag set by the effect's cleanup so the late response is discarded; comparing the response's query against the latest one before committing; and AbortController, which rejects the fetch promise with an AbortError and drops the connection but does not un-send the request. A closing note says a double-clicked button plus a network retry can deliver the same POST twice, and an idempotency key is what lets the server recognise the repeat.",
+          "caption": "Both requests finish. The only question is which result is allowed to win.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -520,6 +672,14 @@
     {
       "id": "race-fix-keying",
       "title": "Without cancelling anything, what's the simplest correct fix for out-of-order search responses?",
+      "images": [
+        {
+          "src": "stale-response-race.svg",
+          "alt": "A timeline of two searches. The request for “rea” is sent at t = 0 and arrives at t = 5; the request for “react” is sent at t = 1 and arrives at t = 3. The results box shows react's results from t = 3, then rea's results from t = 5 — the older query overwriting the newer one. Three fix panels follow: an ignore flag set by the effect's cleanup so the late response is discarded; comparing the response's query against the latest one before committing; and AbortController, which rejects the fetch promise with an AbortError and drops the connection but does not un-send the request. A closing note says a double-clicked button plus a network retry can deliver the same POST twice, and an idempotency key is what lets the server recognise the repeat.",
+          "caption": "Both requests finish. The only question is which result is allowed to win.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -545,6 +705,14 @@
     {
       "id": "race-abortcontroller",
       "title": "What does `AbortController` actually do when you call `controller.abort()` on a `fetch` started with `{ signal: controller.signal }`?",
+      "images": [
+        {
+          "src": "stale-response-race.svg",
+          "alt": "A timeline of two searches. The request for “rea” is sent at t = 0 and arrives at t = 5; the request for “react” is sent at t = 1 and arrives at t = 3. The results box shows react's results from t = 3, then rea's results from t = 5 — the older query overwriting the newer one. Three fix panels follow: an ignore flag set by the effect's cleanup so the late response is discarded; comparing the response's query against the latest one before committing; and AbortController, which rejects the fetch promise with an AbortError and drops the connection but does not un-send the request. A closing note says a double-clicked button plus a network retry can deliver the same POST twice, and an idempotency key is what lets the server recognise the repeat.",
+          "caption": "Both requests finish. The only question is which result is allowed to win.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -595,6 +763,14 @@
     {
       "id": "race-useeffect-cleanup",
       "title": "The React docs' data-fetching effect declares `let ignore = false` and returns `() => { ignore = true; }`. How does that prevent a race?",
+      "images": [
+        {
+          "src": "stale-response-race.svg",
+          "alt": "A timeline of two searches. The request for “rea” is sent at t = 0 and arrives at t = 5; the request for “react” is sent at t = 1 and arrives at t = 3. The results box shows react's results from t = 3, then rea's results from t = 5 — the older query overwriting the newer one. Three fix panels follow: an ignore flag set by the effect's cleanup so the late response is discarded; comparing the response's query against the latest one before committing; and AbortController, which rejects the fetch promise with an AbortError and drops the connection but does not un-send the request. A closing note says a double-clicked button plus a network retry can deliver the same POST twice, and an idempotency key is what lets the server recognise the repeat.",
+          "caption": "Both requests finish. The only question is which result is allowed to win.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -620,6 +796,14 @@
     {
       "id": "race-idempotency",
       "title": "A \"Pay\" button fires a POST; the user double-clicks and the network retries on flaky wifi. Why does making the endpoint **idempotent** (e.g. with an idempotency key) matter?",
+      "images": [
+        {
+          "src": "stale-response-race.svg",
+          "alt": "A timeline of two searches. The request for “rea” is sent at t = 0 and arrives at t = 5; the request for “react” is sent at t = 1 and arrives at t = 3. The results box shows react's results from t = 3, then rea's results from t = 5 — the older query overwriting the newer one. Three fix panels follow: an ignore flag set by the effect's cleanup so the late response is discarded; comparing the response's query against the latest one before committing; and AbortController, which rejects the fetch promise with an AbortError and drops the connection but does not un-send the request. A closing note says a double-clicked button plus a network retry can deliver the same POST twice, and an idempotency key is what lets the server recognise the repeat.",
+          "caption": "Both requests finish. The only question is which result is allowed to win.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -645,6 +829,14 @@
     {
       "id": "race-true-statements",
       "title": "Which statements about client-side race conditions are true? Select all that apply.",
+      "images": [
+        {
+          "src": "stale-response-race.svg",
+          "alt": "A timeline of two searches. The request for “rea” is sent at t = 0 and arrives at t = 5; the request for “react” is sent at t = 1 and arrives at t = 3. The results box shows react's results from t = 3, then rea's results from t = 5 — the older query overwriting the newer one. Three fix panels follow: an ignore flag set by the effect's cleanup so the late response is discarded; comparing the response's query against the latest one before committing; and AbortController, which rejects the fetch promise with an AbortError and drops the connection but does not un-send the request. A closing note says a double-clicked button plus a network retry can deliver the same POST twice, and an idempotency key is what lets the server recognise the repeat.",
+          "caption": "Both requests finish. The only question is which result is allowed to win.",
+          "placement": "explanation"
+        }
+      ],
       "type": "multiple-choice",
       "options": [
         {
@@ -674,6 +866,14 @@
     {
       "id": "race-cancellation-patterns",
       "title": "You're fixing a \"type fast, see the wrong results\" bug in a search component. Which approaches correctly stop stale results from winning? Select all that apply.",
+      "images": [
+        {
+          "src": "stale-response-race.svg",
+          "alt": "A timeline of two searches. The request for “rea” is sent at t = 0 and arrives at t = 5; the request for “react” is sent at t = 1 and arrives at t = 3. The results box shows react's results from t = 3, then rea's results from t = 5 — the older query overwriting the newer one. Three fix panels follow: an ignore flag set by the effect's cleanup so the late response is discarded; comparing the response's query against the latest one before committing; and AbortController, which rejects the fetch promise with an AbortError and drops the connection but does not un-send the request. A closing note says a double-clicked button plus a network retry can deliver the same POST twice, and an idempotency key is what lets the server recognise the repeat.",
+          "caption": "Both requests finish. The only question is which result is allowed to win.",
+          "placement": "explanation"
+        }
+      ],
       "type": "multiple-choice",
       "options": [
         {
@@ -744,6 +944,14 @@
     {
       "id": "eq-reference-vs-value",
       "title": "Why is `{} === {}` `false` while `2 === 2` is `true`?",
+      "images": [
+        {
+          "src": "references-and-equality.svg",
+          "alt": "Three panels. First, two empty object literals pointing at two different addresses, with `{} === {}` false and `2 === 2` true — primitives compare by value, objects by address. Second, structural sharing: an old tree and a new tree after updating a, where the root and a are new objects but b is the very same reference, so a `===` check skips that whole subtree. Third, content hashing: the same bytes producing the same digest twice and different bytes producing a different one, with a note that endless inputs and fixed-width digests make collisions unavoidable. Two footers list what creates a new reference on every render — inline objects, inline arrays, inline functions, the result of map/filter/sort, new Date/Set/Map — and how Object.is differs from `===`: NaN compares equal under Object.is but not `===`, and +0 and −0 compare equal under `===` but not Object.is.",
+          "caption": "Identity is one pointer test — cheap, and merciless about objects you rebuild each render.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -769,6 +977,14 @@
     {
       "id": "eq-new-object-rerender",
       "title": "A memoized child re-renders every time its parent does, even though \"nothing changed.\" The parent passes `style={{ margin: 0 }}`. Why does this defeat `React.memo`?",
+      "images": [
+        {
+          "src": "references-and-equality.svg",
+          "alt": "Three panels. First, two empty object literals pointing at two different addresses, with `{} === {}` false and `2 === 2` true — primitives compare by value, objects by address. Second, structural sharing: an old tree and a new tree after updating a, where the root and a are new objects but b is the very same reference, so a `===` check skips that whole subtree. Third, content hashing: the same bytes producing the same digest twice and different bytes producing a different one, with a note that endless inputs and fixed-width digests make collisions unavoidable. Two footers list what creates a new reference on every render — inline objects, inline arrays, inline functions, the result of map/filter/sort, new Date/Set/Map — and how Object.is differs from `===`: NaN compares equal under Object.is but not `===`, and +0 and −0 compare equal under `===` but not Object.is.",
+          "caption": "Identity is one pointer test — cheap, and merciless about objects you rebuild each render.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -794,6 +1010,14 @@
     {
       "id": "eq-object-is",
       "title": "Where does `Object.is(a, b)` differ from `a === b`?",
+      "images": [
+        {
+          "src": "references-and-equality.svg",
+          "alt": "Three panels. First, two empty object literals pointing at two different addresses, with `{} === {}` false and `2 === 2` true — primitives compare by value, objects by address. Second, structural sharing: an old tree and a new tree after updating a, where the root and a are new objects but b is the very same reference, so a `===` check skips that whole subtree. Third, content hashing: the same bytes producing the same digest twice and different bytes producing a different one, with a note that endless inputs and fixed-width digests make collisions unavoidable. Two footers list what creates a new reference on every render — inline objects, inline arrays, inline functions, the result of map/filter/sort, new Date/Set/Map — and how Object.is differs from `===`: NaN compares equal under Object.is but not `===`, and +0 and −0 compare equal under `===` but not Object.is.",
+          "caption": "Identity is one pointer test — cheap, and merciless about objects you rebuild each render.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -819,6 +1043,14 @@
     {
       "id": "eq-structural-sharing",
       "title": "Immer (and persistent data structures generally) return a new state object on every update but reuse untouched subtrees. Why is that the perfect partner for `===`-based change detection?",
+      "images": [
+        {
+          "src": "references-and-equality.svg",
+          "alt": "Three panels. First, two empty object literals pointing at two different addresses, with `{} === {}` false and `2 === 2` true — primitives compare by value, objects by address. Second, structural sharing: an old tree and a new tree after updating a, where the root and a are new objects but b is the very same reference, so a `===` check skips that whole subtree. Third, content hashing: the same bytes producing the same digest twice and different bytes producing a different one, with a note that endless inputs and fixed-width digests make collisions unavoidable. Two footers list what creates a new reference on every render — inline objects, inline arrays, inline functions, the result of map/filter/sort, new Date/Set/Map — and how Object.is differs from `===`: NaN compares equal under Object.is but not `===`, and +0 and −0 compare equal under `===` but not Object.is.",
+          "caption": "Identity is one pointer test — cheap, and merciless about objects you rebuild each render.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -844,6 +1076,14 @@
     {
       "id": "eq-content-hash",
       "title": "Content hashing shows up as `app.8f3b2c.js` in build output, as `integrity=\"sha384-…\"` on a `<script>`, and as Quizbun's own per-Question **Content hash**. What single property makes hashing useful in all three?",
+      "images": [
+        {
+          "src": "references-and-equality.svg",
+          "alt": "Three panels. First, two empty object literals pointing at two different addresses, with `{} === {}` false and `2 === 2` true — primitives compare by value, objects by address. Second, structural sharing: an old tree and a new tree after updating a, where the root and a are new objects but b is the very same reference, so a `===` check skips that whole subtree. Third, content hashing: the same bytes producing the same digest twice and different bytes producing a different one, with a note that endless inputs and fixed-width digests make collisions unavoidable. Two footers list what creates a new reference on every render — inline objects, inline arrays, inline functions, the result of map/filter/sort, new Date/Set/Map — and how Object.is differs from `===`: NaN compares equal under Object.is but not `===`, and +0 and −0 compare equal under `===` but not Object.is.",
+          "caption": "Identity is one pointer test — cheap, and merciless about objects you rebuild each render.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -869,6 +1109,14 @@
     {
       "id": "eq-collision",
       "title": "Why can't a hash give a *guaranteed*-unique fingerprint for arbitrary content, and when does it matter?",
+      "images": [
+        {
+          "src": "references-and-equality.svg",
+          "alt": "Three panels. First, two empty object literals pointing at two different addresses, with `{} === {}` false and `2 === 2` true — primitives compare by value, objects by address. Second, structural sharing: an old tree and a new tree after updating a, where the root and a are new objects but b is the very same reference, so a `===` check skips that whole subtree. Third, content hashing: the same bytes producing the same digest twice and different bytes producing a different one, with a note that endless inputs and fixed-width digests make collisions unavoidable. Two footers list what creates a new reference on every render — inline objects, inline arrays, inline functions, the result of map/filter/sort, new Date/Set/Map — and how Object.is differs from `===`: NaN compares equal under Object.is but not `===`, and +0 and −0 compare equal under `===` but not Object.is.",
+          "caption": "Identity is one pointer test — cheap, and merciless about objects you rebuild each render.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -894,6 +1142,14 @@
     {
       "id": "eq-shallow-vs-deep",
       "title": "Which statements about **shallow** vs **deep** equality are true? Select all that apply.",
+      "images": [
+        {
+          "src": "references-and-equality.svg",
+          "alt": "Three panels. First, two empty object literals pointing at two different addresses, with `{} === {}` false and `2 === 2` true — primitives compare by value, objects by address. Second, structural sharing: an old tree and a new tree after updating a, where the root and a are new objects but b is the very same reference, so a `===` check skips that whole subtree. Third, content hashing: the same bytes producing the same digest twice and different bytes producing a different one, with a note that endless inputs and fixed-width digests make collisions unavoidable. Two footers list what creates a new reference on every render — inline objects, inline arrays, inline functions, the result of map/filter/sort, new Date/Set/Map — and how Object.is differs from `===`: NaN compares equal under Object.is but not `===`, and +0 and −0 compare equal under `===` but not Object.is.",
+          "caption": "Identity is one pointer test — cheap, and merciless about objects you rebuild each render.",
+          "placement": "explanation"
+        }
+      ],
       "type": "multiple-choice",
       "options": [
         {
@@ -923,6 +1179,14 @@
     {
       "id": "eq-identity-pitfalls",
       "title": "Which of these create a **new reference on every render**, potentially busting memoization or `useEffect` deps? Select all that apply.",
+      "images": [
+        {
+          "src": "references-and-equality.svg",
+          "alt": "Three panels. First, two empty object literals pointing at two different addresses, with `{} === {}` false and `2 === 2` true — primitives compare by value, objects by address. Second, structural sharing: an old tree and a new tree after updating a, where the root and a are new objects but b is the very same reference, so a `===` check skips that whole subtree. Third, content hashing: the same bytes producing the same digest twice and different bytes producing a different one, with a note that endless inputs and fixed-width digests make collisions unavoidable. Two footers list what creates a new reference on every render — inline objects, inline arrays, inline functions, the result of map/filter/sort, new Date/Set/Map — and how Object.is differs from `===`: NaN compares equal under Object.is but not `===`, and +0 and −0 compare equal under `===` but not Object.is.",
+          "caption": "Identity is one pointer test — cheap, and merciless about objects you rebuild each render.",
+          "placement": "explanation"
+        }
+      ],
       "type": "multiple-choice",
       "options": [
         {
@@ -952,6 +1216,14 @@
     {
       "id": "eq-hashing-true",
       "title": "Which statements about hashing and content-addressing are true? Select all that apply.",
+      "images": [
+        {
+          "src": "references-and-equality.svg",
+          "alt": "Three panels. First, two empty object literals pointing at two different addresses, with `{} === {}` false and `2 === 2` true — primitives compare by value, objects by address. Second, structural sharing: an old tree and a new tree after updating a, where the root and a are new objects but b is the very same reference, so a `===` check skips that whole subtree. Third, content hashing: the same bytes producing the same digest twice and different bytes producing a different one, with a note that endless inputs and fixed-width digests make collisions unavoidable. Two footers list what creates a new reference on every render — inline objects, inline arrays, inline functions, the result of map/filter/sort, new Date/Set/Map — and how Object.is differs from `===`: NaN compares equal under Object.is but not `===`, and +0 and −0 compare equal under `===` but not Object.is.",
+          "caption": "Identity is one pointer test — cheap, and merciless about objects you rebuild each render.",
+          "placement": "explanation"
+        }
+      ],
       "type": "multiple-choice",
       "options": [
         {

@@ -10,6 +10,14 @@
       "id": "alo-lost-ack-duplicate",
       "title": "In an at-least-once system, why can a receiver get the same message twice even when the network never corrupts data?",
       "description": "Assume bytes are never garbled — yet duplicates still appear. What causes them?",
+      "images": [
+        {
+          "src": "delivery-guarantees.svg",
+          "alt": "A sender and a receiver: the message is delivered and processed, but the acknowledgment is lost on the way back, so the sender cannot tell a lost message from a lost ack and has exactly two options — retry or don't. Three lanes then show what the receiver ends up with. At-most-once sends once and never retries, so the receiver holds 1, a gap marked lost, and 3. At-least-once retries until acked, so the receiver holds 1, 2, a highlighted duplicate 2, and 3. Exactly-once processing adds a dedup key at the receiver, so the second copy of 2 arrives but is ignored. A closing note states the Two Generals' Problem — over a lossy link no finite exchange makes both sides certain — and that exactly-once semantics is the third lane rather than a repeal of that result.",
+          "caption": "The middle lane: a lost ack, then a second copy.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -36,6 +44,14 @@
       "id": "exactly-once-unattainable",
       "title": "Why do engineers say \"exactly-once *delivery*\" is essentially unattainable — and what do real systems offer instead?",
       "description": "Think about your only two options when an acknowledgment might be lost.",
+      "images": [
+        {
+          "src": "delivery-guarantees.svg",
+          "alt": "A sender and a receiver: the message is delivered and processed, but the acknowledgment is lost on the way back, so the sender cannot tell a lost message from a lost ack and has exactly two options — retry or don't. Three lanes then show what the receiver ends up with. At-most-once sends once and never retries, so the receiver holds 1, a gap marked lost, and 3. At-least-once retries until acked, so the receiver holds 1, 2, a highlighted duplicate 2, and 3. Exactly-once processing adds a dedup key at the receiver, so the second copy of 2 arrives but is ignored. A closing note states the Two Generals' Problem — over a lossy link no finite exchange makes both sides certain — and that exactly-once semantics is the third lane rather than a repeal of that result.",
+          "caption": "Retry or don't — the sender has no third option.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -62,6 +78,14 @@
       "id": "idempotency-facts",
       "title": "Which statements about idempotency in message delivery are correct?",
       "description": "Select every true statement.",
+      "images": [
+        {
+          "src": "delivery-guarantees.svg",
+          "alt": "A sender and a receiver: the message is delivered and processed, but the acknowledgment is lost on the way back, so the sender cannot tell a lost message from a lost ack and has exactly two options — retry or don't. Three lanes then show what the receiver ends up with. At-most-once sends once and never retries, so the receiver holds 1, a gap marked lost, and 3. At-least-once retries until acked, so the receiver holds 1, 2, a highlighted duplicate 2, and 3. Exactly-once processing adds a dedup key at the receiver, so the second copy of 2 arrives but is ignored. A closing note states the Two Generals' Problem — over a lossy link no finite exchange makes both sides certain — and that exactly-once semantics is the third lane rather than a repeal of that result.",
+          "caption": "The dedup key is what turns the middle lane into the green one.",
+          "placement": "explanation"
+        }
+      ],
       "type": "multiple-choice",
       "options": [
         {
@@ -140,6 +164,14 @@
       "id": "two-generals-problem",
       "title": "Which classic thought experiment proves two parties can never be *certain* they agree over a lossy channel — the theoretical root of why exactly-once delivery is unattainable?",
       "description": "Two words naming the problem (about coordinating an attack). The full name adds \"Problem.\"",
+      "images": [
+        {
+          "src": "delivery-guarantees.svg",
+          "alt": "A sender and a receiver: the message is delivered and processed, but the acknowledgment is lost on the way back, so the sender cannot tell a lost message from a lost ack and has exactly two options — retry or don't. Three lanes then show what the receiver ends up with. At-most-once sends once and never retries, so the receiver holds 1, a gap marked lost, and 3. At-least-once retries until acked, so the receiver holds 1, 2, a highlighted duplicate 2, and 3. Exactly-once processing adds a dedup key at the receiver, so the second copy of 2 arrives but is ignored. A closing note states the Two Generals' Problem — over a lossy link no finite exchange makes both sides certain — and that exactly-once semantics is the third lane rather than a repeal of that result.",
+          "caption": "Named in the closing note.",
+          "placement": "explanation"
+        }
+      ],
       "type": "input",
       "validation": {
         "mode": "text",
@@ -158,6 +190,14 @@
       "id": "at-most-once-telemetry",
       "title": "A high-frequency telemetry feed tolerates an occasional dropped reading, but duplicates would corrupt aggregate counters. Best delivery guarantee?",
       "description": "Weigh the cost of a lost message against the cost of a duplicate one.",
+      "images": [
+        {
+          "src": "delivery-guarantees.svg",
+          "alt": "A sender and a receiver: the message is delivered and processed, but the acknowledgment is lost on the way back, so the sender cannot tell a lost message from a lost ack and has exactly two options — retry or don't. Three lanes then show what the receiver ends up with. At-most-once sends once and never retries, so the receiver holds 1, a gap marked lost, and 3. At-least-once retries until acked, so the receiver holds 1, 2, a highlighted duplicate 2, and 3. Exactly-once processing adds a dedup key at the receiver, so the second copy of 2 arrives but is ignored. A closing note states the Two Generals' Problem — over a lossy link no finite exchange makes both sides certain — and that exactly-once semantics is the third lane rather than a repeal of that result.",
+          "caption": "The top lane trades a gap for the certainty of no duplicate.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -184,6 +224,14 @@
       "id": "dedup-bounded-window",
       "title": "You dedup by remembering the ids you've already processed. What's the practical catch?",
       "description": "Consider how much history a real receiver can actually keep.",
+      "images": [
+        {
+          "src": "idempotency-key.svg",
+          "alt": "Five steps. A client sends POST /charges with Idempotency-Key: abc-123, a key it generates itself, one per logical operation. The charge succeeds and the server stores the key alongside the response. The connection then drops before the response arrives, leaving the client unsure whether it charged the customer. The client retries the identical request with the same key, and the server finds the key and replays the stored response, charging nothing. A card lists what the record must carry: the stored response, a request fingerprint so the same key with a different body is rejected, and an expiry, since past a 24-hour window the key counts as new. Six chips name the methods that are idempotent by definition in RFC 9110 — GET, HEAD, PUT, DELETE, OPTIONS, TRACE — with POST absent.",
+          "caption": "The record carries an expiry, because nobody keeps keys forever.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -236,6 +284,14 @@
       "id": "kafka-exactly-once-semantics",
       "title": "When a system advertises \"exactly-once semantics\" (e.g. Kafka EOS), what does it really mean?",
       "description": "Does it repeal the impossibility results — or work around them?",
+      "images": [
+        {
+          "src": "delivery-guarantees.svg",
+          "alt": "A sender and a receiver: the message is delivered and processed, but the acknowledgment is lost on the way back, so the sender cannot tell a lost message from a lost ack and has exactly two options — retry or don't. Three lanes then show what the receiver ends up with. At-most-once sends once and never retries, so the receiver holds 1, a gap marked lost, and 3. At-least-once retries until acked, so the receiver holds 1, 2, a highlighted duplicate 2, and 3. Exactly-once processing adds a dedup key at the receiver, so the second copy of 2 arrives but is ignored. A closing note states the Two Generals' Problem — over a lossy link no finite exchange makes both sides certain — and that exactly-once semantics is the third lane rather than a repeal of that result.",
+          "caption": "It is the green lane, not a fourth one.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -262,6 +318,14 @@
       "id": "idempotent-method-count",
       "title": "Per RFC 9110, how many HTTP methods are idempotent (the safe methods plus PUT and DELETE)?",
       "description": "Count them: the safe methods, plus PUT and DELETE. Give a single number.",
+      "images": [
+        {
+          "src": "idempotency-key.svg",
+          "alt": "Five steps. A client sends POST /charges with Idempotency-Key: abc-123, a key it generates itself, one per logical operation. The charge succeeds and the server stores the key alongside the response. The connection then drops before the response arrives, leaving the client unsure whether it charged the customer. The client retries the identical request with the same key, and the server finds the key and replays the stored response, charging nothing. A card lists what the record must carry: the stored response, a request fingerprint so the same key with a different body is rejected, and an expiry, since past a 24-hour window the key counts as new. Six chips name the methods that are idempotent by definition in RFC 9110 — GET, HEAD, PUT, DELETE, OPTIONS, TRACE — with POST absent.",
+          "caption": "Six chips, and `POST` is not one of them.",
+          "placement": "explanation"
+        }
+      ],
       "type": "input",
       "validation": {
         "mode": "numeric",

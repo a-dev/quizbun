@@ -1,0 +1,150 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="540" viewBox="0 0 720 540">
+  <style>
+    /* An &lt;img&gt;-embedded SVG cannot see the page's `data-theme`, but it does
+       inherit the embedding document's `color-scheme`, so `prefers-color-scheme`
+       tracks the site theme including an explicit toggle. The presentation
+       attributes below stay as the light fallback for renderers without CSS. */
+    svg {
+      --panel: #f5f7fb;
+      --title: #20242c;
+      --muted: #526173;
+      --edge: #64748b;
+      --card: #ffffff;
+      --ctx-fill: #dbeafe;
+      --ctx-edge: #2563eb;
+      --ctx-label: #172554;
+      --accent-fill: #ffedd5;
+      --accent-edge: #c2410c;
+      --accent-text: #9a3412;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      svg {
+        --panel: #1a1f27;
+        --title: #e6eaf2;
+        --muted: #9aa8bd;
+        --edge: #8b9bb4;
+        --card: #252b35;
+        --ctx-fill: #1e3a5f;
+        --ctx-edge: #60a5fa;
+        --ctx-label: #dbeafe;
+        --accent-fill: #3a2416;
+        --accent-edge: #fb923c;
+        --accent-text: #fdba74;
+      }
+    }
+
+    .panel-bg { fill: var(--panel); }
+    .title { fill: var(--title); }
+    .muted { fill: var(--muted); }
+    .edge-line { stroke: var(--edge); }
+    .panel-card { fill: var(--card); stroke: var(--edge); }
+    .tick { stroke: var(--edge); }
+    .ctx-dot { fill: var(--ctx-fill); stroke: var(--ctx-edge); }
+    .ctx-label { fill: var(--ctx-label); }
+    .accent-dot { fill: var(--accent-fill); stroke: var(--accent-edge); }
+    .accent-text { fill: var(--accent-text); }
+  </style>
+
+  <rect class="panel-bg" width="720" height="540" rx="20" fill="#f5f7fb" />
+
+  <text class="title" x="36" y="40" fill="#20242c" font-family="system-ui, sans-serif" font-size="20" font-weight="700">
+    The gap between representable doubles widens with magnitude
+  </text>
+  <text class="muted" x="36" y="64" fill="#526173" font-family="system-ui, sans-serif" font-size="14">
+    Same 53 bits of precision, spread over a bigger span — so the spacing grows.
+  </text>
+
+  <!-- Card 1: near 0.3, ULP ~5.6e-17 -->
+  <g font-family="system-ui, sans-serif">
+    <rect class="panel-card" x="36" y="88" width="648" height="100" rx="14" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <text class="title" x="56" y="110" fill="#20242c" font-size="14" font-weight="700">Near 0.3 — every double gets its own tiny slot</text>
+    <text class="muted" x="664" y="110" fill="#526173" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="12" text-anchor="end">ULP ≈ 5.6 × 10⁻¹⁷</text>
+
+    <line class="edge-line" x1="70" y1="140" x2="650" y2="140" stroke="#64748b" stroke-width="1.6" />
+    <g class="tick" stroke="#64748b" stroke-width="1.6">
+      <line x1="70" y1="134" x2="70" y2="146" />
+      <line x1="128" y1="134" x2="128" y2="146" />
+      <line x1="186" y1="134" x2="186" y2="146" />
+      <line x1="244" y1="134" x2="244" y2="146" />
+      <line x1="418" y1="134" x2="418" y2="146" />
+      <line x1="476" y1="134" x2="476" y2="146" />
+      <line x1="534" y1="134" x2="534" y2="146" />
+      <line x1="592" y1="134" x2="592" y2="146" />
+      <line x1="650" y1="134" x2="650" y2="146" />
+    </g>
+    <circle class="accent-dot" cx="302" cy="140" r="6" fill="#ffedd5" stroke="#c2410c" stroke-width="2" />
+    <circle class="ctx-dot" cx="360" cy="140" r="6" fill="#dbeafe" stroke="#2563eb" stroke-width="2" />
+    <text class="accent-text" x="302" y="164" fill="#9a3412" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="11" text-anchor="middle">0.3</text>
+    <text class="ctx-label" x="360" y="164" fill="#172554" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="11" text-anchor="middle">0.1+0.2</text>
+
+    <text class="muted" x="56" y="180" fill="#526173" font-size="11.5">`0.1 + 0.2` lands one slot above `0.3` — the smallest possible miss.</text>
+  </g>
+
+  <!-- Card 2: near 2^52, ULP = 1 -->
+  <g font-family="system-ui, sans-serif">
+    <rect class="panel-card" x="36" y="196" width="648" height="100" rx="14" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <text class="title" x="56" y="218" fill="#20242c" font-size="14" font-weight="700">Near 2⁵² — still one slot per integer</text>
+    <text class="muted" x="664" y="218" fill="#526173" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="12" text-anchor="end">ULP = 1</text>
+
+    <line class="edge-line" x1="70" y1="248" x2="650" y2="248" stroke="#64748b" stroke-width="1.6" />
+    <g class="tick" stroke="#64748b" stroke-width="1.6">
+      <line x1="70" y1="242" x2="70" y2="254" />
+      <line x1="128" y1="242" x2="128" y2="254" />
+      <line x1="186" y1="242" x2="186" y2="254" />
+      <line x1="244" y1="242" x2="244" y2="254" />
+      <line x1="476" y1="242" x2="476" y2="254" />
+      <line x1="534" y1="242" x2="534" y2="254" />
+      <line x1="592" y1="242" x2="592" y2="254" />
+      <line x1="650" y1="242" x2="650" y2="254" />
+    </g>
+    <circle class="ctx-dot" cx="302" cy="248" r="6" fill="#dbeafe" stroke="#2563eb" stroke-width="2" />
+    <circle class="ctx-dot" cx="360" cy="248" r="6" fill="#dbeafe" stroke="#2563eb" stroke-width="2" />
+    <circle class="ctx-dot" cx="418" cy="248" r="6" fill="#dbeafe" stroke="#2563eb" stroke-width="2" />
+    <text class="ctx-label" x="302" y="272" fill="#172554" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="11" text-anchor="middle">n</text>
+    <text class="ctx-label" x="360" y="272" fill="#172554" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="11" text-anchor="middle">n+1</text>
+    <text class="ctx-label" x="418" y="272" fill="#172554" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="11" text-anchor="middle">n+2</text>
+
+    <text class="muted" x="56" y="288" fill="#526173" font-size="11.5">Every integer below 2⁵³ is exactly representable. Nothing skipped yet.</text>
+  </g>
+
+  <!-- Card 3: at 2^53, ULP = 2 -->
+  <g font-family="system-ui, sans-serif">
+    <rect class="panel-card" x="36" y="304" width="648" height="100" rx="14" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <text class="title" x="56" y="326" fill="#20242c" font-size="14" font-weight="700">At 2⁵³ — the first collision</text>
+    <text class="muted" x="664" y="326" fill="#526173" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="12" text-anchor="end">ULP = 2</text>
+
+    <line class="edge-line" x1="70" y1="356" x2="650" y2="356" stroke="#64748b" stroke-width="1.6" />
+    <g class="tick" stroke="#64748b" stroke-width="1.6">
+      <line x1="70" y1="350" x2="70" y2="362" />
+      <line x1="186" y1="350" x2="186" y2="362" />
+      <line x1="534" y1="350" x2="534" y2="362" />
+      <line x1="650" y1="350" x2="650" y2="362" />
+    </g>
+    <circle class="accent-dot" cx="302" cy="356" r="9" fill="#ffedd5" stroke="#c2410c" stroke-width="2" />
+    <circle class="accent-dot" cx="302" cy="356" r="4" fill="none" stroke="#c2410c" stroke-width="1.4" />
+    <circle class="ctx-dot" cx="418" cy="356" r="6" fill="#dbeafe" stroke="#2563eb" stroke-width="2" />
+    <text class="accent-text" x="302" y="380" fill="#9a3412" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="10.5" text-anchor="middle">2⁵³ &amp; 2⁵³+1</text>
+    <text class="ctx-label" x="418" y="380" fill="#172554" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="11" text-anchor="middle">2⁵³+2</text>
+
+    <text class="muted" x="56" y="396" fill="#526173" font-size="11.5">`2 ** 53 + 1` rounds back down onto `2 ** 53`. Two integers, one double.</text>
+  </g>
+
+  <!-- Card 4: by 2^60, ULP = 256 -->
+  <g font-family="system-ui, sans-serif">
+    <rect class="panel-card" x="36" y="412" width="648" height="100" rx="14" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <text class="title" x="56" y="434" fill="#20242c" font-size="14" font-weight="700">By 2⁶⁰ — a stride of 256</text>
+    <text class="muted" x="664" y="434" fill="#526173" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="12" text-anchor="end">ULP = 256</text>
+
+    <line class="edge-line" x1="70" y1="464" x2="650" y2="464" stroke="#64748b" stroke-width="1.6" />
+    <g class="tick" stroke="#64748b" stroke-width="1.6">
+      <line x1="650" y1="458" x2="650" y2="470" />
+    </g>
+    <circle class="accent-dot" cx="70" cy="464" r="6" fill="#ffedd5" stroke="#c2410c" stroke-width="2" />
+    <circle class="ctx-dot" cx="360" cy="464" r="6" fill="#dbeafe" stroke="#2563eb" stroke-width="2" />
+    <text class="accent-text" x="70" y="488" fill="#9a3412" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="11" text-anchor="start">2⁶⁰</text>
+    <text class="ctx-label" x="360" y="488" fill="#172554" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="11" text-anchor="middle">2⁶⁰+256</text>
+
+    <text class="muted" x="56" y="504" fill="#526173" font-size="11.5">`2⁶⁰ + 1` doesn't exist as a double. The next one up is `2⁶⁰ + 256`.</text>
+  </g>
+</svg>

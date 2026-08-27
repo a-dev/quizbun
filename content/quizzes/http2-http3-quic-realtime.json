@@ -10,6 +10,14 @@
       "id": "h2-multiplexing-benefit",
       "title": "What does HTTP/2 multiplexing improve over HTTP/1.1?",
       "description": "Recall how HTTP/1.1 forced browsers to open several connections per origin.",
+      "images": [
+        {
+          "src": "hol-blocking-tcp-vs-quic.svg",
+          "alt": "Three panels contrasting HTTP versions against the same lost-packet scenario: HTTP/1.1 shown as six separate connections, each strictly serial; HTTP/2 shown as one TCP connection where a lost packet on stream A blocks stream B's already-arrived data because TCP delivers bytes strictly in order; and HTTP/3 over QUIC shown with stream A and stream B as independent lanes, where stream B is fully delivered despite stream A's loss.",
+          "caption": "Top panel — HTTP/1.1's six serial connections, the workaround HTTP/2 multiplexing removes.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -36,6 +44,14 @@
       "id": "h2-tcp-hol-blocking",
       "title": "HTTP/2 multiplexes streams over one TCP connection. Why can a single lost packet still stall every stream?",
       "description": "Think about the guarantee TCP makes about byte order.",
+      "images": [
+        {
+          "src": "hol-blocking-tcp-vs-quic.svg",
+          "alt": "Three panels contrasting HTTP versions against the same lost-packet scenario: HTTP/1.1 shown as six separate connections, each strictly serial; HTTP/2 shown as one TCP connection where a lost packet on stream A blocks stream B's already-arrived data because TCP delivers bytes strictly in order; and HTTP/3 over QUIC shown with stream A and stream B as independent lanes, where stream B is fully delivered despite stream A's loss.",
+          "caption": "Middle panel — one TCP connection: B1 has arrived on the wire but stays withheld behind A's loss.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -62,6 +78,14 @@
       "id": "h3-quic-solves-hol",
       "title": "How does HTTP/3 (over QUIC) eliminate the transport-level head-of-line blocking that HTTP/2 still has?",
       "description": "What changes about how streams are tracked when you move off TCP?",
+      "images": [
+        {
+          "src": "hol-blocking-tcp-vs-quic.svg",
+          "alt": "Three panels contrasting HTTP versions against the same lost-packet scenario: HTTP/1.1 shown as six separate connections, each strictly serial; HTTP/2 shown as one TCP connection where a lost packet on stream A blocks stream B's already-arrived data because TCP delivers bytes strictly in order; and HTTP/3 over QUIC shown with stream A and stream B as independent lanes, where stream B is fully delivered despite stream A's loss.",
+          "caption": "Bottom panel — stream B's own lane delivers fully; only stream A waits behind its own lost packet.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -190,6 +214,14 @@
       "id": "hol-across-http-versions",
       "title": "Which statements about head-of-line (HOL) blocking across HTTP versions are correct?",
       "description": "Select every true statement.",
+      "images": [
+        {
+          "src": "hol-blocking-tcp-vs-quic.svg",
+          "alt": "Three panels contrasting HTTP versions against the same lost-packet scenario: HTTP/1.1 shown as six separate connections, each strictly serial; HTTP/2 shown as one TCP connection where a lost packet on stream A blocks stream B's already-arrived data because TCP delivers bytes strictly in order; and HTTP/3 over QUIC shown with stream A and stream B as independent lanes, where stream B is fully delivered despite stream A's loss.",
+          "caption": "All three panels together — the progression from serial connections, to TCP's transport HOL blocking, to QUIC's independent streams.",
+          "placement": "explanation"
+        }
+      ],
       "type": "multiple-choice",
       "options": [
         {

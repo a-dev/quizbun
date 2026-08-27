@@ -10,6 +10,14 @@
       "id": "short-vs-long-polling",
       "title": "What distinguishes *long* polling from *short* polling?",
       "description": "Both are built on ordinary HTTP request/response. What is the defining difference?",
+      "images": [
+        {
+          "src": "request-response-timeline.svg",
+          "alt": "A timeline comparing four transports against the same moment a server-side event occurs: short polling waits out its fixed interval before its next request happens to catch it; long polling holds a request open and answers within about one round trip; Server-Sent Events pushes the event immediately over its already-open connection; and WebSocket sends it immediately over its open full-duplex connection.",
+          "caption": "Top two lanes: short polling's fixed-interval requests vs. long polling's held-open request, both against the same event.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -74,6 +82,14 @@
       "id": "choose-sse-one-way-dashboard",
       "title": "A trading dashboard streams live price ticks to thousands of browser tabs; clients never send data back on this channel. Simplest robust fit?",
       "description": "Optimize for simplicity and built-in resilience, not for bidirectional traffic you do not have.",
+      "images": [
+        {
+          "src": "request-response-timeline.svg",
+          "alt": "A timeline comparing four transports against the same moment a server-side event occurs: short polling waits out its fixed interval before its next request happens to catch it; long polling holds a request open and answers within about one round trip; Server-Sent Events pushes the event immediately over its already-open connection; and WebSocket sends it immediately over its open full-duplex connection.",
+          "caption": "The SSE lane — the event is pushed the instant it exists, over the one connection already open.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -150,6 +166,14 @@
       "id": "long-polling-ordering-gap",
       "title": "Why can naive long polling miss or reorder messages, and what is the standard fix?",
       "description": "Think about the instant between one response returning and the next request being sent.",
+      "images": [
+        {
+          "src": "request-response-timeline.svg",
+          "alt": "A timeline comparing four transports against the same moment a server-side event occurs: short polling waits out its fixed interval before its next request happens to catch it; long polling holds a request open and answers within about one round trip; Server-Sent Events pushes the event immediately over its already-open connection; and WebSocket sends it immediately over its open full-duplex connection.",
+          "caption": "The long-polling lane — one bar ends right as the event occurs; the next is parked immediately after.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -202,6 +226,14 @@
       "id": "choose-websocket-collab-editor",
       "title": "You are building a collaborative document editor: many users send edits and receive others' edits with sub-second latency. Best transport?",
       "description": "Both directions are hot, and latency matters in each.",
+      "images": [
+        {
+          "src": "request-response-timeline.svg",
+          "alt": "A timeline comparing four transports against the same moment a server-side event occurs: short polling waits out its fixed interval before its next request happens to catch it; long polling holds a request open and answers within about one round trip; Server-Sent Events pushes the event immediately over its already-open connection; and WebSocket sends it immediately over its open full-duplex connection.",
+          "caption": "The WebSocket lane — messages flow either direction, any time, over the one open connection.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {

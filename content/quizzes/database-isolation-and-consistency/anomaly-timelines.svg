@@ -1,0 +1,95 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="744" viewBox="0 0 720 744">
+  <style>
+    /* An &lt;img&gt;-embedded SVG cannot see the page's `data-theme`, but it does
+       inherit the embedding document's `color-scheme`, so `prefers-color-scheme`
+       tracks the site theme including an explicit toggle. The presentation
+       attributes below stay as the light fallback for renderers without CSS. */
+    svg {
+      --panel: #f5f7fb;
+      --title: #20242c;
+      --muted: #526173;
+      --edge: #64748b;
+      --card: #ffffff;
+      --accent-fill: #ffedd5;
+      --accent-edge: #c2410c;
+      --accent-text: #9a3412;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      svg {
+        --panel: #1a1f27;
+        --title: #e6eaf2;
+        --muted: #9aa8bd;
+        --edge: #8b9bb4;
+        --card: #252b35;
+        --accent-fill: #3a2416;
+        --accent-edge: #fb923c;
+        --accent-text: #fdba74;
+      }
+    }
+
+    .panel { fill: var(--panel); }
+    .title { fill: var(--title); }
+    .muted { fill: var(--muted); }
+    .card { fill: var(--card); stroke: var(--edge); }
+    .edge-line { stroke: var(--edge); }
+    .accent-text { fill: var(--accent-text); }
+  </style>
+
+  <rect class="panel" width="720" height="744" rx="20" fill="#f5f7fb" />
+
+  <text class="title" x="36" y="40" fill="#20242c" font-family="system-ui, sans-serif" font-size="20" font-weight="700">
+    Three anomalies, two transactions each
+  </text>
+  <text class="muted" x="36" y="64" fill="#526173" font-family="system-ui, sans-serif" font-size="14">
+    Time runs downward. Every transaction below commits successfully.
+  </text>
+
+  <g font-family="system-ui, sans-serif" text-anchor="start">
+    <rect class="card" x="36" y="88" width="648" height="200" rx="12" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <text class="title" x="52" y="114" fill="#20242c" font-size="15" font-weight="700">Lost update</text>
+    <text class="muted" x="52" y="133" fill="#526173" font-size="11.5">READ COMMITTED · balance starts at 100</text>
+    <text class="muted" x="52" y="156" fill="#526173" font-size="11" font-weight="700">T1</text>
+    <text class="muted" x="372" y="156" fill="#526173" font-size="11" font-weight="700">T2</text>
+    <path class="edge-line" d="M364,144 L364,240" stroke="#64748b" stroke-width="1.5" stroke-dasharray="4 4" fill="none" />
+    <text class="title" x="52" y="176" fill="#20242c" font-size="11.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">SELECT balance → 100</text>
+    <text class="title" x="372" y="176" fill="#20242c" font-size="11.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">SELECT balance → 100</text>
+    <text class="muted" x="52" y="195" fill="#526173" font-size="11.5">application computes 100 − 10</text>
+    <text class="muted" x="372" y="195" fill="#526173" font-size="11.5">application computes 100 − 20</text>
+    <text class="title" x="52" y="214" fill="#20242c" font-size="11.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">UPDATE … SET balance = 90;  COMMIT</text>
+    <text class="title" x="372" y="233" fill="#20242c" font-size="11.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">UPDATE … SET balance = 80;  COMMIT</text>
+    <text class="accent-text" x="52" y="266" fill="#9a3412" font-size="12" font-weight="700">Final balance: 80. T1's −10 never happened — both wrote from the same stale read.</text>
+    <rect class="card" x="36" y="304" width="648" height="200" rx="12" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <text class="title" x="52" y="330" fill="#20242c" font-size="15" font-weight="700">Write skew</text>
+    <text class="muted" x="52" y="349" fill="#526173" font-size="11.5">REPEATABLE READ, i.e. snapshot isolation · the rule is that one doctor must stay on call</text>
+    <text class="muted" x="52" y="372" fill="#526173" font-size="11" font-weight="700">ALICE</text>
+    <text class="muted" x="372" y="372" fill="#526173" font-size="11" font-weight="700">BOB</text>
+    <path class="edge-line" d="M364,360 L364,456" stroke="#64748b" stroke-width="1.5" stroke-dasharray="4 4" fill="none" />
+    <text class="title" x="52" y="392" fill="#20242c" font-size="11.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">SELECT count(*) WHERE on_call → 2</text>
+    <text class="title" x="372" y="392" fill="#20242c" font-size="11.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">SELECT count(*) WHERE on_call → 2</text>
+    <text class="muted" x="52" y="411" fill="#526173" font-size="11.5">2 ≥ 2, so it is safe for me to leave</text>
+    <text class="muted" x="372" y="411" fill="#526173" font-size="11.5">2 ≥ 2, so it is safe for me to leave</text>
+    <text class="title" x="52" y="430" fill="#20242c" font-size="11.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">UPDATE doctors SET on_call = false</text>
+    <text class="title" x="372" y="430" fill="#20242c" font-size="11.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">UPDATE doctors SET on_call = false</text>
+    <text class="title" x="52" y="449" fill="#20242c" font-size="11.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">  WHERE name = 'Alice';  COMMIT</text>
+    <text class="title" x="372" y="449" fill="#20242c" font-size="11.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">  WHERE name = 'Bob';  COMMIT</text>
+    <text class="accent-text" x="52" y="472" fill="#9a3412" font-size="12" font-weight="700">Both commit and nobody is on call. Because they wrote different rows,</text>
+    <text class="accent-text" x="52" y="490" fill="#9a3412" font-size="12" font-weight="700">first-committer-wins saw no conflict — yet each read a premise the other then destroyed.</text>
+    <rect class="card" x="36" y="520" width="648" height="200" rx="12" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <text class="title" x="52" y="546" fill="#20242c" font-size="15" font-weight="700">The phantom a row lock cannot hold</text>
+    <text class="muted" x="52" y="565" fill="#526173" font-size="11.5">READ COMMITTED · two requests for the same room and the same hour</text>
+    <text class="muted" x="52" y="588" fill="#526173" font-size="11" font-weight="700">SESSION A</text>
+    <text class="muted" x="372" y="588" fill="#526173" font-size="11" font-weight="700">SESSION B</text>
+    <path class="edge-line" d="M364,576 L364,672" stroke="#64748b" stroke-width="1.5" stroke-dasharray="4 4" fill="none" />
+    <text class="title" x="52" y="608" fill="#20242c" font-size="11.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">SELECT … FOR UPDATE → 0 rows</text>
+    <text class="title" x="372" y="608" fill="#20242c" font-size="11.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">SELECT … FOR UPDATE → 0 rows</text>
+    <text class="muted" x="52" y="627" fill="#526173" font-size="11.5">the slot looks free</text>
+    <text class="muted" x="372" y="627" fill="#526173" font-size="11.5">the slot looks free</text>
+    <text class="title" x="52" y="646" fill="#20242c" font-size="11.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">INSERT INTO bookings (room_id, during)</text>
+    <text class="title" x="372" y="646" fill="#20242c" font-size="11.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">INSERT INTO bookings (room_id, during)</text>
+    <text class="title" x="52" y="665" fill="#20242c" font-size="11.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">COMMIT</text>
+    <text class="title" x="372" y="665" fill="#20242c" font-size="11.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">COMMIT</text>
+    <text class="accent-text" x="52" y="688" fill="#9a3412" font-size="12" font-weight="700">FOR UPDATE can only lock rows that exist, and there were none — so both inserted.</text>
+    <text class="accent-text" x="52" y="706" fill="#9a3412" font-size="12" font-weight="700">Guard it with an exclusion constraint, or SERIALIZABLE, which locks the predicate not the rows.</text>
+  </g>
+</svg>

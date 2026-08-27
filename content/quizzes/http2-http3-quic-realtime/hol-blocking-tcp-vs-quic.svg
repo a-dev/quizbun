@@ -1,0 +1,148 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="560" viewBox="0 0 720 560">
+  <style>
+    /* An &lt;img&gt;-embedded SVG cannot see the page's `data-theme`, but it does
+       inherit the embedding document's `color-scheme`, so `prefers-color-scheme`
+       tracks the site theme including an explicit toggle. The presentation
+       attributes below stay as the light fallback for renderers without CSS. */
+    svg {
+      --panel: #f5f7fb;
+      --title: #20242c;
+      --muted: #526173;
+      --edge: #64748b;
+      --card: #ffffff;
+      --ctx-fill: #dbeafe;
+      --ctx-edge: #2563eb;
+      --ctx-label: #172554;
+      --accent-fill: #ffedd5;
+      --accent-edge: #c2410c;
+      --accent-text: #9a3412;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      svg {
+        --panel: #1a1f27;
+        --title: #e6eaf2;
+        --muted: #9aa8bd;
+        --edge: #8b9bb4;
+        --card: #252b35;
+        --ctx-fill: #1e3a5f;
+        --ctx-edge: #60a5fa;
+        --ctx-label: #dbeafe;
+        --accent-fill: #3a2416;
+        --accent-edge: #fb923c;
+        --accent-text: #fdba74;
+      }
+    }
+
+    .panel-bg { fill: var(--panel); }
+    .title { fill: var(--title); }
+    .muted { fill: var(--muted); }
+    .lane-label { fill: var(--title); }
+    .delivered { fill: var(--ctx-fill); stroke: var(--ctx-edge); }
+    .delivered-label { fill: var(--ctx-label); }
+    .lost { fill: var(--accent-fill); stroke: var(--accent-edge); }
+    .lost-label { fill: var(--accent-text); }
+    .blocked { fill: var(--panel); stroke: var(--edge); }
+    .blocked-label { fill: var(--muted); }
+    .band { fill: var(--panel); stroke: var(--edge); }
+    .accent-text { fill: var(--accent-text); }
+  </style>
+
+  <rect class="panel-bg" width="720" height="560" rx="20" fill="#f5f7fb" />
+
+  <text class="title" x="36" y="40" fill="#20242c" font-family="system-ui, sans-serif" font-size="20" font-weight="700">
+    Head-of-line blocking: TCP vs QUIC
+  </text>
+  <text class="muted" x="36" y="64" fill="#526173" font-family="system-ui, sans-serif" font-size="14">
+    Same scenario, two transports: stream A drops a packet. Does unrelated stream B stall too?
+  </text>
+
+  <g font-family="system-ui, sans-serif">
+    <text class="lane-label" x="36" y="96" fill="#20242c" font-size="14" font-weight="700">HTTP/1.1 — one connection per request</text>
+    <g>
+      <rect class="delivered" x="56" y="112" width="86" height="40" rx="8" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5" />
+      <rect class="delivered" x="152" y="112" width="86" height="40" rx="8" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5" />
+      <rect class="delivered" x="248" y="112" width="86" height="40" rx="8" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5" />
+      <rect class="delivered" x="344" y="112" width="86" height="40" rx="8" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5" />
+      <rect class="delivered" x="440" y="112" width="86" height="40" rx="8" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5" />
+      <rect class="delivered" x="536" y="112" width="86" height="40" rx="8" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5" />
+      <g text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="11.5" font-weight="700">
+        <text class="delivered-label" x="99" y="136" fill="#172554">conn 1</text>
+        <text class="delivered-label" x="195" y="136" fill="#172554">conn 2</text>
+        <text class="delivered-label" x="291" y="136" fill="#172554">conn 3</text>
+        <text class="delivered-label" x="387" y="136" fill="#172554">conn 4</text>
+        <text class="delivered-label" x="483" y="136" fill="#172554">conn 5</text>
+        <text class="delivered-label" x="579" y="136" fill="#172554">conn 6</text>
+      </g>
+    </g>
+    <text class="muted" x="36" y="172" fill="#526173" font-size="12">
+      Browsers cap concurrent connections per origin at ~6; a 7th request must wait for one to free up.
+    </text>
+  </g>
+
+  <g font-family="system-ui, sans-serif">
+    <text class="lane-label" x="36" y="210" fill="#20242c" font-size="14" font-weight="700">HTTP/2 — one TCP connection, one ordered byte stream</text>
+    <rect class="band" x="56" y="228" width="608" height="44" rx="10" fill="#f5f7fb" stroke="#64748b" stroke-width="1.5" stroke-dasharray="4 3" />
+
+    <rect class="delivered" x="70" y="234" width="74" height="32" rx="6" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5" />
+    <rect class="delivered" x="162" y="234" width="74" height="32" rx="6" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5" />
+    <rect class="lost" x="254" y="234" width="74" height="32" rx="6" fill="#ffedd5" stroke="#c2410c" stroke-width="1.5" />
+    <rect class="blocked" x="346" y="234" width="74" height="32" rx="6" fill="#f5f7fb" stroke="#64748b" stroke-width="1.5" stroke-dasharray="3 3" />
+    <rect class="blocked" x="438" y="234" width="74" height="32" rx="6" fill="#f5f7fb" stroke="#64748b" stroke-width="1.5" stroke-dasharray="3 3" />
+
+    <g text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="12" font-weight="700">
+      <text class="delivered-label" x="107" y="255" fill="#172554">A0</text>
+      <text class="delivered-label" x="199" y="255" fill="#172554">B0</text>
+      <text class="lost-label" x="291" y="255" fill="#9a3412">A1 ✗</text>
+      <text class="blocked-label" x="383" y="255" fill="#526173">B1</text>
+      <text class="blocked-label" x="475" y="255" fill="#526173">A2</text>
+    </g>
+
+    <text class="muted" x="36" y="296" fill="#526173" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="12">
+      Delivered to the application: A0, B0 — then it stalls.
+    </text>
+    <text class="accent-text" x="36" y="318" fill="#9a3412" font-size="12">
+      B1 already arrived on the wire, but TCP won't release anything past the gap until A1 is retransmitted.
+    </text>
+  </g>
+
+  <g font-family="system-ui, sans-serif">
+    <text class="lane-label" x="36" y="356" fill="#20242c" font-size="14" font-weight="700">HTTP/3 — QUIC over UDP, independent per-stream delivery</text>
+
+    <text class="muted" x="36" y="398" fill="#526173" font-size="12" font-weight="700">stream A</text>
+    <rect class="band" x="90" y="376" width="574" height="36" rx="8" fill="#f5f7fb" stroke="#64748b" stroke-width="1.5" stroke-dasharray="4 3" />
+    <rect class="delivered" x="106" y="382" width="74" height="24" rx="6" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5" />
+    <rect class="lost" x="290" y="382" width="74" height="24" rx="6" fill="#ffedd5" stroke="#c2410c" stroke-width="1.5" />
+    <rect class="blocked" x="474" y="382" width="74" height="24" rx="6" fill="#f5f7fb" stroke="#64748b" stroke-width="1.5" stroke-dasharray="3 3" />
+    <g text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="11.5" font-weight="700">
+      <text class="delivered-label" x="143" y="399" fill="#172554">A0</text>
+      <text class="lost-label" x="327" y="399" fill="#9a3412">A1 ✗</text>
+      <text class="blocked-label" x="511" y="399" fill="#526173">A2</text>
+    </g>
+
+    <text class="muted" x="36" y="446" fill="#526173" font-size="12" font-weight="700">stream B</text>
+    <rect class="band" x="90" y="424" width="574" height="36" rx="8" fill="#f5f7fb" stroke="#64748b" stroke-width="1.5" stroke-dasharray="4 3" />
+    <rect class="delivered" x="198" y="430" width="74" height="24" rx="6" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5" />
+    <rect class="delivered" x="382" y="430" width="74" height="24" rx="6" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5" />
+    <g text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="11.5" font-weight="700">
+      <text class="delivered-label" x="235" y="447" fill="#172554">B0</text>
+      <text class="delivered-label" x="419" y="447" fill="#172554">B1</text>
+    </g>
+
+    <text class="muted" x="36" y="486" fill="#526173" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="12">
+      Delivered: {"A":["A0"], "B":["B0","B1"]}
+    </text>
+    <text class="accent-text" x="36" y="508" fill="#9a3412" font-size="12">
+      B is fully delivered — only A2 waits behind its own stream's loss.
+    </text>
+  </g>
+
+  <g font-family="system-ui, sans-serif" font-size="11.5">
+    <rect x="36" y="530" width="16" height="16" rx="4" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5" />
+    <text class="muted" x="58" y="542" fill="#526173">delivered</text>
+    <rect x="150" y="530" width="16" height="16" rx="4" fill="#ffedd5" stroke="#c2410c" stroke-width="1.5" />
+    <text class="muted" x="172" y="542" fill="#526173">lost, retransmitting</text>
+    <rect x="330" y="530" width="16" height="16" rx="4" fill="#f5f7fb" stroke="#64748b" stroke-width="1.5" stroke-dasharray="3 3" />
+    <text class="muted" x="352" y="542" fill="#526173">blocked, waiting</text>
+  </g>
+</svg>

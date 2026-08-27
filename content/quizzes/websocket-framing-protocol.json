@@ -10,6 +10,14 @@
       "id": "ws-first-byte-decode",
       "title": "A WebSocket frame's first byte is `0x81`. What does that tell you?",
       "description": "Decode the most significant byte of the frame header.",
+      "images": [
+        {
+          "src": "frame-header.svg",
+          "alt": "The WebSocket frame header laid out as two always-present bytes: byte 0 with FIN, three reserved bits, and a 4-bit opcode; byte 1 with the MASK bit and a 7-bit payload length. Below them, three conditional or variable-length sections: extended payload length used when the length field reads 126 or 127, a 4-byte masking key present only when MASK is 1, and the payload data itself. A worked example decodes header bytes 0x81 0x85.",
+          "caption": "`0x81` is `FIN=1, RSV=000, opcode=0x1` — the worked example below decodes it byte by byte.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -36,6 +44,14 @@
       "id": "ws-binary-opcode",
       "title": "Which opcode identifies a **binary** data frame? Give it as a decimal number.",
       "description": "The opcode is the low 4 bits of the frame's first byte.",
+      "images": [
+        {
+          "src": "frame-header.svg",
+          "alt": "The WebSocket frame header laid out as two always-present bytes: byte 0 with FIN, three reserved bits, and a 4-bit opcode; byte 1 with the MASK bit and a 7-bit payload length. Below them, three conditional or variable-length sections: extended payload length used when the length field reads 126 or 127, a 4-byte masking key present only when MASK is 1, and the payload data itself. A worked example decodes header bytes 0x81 0x85.",
+          "caption": "The opcode registry along the bottom: `0x2` is binary, distinct from `0x1` text.",
+          "placement": "explanation"
+        }
+      ],
       "type": "input",
       "validation": {
         "mode": "numeric",
@@ -48,6 +64,14 @@
       "id": "ws-masking-facts",
       "title": "Which statements about WebSocket frame masking are correct?",
       "description": "Select every true statement.",
+      "images": [
+        {
+          "src": "frame-header.svg",
+          "alt": "The WebSocket frame header laid out as two always-present bytes: byte 0 with FIN, three reserved bits, and a 4-bit opcode; byte 1 with the MASK bit and a 7-bit payload length. Below them, three conditional or variable-length sections: extended payload length used when the length field reads 126 or 127, a 4-byte masking key present only when MASK is 1, and the payload data itself. A worked example decodes header bytes 0x81 0x85.",
+          "caption": "`MASK` is its own bit in byte 1, separate from the `FIN`/opcode byte — the masking key only appears when it's set.",
+          "placement": "explanation"
+        }
+      ],
       "type": "multiple-choice",
       "options": [
         {
@@ -100,6 +124,14 @@
       "id": "ws-length-126",
       "title": "A frame's 7-bit payload-length field holds the value `126`. What does that mean?",
       "description": "Recall how WebSocket encodes payloads of differing sizes.",
+      "images": [
+        {
+          "src": "frame-header.svg",
+          "alt": "The WebSocket frame header laid out as two always-present bytes: byte 0 with FIN, three reserved bits, and a 4-bit opcode; byte 1 with the MASK bit and a 7-bit payload length. Below them, three conditional or variable-length sections: extended payload length used when the length field reads 126 or 127, a 4-byte masking key present only when MASK is 1, and the payload data itself. A worked example decodes header bytes 0x81 0x85.",
+          "caption": "`126` and `127` are escapes, not literal lengths — they say how many extra bytes to read next.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -138,6 +170,14 @@
       "id": "ws-control-frame-rules",
       "title": "Which rules apply to WebSocket control frames (Close, Ping, Pong)?",
       "description": "Select every true statement about control frames.",
+      "images": [
+        {
+          "src": "frame-header.svg",
+          "alt": "The WebSocket frame header laid out as two always-present bytes: byte 0 with FIN, three reserved bits, and a 4-bit opcode; byte 1 with the MASK bit and a 7-bit payload length. Below them, three conditional or variable-length sections: extended payload length used when the length field reads 126 or 127, a 4-byte masking key present only when MASK is 1, and the payload data itself. A worked example decodes header bytes 0x81 0x85.",
+          "caption": "The 7-bit `payload len` field tops out at 125 without an escape — exactly the control-frame payload ceiling.",
+          "placement": "explanation"
+        }
+      ],
       "type": "multiple-choice",
       "options": [
         {
@@ -202,6 +242,14 @@
       "id": "ws-fragmentation-continuation",
       "title": "A message is sent as several fragments. What opcode do the 2nd and later frames carry?",
       "description": "Think about how a receiver knows where a fragmented message continues and ends.",
+      "images": [
+        {
+          "src": "fragmentation.svg",
+          "alt": "Three frames in sequence. Frame 1 carries FIN=0 and opcode 0x1 (text), naming the message type. Frame 2 carries FIN=0 and opcode 0x0 (continuation). A ping control frame with FIN=1 and opcode 0x9 is shown interleaved between frames, not part of the message. Frame 3 carries FIN=1 and opcode 0x0 (continuation), ending the message. Below, the reassembled message concatenates the three data fragments in order.",
+          "caption": "Only frame 1 names the type; frames 2 and 3 both carry opcode `0x0` — continuation.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -228,6 +276,14 @@
       "id": "ws-text-utf8",
       "title": "Must a `text` frame's payload be valid UTF-8, and what happens if it isn't?",
       "description": "Consider the difference between text (`0x1`) and binary (`0x2`) frames.",
+      "images": [
+        {
+          "src": "frame-header.svg",
+          "alt": "The WebSocket frame header laid out as two always-present bytes: byte 0 with FIN, three reserved bits, and a 4-bit opcode; byte 1 with the MASK bit and a 7-bit payload length. Below them, three conditional or variable-length sections: extended payload length used when the length field reads 126 or 127, a 4-byte masking key present only when MASK is 1, and the payload data itself. A worked example decodes header bytes 0x81 0x85.",
+          "caption": "Opcode `0x1` in the registry is text; `0x2` (binary) is the escape hatch for non-UTF-8 bytes.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {

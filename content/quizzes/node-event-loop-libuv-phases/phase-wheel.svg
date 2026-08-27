@@ -1,0 +1,125 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="650" viewBox="0 0 720 650">
+  <style>
+    /* An &lt;img&gt;-embedded SVG cannot see the page's `data-theme`, but it does
+       inherit the embedding document's `color-scheme`, so `prefers-color-scheme`
+       tracks the site theme including an explicit toggle. The presentation
+       attributes below stay as the light fallback for renderers without CSS. */
+    svg {
+      --panel: #f5f7fb;
+      --title: #20242c;
+      --muted: #526173;
+      --edge: #64748b;
+      --card: #ffffff;
+      --ctx-fill: #dbeafe;
+      --ctx-edge: #2563eb;
+      --ctx-label: #172554;
+      --accent-fill: #ffedd5;
+      --accent-edge: #c2410c;
+      --accent-text: #9a3412;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      svg {
+        --panel: #1a1f27;
+        --title: #e6eaf2;
+        --muted: #9aa8bd;
+        --edge: #8b9bb4;
+        --card: #252b35;
+        --ctx-fill: #1e3a5f;
+        --ctx-edge: #60a5fa;
+        --ctx-label: #dbeafe;
+        --accent-fill: #3a2416;
+        --accent-edge: #fb923c;
+        --accent-text: #fdba74;
+      }
+    }
+
+    .panel { fill: var(--panel); }
+    .title { fill: var(--title); }
+    .muted { fill: var(--muted); }
+    .edge-line { stroke: var(--edge); }
+    .phase { fill: var(--ctx-fill); stroke: var(--ctx-edge); }
+    .phase-name { fill: var(--ctx-label); }
+    .internal { fill: var(--panel); stroke: var(--edge); }
+    .internal-name { fill: var(--muted); }
+    .checkpoint { fill: var(--accent-fill); stroke: var(--accent-edge); }
+    .accent-text { fill: var(--accent-text); }
+  </style>
+
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="var(--edge)" fill-rule="evenodd" />
+    </marker>
+  </defs>
+
+  <rect class="panel" width="720" height="650" rx="20" fill="#f5f7fb" />
+
+  <text class="title" x="36" y="40" fill="#20242c" font-family="system-ui, sans-serif" font-size="20" font-weight="700">
+    One turn of the libuv event loop
+  </text>
+  <text class="muted" x="36" y="64" fill="#526173" font-family="system-ui, sans-serif" font-size="14">
+    Six phases, always this order. Diamonds are microtask checkpoints between them.
+  </text>
+
+  <g fill="none" class="edge-line" stroke="#64748b" stroke-width="2.2">
+    <path d="M447,158 L486,175" marker-end="url(#arrow)" />
+    <path d="M577,253 L577,363" marker-end="url(#arrow)" />
+    <path d="M490,443 L451,459" marker-end="url(#arrow)" />
+    <path d="M273,462 L235,446" marker-end="url(#arrow)" />
+    <path d="M144,367 L144,257" marker-end="url(#arrow)" />
+    <path d="M230,177 L270,161" marker-end="url(#arrow)" />
+  </g>
+
+  <g transform="translate(468.5,167.5) rotate(45)">
+    <rect class="checkpoint" x="-8" y="-8" width="16" height="16" rx="3" fill="#ffedd5" stroke="#c2410c" stroke-width="2" />
+  </g>
+  <g transform="translate(577,310) rotate(45)">
+    <rect class="checkpoint" x="-8" y="-8" width="16" height="16" rx="3" fill="#ffedd5" stroke="#c2410c" stroke-width="2" />
+  </g>
+  <g transform="translate(468.5,452.5) rotate(45)">
+    <rect class="checkpoint" x="-8" y="-8" width="16" height="16" rx="3" fill="#ffedd5" stroke="#c2410c" stroke-width="2" />
+  </g>
+  <g transform="translate(252,452.5) rotate(45)">
+    <rect class="checkpoint" x="-8" y="-8" width="16" height="16" rx="3" fill="#ffedd5" stroke="#c2410c" stroke-width="2" />
+  </g>
+  <g transform="translate(144,310) rotate(45)">
+    <rect class="checkpoint" x="-8" y="-8" width="16" height="16" rx="3" fill="#ffedd5" stroke="#c2410c" stroke-width="2" />
+  </g>
+  <g transform="translate(252,167.5) rotate(45)">
+    <rect class="checkpoint" x="-8" y="-8" width="16" height="16" rx="3" fill="#ffedd5" stroke="#c2410c" stroke-width="2" />
+  </g>
+
+  <g font-family="system-ui, sans-serif" text-anchor="middle">
+    <rect class="phase" x="262" y="82" width="196" height="76" rx="12" fill="#dbeafe" stroke="#2563eb" stroke-width="2" />
+    <text class="phase-name" x="360" y="114" fill="#172554" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="15" font-weight="700">timers</text>
+    <text class="muted" x="360" y="140" fill="#526173" font-size="11.5">setTimeout, setInterval</text>
+
+    <rect class="phase" x="479" y="177" width="196" height="76" rx="12" fill="#dbeafe" stroke="#2563eb" stroke-width="2" />
+    <text class="phase-name" x="577" y="209" fill="#172554" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="14" font-weight="700">pending callbacks</text>
+    <text class="muted" x="577" y="235" fill="#526173" font-size="11.5">deferred system callbacks</text>
+
+    <rect class="internal" x="479" y="367" width="196" height="76" rx="12" fill="#f5f7fb" stroke="#64748b" stroke-width="2" stroke-dasharray="6 5" />
+    <text class="internal-name" x="577" y="399" fill="#526173" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="14" font-weight="700">idle, prepare</text>
+    <text class="muted" x="577" y="425" fill="#526173" font-size="11.5">libuv-internal only</text>
+
+    <rect class="phase" x="262" y="462" width="196" height="76" rx="12" fill="#dbeafe" stroke="#2563eb" stroke-width="2" />
+    <text class="phase-name" x="360" y="488" fill="#172554" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="15" font-weight="700">poll</text>
+    <text class="muted" x="360" y="510" fill="#526173" font-size="11.5">I/O callbacks — can block</text>
+    <text class="muted" x="360" y="526" fill="#526173" font-size="11.5">here waiting for events</text>
+
+    <rect class="phase" x="46" y="367" width="196" height="76" rx="12" fill="#dbeafe" stroke="#2563eb" stroke-width="2" />
+    <text class="phase-name" x="144" y="399" fill="#172554" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="15" font-weight="700">check</text>
+    <text class="muted" x="144" y="425" fill="#526173" font-size="11.5">setImmediate</text>
+
+    <rect class="phase" x="46" y="177" width="196" height="76" rx="12" fill="#dbeafe" stroke="#2563eb" stroke-width="2" />
+    <text class="phase-name" x="144" y="209" fill="#172554" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="14" font-weight="700">close callbacks</text>
+    <text class="muted" x="144" y="235" fill="#526173" font-size="11.5">'close' events</text>
+  </g>
+
+  <g font-family="system-ui, sans-serif" text-anchor="start">
+    <rect class="checkpoint" x="36" y="558" width="14" height="14" rx="3" transform="rotate(45 43 565)" fill="#ffedd5" stroke="#c2410c" stroke-width="2" />
+    <text class="accent-text" x="60" y="570" fill="#9a3412" font-size="14" font-weight="700">Microtask checkpoint — drains between every phase</text>
+    <text class="muted" x="36" y="594" fill="#526173" font-size="13">The `nextTick` queue empties first, then Promise / `queueMicrotask`, before the loop advances.</text>
+    <text class="muted" x="36" y="618" fill="#526173" font-size="13">`idle, prepare` is libuv-internal — you can never schedule work into it.</text>
+  </g>
+</svg>

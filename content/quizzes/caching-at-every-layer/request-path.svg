@@ -1,0 +1,122 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="540" viewBox="0 0 720 540">
+  <style>
+    /* An &lt;img&gt;-embedded SVG cannot see the page's `data-theme`, but it does
+       inherit the embedding document's `color-scheme`, so `prefers-color-scheme`
+       tracks the site theme including an explicit toggle. The presentation
+       attributes below stay as the light fallback for renderers without CSS. */
+    svg {
+      --panel: #f5f7fb;
+      --title: #20242c;
+      --muted: #526173;
+      --edge: #64748b;
+      --card: #ffffff;
+      --ok-fill: #dcfce7;
+      --ok-edge: #16a34a;
+      --ok-text: #14532d;
+      --info-fill: #dbeafe;
+      --info-edge: #2563eb;
+      --info-text: #172554;
+      --accent-fill: #ffedd5;
+      --accent-edge: #c2410c;
+      --accent-text: #9a3412;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      svg {
+        --panel: #1a1f27;
+        --title: #e6eaf2;
+        --muted: #9aa8bd;
+        --edge: #8b9bb4;
+        --card: #252b35;
+        --ok-fill: #14321f;
+        --ok-edge: #4ade80;
+        --ok-text: #bbf7d0;
+        --info-fill: #1e3a5f;
+        --info-edge: #60a5fa;
+        --info-text: #dbeafe;
+        --accent-fill: #3a2416;
+        --accent-edge: #fb923c;
+        --accent-text: #fdba74;
+      }
+    }
+
+    .panel { fill: var(--panel); }
+    .title { fill: var(--title); }
+    .muted { fill: var(--muted); }
+    .card { fill: var(--card); stroke: var(--edge); }
+    .edge-line { stroke: var(--edge); }
+    .ok-box { fill: var(--ok-fill); stroke: var(--ok-edge); }
+    .ok-text { fill: var(--ok-text); }
+    .info-box { fill: var(--info-fill); stroke: var(--info-edge); }
+    .info-text { fill: var(--info-text); }
+    .accent-box { fill: var(--accent-fill); stroke: var(--accent-edge); }
+    .accent-text { fill: var(--accent-text); }
+  </style>
+
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="var(--edge)" fill-rule="evenodd" />
+    </marker>
+  </defs>
+
+  <rect class="panel" width="720" height="540" rx="20" fill="#f5f7fb" />
+
+  <text class="title" x="36" y="40" fill="#20242c" font-family="system-ui, sans-serif" font-size="20" font-weight="700">
+    One GET through every cache
+  </text>
+  <text class="muted" x="36" y="64" fill="#526173" font-family="system-ui, sans-serif" font-size="14">
+    Response: <tspan font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">Cache-Control: max-age=60, s-maxage=600</tspan> and <tspan font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">ETag: "v7"</tspan>
+  </text>
+
+  <g fill="none" class="edge-line" stroke="#64748b" stroke-width="2.2">
+    <path d="M174,168 L174,216" marker-end="url(#arrow)" />
+    <path d="M174,278 L174,342" marker-end="url(#arrow)" />
+    <path d="M308,140 L378,140" marker-end="url(#arrow)" />
+    <path d="M308,250 L378,250" marker-end="url(#arrow)" />
+    <path d="M308,376 L346,376 L346,352 L378,352" marker-end="url(#arrow)" />
+    <path d="M308,376 L346,376 L346,416 L378,416" marker-end="url(#arrow)" />
+  </g>
+
+  <g font-family="system-ui, sans-serif" text-anchor="middle">
+    <rect class="card" x="40" y="112" width="268" height="56" rx="12" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <text class="title" x="174" y="138" fill="#20242c" font-size="14.5" font-weight="700">Browser cache — private</text>
+    <text class="muted" x="174" y="157" fill="#526173" font-size="11.5">one user's store, on this device only</text>
+
+    <rect class="card" x="40" y="222" width="268" height="56" rx="12" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <text class="title" x="174" y="248" fill="#20242c" font-size="14.5" font-weight="700">CDN edge — shared</text>
+    <text class="muted" x="174" y="267" fill="#526173" font-size="11.5">one store, answering every user</text>
+
+    <rect class="card" x="40" y="348" width="268" height="56" rx="12" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <text class="title" x="174" y="374" fill="#20242c" font-size="14.5" font-weight="700">Origin</text>
+    <text class="muted" x="174" y="393" fill="#526173" font-size="11.5">the only copy that is definitely true</text>
+
+    <rect class="ok-box" x="384" y="112" width="300" height="56" rx="12" fill="#dcfce7" stroke="#16a34a" stroke-width="2" />
+    <text class="ok-text" x="534" y="138" fill="#14532d" font-size="14.5" font-weight="700">Fresh hit — no network at all</text>
+    <text class="ok-text" x="534" y="157" fill="#14532d" font-size="11.5">nothing downstream ever hears about it</text>
+
+    <rect class="ok-box" x="384" y="222" width="300" height="56" rx="12" fill="#dcfce7" stroke="#16a34a" stroke-width="2" />
+    <text class="ok-text" x="534" y="248" fill="#14532d" font-size="14.5" font-weight="700">Fresh hit at the edge — <tspan font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">Age: 200</tspan></text>
+    <text class="ok-text" x="534" y="267" fill="#14532d" font-size="11.5">body returned; 600 − 200 = 400 s of freshness left</text>
+
+    <rect class="info-box" x="384" y="326" width="300" height="52" rx="12" fill="#dbeafe" stroke="#2563eb" stroke-width="2" />
+    <text class="info-text" x="534" y="350" fill="#172554" font-size="14.5" font-weight="700">304 — the ETag still matches</text>
+    <text class="info-text" x="534" y="368" fill="#172554" font-size="11.5">no body; the edge reuses its stored copy</text>
+
+    <rect class="accent-box" x="384" y="390" width="300" height="52" rx="12" fill="#ffedd5" stroke="#c2410c" stroke-width="2" />
+    <text class="accent-text" x="534" y="414" fill="#9a3412" font-size="14.5" font-weight="700">200 — the ETag differs</text>
+    <text class="accent-text" x="534" y="432" fill="#9a3412" font-size="11.5">new body and new validator replace the copy</text>
+  </g>
+
+  <g font-family="system-ui, sans-serif" text-anchor="start">
+    <text class="muted" x="188" y="190" fill="#526173" font-size="12">stale — age ≥ 60 s</text>
+    <text class="muted" x="188" y="207" fill="#526173" font-size="12" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">max-age=60</text>
+
+    <text class="muted" x="188" y="298" fill="#526173" font-size="12">stale — age ≥ 600 s</text>
+    <text class="muted" x="188" y="315" fill="#526173" font-size="12" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">If-None-Match: "v7"</text>
+    <text class="muted" x="188" y="331" fill="#526173" font-size="11.5">(or <tspan font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">If-Modified-Since</tspan>)</text>
+
+    <text class="accent-text" x="36" y="474" fill="#9a3412" font-size="13.5" font-weight="700"><tspan font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">s-maxage</tspan> retargets the shared row only — the browser row still expires at 60 s.</text>
+    <text class="accent-text" x="36" y="496" fill="#9a3412" font-size="13.5" font-weight="700"><tspan font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">private</tspan> bars the shared row from storing at all. Leave it off per-user HTML</text>
+    <text class="accent-text" x="36" y="516" fill="#9a3412" font-size="13.5" font-weight="700">and the edge hands one user's page to the next visitor.</text>
+  </g>
+</svg>

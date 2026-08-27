@@ -1,0 +1,92 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="456" viewBox="0 0 720 456">
+  <style>
+    /* An &lt;img&gt;-embedded SVG cannot see the page's `data-theme`, but it does
+       inherit the embedding document's `color-scheme`, so `prefers-color-scheme`
+       tracks the site theme including an explicit toggle. The presentation
+       attributes below stay as the light fallback for renderers without CSS. */
+    svg {
+      --panel: #f5f7fb;
+      --title: #20242c;
+      --muted: #526173;
+      --edge: #64748b;
+      --card: #ffffff;
+      --ctx-edge: #2563eb;
+      --accent-text: #9a3412;
+      --ok-fill: #dcfce7;
+      --ok-edge: #16a34a;
+      --ok-text: #15803d;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      svg {
+        --panel: #1a1f27;
+        --title: #e6eaf2;
+        --muted: #9aa8bd;
+        --edge: #8b9bb4;
+        --card: #252b35;
+        --ctx-edge: #60a5fa;
+        --accent-text: #fdba74;
+        --ok-fill: #14321f;
+        --ok-edge: #4ade80;
+        --ok-text: #86efac;
+      }
+    }
+
+    .panel { fill: var(--panel); }
+    .title { fill: var(--title); }
+    .muted { fill: var(--muted); }
+    .card { fill: var(--card); stroke: var(--edge); }
+    .ctx-mark { fill: var(--ctx-edge); }
+    .accent-text { fill: var(--accent-text); }
+    .ok-box { fill: var(--ok-fill); stroke: var(--ok-edge); }
+    .ok-text { fill: var(--ok-text); }
+  </style>
+
+  <rect class="panel" width="720" height="456" rx="20" fill="#f5f7fb" />
+
+  <text class="title" x="36" y="44" fill="#20242c" font-family="system-ui, sans-serif" font-size="20" font-weight="700">
+    Four ways to contain a component's z-index
+  </text>
+  <text class="muted" x="36" y="68" fill="#526173" font-family="system-ui, sans-serif" font-size="14">
+    Three of them work. The difference is what else they change.
+  </text>
+
+  <g font-family="system-ui, sans-serif">
+    <text class="muted" x="315" y="112" fill="#526173" font-size="12" font-weight="700" text-anchor="middle">Stacking context?</text>
+    <text class="muted" x="445" y="112" fill="#526173" font-size="12" font-weight="700" text-anchor="middle">Containing block?</text>
+    <text class="muted" x="522" y="112" fill="#526173" font-size="12" font-weight="700">Other side effects</text>
+
+    <rect class="ok-box" x="36" y="128" width="648" height="56" rx="10" fill="#dcfce7" stroke="#16a34a" stroke-width="2" />
+    <text class="ok-text" x="52" y="162" fill="#15803d" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="13" font-weight="700">isolation: isolate</text>
+    <text class="ok-text" x="315" y="162" fill="#15803d" font-size="15" font-weight="700" text-anchor="middle">yes</text>
+    <text class="muted" x="445" y="162" fill="#526173" font-size="15" text-anchor="middle">no</text>
+    <text class="ok-text" x="522" y="162" fill="#15803d" font-size="13" font-weight="700">none at all</text>
+
+    <rect class="card" x="36" y="190" width="648" height="56" rx="10" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <text class="title" x="52" y="214" fill="#20242c" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="13">position: relative;</text>
+    <text class="title" x="52" y="234" fill="#20242c" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="13">z-index: 0</text>
+    <text class="ctx-mark" x="315" y="224" fill="#2563eb" font-size="15" font-weight="700" text-anchor="middle">yes</text>
+    <text class="accent-text" x="445" y="224" fill="#9a3412" font-size="13" font-weight="700" text-anchor="middle">for absolute</text>
+    <text class="accent-text" x="522" y="214" fill="#9a3412" font-size="13">pins the card to</text>
+    <text class="accent-text" x="522" y="234" fill="#9a3412" font-size="13">level 0</text>
+
+    <rect class="card" x="36" y="252" width="648" height="56" rx="10" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <text class="title" x="52" y="286" fill="#20242c" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="13">transform: translateZ(0)</text>
+    <text class="ctx-mark" x="315" y="286" fill="#2563eb" font-size="15" font-weight="700" text-anchor="middle">yes</text>
+    <text class="accent-text" x="445" y="276" fill="#9a3412" font-size="13" font-weight="700" text-anchor="middle">for absolute</text>
+    <text class="accent-text" x="445" y="296" fill="#9a3412" font-size="13" font-weight="700" text-anchor="middle">and fixed</text>
+    <text class="accent-text" x="522" y="276" fill="#9a3412" font-size="13">GPU layer;</text>
+    <text class="accent-text" x="522" y="296" fill="#9a3412" font-size="13">may blur text</text>
+
+    <rect class="card" x="36" y="314" width="648" height="56" rx="10" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <text class="title" x="52" y="348" fill="#20242c" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="13">overflow: hidden</text>
+    <text class="accent-text" x="315" y="338" fill="#9a3412" font-size="15" font-weight="700" text-anchor="middle">no</text>
+    <text class="accent-text" x="315" y="358" fill="#9a3412" font-size="12" text-anchor="middle">block formatting only</text>
+    <text class="muted" x="445" y="348" fill="#526173" font-size="15" text-anchor="middle">no</text>
+    <text class="accent-text" x="522" y="338" fill="#9a3412" font-size="13">clips the badge</text>
+    <text class="accent-text" x="522" y="358" fill="#9a3412" font-size="13">and menu</text>
+
+    <text class="ok-text" x="36" y="402" fill="#15803d" font-size="15" font-weight="700">Only isolation: isolate does nothing but form the stacking context.</text>
+    <text class="muted" x="36" y="426" fill="#526173" font-size="14">The middle two contain the layers, but change layout or rendering as well.</text>
+  </g>
+</svg>

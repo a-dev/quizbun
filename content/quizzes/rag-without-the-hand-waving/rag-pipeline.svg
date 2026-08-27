@@ -1,0 +1,136 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="548" viewBox="0 0 720 548">
+  <style>
+    /* An &lt;img&gt;-embedded SVG cannot see the page's `data-theme`, but it does
+       inherit the embedding document's `color-scheme`, so `prefers-color-scheme`
+       tracks the site theme including an explicit toggle. The presentation
+       attributes below stay as the light fallback for renderers without CSS. */
+    svg {
+      --panel: #f5f7fb;
+      --title: #20242c;
+      --muted: #526173;
+      --edge: #64748b;
+      --card: #ffffff;
+      --info-fill: #dbeafe;
+      --info-edge: #2563eb;
+      --info-text: #172554;
+      --accent-fill: #ffedd5;
+      --accent-edge: #c2410c;
+      --accent-text: #9a3412;
+      --good-fill: #dcfce7;
+      --good-edge: #16a34a;
+      --good-text: #14532d;
+      --alt-fill: #f3e8ff;
+      --alt-edge: #9333ea;
+      --alt-text: #581c87;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      svg {
+        --panel: #1a1f27;
+        --title: #e6eaf2;
+        --muted: #9aa8bd;
+        --edge: #8b9bb4;
+        --card: #252b35;
+        --info-fill: #1e3a5f;
+        --info-edge: #60a5fa;
+        --info-text: #dbeafe;
+        --accent-fill: #3a2416;
+        --accent-edge: #fb923c;
+        --accent-text: #fdba74;
+        --good-fill: #14321f;
+        --good-edge: #4ade80;
+        --good-text: #bbf7d0;
+        --alt-fill: #2e1d40;
+        --alt-edge: #c084fc;
+        --alt-text: #e9d5ff;
+      }
+    }
+
+    .panel { fill: var(--panel); }
+    .title { fill: var(--title); }
+    .muted { fill: var(--muted); }
+    .info-text { fill: var(--info-text); }
+    .accent-text { fill: var(--accent-text); }
+    .good-text { fill: var(--good-text); }
+    .alt-text { fill: var(--alt-text); }
+    .accent-box { fill: var(--accent-fill); stroke: var(--accent-edge); }
+    .alt-box { fill: var(--alt-fill); stroke: var(--alt-edge); }
+    .card-box { fill: var(--card); stroke: var(--edge); }
+    .good-box { fill: var(--good-fill); stroke: var(--good-edge); }
+    .info-box { fill: var(--info-fill); stroke: var(--info-edge); }
+    .edge-line { stroke: var(--edge); }
+    .info-line { stroke: var(--info-edge); }
+  </style>
+  <defs>
+    <marker id="arrow-edge" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="var(--edge)" />
+    </marker>
+    <marker id="arrow-info" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="var(--info-edge)" />
+    </marker>
+  </defs>
+  <rect class="panel" width="720" height="548" rx="20" fill="#f5f7fb" />
+
+  <text class="title" x="36" y="42" fill="#20242c" font-family="system-ui, sans-serif" font-size="20" font-weight="700">One RAG request, stage by stage</text>
+  <text class="muted" x="36" y="66" fill="#526173" font-family="system-ui, sans-serif" font-size="14">Parametric memory in the weights; non-parametric memory in the index.</text>
+  <rect class="card-box" x="36" y="88" width="648" height="126" rx="12" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+  <text class="title" x="54" y="114" fill="#20242c" font-family="system-ui, sans-serif" font-size="13.5" font-weight="700">Ingestion — runs offline, ahead of any query</text>
+  <rect class="card-box" x="54" y="130" width="132" height="54" rx="10" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+  <text class="title" x="120" y="152" fill="#20242c" font-family="system-ui, sans-serif" font-size="12.5" font-weight="700" text-anchor="middle">Source docs</text>
+  <text class="muted" x="120" y="170" fill="#526173" font-family="system-ui, sans-serif" font-size="10.5" text-anchor="middle">policies, runbooks</text>
+  <path class="edge-line" d="M186,157 H208" fill="none" stroke="#64748b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-edge)" />
+  <rect class="info-box" x="214" y="130" width="132" height="54" rx="10" fill="#dbeafe" stroke="#2563eb" stroke-width="2" />
+  <text class="info-text" x="280" y="152" fill="#172554" font-family="system-ui, sans-serif" font-size="12.5" font-weight="700" text-anchor="middle">Chunk</text>
+  <text class="info-text" x="280" y="170" fill="#172554" font-family="system-ui, sans-serif" font-size="10.5" text-anchor="middle">self-contained units</text>
+  <path class="edge-line" d="M346,157 H368" fill="none" stroke="#64748b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-edge)" />
+  <rect class="info-box" x="374" y="130" width="132" height="54" rx="10" fill="#dbeafe" stroke="#2563eb" stroke-width="2" />
+  <text class="info-text" x="440" y="152" fill="#172554" font-family="system-ui, sans-serif" font-size="12.5" font-weight="700" text-anchor="middle">Embed passages</text>
+  <text class="info-text" x="440" y="170" fill="#172554" font-family="system-ui, sans-serif" font-size="10.5" text-anchor="middle">encoded ahead of time</text>
+  <path class="edge-line" d="M506,157 H528" fill="none" stroke="#64748b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-edge)" />
+  <rect class="info-box" x="534" y="130" width="132" height="54" rx="10" fill="#dbeafe" stroke="#2563eb" stroke-width="2" />
+  <text class="info-text" x="600" y="152" fill="#172554" font-family="system-ui, sans-serif" font-size="12.5" font-weight="700" text-anchor="middle">Index</text>
+  <text class="info-text" x="600" y="170" fill="#172554" font-family="system-ui, sans-serif" font-size="10.5" text-anchor="middle">vectors + lexical</text>
+  <text class="info-text" x="600" y="198" fill="#172554" font-family="system-ui, sans-serif" font-size="10.5" font-weight="700" text-anchor="middle">non-parametric memory</text>
+  <text class="muted" x="54" y="202" fill="#526173" font-family="system-ui, sans-serif" font-size="11">A source edit that never reaches the index is an ingestion bug, not a decoding problem.</text>
+  <rect class="card-box" x="36" y="226" width="648" height="216" rx="12" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+  <text class="title" x="54" y="252" fill="#20242c" font-family="system-ui, sans-serif" font-size="13.5" font-weight="700">Query time</text>
+  <rect class="card-box" x="54" y="266" width="110" height="88" rx="10" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+  <text class="title" x="109" y="306" fill="#20242c" font-family="system-ui, sans-serif" font-size="12.5" font-weight="700" text-anchor="middle">User query</text>
+  <text class="muted" x="109" y="324" fill="#526173" font-family="system-ui, sans-serif" font-size="10.5" text-anchor="middle">encoded now</text>
+  <path class="edge-line" d="M164,288 H186" fill="none" stroke="#64748b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-edge)" />
+  <path class="edge-line" d="M164,332 H186" fill="none" stroke="#64748b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-edge)" />
+  <rect class="info-box" x="192" y="268" width="196" height="40" rx="10" fill="#dbeafe" stroke="#2563eb" stroke-width="2" />
+  <text class="info-text" x="290" y="285" fill="#172554" font-family="system-ui, sans-serif" font-size="11.5" font-weight="700" text-anchor="middle">Dense: approximate</text>
+  <text class="info-text" x="290" y="300" fill="#172554" font-family="system-ui, sans-serif" font-size="11.5" font-weight="700" text-anchor="middle">nearest neighbours</text>
+  <rect class="alt-box" x="192" y="312" width="196" height="40" rx="10" fill="#f3e8ff" stroke="#9333ea" stroke-width="2" />
+  <text class="alt-text" x="290" y="329" fill="#581c87" font-family="system-ui, sans-serif" font-size="11.5" font-weight="700" text-anchor="middle">Lexical BM25: exact</text>
+  <text class="alt-text" x="290" y="344" fill="#581c87" font-family="system-ui, sans-serif" font-size="11.5" font-weight="700" text-anchor="middle">codes, names, ids</text>
+  <path class="edge-line" d="M388,288 H404 V304" fill="none" stroke="#64748b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+  <path class="edge-line" d="M388,332 H404 V316" fill="none" stroke="#64748b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+  <path class="edge-line" d="M404,310 H416" fill="none" stroke="#64748b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-edge)" />
+  <rect class="info-box" x="422" y="280" width="110" height="60" rx="10" fill="#dbeafe" stroke="#2563eb" stroke-width="2" />
+  <text class="info-text" x="477" y="300" fill="#172554" font-family="system-ui, sans-serif" font-size="12.5" font-weight="700" text-anchor="middle">RRF fuse</text>
+  <text class="info-text" x="477" y="316" fill="#172554" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="11" text-anchor="middle">1 / (60 + rank)</text>
+  <text class="info-text" x="477" y="331" fill="#172554" font-family="system-ui, sans-serif" font-size="10.5" text-anchor="middle">ranks, not scores</text>
+  <path class="edge-line" d="M532,310 H550" fill="none" stroke="#64748b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-edge)" />
+  <rect class="info-box" x="556" y="280" width="128" height="60" rx="10" fill="#dbeafe" stroke="#2563eb" stroke-width="2" />
+  <text class="info-text" x="620" y="300" fill="#172554" font-family="system-ui, sans-serif" font-size="12.5" font-weight="700" text-anchor="middle">Rerank top-n</text>
+  <text class="info-text" x="620" y="316" fill="#172554" font-family="system-ui, sans-serif" font-size="10.5" text-anchor="middle">cross-encoder</text>
+  <text class="info-text" x="620" y="330" fill="#172554" font-family="system-ui, sans-serif" font-size="10.5" text-anchor="middle">scores query + passage</text>
+  <path class="info-line" d="M620,340 V360 H164 V374" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-info)" />
+  <rect class="card-box" x="54" y="376" width="220" height="48" rx="10" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+  <text class="title" x="164" y="396" fill="#20242c" font-family="system-ui, sans-serif" font-size="12.5" font-weight="700" text-anchor="middle">Prompt</text>
+  <text class="muted" x="164" y="412" fill="#526173" font-family="system-ui, sans-serif" font-size="10.5" text-anchor="middle">instructions + the surviving chunks</text>
+  <path class="edge-line" d="M274,400 H296" fill="none" stroke="#64748b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-edge)" />
+  <rect class="good-box" x="302" y="376" width="190" height="48" rx="10" fill="#dcfce7" stroke="#16a34a" stroke-width="2" />
+  <text class="good-text" x="397" y="396" fill="#14532d" font-family="system-ui, sans-serif" font-size="12.5" font-weight="700" text-anchor="middle">Generator</text>
+  <text class="good-text" x="397" y="412" fill="#14532d" font-family="system-ui, sans-serif" font-size="10.5" font-weight="700" text-anchor="middle">parametric memory</text>
+  <path class="edge-line" d="M492,400 H514" fill="none" stroke="#64748b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-edge)" />
+  <rect class="good-box" x="520" y="376" width="164" height="48" rx="10" fill="#dcfce7" stroke="#16a34a" stroke-width="2" />
+  <text class="good-text" x="602" y="396" fill="#14532d" font-family="system-ui, sans-serif" font-size="12.5" font-weight="700" text-anchor="middle">Answer + citations</text>
+  <text class="good-text" x="602" y="412" fill="#14532d" font-family="system-ui, sans-serif" font-size="10.5" text-anchor="middle">each claim traced to a chunk</text>
+  <text class="muted" x="54" y="462" fill="#526173" font-family="system-ui, sans-serif" font-size="10.8">Score the stages apart: recall@k · context relevance · faithfulness · citation correctness and completeness.</text>
+  <rect class="accent-box" x="36" y="476" width="648" height="48" rx="12" fill="#ffedd5" stroke="#c2410c" stroke-width="2" />
+  <text class="accent-text" x="54" y="497" fill="#9a3412" font-family="system-ui, sans-serif" font-size="13" font-weight="700">A reranker only reorders the candidates it was handed.</text>
+  <text class="accent-text" x="54" y="514" fill="#9a3412" font-family="system-ui, sans-serif" font-size="10.8">Nothing downstream can put back a passage the retriever dropped. That is why recall@k is measured alone.</text>
+</svg>

@@ -1,0 +1,139 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="520" viewBox="0 0 720 520">
+  <style>
+    /* An &lt;img&gt;-embedded SVG cannot see the page's `data-theme`, but it does
+       inherit the embedding document's `color-scheme`, so `prefers-color-scheme`
+       tracks the site theme including an explicit toggle. The presentation
+       attributes below stay as the light fallback for renderers without CSS. */
+    svg {
+      --panel: #f5f7fb;
+      --title: #20242c;
+      --muted: #526173;
+      --edge: #64748b;
+      --card: #ffffff;
+      --warn-fill: #ffedd5;
+      --warn-edge: #c2410c;
+      --warn-text: #9a3412;
+      --ok-fill: #dcfce7;
+      --ok-edge: #16a34a;
+      --ok-text: #15803d;
+      --neutral-fill: #dbeafe;
+      --neutral-edge: #2563eb;
+      --neutral-text: #172554;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      svg {
+        --panel: #1a1f27;
+        --title: #e6eaf2;
+        --muted: #9aa8bd;
+        --edge: #8b9bb4;
+        --card: #252b35;
+        --warn-fill: #3a2416;
+        --warn-edge: #fb923c;
+        --warn-text: #fdba74;
+        --ok-fill: #14321f;
+        --ok-edge: #4ade80;
+        --ok-text: #86efac;
+        --neutral-fill: #1e3a5f;
+        --neutral-edge: #60a5fa;
+        --neutral-text: #dbeafe;
+      }
+    }
+
+    .panel-bg { fill: var(--panel); }
+    .title { fill: var(--title); }
+    .muted { fill: var(--muted); }
+    .edge-line { stroke: var(--edge); }
+    .card { fill: var(--card); stroke: var(--edge); }
+    .warn-box { fill: var(--warn-fill); stroke: var(--warn-edge); }
+    .warn-text { fill: var(--warn-text); }
+    .ok-box { fill: var(--ok-fill); stroke: var(--ok-edge); }
+    .ok-text { fill: var(--ok-text); }
+    .neutral-box { fill: var(--neutral-fill); stroke: var(--neutral-edge); }
+    .neutral-text { fill: var(--neutral-text); }
+  </style>
+
+  <defs>
+    <marker id="arrowd" viewBox="0 0 10 10" refX="5" refY="8.5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,0 L5,10 z" fill="var(--warn-edge)" fill-rule="evenodd" />
+    </marker>
+  </defs>
+
+  <rect class="panel-bg" width="720" height="520" rx="20" fill="#f5f7fb" />
+
+  <text class="title" x="36" y="40" fill="#20242c" font-family="system-ui, sans-serif" font-size="20" font-weight="700">
+    A layout shift, and how to prevent it
+  </text>
+  <text class="muted" x="36" y="64" fill="#526173" font-family="system-ui, sans-serif" font-size="14">
+    Reserving the image's space keeps the paragraph exactly where it was rendered.
+  </text>
+
+  <!-- Card 1: no dimensions -->
+  <g font-family="system-ui, sans-serif">
+    <rect class="card" x="36" y="90" width="300" height="184" rx="12" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <text class="warn-text" x="52" y="114" fill="#9a3412" font-size="13" font-weight="700">No width / height reserved</text>
+
+    <line x1="52" y1="132" x2="272" y2="132" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4 3" />
+    <text class="muted" x="52" y="126" fill="#526173" font-size="9.5">paragraph starts here (before load)</text>
+
+    <rect class="warn-box" x="52" y="132" width="220" height="48" fill="#ffedd5" stroke="#c2410c" stroke-width="2" />
+    <text class="warn-text" x="162" y="160" fill="#9a3412" font-size="10.5" text-anchor="middle">image loads late</text>
+
+    <line x1="300" y1="132" x2="300" y2="192" stroke="var(--warn-edge)" stroke-width="2" marker-end="url(#arrowd)" />
+    <text class="warn-text" x="308" y="166" fill="#9a3412" font-size="10.5" font-weight="700">+48px</text>
+
+    <rect class="card" x="52" y="192" width="220" height="36" rx="4" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <text class="title" x="162" y="214" fill="#20242c" font-size="10.5" text-anchor="middle">paragraph (pushed down)</text>
+
+    <text class="warn-text" x="52" y="252" fill="#9a3412" font-size="12" font-weight="700">✗ visible content jumps</text>
+  </g>
+
+  <!-- Card 2: reserved -->
+  <g font-family="system-ui, sans-serif">
+    <rect class="card" x="384" y="90" width="300" height="184" rx="12" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <text class="ok-text" x="400" y="114" fill="#15803d" font-size="13" font-weight="700">Width &amp; height reserved</text>
+
+    <rect class="ok-box" x="400" y="132" width="220" height="48" fill="#dcfce7" stroke="#16a34a" stroke-width="2" />
+    <text class="ok-text" x="510" y="160" fill="#15803d" font-size="10.5" text-anchor="middle">image fills reserved box</text>
+
+    <rect class="card" x="400" y="192" width="220" height="36" rx="4" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <text class="title" x="510" y="214" fill="#20242c" font-size="10.5" text-anchor="middle">paragraph (never moves)</text>
+
+    <text class="ok-text" x="400" y="252" fill="#15803d" font-size="12" font-weight="700">✓ nothing shifts</text>
+  </g>
+
+  <line x1="36" y1="292" x2="684" y2="292" stroke="#64748b" stroke-width="1" stroke-dasharray="2 4" />
+
+  <text class="title" x="36" y="324" fill="#20242c" font-family="system-ui, sans-serif" font-size="15" font-weight="700">
+    Layout-shift score = impact fraction × distance fraction
+  </text>
+
+  <g font-family="system-ui, sans-serif" text-anchor="middle">
+    <rect class="neutral-box" x="36" y="340" width="180" height="64" rx="10" fill="#dbeafe" stroke="#2563eb" stroke-width="2" />
+    <text class="neutral-text" x="126" y="368" fill="#172554" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="16" font-weight="700">0.6</text>
+    <text class="neutral-text" x="126" y="386" fill="#172554" font-size="10.5">impact fraction</text>
+
+    <text class="title" x="228" y="378" fill="#20242c" font-size="18" font-weight="700">×</text>
+
+    <rect class="warn-box" x="248" y="340" width="180" height="64" rx="10" fill="#ffedd5" stroke="#c2410c" stroke-width="2" />
+    <text class="warn-text" x="338" y="368" fill="#9a3412" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="16" font-weight="700">0.3</text>
+    <text class="warn-text" x="338" y="386" fill="#9a3412" font-size="10.5">distance fraction</text>
+
+    <text class="title" x="460" y="378" fill="#20242c" font-size="18" font-weight="700">=</text>
+
+    <rect class="ok-box" x="480" y="340" width="204" height="64" rx="10" fill="#dcfce7" stroke="#16a34a" stroke-width="2" />
+    <text class="ok-text" x="582" y="368" fill="#15803d" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="16" font-weight="700">0.18</text>
+    <text class="ok-text" x="582" y="386" fill="#15803d" font-size="10.5">layout-shift score</text>
+  </g>
+
+  <rect class="card" x="36" y="424" width="648" height="72" rx="10" fill="#ffffff" stroke="#64748b" stroke-width="1.5" />
+  <text class="title" x="52" y="448" fill="#20242c" font-family="system-ui, sans-serif" font-size="12.5" font-weight="700">
+    CLS = the highest single session-window score, not a sum
+  </text>
+  <text class="muted" x="52" y="468" fill="#526173" font-family="system-ui, sans-serif" font-size="12">
+    Two windows scoring 0.12 and 0.08 give a CLS of 0.12 — the windows are not added together.
+  </text>
+  <text class="muted" x="52" y="486" fill="#526173" font-family="system-ui, sans-serif" font-size="12">
+    A discrete click or tap excuses a shift within 500 ms; scrolling never does.
+  </text>
+</svg>
