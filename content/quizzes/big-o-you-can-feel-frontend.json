@@ -11,6 +11,14 @@
       "id": "scaling-10-to-10000",
       "title": "This list render runs one `.find()` for every row it `.map()`s. It feels instant with 10 rows but freezes at 10,000. Why?",
       "description": "```jsx\nrows.map((row) => {\n  const user = users.find((u) => u.id === row.userId);\n  return <Cell key={row.id} name={user.name} />;\n});\n```\n\nAssume `rows` and `users` both grow with the data size *n*.",
+      "images": [
+        {
+          "src": "growth-curves.svg",
+          "alt": "A plot of five growth curves rising from a shared origin: O(1) flat, O(log n) climbing steeply then flattening, O(n) a straight diagonal, O(n log n) bending upward past the linear line, and O(n squared) shooting off the top of the chart while the input axis is still short. Below it a table of rough operation counts. At n equals 10: 1, 3, 10, 33, 100. At n equals 1,000: 1, 10, 1,000, 9,966, 1,000,000. At n equals 10,000: 1, 13, 10,000, 132,877, 100,000,000. A closing note says growing n by a thousand grows n squared by a million, and that against a 16 millisecond frame the last cell is hundreds of milliseconds of blocked main thread.",
+          "caption": "Only the class matters once the data grows — the constants decide how it feels at ten rows.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -86,6 +94,14 @@
       "id": "best-worst-case-linear-search",
       "title": "For `array.find(predicate)` on an unsorted array of *n* items, which best/worst-case description is correct?",
       "description": "Think about where in the array the matching element is allowed to sit.",
+      "images": [
+        {
+          "src": "lookup-linear-vs-hash.svg",
+          "alt": "Two panels comparing membership tests. On the left, `arr.includes(x)` is a strip of ten array slots with an arrow sweeping from slot 0 to slot n minus 1, labelled compare, compare, compare; a note says the average is n/2 but a miss always costs the full n because nothing stops the walk early, and that `.indexOf` and `.find` behave the same. On the right, `set.has(x)` sends the value through a hash function to a single highlighted bucket among six, with a note that one hash and one bucket cost the same whatever n is, and that sameness uses SameValueZero so NaN dedupes. A bottom band applies this to `rows.filter(r => selectedIds.includes(r.id))` with 1,000 rows and 1,000 ids and no matches: 1,000,000 comparisons with the array, about 2,000 after building the Set once.",
+          "caption": "A miss is the worst case for a scan, and every row in a filter is a fresh miss.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -134,6 +150,14 @@
     {
       "id": "constant-factors-main-thread",
       "title": "Two functions are both O(*n*) over the same list. Why might one still cause visible jank while the other does not?",
+      "images": [
+        {
+          "src": "growth-curves.svg",
+          "alt": "A plot of five growth curves rising from a shared origin: O(1) flat, O(log n) climbing steeply then flattening, O(n) a straight diagonal, O(n log n) bending upward past the linear line, and O(n squared) shooting off the top of the chart while the input axis is still short. Below it a table of rough operation counts. At n equals 10: 1, 3, 10, 33, 100. At n equals 1,000: 1, 10, 1,000, 9,966, 1,000,000. At n equals 10,000: 1, 13, 10,000, 132,877, 100,000,000. A closing note says growing n by a thousand grows n squared by a million, and that against a 16 millisecond frame the last cell is hundreds of milliseconds of blocked main thread.",
+          "caption": "Only the class matters once the data grows — the constants decide how it feels at ten rows.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -158,6 +182,14 @@
     {
       "id": "which-patterns-are-quadratic",
       "title": "Select every snippet whose running time is O(*n*²). Assume each array has length *n*.",
+      "images": [
+        {
+          "src": "growth-curves.svg",
+          "alt": "A plot of five growth curves rising from a shared origin: O(1) flat, O(log n) climbing steeply then flattening, O(n) a straight diagonal, O(n log n) bending upward past the linear line, and O(n squared) shooting off the top of the chart while the input axis is still short. Below it a table of rough operation counts. At n equals 10: 1, 3, 10, 33, 100. At n equals 1,000: 1, 10, 1,000, 9,966, 1,000,000. At n equals 10,000: 1, 13, 10,000, 132,877, 100,000,000. A closing note says growing n by a thousand grows n squared by a million, and that against a 16 millisecond frame the last cell is hundreds of milliseconds of blocked main thread.",
+          "caption": "Only the class matters once the data grows — the constants decide how it feels at ten rows.",
+          "placement": "explanation"
+        }
+      ],
       "type": "multiple-choice",
       "options": [
         {
@@ -186,6 +218,14 @@
     {
       "id": "reading-complexity-true-statements",
       "title": "Which statements about estimating complexity from real frontend code are true? Select all that apply.",
+      "images": [
+        {
+          "src": "growth-curves.svg",
+          "alt": "A plot of five growth curves rising from a shared origin: O(1) flat, O(log n) climbing steeply then flattening, O(n) a straight diagonal, O(n log n) bending upward past the linear line, and O(n squared) shooting off the top of the chart while the input axis is still short. Below it a table of rough operation counts. At n equals 10: 1, 3, 10, 33, 100. At n equals 1,000: 1, 10, 1,000, 9,966, 1,000,000. At n equals 10,000: 1, 13, 10,000, 132,877, 100,000,000. A closing note says growing n by a thousand grows n squared by a million, and that against a 16 millisecond frame the last cell is hundreds of milliseconds of blocked main thread.",
+          "caption": "Only the class matters once the data grows — the constants decide how it feels at ten rows.",
+          "placement": "explanation"
+        }
+      ],
       "type": "multiple-choice",
       "options": [
         {
@@ -215,6 +255,14 @@
       "id": "complexity-of-sort-then-slice",
       "title": "Read the snippet and type its overall time-complexity class, for example `O(n)`.",
       "description": "```js\nfunction topThree(scores) {\n  return scores\n    .slice()              // copy the array\n    .sort((a, b) => b - a)\n    .slice(0, 3);         // keep the top 3\n}\n```\n\n`scores` has length *n*. Give the dominant Big-O class.",
+      "images": [
+        {
+          "src": "growth-curves.svg",
+          "alt": "A plot of five growth curves rising from a shared origin: O(1) flat, O(log n) climbing steeply then flattening, O(n) a straight diagonal, O(n log n) bending upward past the linear line, and O(n squared) shooting off the top of the chart while the input axis is still short. Below it a table of rough operation counts. At n equals 10: 1, 3, 10, 33, 100. At n equals 1,000: 1, 10, 1,000, 9,966, 1,000,000. At n equals 10,000: 1, 13, 10,000, 132,877, 100,000,000. A closing note says growing n by a thousand grows n squared by a million, and that against a 16 millisecond frame the last cell is hundreds of milliseconds of blocked main thread.",
+          "caption": "Only the class matters once the data grows — the constants decide how it feels at ten rows.",
+          "placement": "explanation"
+        }
+      ],
       "type": "input",
       "validation": {
         "mode": "text",
@@ -233,6 +281,14 @@
       "id": "complexity-of-filter-includes",
       "title": "Read the snippet and type its worst-case time-complexity class, for example `O(n)`.",
       "description": "```js\n// a and b each have length n\nfunction shared(a, b) {\n  return a.filter((x) => b.includes(x));\n}\n```\n\nGive the dominant Big-O class in terms of *n*.",
+      "images": [
+        {
+          "src": "lookup-linear-vs-hash.svg",
+          "alt": "Two panels comparing membership tests. On the left, `arr.includes(x)` is a strip of ten array slots with an arrow sweeping from slot 0 to slot n minus 1, labelled compare, compare, compare; a note says the average is n/2 but a miss always costs the full n because nothing stops the walk early, and that `.indexOf` and `.find` behave the same. On the right, `set.has(x)` sends the value through a hash function to a single highlighted bucket among six, with a note that one hash and one bucket cost the same whatever n is, and that sameness uses SameValueZero so NaN dedupes. A bottom band applies this to `rows.filter(r => selectedIds.includes(r.id))` with 1,000 rows and 1,000 ids and no matches: 1,000,000 comparisons with the array, about 2,000 after building the Set once.",
+          "caption": "A miss is the worst case for a scan, and every row in a filter is a fresh miss.",
+          "placement": "explanation"
+        }
+      ],
       "type": "input",
       "validation": {
         "mode": "text",
@@ -252,6 +308,14 @@
     {
       "id": "includes-is-linear",
       "title": "What is the average time complexity of `arr.includes(x)` for an array of *n* elements?",
+      "images": [
+        {
+          "src": "lookup-linear-vs-hash.svg",
+          "alt": "Two panels comparing membership tests. On the left, `arr.includes(x)` is a strip of ten array slots with an arrow sweeping from slot 0 to slot n minus 1, labelled compare, compare, compare; a note says the average is n/2 but a miss always costs the full n because nothing stops the walk early, and that `.indexOf` and `.find` behave the same. On the right, `set.has(x)` sends the value through a hash function to a single highlighted bucket among six, with a note that one hash and one bucket cost the same whatever n is, and that sameness uses SameValueZero so NaN dedupes. A bottom band applies this to `rows.filter(r => selectedIds.includes(r.id))` with 1,000 rows and 1,000 ids and no matches: 1,000,000 comparisons with the array, about 2,000 after building the Set once.",
+          "caption": "A miss is the worst case for a scan, and every row in a filter is a fresh miss.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -277,6 +341,14 @@
     {
       "id": "filter-includes-is-quadratic",
       "title": "A table renders *n* rows and stores the selected ids in an array `selectedIds` of length *m*. What is the cost of `rows.filter(r => selectedIds.includes(r.id))`?",
+      "images": [
+        {
+          "src": "lookup-linear-vs-hash.svg",
+          "alt": "Two panels comparing membership tests. On the left, `arr.includes(x)` is a strip of ten array slots with an arrow sweeping from slot 0 to slot n minus 1, labelled compare, compare, compare; a note says the average is n/2 but a miss always costs the full n because nothing stops the walk early, and that `.indexOf` and `.find` behave the same. On the right, `set.has(x)` sends the value through a hash function to a single highlighted bucket among six, with a note that one hash and one bucket cost the same whatever n is, and that sameness uses SameValueZero so NaN dedupes. A bottom band applies this to `rows.filter(r => selectedIds.includes(r.id))` with 1,000 rows and 1,000 ids and no matches: 1,000,000 comparisons with the array, about 2,000 after building the Set once.",
+          "caption": "A miss is the worst case for a scan, and every row in a filter is a fresh miss.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -302,6 +374,14 @@
     {
       "id": "set-has-is-constant",
       "title": "What is the average time complexity of `set.has(x)` for a `Set`?",
+      "images": [
+        {
+          "src": "lookup-linear-vs-hash.svg",
+          "alt": "Two panels comparing membership tests. On the left, `arr.includes(x)` is a strip of ten array slots with an arrow sweeping from slot 0 to slot n minus 1, labelled compare, compare, compare; a note says the average is n/2 but a miss always costs the full n because nothing stops the walk early, and that `.indexOf` and `.find` behave the same. On the right, `set.has(x)` sends the value through a hash function to a single highlighted bucket among six, with a note that one hash and one bucket cost the same whatever n is, and that sameness uses SameValueZero so NaN dedupes. A bottom band applies this to `rows.filter(r => selectedIds.includes(r.id))` with 1,000 rows and 1,000 ids and no matches: 1,000,000 comparisons with the array, about 2,000 after building the Set once.",
+          "caption": "A miss is the worst case for a scan, and every row in a filter is a fresh miss.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -328,6 +408,14 @@
       "id": "when-to-reach-for-a-set",
       "title": "Which UI tasks get faster or simpler when backed by a `Set` instead of an array?",
       "description": "Select every task where a `Set` is the better fit.",
+      "images": [
+        {
+          "src": "lookup-linear-vs-hash.svg",
+          "alt": "Two panels comparing membership tests. On the left, `arr.includes(x)` is a strip of ten array slots with an arrow sweeping from slot 0 to slot n minus 1, labelled compare, compare, compare; a note says the average is n/2 but a miss always costs the full n because nothing stops the walk early, and that `.indexOf` and `.find` behave the same. On the right, `set.has(x)` sends the value through a hash function to a single highlighted bucket among six, with a note that one hash and one bucket cost the same whatever n is, and that sameness uses SameValueZero so NaN dedupes. A bottom band applies this to `rows.filter(r => selectedIds.includes(r.id))` with 1,000 rows and 1,000 ids and no matches: 1,000,000 comparisons with the array, about 2,000 after building the Set once.",
+          "caption": "A miss is the worst case for a scan, and every row in a filter is a fresh miss.",
+          "placement": "explanation"
+        }
+      ],
       "type": "multiple-choice",
       "options": [
         {
@@ -378,6 +466,14 @@
     {
       "id": "dedupe-in-linear-time",
       "title": "Which expression removes duplicate primitives from `arr` in `O(n)` average time?",
+      "images": [
+        {
+          "src": "lookup-linear-vs-hash.svg",
+          "alt": "Two panels comparing membership tests. On the left, `arr.includes(x)` is a strip of ten array slots with an arrow sweeping from slot 0 to slot n minus 1, labelled compare, compare, compare; a note says the average is n/2 but a miss always costs the full n because nothing stops the walk early, and that `.indexOf` and `.find` behave the same. On the right, `set.has(x)` sends the value through a hash function to a single highlighted bucket among six, with a note that one hash and one bucket cost the same whatever n is, and that sameness uses SameValueZero so NaN dedupes. A bottom band applies this to `rows.filter(r => selectedIds.includes(r.id))` with 1,000 rows and 1,000 ids and no matches: 1,000,000 comparisons with the array, about 2,000 after building the Set once.",
+          "caption": "A miss is the worst case for a scan, and every row in a filter is a fresh miss.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -456,6 +552,14 @@
       "id": "id-to-entity-lookup-index",
       "title": "You hold an array of *n* entities and must look many of them up by `id`. Which statements are correct?",
       "description": "Select every true statement.",
+      "images": [
+        {
+          "src": "lookup-linear-vs-hash.svg",
+          "alt": "Two panels comparing membership tests. On the left, `arr.includes(x)` is a strip of ten array slots with an arrow sweeping from slot 0 to slot n minus 1, labelled compare, compare, compare; a note says the average is n/2 but a miss always costs the full n because nothing stops the walk early, and that `.indexOf` and `.find` behave the same. On the right, `set.has(x)` sends the value through a hash function to a single highlighted bucket among six, with a note that one hash and one bucket cost the same whatever n is, and that sameness uses SameValueZero so NaN dedupes. A bottom band applies this to `rows.filter(r => selectedIds.includes(r.id))` with 1,000 rows and 1,000 ids and no matches: 1,000,000 comparisons with the array, about 2,000 after building the Set once.",
+          "caption": "A miss is the worst case for a scan, and every row in a filter is a fresh miss.",
+          "placement": "explanation"
+        }
+      ],
       "type": "multiple-choice",
       "options": [
         {
@@ -482,6 +586,14 @@
       "id": "quadratic-comparison-count",
       "title": "In the worst case, how many element comparisons does `includes` make in total? Enter the number.",
       "description": "A list of **1,000** rows is filtered with `rows.filter(r => selectedIds.includes(r.id))`. The array `selectedIds` also holds **1,000** ids, and none of the rows match.",
+      "images": [
+        {
+          "src": "lookup-linear-vs-hash.svg",
+          "alt": "Two panels comparing membership tests. On the left, `arr.includes(x)` is a strip of ten array slots with an arrow sweeping from slot 0 to slot n minus 1, labelled compare, compare, compare; a note says the average is n/2 but a miss always costs the full n because nothing stops the walk early, and that `.indexOf` and `.find` behave the same. On the right, `set.has(x)` sends the value through a hash function to a single highlighted bucket among six, with a note that one hash and one bucket cost the same whatever n is, and that sameness uses SameValueZero so NaN dedupes. A bottom band applies this to `rows.filter(r => selectedIds.includes(r.id))` with 1,000 rows and 1,000 ids and no matches: 1,000,000 comparisons with the array, about 2,000 after building the Set once.",
+          "caption": "A miss is the worst case for a scan, and every row in a filter is a fresh miss.",
+          "placement": "explanation"
+        }
+      ],
       "type": "input",
       "validation": {
         "mode": "numeric",
@@ -518,6 +630,14 @@
       "id": "loop-condition-inclusive-bounds",
       "title": "With inclusive bounds (`hi = arr.length - 1`), which loop condition correctly searches for an exact match?",
       "description": "```js\nlet lo = 0;\nlet hi = arr.length - 1; // inclusive: arr[hi] is a real element\nwhile (/* ??? */) {\n  const mid = Math.floor((lo + hi) / 2);\n  // ...compare arr[mid] with target\n}\n```",
+      "images": [
+        {
+          "src": "binary-search-halving.svg",
+          "alt": "Sixteen sorted slots drawn three times with inclusive bounds. Step 1 has all sixteen in play, lo at index 0, hi at index 15, mid at index 7. Step 2 greys out slots 0 through 7 and leaves eight, lo at 8, mid at 11, hi at 15. Step 3 leaves three, lo at 8, mid at 9, hi at 10. A note says step 2 excludes mid itself because it was already compared, so lo becomes mid plus 1. A card traces the stall: with lo 0 and hi 1, mid floors to 0, so `lo = mid` leaves the range 0 to 1 forever while `lo = mid + 1` shrinks it to 1 to 1. A second card shows the array 3, 5, 5, 5, 9 with the lower bound of 5 on the first 5 and the upper bound one past the last 5, on the 9. A closing row gives the worst case as ceil of log base 2 of n: 20 at a million, 21 at two million, 22 at four million.",
+          "caption": "Each doubling of the data buys exactly one more comparison.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -543,6 +663,14 @@
       "id": "off-by-one-update-infinite-loop",
       "title": "Filling the blank, why is `lo = mid + 1` correct while `lo = mid` is a bug?",
       "description": "```js\nlet lo = 0, hi = arr.length - 1;\nwhile (lo <= hi) {\n  const mid = Math.floor((lo + hi) / 2);\n  if (arr[mid] < target) {\n    lo = /* ??? */;   // search the right half\n  } else if (arr[mid] > target) {\n    hi = mid - 1;     // search the left half\n  } else return mid;\n}\n```",
+      "images": [
+        {
+          "src": "binary-search-halving.svg",
+          "alt": "Sixteen sorted slots drawn three times with inclusive bounds. Step 1 has all sixteen in play, lo at index 0, hi at index 15, mid at index 7. Step 2 greys out slots 0 through 7 and leaves eight, lo at 8, mid at 11, hi at 15. Step 3 leaves three, lo at 8, mid at 9, hi at 10. A note says step 2 excludes mid itself because it was already compared, so lo becomes mid plus 1. A card traces the stall: with lo 0 and hi 1, mid floors to 0, so `lo = mid` leaves the range 0 to 1 forever while `lo = mid + 1` shrinks it to 1 to 1. A second card shows the array 3, 5, 5, 5, 9 with the lower bound of 5 on the first 5 and the upper bound one past the last 5, on the 9. A closing row gives the worst case as ceil of log base 2 of n: 20 at a million, 21 at two million, 22 at four million.",
+          "caption": "Each doubling of the data buys exactly one more comparison.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -567,6 +695,14 @@
     {
       "id": "lower-bound-semantics",
       "title": "What does a *lower-bound* binary search return for a target `x` in a sorted array?",
+      "images": [
+        {
+          "src": "binary-search-halving.svg",
+          "alt": "Sixteen sorted slots drawn three times with inclusive bounds. Step 1 has all sixteen in play, lo at index 0, hi at index 15, mid at index 7. Step 2 greys out slots 0 through 7 and leaves eight, lo at 8, mid at 11, hi at 15. Step 3 leaves three, lo at 8, mid at 9, hi at 10. A note says step 2 excludes mid itself because it was already compared, so lo becomes mid plus 1. A card traces the stall: with lo 0 and hi 1, mid floors to 0, so `lo = mid` leaves the range 0 to 1 forever while `lo = mid + 1` shrinks it to 1 to 1. A second card shows the array 3, 5, 5, 5, 9 with the lower bound of 5 on the first 5 and the upper bound one past the last 5, on the 9. A closing row gives the worst case as ceil of log base 2 of n: 20 at a million, 21 at two million, 22 at four million.",
+          "caption": "Each doubling of the data buys exactly one more comparison.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -592,6 +728,14 @@
       "id": "virtualized-list-first-visible-row",
       "title": "`react-window` and `@tanstack/virtual` render only the visible rows. With *variable* row heights, how do they find the first visible row for a given `scrollTop`?",
       "description": "```js\n// Variable-height rows: offsets[i] = pixel position of row i's top.\n// offsets is sorted ascending, e.g. [0, 48, 110, 158, 232, ...]\nfunction firstVisibleRow(offsets, scrollTop) {\n  // find it in O(log n), not O(n)\n}\n```",
+      "images": [
+        {
+          "src": "binary-search-halving.svg",
+          "alt": "Sixteen sorted slots drawn three times with inclusive bounds. Step 1 has all sixteen in play, lo at index 0, hi at index 15, mid at index 7. Step 2 greys out slots 0 through 7 and leaves eight, lo at 8, mid at 11, hi at 15. Step 3 leaves three, lo at 8, mid at 9, hi at 10. A note says step 2 excludes mid itself because it was already compared, so lo becomes mid plus 1. A card traces the stall: with lo 0 and hi 1, mid floors to 0, so `lo = mid` leaves the range 0 to 1 forever while `lo = mid + 1` shrinks it to 1 to 1. A second card shows the array 3, 5, 5, 5, 9 with the lower bound of 5 on the first 5 and the upper bound one past the last 5, on the 9. A closing row gives the worst case as ceil of log base 2 of n: 20 at a million, 21 at two million, 22 at four million.",
+          "caption": "Each doubling of the data buys exactly one more comparison.",
+          "placement": "explanation"
+        }
+      ],
       "type": "single-choice",
       "options": [
         {
@@ -640,6 +784,14 @@
     {
       "id": "which-tasks-are-binary-search-in-disguise",
       "title": "Select every task that is really a binary search over sorted data, even if it's never called that.",
+      "images": [
+        {
+          "src": "binary-search-halving.svg",
+          "alt": "Sixteen sorted slots drawn three times with inclusive bounds. Step 1 has all sixteen in play, lo at index 0, hi at index 15, mid at index 7. Step 2 greys out slots 0 through 7 and leaves eight, lo at 8, mid at 11, hi at 15. Step 3 leaves three, lo at 8, mid at 9, hi at 10. A note says step 2 excludes mid itself because it was already compared, so lo becomes mid plus 1. A card traces the stall: with lo 0 and hi 1, mid floors to 0, so `lo = mid` leaves the range 0 to 1 forever while `lo = mid + 1` shrinks it to 1 to 1. A second card shows the array 3, 5, 5, 5, 9 with the lower bound of 5 on the first 5 and the upper bound one past the last 5, on the 9. A closing row gives the worst case as ceil of log base 2 of n: 20 at a million, 21 at two million, 22 at four million.",
+          "caption": "Each doubling of the data buys exactly one more comparison.",
+          "placement": "explanation"
+        }
+      ],
       "type": "multiple-choice",
       "options": [
         {
@@ -668,6 +820,14 @@
     {
       "id": "true-statements-about-binary-search",
       "title": "Which statements about binary search are true? Select all that apply.",
+      "images": [
+        {
+          "src": "binary-search-halving.svg",
+          "alt": "Sixteen sorted slots drawn three times with inclusive bounds. Step 1 has all sixteen in play, lo at index 0, hi at index 15, mid at index 7. Step 2 greys out slots 0 through 7 and leaves eight, lo at 8, mid at 11, hi at 15. Step 3 leaves three, lo at 8, mid at 9, hi at 10. A note says step 2 excludes mid itself because it was already compared, so lo becomes mid plus 1. A card traces the stall: with lo 0 and hi 1, mid floors to 0, so `lo = mid` leaves the range 0 to 1 forever while `lo = mid + 1` shrinks it to 1 to 1. A second card shows the array 3, 5, 5, 5, 9 with the lower bound of 5 on the first 5 and the upper bound one past the last 5, on the 9. A closing row gives the worst case as ceil of log base 2 of n: 20 at a million, 21 at two million, 22 at four million.",
+          "caption": "Each doubling of the data buys exactly one more comparison.",
+          "placement": "explanation"
+        }
+      ],
       "type": "multiple-choice",
       "options": [
         {
@@ -697,6 +857,14 @@
       "id": "comparisons-for-one-million",
       "title": "Worst case, how many comparisons (halving steps) does binary search make on a sorted array of `n = 1,000,000` items? Enter a whole number.",
       "description": "Each step compares the target with the middle element and discards half of what's left.",
+      "images": [
+        {
+          "src": "binary-search-halving.svg",
+          "alt": "Sixteen sorted slots drawn three times with inclusive bounds. Step 1 has all sixteen in play, lo at index 0, hi at index 15, mid at index 7. Step 2 greys out slots 0 through 7 and leaves eight, lo at 8, mid at 11, hi at 15. Step 3 leaves three, lo at 8, mid at 9, hi at 10. A note says step 2 excludes mid itself because it was already compared, so lo becomes mid plus 1. A card traces the stall: with lo 0 and hi 1, mid floors to 0, so `lo = mid` leaves the range 0 to 1 forever while `lo = mid + 1` shrinks it to 1 to 1. A second card shows the array 3, 5, 5, 5, 9 with the lower bound of 5 on the first 5 and the upper bound one past the last 5, on the 9. A closing row gives the worst case as ceil of log base 2 of n: 20 at a million, 21 at two million, 22 at four million.",
+          "caption": "Each doubling of the data buys exactly one more comparison.",
+          "placement": "explanation"
+        }
+      ],
       "type": "input",
       "validation": {
         "mode": "numeric",
@@ -708,6 +876,14 @@
       "id": "extra-comparisons-when-doubling",
       "title": "The list grows from 1,000,000 to 2,000,000 items. How many *additional* worst-case comparisons does binary search now need? Enter a whole number.",
       "description": "Binary search's worst case grows like `log2(n)` — so think about what a single doubling of `n` does to it.",
+      "images": [
+        {
+          "src": "binary-search-halving.svg",
+          "alt": "Sixteen sorted slots drawn three times with inclusive bounds. Step 1 has all sixteen in play, lo at index 0, hi at index 15, mid at index 7. Step 2 greys out slots 0 through 7 and leaves eight, lo at 8, mid at 11, hi at 15. Step 3 leaves three, lo at 8, mid at 9, hi at 10. A note says step 2 excludes mid itself because it was already compared, so lo becomes mid plus 1. A card traces the stall: with lo 0 and hi 1, mid floors to 0, so `lo = mid` leaves the range 0 to 1 forever while `lo = mid + 1` shrinks it to 1 to 1. A second card shows the array 3, 5, 5, 5, 9 with the lower bound of 5 on the first 5 and the upper bound one past the last 5, on the 9. A closing row gives the worst case as ceil of log base 2 of n: 20 at a million, 21 at two million, 22 at four million.",
+          "caption": "Each doubling of the data buys exactly one more comparison.",
+          "placement": "explanation"
+        }
+      ],
       "type": "input",
       "validation": {
         "mode": "numeric",

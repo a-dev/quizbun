@@ -1,0 +1,110 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="550" viewBox="0 0 720 550">
+  <style>
+    /* An &lt;img&gt;-embedded SVG cannot see the page's `data-theme`, but it does
+       inherit the embedding document's `color-scheme`, so `prefers-color-scheme`
+       tracks the site theme including an explicit toggle. The presentation
+       attributes below stay as the light fallback for renderers without CSS. */
+    svg {
+      --panel: #f5f7fb;
+      --title: #20242c;
+      --muted: #526173;
+      --edge: #64748b;
+      --card: #ffffff;
+      --dead-text: #8a97a8;
+      --info-fill: #dbeafe;
+      --info-edge: #2563eb;
+      --info-text: #172554;
+      --accent-fill: #ffedd5;
+      --accent-edge: #c2410c;
+      --accent-text: #9a3412;
+      --good-fill: #dcfce7;
+      --good-edge: #16a34a;
+      --good-text: #14532d;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      svg {
+        --panel: #1a1f27;
+        --title: #e6eaf2;
+        --muted: #9aa8bd;
+        --edge: #8b9bb4;
+        --card: #252b35;
+        --dead-text: #6b7787;
+        --info-fill: #1e3a5f;
+        --info-edge: #60a5fa;
+        --info-text: #dbeafe;
+        --accent-fill: #3a2416;
+        --accent-edge: #fb923c;
+        --accent-text: #fdba74;
+        --good-fill: #14321f;
+        --good-edge: #4ade80;
+        --good-text: #bbf7d0;
+      }
+    }
+
+    .card { fill: var(--card); stroke: var(--edge); }
+    .info-box { fill: var(--info-fill); stroke: var(--info-edge); }
+    .accent-box { fill: var(--accent-fill); stroke: var(--accent-edge); }
+    .good-box { fill: var(--good-fill); stroke: var(--good-edge); }
+    .panel { fill: var(--panel); }
+    .title { fill: var(--title); }
+    .muted { fill: var(--muted); }
+    .dead-text { fill: var(--dead-text); }
+    .info-text { fill: var(--info-text); }
+    .accent-text { fill: var(--accent-text); }
+    .good-text { fill: var(--good-text); }
+    .accent-line { stroke: var(--accent-edge); }
+  </style>
+  <rect class="panel" width="720" height="550" rx="20" fill="#f5f7fb" />
+
+  <text class="title" x="36" y="42" fill="#20242c" font-family="system-ui, sans-serif" font-size="20" font-weight="700">await splits a function in two: a synchronous head and a microtask tail</text>
+  <text class="muted" x="36" y="66" fill="#526173" font-family="system-ui, sans-serif" font-size="14">Calling an async function runs its body immediately. The first await is where it hands control back.</text>
+  <rect class="card" x="36" y="88" width="316" height="268" rx="12" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+  <text class="title" x="54" y="114" fill="#20242c" font-family="system-ui, sans-serif" font-size="13" font-weight="700">One function, one cut</text>
+  <text class="muted" x="54" y="140" fill="#526173" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="11">async function a() {</text>
+  <text class="good-text" x="54" y="160" fill="#14532d" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="11" font-weight="700">  log('a1');</text>
+  <path class="accent-line" d="M54,170 H334" fill="none" stroke="#c2410c" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="5 4" />
+  <text class="accent-text" x="54" y="180" fill="#9a3412" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="11" font-weight="700">  await b();</text>
+  <text class="info-text" x="54" y="204" fill="#172554" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="11" font-weight="700">  log('a2');</text>
+  <text class="muted" x="54" y="224" fill="#526173" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="11">}</text>
+  <text class="good-text" x="54" y="244" fill="#14532d" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="11" font-weight="700">a();</text>
+  <text class="good-text" x="54" y="264" fill="#14532d" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="11" font-weight="700">log('sync');</text>
+  <text class="muted" x="54" y="288" fill="#526173" font-family="system-ui, sans-serif" font-size="10">Above the rule runs now, on the caller's stack — including</text>
+  <text class="muted" x="54" y="302" fill="#526173" font-family="system-ui, sans-serif" font-size="10">b()'s own body, right up to b's first await.</text>
+  <rect class="good-box" x="54" y="314" width="280" height="26" rx="7" fill="#dcfce7" stroke="#16a34a" stroke-width="2" />
+  <text class="good-text" x="194" y="332" fill="#14532d" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="12" font-weight="700" text-anchor="middle">logs a1  sync  a2</text>
+  <rect class="card" x="368" y="88" width="316" height="268" rx="12" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+  <text class="title" x="386" y="114" fill="#20242c" font-family="system-ui, sans-serif" font-size="13" font-weight="700">Two of them interleave, one tick each</text>
+  <text class="muted" x="386" y="140" fill="#526173" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="11">f() { 1; await; 3; await; 5 }</text>
+  <text class="muted" x="386" y="160" fill="#526173" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="11">g() { 2; await; 4; await; 6 }</text>
+  <text class="dead-text" x="386" y="208" fill="#8a97a8" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="10.5">sync</text>
+  <rect class="good-box" x="452" y="186" width="150" height="32" rx="8" fill="#dcfce7" stroke="#16a34a" stroke-width="2" />
+  <text class="good-text" x="527" y="207" fill="#14532d" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="13" font-weight="700" text-anchor="middle">1  2</text>
+  <text class="dead-text" x="386" y="250" fill="#8a97a8" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="10.5">tick 1</text>
+  <rect class="info-box" x="452" y="228" width="150" height="32" rx="8" fill="#dbeafe" stroke="#2563eb" stroke-width="2" />
+  <text class="info-text" x="527" y="249" fill="#172554" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="13" font-weight="700" text-anchor="middle">3  4</text>
+  <text class="dead-text" x="386" y="292" fill="#8a97a8" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="10.5">tick 2</text>
+  <rect class="info-box" x="452" y="270" width="150" height="32" rx="8" fill="#dbeafe" stroke="#2563eb" stroke-width="2" />
+  <text class="info-text" x="527" y="291" fill="#172554" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="13" font-weight="700" text-anchor="middle">5  6</text>
+  <text class="muted" x="386" y="328" fill="#526173" font-family="system-ui, sans-serif" font-size="10">Each await queues exactly one continuation, so the two</text>
+  <text class="muted" x="386" y="342" fill="#526173" font-family="system-ui, sans-serif" font-size="10">functions take turns instead of running to completion.</text>
+  <rect class="info-box" x="36" y="372" width="316" height="148" rx="12" fill="#dbeafe" stroke="#2563eb" stroke-width="2" />
+  <text class="info-text" x="54" y="398" fill="#172554" font-family="system-ui, sans-serif" font-size="12.5" font-weight="700">What a resumption costs, in ticks</text>
+  <text class="info-text" x="54" y="422" fill="#172554" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="11" font-weight="700">return 'V'</text>
+  <text class="good-text" x="334" y="422" fill="#14532d" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="11" font-weight="700" text-anchor="end">tick 1</text>
+  <text class="info-text" x="54" y="444" fill="#172554" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="11" font-weight="700">return await p</text>
+  <text class="good-text" x="334" y="444" fill="#14532d" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="11" font-weight="700" text-anchor="end">tick 2</text>
+  <text class="info-text" x="54" y="466" fill="#172554" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="11" font-weight="700">return Promise.resolve(v)</text>
+  <text class="good-text" x="334" y="466" fill="#14532d" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="11" font-weight="700" text-anchor="end">tick 3</text>
+  <text class="info-text" x="54" y="496" fill="#172554" font-family="system-ui, sans-serif" font-size="10">Returning a promise makes the engine subscribe to it and</text>
+  <text class="info-text" x="54" y="510" fill="#172554" font-family="system-ui, sans-serif" font-size="10">then resolve the outer one — two jobs, not one.</text>
+  <rect class="accent-box" x="368" y="372" width="316" height="148" rx="12" fill="#ffedd5" stroke="#c2410c" stroke-width="2" />
+  <text class="accent-text" x="386" y="398" fill="#9a3412" font-family="system-ui, sans-serif" font-size="12.5" font-weight="700">Two things await does not do</text>
+  <text class="accent-text" x="386" y="422" fill="#9a3412" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="11" font-weight="700">await 5</text>
+  <text class="accent-text" x="444" y="422" fill="#9a3412" font-family="system-ui, sans-serif" font-size="10.5">still suspends. A non-promise is</text>
+  <text class="accent-text" x="386" y="438" fill="#9a3412" font-family="system-ui, sans-serif" font-size="10.5">wrapped and resumed on the next microtask; the</text>
+  <text class="accent-text" x="386" y="454" fill="#9a3412" font-family="system-ui, sans-serif" font-size="10.5">expression just evaluates to 5. An async function</text>
+  <text class="accent-text" x="386" y="470" fill="#9a3412" font-family="system-ui, sans-serif" font-size="10.5">with no await runs start to finish synchronously.</text>
+  <text class="accent-text" x="386" y="494" fill="#9a3412" font-family="system-ui, sans-serif" font-size="10.5">await in a non-async function is a SyntaxError at</text>
+  <text class="accent-text" x="386" y="510" fill="#9a3412" font-family="system-ui, sans-serif" font-size="10.5">parse time. Top level is modules only, never CommonJS.</text>
+</svg>

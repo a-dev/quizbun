@@ -1,0 +1,130 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="576" viewBox="0 0 720 576">
+  <style>
+    /* An &lt;img&gt;-embedded SVG cannot see the page's `data-theme`, but it does
+       inherit the embedding document's `color-scheme`, so `prefers-color-scheme`
+       tracks the site theme including an explicit toggle. The presentation
+       attributes below stay as the light fallback for renderers without CSS. */
+    svg {
+      --panel: #f5f7fb;
+      --title: #20242c;
+      --muted: #526173;
+      --edge: #64748b;
+      --card: #ffffff;
+      --dead-fill: #e8ecf3;
+      --dead-text: #8a97a8;
+      --info-fill: #dbeafe;
+      --info-edge: #2563eb;
+      --info-text: #172554;
+      --accent-fill: #ffedd5;
+      --accent-edge: #c2410c;
+      --accent-text: #9a3412;
+      --good-fill: #dcfce7;
+      --good-edge: #16a34a;
+      --good-text: #14532d;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      svg {
+        --panel: #1a1f27;
+        --title: #e6eaf2;
+        --muted: #9aa8bd;
+        --edge: #8b9bb4;
+        --card: #252b35;
+        --dead-fill: #20262e;
+        --dead-text: #6b7787;
+        --info-fill: #1e3a5f;
+        --info-edge: #60a5fa;
+        --info-text: #dbeafe;
+        --accent-fill: #3a2416;
+        --accent-edge: #fb923c;
+        --accent-text: #fdba74;
+        --good-fill: #14321f;
+        --good-edge: #4ade80;
+        --good-text: #bbf7d0;
+      }
+    }
+
+    .card { fill: var(--card); stroke: var(--edge); }
+    .dead { fill: var(--dead-fill); stroke: var(--dead-text); }
+    .info-box { fill: var(--info-fill); stroke: var(--info-edge); }
+    .accent-box { fill: var(--accent-fill); stroke: var(--accent-edge); }
+    .good-box { fill: var(--good-fill); stroke: var(--good-edge); }
+    .panel { fill: var(--panel); }
+    .title { fill: var(--title); }
+    .muted { fill: var(--muted); }
+    .info-text { fill: var(--info-text); }
+    .accent-text { fill: var(--accent-text); }
+    .good-text { fill: var(--good-text); }
+    .dead-line { stroke: var(--dead-text); }
+  </style>
+  <rect class="panel" width="720" height="576" rx="20" fill="#f5f7fb" />
+
+  <text class="title" x="36" y="42" fill="#20242c" font-family="system-ui, sans-serif" font-size="20" font-weight="700">Undo and redo are two stacks, and the redo stack is fragile</text>
+  <text class="muted" x="36" y="66" fill="#526173" font-family="system-ui, sans-serif" font-size="14">Each panel is one moment in the same session. Top of each stack is the top of each column.</text>
+  <rect class="card" x="36" y="88" width="212" height="192" rx="12" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+  <text class="title" x="52" y="114" fill="#20242c" font-family="system-ui, sans-serif" font-size="12" font-weight="700">1 · three edits made</text>
+  <text class="info-text" x="94" y="138" fill="#172554" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="11" font-weight="700" text-anchor="middle">undo</text>
+  <rect class="info-box" x="52" y="148" width="84" height="26" rx="6" fill="#dbeafe" stroke="#2563eb" stroke-width="2" />
+  <text class="info-text" x="94" y="166" fill="#172554" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="12" font-weight="700" text-anchor="middle">e3</text>
+  <rect class="info-box" x="52" y="178" width="84" height="26" rx="6" fill="#dbeafe" stroke="#2563eb" stroke-width="2" />
+  <text class="info-text" x="94" y="196" fill="#172554" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="12" font-weight="700" text-anchor="middle">e2</text>
+  <rect class="info-box" x="52" y="208" width="84" height="26" rx="6" fill="#dbeafe" stroke="#2563eb" stroke-width="2" />
+  <text class="info-text" x="94" y="226" fill="#172554" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="12" font-weight="700" text-anchor="middle">e1</text>
+  <path class="dead-line" d="M52,240 H136" fill="none" stroke="#8a97a8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+  <text class="accent-text" x="190" y="138" fill="#9a3412" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="11" font-weight="700" text-anchor="middle">redo</text>
+  <rect class="dead" x="148" y="148" width="84" height="26" rx="6" fill="#e8ecf3" stroke="#8a97a8" stroke-width="1" stroke-dasharray="3 3" />
+  <rect class="dead" x="148" y="178" width="84" height="26" rx="6" fill="#e8ecf3" stroke="#8a97a8" stroke-width="1" stroke-dasharray="3 3" />
+  <rect class="dead" x="148" y="208" width="84" height="26" rx="6" fill="#e8ecf3" stroke="#8a97a8" stroke-width="1" stroke-dasharray="3 3" />
+  <path class="dead-line" d="M148,240 H232" fill="none" stroke="#8a97a8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+  <rect class="card" x="254" y="88" width="212" height="192" rx="12" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+  <text class="title" x="270" y="114" fill="#20242c" font-family="system-ui, sans-serif" font-size="12" font-weight="700">2 · Undo pressed twice</text>
+  <text class="info-text" x="312" y="138" fill="#172554" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="11" font-weight="700" text-anchor="middle">undo</text>
+  <rect class="dead" x="270" y="148" width="84" height="26" rx="6" fill="#e8ecf3" stroke="#8a97a8" stroke-width="1" stroke-dasharray="3 3" />
+  <rect class="dead" x="270" y="178" width="84" height="26" rx="6" fill="#e8ecf3" stroke="#8a97a8" stroke-width="1" stroke-dasharray="3 3" />
+  <rect class="info-box" x="270" y="208" width="84" height="26" rx="6" fill="#dbeafe" stroke="#2563eb" stroke-width="2" />
+  <text class="info-text" x="312" y="226" fill="#172554" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="12" font-weight="700" text-anchor="middle">e1</text>
+  <path class="dead-line" d="M270,240 H354" fill="none" stroke="#8a97a8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+  <text class="accent-text" x="408" y="138" fill="#9a3412" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="11" font-weight="700" text-anchor="middle">redo</text>
+  <rect class="dead" x="366" y="148" width="84" height="26" rx="6" fill="#e8ecf3" stroke="#8a97a8" stroke-width="1" stroke-dasharray="3 3" />
+  <rect class="accent-box" x="366" y="178" width="84" height="26" rx="6" fill="#ffedd5" stroke="#c2410c" stroke-width="2" />
+  <text class="accent-text" x="408" y="196" fill="#9a3412" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="12" font-weight="700" text-anchor="middle">e2</text>
+  <rect class="accent-box" x="366" y="208" width="84" height="26" rx="6" fill="#ffedd5" stroke="#c2410c" stroke-width="2" />
+  <text class="accent-text" x="408" y="226" fill="#9a3412" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="12" font-weight="700" text-anchor="middle">e3</text>
+  <path class="dead-line" d="M366,240 H450" fill="none" stroke="#8a97a8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+  <rect class="card" x="472" y="88" width="212" height="192" rx="12" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+  <text class="title" x="488" y="114" fill="#20242c" font-family="system-ui, sans-serif" font-size="12" font-weight="700">3 · then a brand-new edit</text>
+  <text class="info-text" x="530" y="138" fill="#172554" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="11" font-weight="700" text-anchor="middle">undo</text>
+  <rect class="dead" x="488" y="148" width="84" height="26" rx="6" fill="#e8ecf3" stroke="#8a97a8" stroke-width="1" stroke-dasharray="3 3" />
+  <rect class="info-box" x="488" y="178" width="84" height="26" rx="6" fill="#dbeafe" stroke="#2563eb" stroke-width="2" />
+  <text class="info-text" x="530" y="196" fill="#172554" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="12" font-weight="700" text-anchor="middle">e4</text>
+  <rect class="info-box" x="488" y="208" width="84" height="26" rx="6" fill="#dbeafe" stroke="#2563eb" stroke-width="2" />
+  <text class="info-text" x="530" y="226" fill="#172554" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="12" font-weight="700" text-anchor="middle">e1</text>
+  <path class="dead-line" d="M488,240 H572" fill="none" stroke="#8a97a8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+  <text class="accent-text" x="626" y="138" fill="#9a3412" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="11" font-weight="700" text-anchor="middle">redo</text>
+  <rect class="dead" x="584" y="148" width="84" height="26" rx="6" fill="#e8ecf3" stroke="#8a97a8" stroke-width="1" stroke-dasharray="3 3" />
+  <rect class="dead" x="584" y="178" width="84" height="26" rx="6" fill="#e8ecf3" stroke="#8a97a8" stroke-width="1" stroke-dasharray="3 3" />
+  <rect class="dead" x="584" y="208" width="84" height="26" rx="6" fill="#e8ecf3" stroke="#8a97a8" stroke-width="1" stroke-dasharray="3 3" />
+  <path class="dead-line" d="M584,240 H668" fill="none" stroke="#8a97a8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+  <text class="accent-text" x="626" y="266" fill="#9a3412" font-family="system-ui, sans-serif" font-size="11" font-weight="700" text-anchor="middle">cleared</text>
+  <text class="muted" x="240" y="200" fill="#526173" font-family="system-ui, sans-serif" font-size="18" font-weight="700" text-anchor="middle">→</text>
+  <text class="muted" x="458" y="200" fill="#526173" font-family="system-ui, sans-serif" font-size="18" font-weight="700" text-anchor="middle">→</text>
+  <text class="muted" x="36" y="308" fill="#526173" font-family="system-ui, sans-serif" font-size="11.5">Undo moves the top of the undo stack onto the redo stack. A brand-new action makes every saved redo unreachable — the</text>
+  <text class="muted" x="36" y="324" fill="#526173" font-family="system-ui, sans-serif" font-size="11.5">future it belonged to no longer exists — so the redo stack is discarded. One shared stack could not tell the two apart.</text>
+  <rect class="info-box" x="36" y="344" width="316" height="130" rx="12" fill="#dbeafe" stroke="#2563eb" stroke-width="2" />
+  <text class="info-text" x="54" y="370" fill="#172554" font-family="system-ui, sans-serif" font-size="13.5" font-weight="700">LIFO — a stack</text>
+  <text class="info-text" x="54" y="394" fill="#172554" font-family="system-ui, sans-serif" font-size="11">The JavaScript call stack: the most recent call returns first.</text>
+  <text class="info-text" x="54" y="412" fill="#172554" font-family="system-ui, sans-serif" font-size="11">The browser’s session history, which Back pops from.</text>
+  <text class="info-text" x="54" y="430" fill="#172554" font-family="system-ui, sans-serif" font-size="11">Undo history, newest action undone first.</text>
+  <text class="info-text" x="54" y="448" fill="#172554" font-family="system-ui, sans-serif" font-size="11">Stacked modals: the last one opened closes first.</text>
+  <text class="info-text" x="54" y="466" fill="#172554" font-family="system-ui, sans-serif" font-size="11" font-weight="700">push and pop act on the same end.</text>
+  <rect class="good-box" x="368" y="344" width="316" height="130" rx="12" fill="#dcfce7" stroke="#16a34a" stroke-width="2" />
+  <text class="good-text" x="386" y="370" fill="#14532d" font-family="system-ui, sans-serif" font-size="13.5" font-weight="700">FIFO — a queue</text>
+  <text class="good-text" x="386" y="394" fill="#14532d" font-family="system-ui, sans-serif" font-size="11">The browser’s task and callback queues.</text>
+  <text class="good-text" x="386" y="412" fill="#14532d" font-family="system-ui, sans-serif" font-size="11">A render queue draining in arrival order.</text>
+  <text class="good-text" x="386" y="430" fill="#14532d" font-family="system-ui, sans-serif" font-size="11">The microtask queue draining promise callbacks.</text>
+  <text class="good-text" x="386" y="448" fill="#14532d" font-family="system-ui, sans-serif" font-size="11">A print spooler, printing in submission order.</text>
+  <text class="good-text" x="386" y="466" fill="#14532d" font-family="system-ui, sans-serif" font-size="11" font-weight="700">Enqueue at one end, dequeue at the other.</text>
+  <rect class="accent-box" x="36" y="490" width="648" height="62" rx="12" fill="#ffedd5" stroke="#c2410c" stroke-width="2" />
+  <text class="accent-text" x="54" y="514" fill="#9a3412" font-family="system-ui, sans-serif" font-size="12" font-weight="700">Cap the history at 100 and the 101st action evicts the oldest — the bottom of the stack, never the newest.</text>
+  <text class="accent-text" x="54" y="534" fill="#9a3412" font-family="system-ui, sans-serif" font-size="10.5">On a plain array that bottom removal is an O(n) shift; a deque or ring buffer keeps both ends O(1).</text>
+</svg>

@@ -1,0 +1,134 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="644" viewBox="0 0 720 644">
+  <style>
+    /* An &lt;img&gt;-embedded SVG cannot see the page's `data-theme`, but it does
+       inherit the embedding document's `color-scheme`, so `prefers-color-scheme`
+       tracks the site theme including an explicit toggle. The presentation
+       attributes below stay as the light fallback for renderers without CSS. */
+    svg {
+      --panel: #f5f7fb;
+      --title: #20242c;
+      --muted: #526173;
+      --edge: #64748b;
+      --card: #ffffff;
+      --dead-fill: #e8ecf3;
+      --dead-text: #8a97a8;
+      --info-fill: #dbeafe;
+      --info-edge: #2563eb;
+      --info-text: #172554;
+      --accent-fill: #ffedd5;
+      --accent-edge: #c2410c;
+      --accent-text: #9a3412;
+      --good-fill: #dcfce7;
+      --good-edge: #16a34a;
+      --good-text: #14532d;
+      --alt-fill: #f3e8ff;
+      --alt-edge: #9333ea;
+      --alt-text: #581c87;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      svg {
+        --panel: #1a1f27;
+        --title: #e6eaf2;
+        --muted: #9aa8bd;
+        --edge: #8b9bb4;
+        --card: #252b35;
+        --dead-fill: #20262e;
+        --dead-text: #6b7787;
+        --info-fill: #1e3a5f;
+        --info-edge: #60a5fa;
+        --info-text: #dbeafe;
+        --accent-fill: #3a2416;
+        --accent-edge: #fb923c;
+        --accent-text: #fdba74;
+        --good-fill: #14321f;
+        --good-edge: #4ade80;
+        --good-text: #bbf7d0;
+        --alt-fill: #2e1d40;
+        --alt-edge: #c084fc;
+        --alt-text: #e9d5ff;
+      }
+    }
+
+    .panel { fill: var(--panel); }
+    .title { fill: var(--title); }
+    .muted { fill: var(--muted); }
+    .dead-text { fill: var(--dead-text); }
+    .info-text { fill: var(--info-text); }
+    .accent-text { fill: var(--accent-text); }
+    .good-text { fill: var(--good-text); }
+    .alt-text { fill: var(--alt-text); }
+    .accent-box { fill: var(--accent-fill); stroke: var(--accent-edge); }
+    .alt-box { fill: var(--alt-fill); stroke: var(--alt-edge); }
+    .card-box { fill: var(--card); stroke: var(--edge); }
+    .dead-box { fill: var(--dead-fill); stroke: var(--edge); }
+    .good-box { fill: var(--good-fill); stroke: var(--good-edge); }
+    .info-box { fill: var(--info-fill); stroke: var(--info-edge); }
+    .dead-line { stroke: var(--dead-text); }
+  </style>
+  <rect class="panel" width="720" height="644" rx="20" fill="#f5f7fb" />
+
+  <text class="title" x="36" y="42" fill="#20242c" font-family="system-ui, sans-serif" font-size="20" font-weight="700">Fusing two rankings, and measuring what came back</text>
+  <text class="muted" x="36" y="66" fill="#526173" font-family="system-ui, sans-serif" font-size="14">RRF works on ranks. recall@5 works on the relevant set. Neither one looks at a raw score.</text>
+  <rect class="card-box" x="36" y="88" width="648" height="250" rx="12" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+  <text class="title" x="54" y="114" fill="#20242c" font-family="system-ui, sans-serif" font-size="13.5" font-weight="700">Two branches, two score scales that never meet</text>
+  <rect class="alt-box" x="54" y="128" width="280" height="120" rx="10" fill="#f3e8ff" stroke="#9333ea" stroke-width="2" />
+  <text class="alt-text" x="70" y="150" fill="#581c87" font-family="system-ui, sans-serif" font-size="12.5" font-weight="700">Lexical BM25</text>
+  <text class="alt-text" x="70" y="172" fill="#581c87" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="11">1.  doc-C</text>
+  <text class="alt-text" x="318" y="172" fill="#581c87" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="11" text-anchor="end">18.4</text>
+  <text class="alt-text" x="70" y="191" fill="#581c87" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="11">2.  doc-B</text>
+  <text class="alt-text" x="318" y="191" fill="#581c87" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="11" text-anchor="end">12.1</text>
+  <text class="alt-text" x="70" y="210" fill="#581c87" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="11">3.  doc-E</text>
+  <text class="alt-text" x="318" y="210" fill="#581c87" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="11" text-anchor="end">9.7</text>
+  <text class="alt-text" x="70" y="229" fill="#581c87" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="11">4.  doc-A</text>
+  <text class="alt-text" x="318" y="229" fill="#581c87" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="11" text-anchor="end">6.2</text>
+  <rect class="info-box" x="386" y="128" width="280" height="120" rx="10" fill="#dbeafe" stroke="#2563eb" stroke-width="2" />
+  <text class="info-text" x="402" y="150" fill="#172554" font-family="system-ui, sans-serif" font-size="12.5" font-weight="700">Dense vectors</text>
+  <text class="info-text" x="402" y="172" fill="#172554" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="11">1.  doc-A</text>
+  <text class="info-text" x="650" y="172" fill="#172554" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="11" text-anchor="end">0.83</text>
+  <text class="info-text" x="402" y="191" fill="#172554" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="11">2.  doc-D</text>
+  <text class="info-text" x="650" y="191" fill="#172554" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="11" text-anchor="end">0.79</text>
+  <text class="info-text" x="402" y="210" fill="#172554" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="11">3.  doc-C</text>
+  <text class="info-text" x="650" y="210" fill="#172554" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="11" text-anchor="end">0.77</text>
+  <text class="info-text" x="402" y="229" fill="#172554" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="11">4.  doc-F</text>
+  <text class="info-text" x="650" y="229" fill="#172554" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="11" text-anchor="end">0.71</text>
+  <rect class="good-box" x="54" y="258" width="612" height="64" rx="10" fill="#dcfce7" stroke="#16a34a" stroke-width="2" />
+  <text class="good-text" x="70" y="278" fill="#14532d" font-family="system-ui, sans-serif" font-size="12" font-weight="700">RRF adds one reciprocal per list it appears in — rank in, raw score never</text>
+  <text class="good-text" x="70" y="297" fill="#14532d" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="11">doc-A: 1 / (60 + 4) + 1 / (60 + 1) = 0.01563 + 0.01639 = 0.03202</text>
+  <text class="good-text" x="70" y="314" fill="#14532d" font-family="system-ui, sans-serif" font-size="10.5">18.4 and 0.83 are not on one scale. Ranks are comparable by construction, so no normalization step is needed.</text>
+  <rect class="card-box" x="36" y="350" width="648" height="150" rx="12" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+  <text class="title" x="54" y="376" fill="#20242c" font-family="system-ui, sans-serif" font-size="13.5" font-weight="700">recall@5 counts the relevant chunks found, not the results returned</text>
+  <rect class="good-box" x="54" y="390" width="88" height="44" rx="8" fill="#dcfce7" stroke="#16a34a" stroke-width="2" />
+  <text class="good-text" x="98" y="408" fill="#14532d" font-family="system-ui, sans-serif" font-size="11" font-weight="700" text-anchor="middle">rank 1</text>
+  <text class="good-text" x="98" y="424" fill="#14532d" font-family="system-ui, sans-serif" font-size="10" text-anchor="middle">relevant</text>
+  <rect class="dead-box" x="150" y="390" width="88" height="44" rx="8" fill="#e8ecf3" stroke="#64748b" stroke-width="2" />
+  <text class="dead-text" x="194" y="408" fill="#8a97a8" font-family="system-ui, sans-serif" font-size="11" font-weight="700" text-anchor="middle">rank 2</text>
+  <text class="dead-text" x="194" y="424" fill="#8a97a8" font-family="system-ui, sans-serif" font-size="10" text-anchor="middle">not relevant</text>
+  <rect class="good-box" x="246" y="390" width="88" height="44" rx="8" fill="#dcfce7" stroke="#16a34a" stroke-width="2" />
+  <text class="good-text" x="290" y="408" fill="#14532d" font-family="system-ui, sans-serif" font-size="11" font-weight="700" text-anchor="middle">rank 3</text>
+  <text class="good-text" x="290" y="424" fill="#14532d" font-family="system-ui, sans-serif" font-size="10" text-anchor="middle">relevant</text>
+  <rect class="dead-box" x="342" y="390" width="88" height="44" rx="8" fill="#e8ecf3" stroke="#64748b" stroke-width="2" />
+  <text class="dead-text" x="386" y="408" fill="#8a97a8" font-family="system-ui, sans-serif" font-size="11" font-weight="700" text-anchor="middle">rank 4</text>
+  <text class="dead-text" x="386" y="424" fill="#8a97a8" font-family="system-ui, sans-serif" font-size="10" text-anchor="middle">not relevant</text>
+  <rect class="good-box" x="438" y="390" width="88" height="44" rx="8" fill="#dcfce7" stroke="#16a34a" stroke-width="2" />
+  <text class="good-text" x="482" y="408" fill="#14532d" font-family="system-ui, sans-serif" font-size="11" font-weight="700" text-anchor="middle">rank 5</text>
+  <text class="good-text" x="482" y="424" fill="#14532d" font-family="system-ui, sans-serif" font-size="10" text-anchor="middle">relevant</text>
+  <path class="dead-line" d="M538,412 H556" fill="none" stroke="#8a97a8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="4 4" />
+  <rect class="accent-box" x="560" y="390" width="106" height="44" rx="8" fill="#ffedd5" stroke="#c2410c" stroke-width="2" stroke-dasharray="5 4" />
+  <text class="accent-text" x="613" y="408" fill="#9a3412" font-family="system-ui, sans-serif" font-size="11" font-weight="700" text-anchor="middle">rank 23</text>
+  <text class="accent-text" x="613" y="424" fill="#9a3412" font-family="system-ui, sans-serif" font-size="10" text-anchor="middle">relevant, missed</text>
+  <text class="title" x="54" y="458" fill="#20242c" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="12">recall@5 = 3 relevant found / 4 relevant total = 0.75</text>
+  <text class="muted" x="54" y="480" fill="#526173" font-family="system-ui, sans-serif" font-size="11">The two non-relevant results lower precision. They do not touch recall.</text>
+  <rect class="card-box" x="36" y="512" width="648" height="120" rx="12" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+  <text class="title" x="54" y="538" fill="#20242c" font-family="system-ui, sans-serif" font-size="13.5" font-weight="700">Raising k from 5 to 50 is a trade, not an upgrade</text>
+  <rect class="good-box" x="54" y="548" width="196" height="44" rx="10" fill="#dcfce7" stroke="#16a34a" stroke-width="2" />
+  <text class="good-text" x="152" y="566" fill="#14532d" font-family="system-ui, sans-serif" font-size="12" font-weight="700" text-anchor="middle">Recall can rise</text>
+  <text class="good-text" x="152" y="582" fill="#14532d" font-family="system-ui, sans-serif" font-size="10.2" text-anchor="middle">more supporting evidence</text>
+  <rect class="accent-box" x="262" y="548" width="196" height="44" rx="10" fill="#ffedd5" stroke="#c2410c" stroke-width="2" />
+  <text class="accent-text" x="360" y="566" fill="#9a3412" font-family="system-ui, sans-serif" font-size="12" font-weight="700" text-anchor="middle">Distractors arrive</text>
+  <text class="accent-text" x="360" y="582" fill="#9a3412" font-family="system-ui, sans-serif" font-size="10.2" text-anchor="middle">irrelevant passages mislead</text>
+  <rect class="accent-box" x="470" y="548" width="196" height="44" rx="10" fill="#ffedd5" stroke="#c2410c" stroke-width="2" />
+  <text class="accent-text" x="568" y="566" fill="#9a3412" font-family="system-ui, sans-serif" font-size="12" font-weight="700" text-anchor="middle">Context is spent</text>
+  <text class="accent-text" x="568" y="582" fill="#9a3412" font-family="system-ui, sans-serif" font-size="10.2" text-anchor="middle">45 more passages, same window</text>
+  <text class="muted" x="54" y="616" fill="#526173" font-family="system-ui, sans-serif" font-size="10.6">Pick k by measuring it — against retrieval metrics and against the end-to-end answer, not by assuming more is better.</text>
+</svg>

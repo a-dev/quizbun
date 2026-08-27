@@ -1,0 +1,110 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="586" viewBox="0 0 720 586">
+  <style>
+    /* An &lt;img&gt;-embedded SVG cannot see the page's `data-theme`, but it does
+       inherit the embedding document's `color-scheme`, so `prefers-color-scheme`
+       tracks the site theme including an explicit toggle. The presentation
+       attributes below stay as the light fallback for renderers without CSS. */
+    svg {
+      --panel: #f5f7fb;
+      --title: #20242c;
+      --muted: #526173;
+      --edge: #64748b;
+      --card: #ffffff;
+      --info-fill: #dbeafe;
+      --info-edge: #2563eb;
+      --info-text: #172554;
+      --accent-fill: #ffedd5;
+      --accent-edge: #c2410c;
+      --accent-text: #9a3412;
+      --good-fill: #dcfce7;
+      --good-edge: #16a34a;
+      --good-text: #14532d;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      svg {
+        --panel: #1a1f27;
+        --title: #e6eaf2;
+        --muted: #9aa8bd;
+        --edge: #8b9bb4;
+        --card: #252b35;
+        --info-fill: #1e3a5f;
+        --info-edge: #60a5fa;
+        --info-text: #dbeafe;
+        --accent-fill: #3a2416;
+        --accent-edge: #fb923c;
+        --accent-text: #fdba74;
+        --good-fill: #14321f;
+        --good-edge: #4ade80;
+        --good-text: #bbf7d0;
+      }
+    }
+
+    .card { fill: var(--card); stroke: var(--edge); }
+    .info-box { fill: var(--info-fill); stroke: var(--info-edge); }
+    .accent-box { fill: var(--accent-fill); stroke: var(--accent-edge); }
+    .good-box { fill: var(--good-fill); stroke: var(--good-edge); }
+    .panel { fill: var(--panel); }
+    .title { fill: var(--title); }
+    .muted { fill: var(--muted); }
+    .info-text { fill: var(--info-text); }
+    .accent-text { fill: var(--accent-text); }
+    .good-text { fill: var(--good-text); }
+    .accent-line { stroke: var(--accent-edge); }
+    .good-line { stroke: var(--good-edge); }
+  </style>
+  <defs>
+    <marker id="arrow-good" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="var(--good-edge)" />
+    </marker>
+    <marker id="arrow-accent" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="var(--accent-edge)" />
+    </marker>
+  </defs>
+  <rect class="panel" width="720" height="586" rx="20" fill="#f5f7fb" />
+
+  <text class="title" x="36" y="42" fill="#20242c" font-family="system-ui, sans-serif" font-size="20" font-weight="700">A promise settles once, and the executor runs before you get it back</text>
+  <text class="muted" x="36" y="66" fill="#526173" font-family="system-ui, sans-serif" font-size="14">Three states, one transition each way, and no way back — everything else follows from that.</text>
+  <rect class="info-box" x="60" y="116" width="130" height="48" rx="10" fill="#dbeafe" stroke="#2563eb" stroke-width="2" />
+  <text class="info-text" x="125" y="146" fill="#172554" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="14" font-weight="700" text-anchor="middle">pending</text>
+  <rect class="good-box" x="330" y="96" width="160" height="44" rx="10" fill="#dcfce7" stroke="#16a34a" stroke-width="2" />
+  <text class="good-text" x="410" y="124" fill="#14532d" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="13" font-weight="700" text-anchor="middle">fulfilled (value)</text>
+  <rect class="accent-box" x="330" y="158" width="160" height="44" rx="10" fill="#ffedd5" stroke="#c2410c" stroke-width="2" />
+  <text class="accent-text" x="410" y="186" fill="#9a3412" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="13" font-weight="700" text-anchor="middle">rejected (reason)</text>
+  <path class="good-line" d="M190,132 L326,118" fill="none" stroke="#16a34a" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-good)" />
+  <path class="accent-line" d="M190,150 L326,180" fill="none" stroke="#c2410c" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-accent)" />
+  <text class="good-text" x="258" y="112" fill="#14532d" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="11" font-weight="700" text-anchor="middle">resolve(v)</text>
+  <text class="accent-text" x="243" y="196" fill="#9a3412" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="11" font-weight="700" text-anchor="middle">reject(e)</text>
+  <text class="muted" x="506" y="128" fill="#526173" font-family="system-ui, sans-serif" font-size="11">Settled. The state and the value</text>
+  <text class="muted" x="506" y="146" fill="#526173" font-family="system-ui, sans-serif" font-size="11">never change again, and every</text>
+  <text class="muted" x="506" y="164" fill="#526173" font-family="system-ui, sans-serif" font-size="11">later handler sees the same one.</text>
+  <rect class="card" x="36" y="226" width="316" height="108" rx="12" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+  <text class="title" x="54" y="252" fill="#20242c" font-family="system-ui, sans-serif" font-size="12.5" font-weight="700">The executor runs right now</text>
+  <text class="muted" x="54" y="274" fill="#526173" font-family="system-ui, sans-serif" font-size="10.5">new Promise(fn) calls fn synchronously, before the</text>
+  <text class="muted" x="54" y="290" fill="#526173" font-family="system-ui, sans-serif" font-size="10.5">constructor even returns. Anything you log inside it</text>
+  <text class="muted" x="54" y="306" fill="#526173" font-family="system-ui, sans-serif" font-size="10.5">lands before the code that follows the constructor</text>
+  <text class="muted" x="54" y="322" fill="#526173" font-family="system-ui, sans-serif" font-size="10.5">call — the executor is not deferred at all.</text>
+  <rect class="card" x="368" y="226" width="316" height="108" rx="12" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+  <text class="title" x="386" y="252" fill="#20242c" font-family="system-ui, sans-serif" font-size="12.5" font-weight="700">The first settle wins</text>
+  <text class="muted" x="386" y="274" fill="#526173" font-family="system-ui, sans-serif" font-size="10.5">resolve(1); reject(err); resolve(2) settles with 1.</text>
+  <text class="muted" x="386" y="290" fill="#526173" font-family="system-ui, sans-serif" font-size="10.5">The later calls are silent no-ops — but the</text>
+  <text class="muted" x="386" y="306" fill="#526173" font-family="system-ui, sans-serif" font-size="10.5">statements around them still execute, so a log</text>
+  <text class="muted" x="386" y="322" fill="#526173" font-family="system-ui, sans-serif" font-size="10.5">written after reject() still prints.</text>
+  <rect class="accent-box" x="36" y="346" width="316" height="108" rx="12" fill="#ffedd5" stroke="#c2410c" stroke-width="2" />
+  <text class="accent-text" x="54" y="372" fill="#9a3412" font-family="system-ui, sans-serif" font-size="12.5" font-weight="700">Throwing is rejecting</text>
+  <text class="accent-text" x="54" y="394" fill="#9a3412" font-family="system-ui, sans-serif" font-size="10.5">An exception thrown inside the executor rejects the</text>
+  <text class="accent-text" x="54" y="410" fill="#9a3412" font-family="system-ui, sans-serif" font-size="10.5">promise with the thrown value. There is no second</text>
+  <text class="accent-text" x="54" y="426" fill="#9a3412" font-family="system-ui, sans-serif" font-size="10.5">error path. Once the executor has already returned,</text>
+  <text class="accent-text" x="54" y="442" fill="#9a3412" font-family="system-ui, sans-serif" font-size="10.5">a later throw is not caught this way.</text>
+  <rect class="accent-box" x="368" y="346" width="316" height="108" rx="12" fill="#ffedd5" stroke="#c2410c" stroke-width="2" />
+  <text class="accent-text" x="386" y="372" fill="#9a3412" font-family="system-ui, sans-serif" font-size="12.5" font-weight="700">Never settling is completely silent</text>
+  <text class="accent-text" x="386" y="394" fill="#9a3412" font-family="system-ui, sans-serif" font-size="10.5">No handler runs, no error, no warning — the promise</text>
+  <text class="accent-text" x="386" y="410" fill="#9a3412" font-family="system-ui, sans-serif" font-size="10.5">just stays pending forever. Separately, new Promise()</text>
+  <text class="accent-text" x="386" y="426" fill="#9a3412" font-family="system-ui, sans-serif" font-size="10.5">with no callable executor throws a TypeError</text>
+  <text class="accent-text" x="386" y="442" fill="#9a3412" font-family="system-ui, sans-serif" font-size="10.5">synchronously, at construction time.</text>
+  <rect class="info-box" x="36" y="470" width="648" height="88" rx="12" fill="#dbeafe" stroke="#2563eb" stroke-width="2" />
+  <text class="info-text" x="54" y="494" fill="#172554" font-family="system-ui, sans-serif" font-size="13" font-weight="700">Resolving with a promise or a thenable adopts it — and costs ticks</text>
+  <text class="info-text" x="54" y="518" fill="#172554" font-family="system-ui, sans-serif" font-size="11">The engine must call the thenable's .then to subscribe (one microtask job), then resolve the outer promise when it reports</text>
+  <text class="info-text" x="54" y="534" fill="#172554" font-family="system-ui, sans-serif" font-size="11">back (a second job). Those are the two extra ticks you pay for returning a promise from .then instead of a plain value — and</text>
+  <text class="info-text" x="54" y="550" fill="#172554" font-family="system-ui, sans-serif" font-size="11">it is why Promise.resolve(thenable) calls that .then asynchronously, never during the current synchronous run.</text>
+</svg>

@@ -1,0 +1,116 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="510" viewBox="0 0 720 510">
+  <style>
+    /* An &lt;img&gt;-embedded SVG cannot see the page's `data-theme`, but it does
+       inherit the embedding document's `color-scheme`, so `prefers-color-scheme`
+       tracks the site theme including an explicit toggle. The presentation
+       attributes below stay as the light fallback for renderers without CSS. */
+    svg {
+      --panel: #f5f7fb;
+      --title: #20242c;
+      --muted: #526173;
+      --edge: #64748b;
+      --card: #ffffff;
+      --info-fill: #dbeafe;
+      --info-edge: #2563eb;
+      --info-text: #172554;
+      --accent-fill: #ffedd5;
+      --accent-edge: #c2410c;
+      --accent-text: #9a3412;
+      --good-fill: #dcfce7;
+      --good-edge: #16a34a;
+      --good-text: #14532d;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      svg {
+        --panel: #1a1f27;
+        --title: #e6eaf2;
+        --muted: #9aa8bd;
+        --edge: #8b9bb4;
+        --card: #252b35;
+        --info-fill: #1e3a5f;
+        --info-edge: #60a5fa;
+        --info-text: #dbeafe;
+        --accent-fill: #3a2416;
+        --accent-edge: #fb923c;
+        --accent-text: #fdba74;
+        --good-fill: #14321f;
+        --good-edge: #4ade80;
+        --good-text: #bbf7d0;
+      }
+    }
+
+    .card { fill: var(--card); stroke: var(--edge); }
+    .info-box { fill: var(--info-fill); stroke: var(--info-edge); }
+    .accent-box { fill: var(--accent-fill); stroke: var(--accent-edge); }
+    .good-box { fill: var(--good-fill); stroke: var(--good-edge); }
+    .panel { fill: var(--panel); }
+    .title { fill: var(--title); }
+    .muted { fill: var(--muted); }
+    .info-text { fill: var(--info-text); }
+    .accent-text { fill: var(--accent-text); }
+    .good-text { fill: var(--good-text); }
+  </style>
+  <rect class="panel" width="720" height="510" rx="20" fill="#f5f7fb" />
+
+  <text class="title" x="36" y="42" fill="#20242c" font-family="system-ui, sans-serif" font-size="20" font-weight="700">Backtracking: commit to a choice, then undo it when it fails</text>
+  <text class="muted" x="36" y="66" fill="#526173" font-family="system-ui, sans-serif" font-size="14">One pattern behind two very different costs — a selector that gives up instantly, and a regex that never does.</text>
+  <rect class="card" x="36" y="88" width="316" height="268" rx="12" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+  <text class="title" x="54" y="114" fill="#20242c" font-family="system-ui, sans-serif" font-size="13.5" font-weight="700">Matching</text>
+  <text class="info-text" x="120" y="114" fill="#172554" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="13" font-weight="700">.menu li a</text>
+  <text class="title" x="214" y="114" fill="#20242c" font-family="system-ui, sans-serif" font-size="13.5" font-weight="700">against one element</text>
+  <rect class="card" x="54" y="132" width="176" height="32" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.5" />
+  <text class="muted" x="66" y="153" fill="#526173" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="11.5" font-weight="700">&lt;div class="menu"&gt;</text>
+  <text class="info-text" x="336" y="147" fill="#172554" font-family="system-ui, sans-serif" font-size="11" font-weight="700" text-anchor="end">step 3</text>
+  <text class="muted" x="336" y="161" fill="#526173" font-family="system-ui, sans-serif" font-size="10.5" text-anchor="end">.menu ancestor?</text>
+  <rect class="card" x="70" y="178" width="160" height="32" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.5" />
+  <text class="muted" x="82" y="199" fill="#526173" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="11.5" font-weight="700">&lt;ul&gt;</text>
+  <rect class="card" x="86" y="224" width="144" height="32" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.5" />
+  <text class="muted" x="98" y="245" fill="#526173" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="11.5" font-weight="700">&lt;li&gt;</text>
+  <text class="info-text" x="336" y="239" fill="#172554" font-family="system-ui, sans-serif" font-size="11" font-weight="700" text-anchor="end">step 2</text>
+  <text class="muted" x="336" y="253" fill="#526173" font-family="system-ui, sans-serif" font-size="10.5" text-anchor="end">li ancestor?</text>
+  <rect class="good-box" x="102" y="270" width="128" height="32" rx="8" fill="#dcfce7" stroke="#16a34a" stroke-width="2" />
+  <text class="good-text" x="114" y="291" fill="#14532d" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="11.5" font-weight="700">&lt;a&gt;</text>
+  <text class="info-text" x="336" y="285" fill="#172554" font-family="system-ui, sans-serif" font-size="11" font-weight="700" text-anchor="end">step 1</text>
+  <text class="muted" x="336" y="299" fill="#526173" font-family="system-ui, sans-serif" font-size="10.5" text-anchor="end">is it an a?</text>
+  <text class="muted" x="54" y="328" fill="#526173" font-family="system-ui, sans-serif" font-size="11.5">Almost every element in the document fails step 1 on</text>
+  <text class="muted" x="54" y="344" fill="#526173" font-family="system-ui, sans-serif" font-size="11.5">one comparison, so the ancestor walk never starts.</text>
+  <rect class="card" x="368" y="88" width="316" height="268" rx="12" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+  <text class="title" x="386" y="114" fill="#20242c" font-family="system-ui, sans-serif" font-size="13.5" font-weight="700">Running</text>
+  <text class="accent-text" x="444" y="114" fill="#9a3412" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="13" font-weight="700">/^(a+)+$/</text>
+  <text class="title" x="526" y="114" fill="#20242c" font-family="system-ui, sans-serif" font-size="13.5" font-weight="700">against</text>
+  <text class="accent-text" x="578" y="114" fill="#9a3412" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="13" font-weight="700">aaaa!</text>
+  <rect class="accent-box" x="386" y="136" width="138" height="24" rx="6" fill="#ffedd5" stroke="#c2410c" stroke-width="1.5" />
+  <text class="accent-text" x="455" y="153" fill="#9a3412" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="12" font-weight="700" text-anchor="middle">aaaa</text>
+  <rect class="accent-box" x="536" y="136" width="138" height="24" rx="6" fill="#ffedd5" stroke="#c2410c" stroke-width="1.5" />
+  <text class="accent-text" x="605" y="153" fill="#9a3412" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="12" font-weight="700" text-anchor="middle">aaa·a</text>
+  <rect class="accent-box" x="386" y="166" width="138" height="24" rx="6" fill="#ffedd5" stroke="#c2410c" stroke-width="1.5" />
+  <text class="accent-text" x="455" y="183" fill="#9a3412" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="12" font-weight="700" text-anchor="middle">aa·aa</text>
+  <rect class="accent-box" x="536" y="166" width="138" height="24" rx="6" fill="#ffedd5" stroke="#c2410c" stroke-width="1.5" />
+  <text class="accent-text" x="605" y="183" fill="#9a3412" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="12" font-weight="700" text-anchor="middle">a·aaa</text>
+  <rect class="accent-box" x="386" y="196" width="138" height="24" rx="6" fill="#ffedd5" stroke="#c2410c" stroke-width="1.5" />
+  <text class="accent-text" x="455" y="213" fill="#9a3412" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="12" font-weight="700" text-anchor="middle">aa·a·a</text>
+  <rect class="accent-box" x="536" y="196" width="138" height="24" rx="6" fill="#ffedd5" stroke="#c2410c" stroke-width="1.5" />
+  <text class="accent-text" x="605" y="213" fill="#9a3412" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="12" font-weight="700" text-anchor="middle">a·aa·a</text>
+  <rect class="accent-box" x="386" y="226" width="138" height="24" rx="6" fill="#ffedd5" stroke="#c2410c" stroke-width="1.5" />
+  <text class="accent-text" x="455" y="243" fill="#9a3412" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="12" font-weight="700" text-anchor="middle">a·a·aa</text>
+  <rect class="accent-box" x="536" y="226" width="138" height="24" rx="6" fill="#ffedd5" stroke="#c2410c" stroke-width="1.5" />
+  <text class="accent-text" x="605" y="243" fill="#9a3412" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="12" font-weight="700" text-anchor="middle">a·a·a·a</text>
+  <text class="muted" x="386" y="272" fill="#526173" font-family="system-ui, sans-serif" font-size="11.5">Eight ways to split four a’s between the inner and</text>
+  <text class="muted" x="386" y="288" fill="#526173" font-family="system-ui, sans-serif" font-size="11.5">outer +. For n a’s there are 2ⁿ⁻¹ splits, and the</text>
+  <text class="muted" x="386" y="304" fill="#526173" font-family="system-ui, sans-serif" font-size="11.5">trailing ! makes the match fail — so the engine has</text>
+  <text class="muted" x="386" y="320" fill="#526173" font-family="system-ui, sans-serif" font-size="11.5">to try every one. Twenty a’s means 524,288 attempts;</text>
+  <text class="muted" x="386" y="336" fill="#526173" font-family="system-ui, sans-serif" font-size="11.5">twenty-one means double that. The thread is gone.</text>
+  <rect class="info-box" x="36" y="372" width="316" height="118" rx="12" fill="#dbeafe" stroke="#2563eb" stroke-width="2" />
+  <text class="info-text" x="54" y="398" fill="#172554" font-family="system-ui, sans-serif" font-size="13.5" font-weight="700">This is backtracking</text>
+  <text class="info-text" x="54" y="420" fill="#172554" font-family="system-ui, sans-serif" font-size="11.5">A regex engine retrying an alternative branch.</text>
+  <text class="info-text" x="54" y="438" fill="#172554" font-family="system-ui, sans-serif" font-size="11.5">A selector engine walking up ancestors and</text>
+  <text class="info-text" x="54" y="456" fill="#172554" font-family="system-ui, sans-serif" font-size="11.5">abandoning a candidate that does not match.</text>
+  <text class="info-text" x="54" y="474" fill="#172554" font-family="system-ui, sans-serif" font-size="11.5">Sudoku or N-queens: place a value, undo on conflict.</text>
+  <rect class="good-box" x="368" y="372" width="316" height="118" rx="12" fill="#dcfce7" stroke="#16a34a" stroke-width="2" />
+  <text class="good-text" x="386" y="398" fill="#14532d" font-family="system-ui, sans-serif" font-size="13.5" font-weight="700">This is not</text>
+  <text class="good-text" x="386" y="420" fill="#14532d" font-family="system-ui, sans-serif" font-size="11.5">Looking a value up in a hash map by its key —</text>
+  <text class="good-text" x="386" y="438" fill="#14532d" font-family="system-ui, sans-serif" font-size="11.5">one hash, one bucket, nothing to undo.</text>
+  <text class="good-text" x="386" y="456" fill="#14532d" font-family="system-ui, sans-serif" font-size="11.5">Flexbox dividing free space in a single</text>
+  <text class="good-text" x="386" y="474" fill="#14532d" font-family="system-ui, sans-serif" font-size="11.5">proportional pass. No search, no retries.</text>
+</svg>
