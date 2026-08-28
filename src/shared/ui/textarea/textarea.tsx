@@ -10,17 +10,6 @@ type ScrollPosition = {
   inline: number;
 };
 
-/**
- * `field-sizing: content` grows the field to its content in CSS, which is both
- * cheaper and smoother than measuring `scrollHeight` on every keystroke. Where
- * the browser has it, the measuring path below is dead weight — and worse than
- * that, the explicit height it writes would override the native sizing. So it
- * is disabled wholesale rather than left to run alongside. The JS stays as the
- * fallback for browsers that do not support the property yet, and the shape
- * both paths produce is the same: `rows` as the floor, `max-block-size` as the
- * ceiling. Read once at module scope: support cannot change within a session,
- * and `CSS` is undefined during SSR, where no measuring happens either way.
- */
 const SIZES_TO_CONTENT_NATIVELY =
   typeof CSS !== "undefined" && CSS.supports("field-sizing", "content");
 

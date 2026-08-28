@@ -43,7 +43,7 @@ describe("Textarea", () => {
     expect((textarea as HTMLTextAreaElement).style.getPropertyValue("--_height")).toBe("");
   });
 
-  it("stops growing at its maximum and scrolls instead", async () => {
+  it("keeps growing to fit long content", async () => {
     const screen = await page.render(<Textarea aria-label="Quiz notes" />);
     const textarea = screen.getByRole("textbox", { name: "Quiz notes" });
 
@@ -51,7 +51,8 @@ describe("Textarea", () => {
 
     const element = textarea.element() as HTMLTextAreaElement;
 
-    expect(element.scrollHeight).toBeGreaterThan(element.clientHeight);
+    expect(getComputedStyle(element).maxBlockSize).toBe("none");
+    expect(element.clientHeight).toBeGreaterThanOrEqual(element.scrollHeight);
   });
 
   // Only the JS fallback can move the page: it writes an explicit height, and
