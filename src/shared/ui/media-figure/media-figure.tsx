@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 
 import { MarkdownRender } from "@/shared/ui/markdown";
 
-import { cx } from "#styles";
+import { cssVars, cx } from "#styles";
 import styles from "./media-figure.module.css";
 
 interface MediaFigureProps {
@@ -35,6 +35,21 @@ export function MediaFigure({
   const hasDimensions = width !== undefined && height !== undefined;
   const sizePending = !hasDimensions && loadedSrc !== src;
 
+  // A server-rendered Image can finish loading before this island hydrates, and
+  // React then never fires `onLoad` for an event that already happened. Ask the
+  // element itself on attach so a settled Image is never stuck in either
+  // pending or unresolved state.
+  const settleOnAttach = useCallback(
+    (image: HTMLImageElement | null) => {
+      if (image === null || !image.complete) return;
+
+      // A complete Image with no intrinsic width never decoded.
+      if (image.naturalWidth === 0) setFailedSrc(src);
+      else setLoadedSrc(src);
+    },
+    [src],
+  );
+
   return (
     <figure className={cx(styles.root, className)}>
       {failed ? (
@@ -45,6 +60,7 @@ export function MediaFigure({
         </div>
       ) : (
         <img
+          ref={settleOnAttach}
           src={src}
           alt={alt}
           width={width}
@@ -54,6 +70,9 @@ export function MediaFigure({
           decoding="async"
           data-size-pending={sizePending || undefined}
           className={styles.image}
+          // Caps the box to the Image's own shape, so clamping a tall Image
+          // shrinks its width too instead of leaving `object-fit` gutters.
+          style={hasDimensions ? cssVars({ "--_aspect": `${width} / ${height}` }) : undefined}
           onLoad={() => setLoadedSrc(src)}
           onError={() => setFailedSrc(src)}
         />

@@ -90,6 +90,18 @@ export function writeStoredThemePreference(preference: ThemePreference) {
   }
 }
 
+export const COLOR_SCHEME_META_SELECTOR = 'meta[name="color-scheme"]';
+
+/**
+ * The `<meta name="color-scheme">` value for a preference: the pinned scheme,
+ * or both schemes when the user follows the system. Keeping the meta tag in
+ * step with the pin is what the toggle needs to reach browser-painted surfaces
+ * that read the document metadata rather than the cascade.
+ */
+export function metaColorSchemeFor(preference: ThemePreference): string {
+  return preference === "system" ? "light dark" : preference;
+}
+
 export function applyThemePreference(
   preference: ThemePreference,
   root = canUseDOM() ? document.documentElement : null,
@@ -103,6 +115,12 @@ export function applyThemePreference(
   root.setAttribute(THEME_PREFERENCE_ATTRIBUTE, preference);
   root.setAttribute(THEME_ATTRIBUTE, resolvedTheme);
   root.style.colorScheme = resolvedTheme;
+
+  const meta = root.ownerDocument.querySelector<HTMLMetaElement>(COLOR_SCHEME_META_SELECTOR);
+
+  if (meta !== null) {
+    meta.content = metaColorSchemeFor(preference);
+  }
 
   return resolvedTheme;
 }
@@ -137,5 +155,11 @@ export function createThemeBootstrapScript() {
 		root.setAttribute(preferenceAttribute, preference);
 		root.setAttribute(themeAttribute, resolvedTheme);
 		root.style.colorScheme = resolvedTheme;
+
+		const meta = document.querySelector(${JSON.stringify(COLOR_SCHEME_META_SELECTOR)});
+
+		if (meta) {
+			meta.content = preference === 'system' ? 'light dark' : preference;
+		}
 	})();`;
 }

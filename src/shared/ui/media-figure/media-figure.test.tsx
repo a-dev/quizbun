@@ -1,4 +1,6 @@
-import { describe, expect, it } from "vitest";
+import { hydrateRoot } from "react-dom/client";
+import { renderToString } from "react-dom/server";
+import { describe, expect, it, vi } from "vitest";
 import { page } from "vitest/browser";
 
 import { renderMarkdownField } from "@/shared/lib/render";
@@ -63,6 +65,36 @@ describe("MediaFigure", () => {
 
     expect(bounds.height).toBeLessThanOrEqual(window.innerHeight * 0.7 + 1);
     expect(getComputedStyle(image.element()).objectFit).toBe("contain");
+
+    // The box shrinks in both axes, so the capped Image leaves no gutters
+    // beside itself inside a box that kept the uncapped width.
+    expect(bounds.width / bounds.height).toBeCloseTo(600 / 1200, 2);
+  });
+
+  it("settles an Image that finished loading before the island hydrated", async () => {
+    // The server-rendered Image can complete before hydration, and React never
+    // fires `onLoad` for a `load` event that already happened. Hydrating over
+    // settled markup is the only faithful way to reproduce that.
+    const container = document.createElement("div");
+    container.innerHTML = renderToString(<MediaFigure src={IMAGE_SRC} alt="Cache tiers" />);
+    document.body.append(container);
+
+    const image = container.querySelector("img")!;
+    expect(image.dataset.sizePending).toBe("true");
+
+    await new Promise((resolve) => {
+      if (image.complete) resolve(undefined);
+      else image.addEventListener("load", resolve, { once: true });
+    });
+
+    const root = hydrateRoot(container, <MediaFigure src={IMAGE_SRC} alt="Cache tiers" />);
+
+    try {
+      await vi.waitFor(() => expect(image.dataset.sizePending).toBeUndefined());
+    } finally {
+      root.unmount();
+      container.remove();
+    }
   });
 
   it("replaces a failed Image with a visible alt-text placeholder", async () => {

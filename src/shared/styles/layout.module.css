@@ -27,13 +27,14 @@
        Shared tracks mean every title — and every description below it — lines
        up across the row, regardless of how many lines a title wraps to. */
     grid-auto-rows: auto auto auto 1fr;
-    grid-template-columns: 1fr;
-    gap: var(--_section-gap);
-  }
 
-  @media (width >= 26rem) {
-    .quiz-card-grid {
-      grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr));
-    }
+    /* Column count follows the grid's own inline size, not the viewport's: the
+       grid lives inside `.main`, which is capped at `--max-content-width` and
+       inset by `--body-inline-padding`, so a viewport breakpoint would switch
+       at the wrong moment. `min(20rem, 100%)` is what makes this work without a
+       query -- it lets the track floor collapse below 20rem in a narrow
+       container instead of overflowing it. */
+    grid-template-columns: repeat(auto-fit, minmax(min(20rem, 100%), 1fr));
+    gap: var(--_section-gap);
   }
 }

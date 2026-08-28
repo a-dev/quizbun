@@ -3,6 +3,8 @@ import { page, userEvent } from "vitest/browser";
 
 import { CodeTextarea, Textarea } from "./index";
 
+const sizesToContentNatively = CSS.supports("field-sizing", "content");
+
 describe("Textarea", () => {
   it("forwards typed input and updates its content height", async () => {
     const onChange = vi.fn();
@@ -31,7 +33,31 @@ describe("Textarea", () => {
     expect(getComputedStyle(textarea.element()).resize).toBe("none");
   });
 
-  it("preserves document scroll while editing", async () => {
+  it.skipIf(!sizesToContentNatively)("sizes itself to its content in CSS", async () => {
+    const screen = await page.render(<Textarea aria-label="Quiz notes" />);
+    const textarea = screen.getByRole("textbox", { name: "Quiz notes" }).element();
+
+    expect(getComputedStyle(textarea).getPropertyValue("field-sizing")).toBe("content");
+    // The measuring fallback must stay out of the way: an explicit height would
+    // override the native sizing it is meant to replace.
+    expect((textarea as HTMLTextAreaElement).style.getPropertyValue("--_height")).toBe("");
+  });
+
+  it("stops growing at its maximum and scrolls instead", async () => {
+    const screen = await page.render(<Textarea aria-label="Quiz notes" />);
+    const textarea = screen.getByRole("textbox", { name: "Quiz notes" });
+
+    await userEvent.fill(textarea, Array.from({ length: 60 }, (_, i) => `line ${i}`).join("\n"));
+
+    const element = textarea.element() as HTMLTextAreaElement;
+
+    expect(element.scrollHeight).toBeGreaterThan(element.clientHeight);
+  });
+
+  // Only the JS fallback can move the page: it writes an explicit height, and
+  // restores the scroll position that height change disturbed. Under
+  // `field-sizing` the growth happens in layout and never scrolls the document.
+  it.skipIf(sizesToContentNatively)("preserves document scroll while editing", async () => {
     const scrollTo = vi.spyOn(window, "scrollTo").mockImplementation(() => undefined);
     const screen = await page.render(<Textarea aria-label="Quiz notes" />);
     const textarea = screen.getByRole("textbox", { name: "Quiz notes" });
@@ -44,10 +70,13 @@ describe("Textarea", () => {
   });
 });
 
+/**
+ * The rendered height, whichever path produced it: `field-sizing: content` in
+ * CSS, or the measured `--_height` fallback. Asserting on the rendered box
+ * rather than the private custom property keeps these tests true of both.
+ */
 function getAutoHeight(textarea: ReturnType<typeof page.getByRole>): number {
-  const element = textarea.element() as HTMLTextAreaElement;
-
-  return Number.parseFloat(element.style.getPropertyValue("--_height"));
+  return (textarea.element() as HTMLTextAreaElement).offsetHeight;
 }
 
 describe("CodeTextarea", () => {
@@ -112,6 +141,26 @@ describe("CodeTextarea", () => {
     expect(getComputedStyle(textarea).overflowWrap).toBe("anywhere");
     expect(getComputedStyle(code).whiteSpace).toBe("pre-wrap");
     expect(getComputedStyle(code).overflowWrap).toBe("anywhere");
+  });
+
+  // The highlighted <pre> is inset over the textarea, so the two glyph layers
+  // only stay aligned while the wrapper tracks the field's height. Growth is
+  // the case that breaks it, whichever path drives the growth.
+  it("keeps the syntax layer the same height as the field while it grows", async () => {
+    const screen = await page.render(<CodeTextarea aria-label="Quiz JSON" defaultValue="{}" />);
+    const textarea = screen.getByRole("textbox", { name: "Quiz JSON" });
+    const code = screen.container.querySelector<HTMLPreElement>("pre")!;
+    const element = textarea.element() as HTMLTextAreaElement;
+    const initialHeight = element.offsetHeight;
+
+    await userEvent.fill(
+      textarea,
+      `{\n${Array.from({ length: 12 }, (_, i) => `  "key${i}": ${i}`).join(",\n")}\n}`,
+    );
+
+    expect(element.offsetHeight).toBeGreaterThan(initialHeight);
+    // `inset: 1px` on the wrapper, so the layer is the field less its borders.
+    expect(Math.abs(code.offsetHeight - (element.offsetHeight - 2))).toBeLessThanOrEqual(1);
   });
 
   it("uses identical text metrics for editing and highlighting", async () => {

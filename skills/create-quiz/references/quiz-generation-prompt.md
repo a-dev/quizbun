@@ -152,7 +152,8 @@ JSON Schema:
                   },
                   "required": ["src", "alt"],
                   "additionalProperties": false,
-                  "description": "An Image sets `width` and `height` together or omits both, and the values must be the intrinsic pixel size of the file `src` names. JSON Schema cannot enforce this cross-field rule; the Zod validator and import page are the final authority."
+                  "dependentRequired": { "height": ["width"], "width": ["height"] },
+                  "description": "An Image sets `width` and `height` together or omits both. Both must be the intrinsic pixel size of the file `src` names, which JSON Schema cannot check against the file itself; the Zod validator and import page are the final authority."
                 }
               },
               "videos": {
@@ -270,7 +271,8 @@ JSON Schema:
                   },
                   "required": ["src", "alt"],
                   "additionalProperties": false,
-                  "description": "An Image sets `width` and `height` together or omits both, and the values must be the intrinsic pixel size of the file `src` names. JSON Schema cannot enforce this cross-field rule; the Zod validator and import page are the final authority."
+                  "dependentRequired": { "height": ["width"], "width": ["height"] },
+                  "description": "An Image sets `width` and `height` together or omits both. Both must be the intrinsic pixel size of the file `src` names, which JSON Schema cannot check against the file itself; the Zod validator and import page are the final authority."
                 }
               },
               "videos": {
@@ -388,7 +390,8 @@ JSON Schema:
                   },
                   "required": ["src", "alt"],
                   "additionalProperties": false,
-                  "description": "An Image sets `width` and `height` together or omits both, and the values must be the intrinsic pixel size of the file `src` names. JSON Schema cannot enforce this cross-field rule; the Zod validator and import page are the final authority."
+                  "dependentRequired": { "height": ["width"], "width": ["height"] },
+                  "description": "An Image sets `width` and `height` together or omits both. Both must be the intrinsic pixel size of the file `src` names, which JSON Schema cannot check against the file itself; the Zod validator and import page are the final authority."
                 }
               },
               "videos": {

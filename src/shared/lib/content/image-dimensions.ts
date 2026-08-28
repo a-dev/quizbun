@@ -7,9 +7,9 @@ import { extname } from "node:path";
  *
  * Every format the Standard allows in an Image `src` is covered here, and an
  * unreadable file throws rather than returning a guess: a wrong `width` makes a
- * Renderer reserve the wrong box, which is worse than reserving nothing. The
- * readers parse headers only — a few hundred bytes per file, no decoding, no
- * dependencies.
+ * Renderer reserve the wrong box, which is worse than reserving nothing. Each
+ * reader takes the file into memory and inspects its header — no decoding and
+ * no dependencies, which measures at a few milliseconds for the whole Catalog.
  */
 
 export interface ImageDimensions {

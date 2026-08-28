@@ -3,4 +3,5 @@ export {
   SITE_DESCRIPTION,
   SITE_NAME,
   SITE_THEME_COLOR,
+  SITE_THEME_COLOR_DARK,
 } from "./site-metadata";

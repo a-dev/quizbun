@@ -25,6 +25,23 @@
   line-height: var(--lh-s);
 }
 
+/* The list renders every Question in the Quiz — 29 in the largest catalog
+   entry, each with rendered Markdown — so most of it is off-screen on load.
+   Skipping the first four keeps the deferral out of the initial fold, where it
+   would delay first paint rather than help. `contain-intrinsic-size` is
+   mandatory: without it a skipped item collapses to 0px and the scrollbar
+   jumps as the reader scrolls. `auto` lets the browser substitute each item's
+   real measured size once it has been rendered a first time, so the estimate
+   only has to hold for items the reader has not reached yet: 12rem is the
+   measured median across the catalog, where a Question title is a sentence
+   that wraps to several lines rather than a label. Every item holds a link, so
+   `question-preview-list.test.tsx` walks Tab across the boundary to confirm
+   the skipped items stay sequentially reachable. */
+.item:nth-child(n + 5) {
+  content-visibility: auto;
+  contain-intrinsic-size: auto none auto 12rem;
+}
+
 .position {
   display: flex;
   flex-shrink: 0;

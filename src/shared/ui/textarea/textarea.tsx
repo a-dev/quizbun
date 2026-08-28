@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, type ComponentPropsWithRef } from "react";
 
-import { cx } from "#styles";
+import { cssVars, cx } from "#styles";
 import styles from "./textarea.module.css";
 
 export type TextareaProps = ComponentPropsWithRef<"textarea">;
@@ -10,7 +10,29 @@ type ScrollPosition = {
   inline: number;
 };
 
-export function Textarea({ className, ref, onBeforeInput, onInput, ...props }: TextareaProps) {
+/**
+ * `field-sizing: content` grows the field to its content in CSS, which is both
+ * cheaper and smoother than measuring `scrollHeight` on every keystroke. Where
+ * the browser has it, the measuring path below is dead weight — and worse than
+ * that, the explicit height it writes would override the native sizing. So it
+ * is disabled wholesale rather than left to run alongside. The JS stays as the
+ * fallback for browsers that do not support the property yet, and the shape
+ * both paths produce is the same: `rows` as the floor, `max-block-size` as the
+ * ceiling. Read once at module scope: support cannot change within a session,
+ * and `CSS` is undefined during SSR, where no measuring happens either way.
+ */
+const SIZES_TO_CONTENT_NATIVELY =
+  typeof CSS !== "undefined" && CSS.supports("field-sizing", "content");
+
+export function Textarea({
+  className,
+  ref,
+  rows,
+  style,
+  onBeforeInput,
+  onInput,
+  ...props
+}: TextareaProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const minimumHeightRef = useRef<number | undefined>(undefined);
   const pageScrollPositionRef = useRef<ScrollPosition | undefined>(undefined);
@@ -33,7 +55,7 @@ export function Textarea({ className, ref, onBeforeInput, onInput, ...props }: T
   const resize = useCallback(() => {
     const textarea = textareaRef.current;
 
-    if (textarea === null) return;
+    if (SIZES_TO_CONTENT_NATIVELY || textarea === null) return;
 
     // Store the rendered minimum before setting an explicit height. This preserves
     // the caller's `rows` value while allowing the field to shrink after edits.
@@ -76,7 +98,7 @@ export function Textarea({ className, ref, onBeforeInput, onInput, ...props }: T
   useEffect(() => {
     const textarea = textareaRef.current;
 
-    if (textarea === null) return;
+    if (SIZES_TO_CONTENT_NATIVELY || textarea === null) return;
 
     const observer = new ResizeObserver(resize);
     observer.observe(textarea);
@@ -85,6 +107,12 @@ export function Textarea({ className, ref, onBeforeInput, onInput, ...props }: T
   }, [resize]);
 
   const handleInput: NonNullable<TextareaProps["onInput"]> = (event) => {
+    if (SIZES_TO_CONTENT_NATIVELY) {
+      onInput?.(event);
+
+      return;
+    }
+
     if (pageScrollPositionRef.current === undefined) capturePageScroll();
 
     resize();
@@ -102,14 +130,20 @@ export function Textarea({ className, ref, onBeforeInput, onInput, ...props }: T
   };
 
   const handleBeforeInput: NonNullable<TextareaProps["onBeforeInput"]> = (event) => {
-    capturePageScroll();
+    if (!SIZES_TO_CONTENT_NATIVELY) capturePageScroll();
+
     onBeforeInput?.(event);
   };
 
   return (
     <textarea
       ref={setRefs}
+      rows={rows}
       className={cx(styles.root, className)}
+      // `field-sizing: content` ignores the `rows` attribute, so hand the same
+      // value to CSS as the minimum height. The attribute stays for the
+      // fallback path and for the initial server-rendered size.
+      style={rows === undefined ? style : { ...cssVars({ "--_rows": rows }), ...style }}
       onBeforeInput={handleBeforeInput}
       onInput={handleInput}
       {...props}

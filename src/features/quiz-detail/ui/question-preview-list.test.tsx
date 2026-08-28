@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { page } from "vitest/browser";
+import { page, userEvent } from "vitest/browser";
 
 import type { Quiz } from "@/shared/lib/quiz";
 import type { QuestionProgress } from "@/shared/lib/storage";
@@ -111,5 +111,46 @@ describe("QuestionPreviewList", () => {
     );
 
     expect(onQuestionSelect).not.toHaveBeenCalled();
+  });
+
+  // `content-visibility: auto` on the off-screen items skips their rendering,
+  // and the guidance for it requires proving sequential keyboard reachability
+  // across that boundary: every item holds a link, and SPEC §7 promises full
+  // keyboard operation.
+  it("keeps deferred off-screen items sequentially focusable", async () => {
+    const longQuiz: Quiz = {
+      ...quiz,
+      questions: Array.from({ length: 12 }, (_, index) => ({
+        id: `q-${index}`,
+        type: "input",
+        title: `Question ${index}`,
+        explanation: "Explanation.",
+        validation: { mode: "text", acceptedAnswers: ["answer"] },
+      })),
+    };
+
+    const screen = await page.render(
+      <QuestionPreviewList
+        quiz={longQuiz}
+        answers={undefined}
+        questionHref={(questionId) => `/quizzes/preview-list/?question=${questionId}`}
+        onQuestionSelect={vi.fn()}
+      />,
+    );
+
+    const items = [...screen.container.querySelectorAll("li")];
+
+    // The rule starts at the fifth item; anything before it must stay rendered.
+    expect(getComputedStyle(items[3]!).contentVisibility).toBe("visible");
+    expect(getComputedStyle(items[4]!).contentVisibility).toBe("auto");
+
+    const lastRenderedLink = screen.getByRole("link", { name: "Question 3" }).element();
+    (lastRenderedLink as HTMLAnchorElement).focus();
+
+    await userEvent.tab();
+    expect(document.activeElement).toBe(screen.getByRole("link", { name: "Question 4" }).element());
+
+    await userEvent.tab();
+    expect(document.activeElement).toBe(screen.getByRole("link", { name: "Question 5" }).element());
   });
 });

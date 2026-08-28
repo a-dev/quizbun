@@ -1,7 +1,7 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { basename, resolve } from "node:path";
 
-import { readImageDimensions } from "../src/shared/lib/content/image-dimensions";
+import { readImageDimensions } from "../src/shared/lib/content";
 import {
   applyJsonEdits,
   createMemberInsertion,
