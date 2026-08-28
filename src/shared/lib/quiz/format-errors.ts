@@ -145,6 +145,14 @@ function explainMediaIssue(issue: QuizValidationIssue) {
     };
   }
 
+  if (isPathEnding(issue.path, ["width"]) || isPathEnding(issue.path, ["height"])) {
+    return {
+      path: formatPath(issue.path),
+      problem: issue.message,
+      fix: "Set both to the image file's own pixel size, or omit both. Never estimate them: an absent pair is valid, a wrong one is not. In the Quizbun repository, `bun run quiz:sizes:generate` writes them for you.",
+    };
+  }
+
   if (isPathEnding(issue.path, ["provider"])) {
     return {
       path: formatPath(issue.path),

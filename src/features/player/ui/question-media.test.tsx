@@ -58,15 +58,17 @@ describe("QuestionMedia", () => {
       <QuestionMedia
         quizId="cache-hierarchy"
         questionTitle="Which tier answers the repeat read?"
-        images={[{ src: "cache-tiers.svg", alt: "Three cache tiers" }]}
+        images={[{ src: "cache-tiers.svg", alt: "Three cache tiers", width: 720, height: 480 }]}
         videos={undefined}
         surface="question"
       />,
     );
 
-    expect(screen.container.querySelector("img")?.getAttribute("src")).toBe(
-      "/quiz-assets/cache-hierarchy/cache-tiers.svg",
-    );
+    const image = screen.container.querySelector("img");
+
+    expect(image?.getAttribute("src")).toBe("/quiz-assets/cache-hierarchy/cache-tiers.svg");
+    expect(image?.getAttribute("width")).toBe("720");
+    expect(image?.getAttribute("height")).toBe("480");
   });
 
   it("leaves a remote Image source untouched", async () => {
@@ -132,5 +134,29 @@ describe("QuestionMedia", () => {
     expect(secondImage.compareDocumentPosition(video) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
       Node.DOCUMENT_POSITION_FOLLOWING,
     );
+  });
+
+  it("prioritizes only the first Image on a prioritized Question surface", async () => {
+    const screen = await page.render(
+      <QuestionMedia
+        quizId="cache-hierarchy"
+        questionTitle="Which tier answers the repeat read?"
+        images={[
+          { src: "https://127.0.0.1:1/first.png", alt: "First diagram" },
+          { src: "https://127.0.0.1:1/second.png", alt: "Second diagram" },
+        ]}
+        videos={undefined}
+        surface="question"
+        priority
+      />,
+    );
+
+    const firstImage = screen.getByRole("img", { name: "First diagram" });
+    const secondImage = screen.getByRole("img", { name: "Second diagram" });
+
+    await expect.element(firstImage).toHaveAttribute("loading", "eager");
+    await expect.element(firstImage).toHaveAttribute("fetchpriority", "high");
+    await expect.element(secondImage).toHaveAttribute("loading", "lazy");
+    await expect.element(secondImage).not.toHaveAttribute("fetchpriority");
   });
 });

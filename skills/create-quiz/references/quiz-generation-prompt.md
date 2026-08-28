@@ -26,10 +26,11 @@ Follow these rules:
 - Renderers shuffle Options, so the learner does not see the JSON order. Never refer to an Option by position or with an invented label in any text field. Avoid "the first option", "the last option", "the third distractor", "option B", and "(option 2)". Quote or paraphrase the Option text instead. Positional labels are allowed only when the Question defines them, for example as comments in a code snippet in the `description`.
 - Add optional `references` when a Question benefits from source links, citations, or further reading. References appear after the Explanation and must be non-empty when present. Where practical, prefer link text that names both the publication and the linked article or topic (for example, `[MDN: Array.prototype.sort()](...)`); this is a recommendation, not a requirement.
 - Media is optional. Add `images` or `videos` to a Question only when a diagram, screenshot, or clip teaches something the text cannot. Both fields are arrays and must be non-empty when present.
-- An Image is `{ src, alt, caption?, placement? }`. `alt` is always required because a Question's Image is content, not decoration. Put attribution in `caption`. Image `src` is either an `https://` URL or a bare kebab-case filename with a `png`/`jpg`/`jpeg`/`webp`/`avif`/`gif`/`svg` extension. The validator rejects `http://`, protocol-relative and `data:` sources, and paths that contain directories.
+- An Image is `{ src, alt, caption?, placement?, width?, height? }`. `alt` is always required because a Question's Image is content, not decoration. Put attribution in `caption`. Image `src` is either an `https://` URL or a bare kebab-case filename with a `png`/`jpg`/`jpeg`/`webp`/`avif`/`gif`/`svg` extension. The validator rejects `http://`, protocol-relative and `data:` sources, and paths that contain directories.
 - A Video is `{ provider: "youtube", id, start?, placement? }`. `id` is the bare 11-character YouTube id, never a URL. `start` is a whole number of seconds.
 - `placement` is `"question"` or `"explanation"`. An absent `placement` already means `"question"`, so omit the default. Put anything that reveals the answer under `"explanation"`.
 - **Never fabricate a source.** Every image URL, every filename, and every YouTube id must point at something you have verified exists. Generating your own diagram is welcome; inventing a plausible-looking URL or video id is not. Omit the media instead.
+- **Never fabricate Image dimensions.** Always omit `width` and `height`. Repository tooling reads vendored Image files and fills in their intrinsic dimensions.
 - Markdown image syntax does not work. `![alt](src)` and `<img>` are stripped everywhere; `images` is the only image channel.
 - Every text field is Markdown. Titles and Option text are inline-only; descriptions, Explanations, and References may use full Markdown. Never use raw HTML.
 - Fenced code blocks in descriptions, Explanations, and References are syntax-highlighted for JavaScript/TypeScript (`js`, `ts`, `jsx`, `tsx`), `json`, `html`, `css`, Python (`py`), Bash (`bash`, `sh`), and `sql`. Other languages still render, just without colors. Prefer these hints, and always tag the fence with its language.
@@ -48,6 +49,7 @@ Before emitting the final JSON, silently check:
 - Every Question `title` states the actual question; no `description` carries the ask on its own.
 - No text field refers to an Option by position or label ("first option", "option B", …).
 - Every image source and every YouTube video id is one you verified, not one you invented.
+- No Image has `width` or `height`; repository tooling fills in both fields for vendored Images.
 
 JSON Schema:
 
@@ -136,10 +138,21 @@ JSON Schema:
                     "placement": {
                       "type": "string",
                       "enum": ["question", "explanation"]
+                    },
+                    "width": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 9007199254740991
+                    },
+                    "height": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 9007199254740991
                     }
                   },
                   "required": ["src", "alt"],
-                  "additionalProperties": false
+                  "additionalProperties": false,
+                  "description": "An Image sets `width` and `height` together or omits both, and the values must be the intrinsic pixel size of the file `src` names. JSON Schema cannot enforce this cross-field rule; the Zod validator and import page are the final authority."
                 }
               },
               "videos": {
@@ -243,10 +256,21 @@ JSON Schema:
                     "placement": {
                       "type": "string",
                       "enum": ["question", "explanation"]
+                    },
+                    "width": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 9007199254740991
+                    },
+                    "height": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 9007199254740991
                     }
                   },
                   "required": ["src", "alt"],
-                  "additionalProperties": false
+                  "additionalProperties": false,
+                  "description": "An Image sets `width` and `height` together or omits both, and the values must be the intrinsic pixel size of the file `src` names. JSON Schema cannot enforce this cross-field rule; the Zod validator and import page are the final authority."
                 }
               },
               "videos": {
@@ -350,10 +374,21 @@ JSON Schema:
                     "placement": {
                       "type": "string",
                       "enum": ["question", "explanation"]
+                    },
+                    "width": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 9007199254740991
+                    },
+                    "height": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 9007199254740991
                     }
                   },
                   "required": ["src", "alt"],
-                  "additionalProperties": false
+                  "additionalProperties": false,
+                  "description": "An Image sets `width` and `height` together or omits both, and the values must be the intrinsic pixel size of the file `src` names. JSON Schema cannot enforce this cross-field rule; the Zod validator and import page are the final authority."
                 }
               },
               "videos": {

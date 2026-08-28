@@ -24,6 +24,8 @@ interface Props {
   progress: QuestionProgress | undefined;
   /** Display-only order of original JSON Option indexes. */
   optionOrder: readonly number[] | undefined;
+  /** Prioritizes the first Question Image on the current player page. */
+  mediaPriority?: boolean;
   onSubmit: (question: Question, answer: SubmittedAnswer, isCorrect: boolean) => void;
 }
 
@@ -38,6 +40,7 @@ export const QuestionCard = memo(function QuestionCard({
   index,
   progress,
   optionOrder,
+  mediaPriority = false,
   onSubmit,
 }: Props) {
   const idPrefix = useId();
@@ -102,6 +105,7 @@ export const QuestionCard = memo(function QuestionCard({
           images={question.images}
           videos={question.videos}
           surface="question"
+          priority={mediaPriority}
         />
         {descriptionHtml !== undefined && (
           <MarkdownRender content={descriptionHtml} size="s" className={styles.description} />

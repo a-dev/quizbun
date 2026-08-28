@@ -106,10 +106,46 @@ describe("loadPublicQuizzes", () => {
   });
 
   test("accepts a referenced vendored Image within the size limit", () => {
-    const contentDir = makeAssetCatalog({ imageSrc: "cache-tiers.svg" });
-    writeAsset(contentDir, "sample-quiz", "cache-tiers.svg", "<svg></svg>");
+    const contentDir = makeAssetCatalog({
+      imageDimensions: { height: 10, width: 20 },
+      imageSrc: "cache-tiers.svg",
+    });
+    writeAsset(contentDir, "sample-quiz", "cache-tiers.svg", '<svg viewBox="0 0 20 10"></svg>');
 
     expect(loadAssetCatalog(contentDir).quizzes).toHaveLength(1);
+  });
+
+  test("requires generated dimensions for a vendored Image", () => {
+    const contentDir = makeAssetCatalog({ imageSrc: "cache-tiers.svg" });
+    writeAsset(contentDir, "sample-quiz", "cache-tiers.svg", '<svg viewBox="0 0 20 10"></svg>');
+
+    expect(() => loadAssetCatalog(contentDir)).toThrow(
+      /Quiz Image dimensions are missing[\s\S]*questions\[0\]\.images\[0\][\s\S]*20×10[\s\S]*quiz:sizes:generate/,
+    );
+  });
+
+  test("rejects dimensions that do not match the vendored Image", () => {
+    const contentDir = makeAssetCatalog({
+      imageDimensions: { height: 15, width: 30 },
+      imageSrc: "cache-tiers.svg",
+    });
+    writeAsset(contentDir, "sample-quiz", "cache-tiers.svg", '<svg viewBox="0 0 20 10"></svg>');
+
+    expect(() => loadAssetCatalog(contentDir)).toThrow(
+      /Quiz Image dimensions do not match[\s\S]*records 30×15[\s\S]*is 20×10[\s\S]*`width` to 20[\s\S]*`height` to 10/,
+    );
+  });
+
+  test("rejects a vendored Image whose dimensions cannot be read", () => {
+    const contentDir = makeAssetCatalog({
+      imageDimensions: { height: 10, width: 20 },
+      imageSrc: "cache-tiers.svg",
+    });
+    writeAsset(contentDir, "sample-quiz", "cache-tiers.svg", "<svg></svg>");
+
+    expect(() => loadAssetCatalog(contentDir)).toThrow(
+      /Quiz Image dimensions could not be read[\s\S]*questions\[0\]\.images\[0\]\.src[\s\S]*no intrinsic size[\s\S]*Repair or replace/,
+    );
   });
 
   test("rejects a remote Image in a Catalog Quiz", () => {
@@ -159,11 +195,19 @@ describe("loadPublicQuizzes", () => {
   );
 
   test("rejects an asset larger than 500 KB", () => {
-    const contentDir = makeAssetCatalog({ imageSrc: "large-image.png" });
-    writeAsset(contentDir, "sample-quiz", "large-image.png", Buffer.alloc(512_001));
+    const contentDir = makeAssetCatalog({
+      imageDimensions: { height: 10, width: 20 },
+      imageSrc: "large-image.svg",
+    });
+    writeAsset(
+      contentDir,
+      "sample-quiz",
+      "large-image.svg",
+      `<svg viewBox="0 0 20 10">${" ".repeat(512_001)}</svg>`,
+    );
 
     expect(() => loadAssetCatalog(contentDir)).toThrow(
-      /Quiz asset file is too large[\s\S]*512001 bytes[\s\S]*limit is 512000 bytes \(500 KB\)[\s\S]*Fix:/,
+      /Quiz asset file is too large[\s\S]*512032 bytes[\s\S]*limit is 512000 bytes \(500 KB\)[\s\S]*Fix:/,
     );
   });
 });
@@ -287,7 +331,13 @@ function makeSummary(id: string, addedAt: string): PublicQuizSummary {
   };
 }
 
-function makeAssetCatalog({ imageSrc }: { imageSrc?: string } = {}) {
+function makeAssetCatalog({
+  imageDimensions,
+  imageSrc,
+}: {
+  imageDimensions?: { height: number; width: number };
+  imageSrc?: string;
+} = {}) {
   const contentDir = mkdtempSync(join(tmpdir(), "quizbun-public-quizzes-"));
   temporaryDirectories.push(contentDir);
   const quiz = {
@@ -302,7 +352,17 @@ function makeAssetCatalog({ imageSrc }: { imageSrc?: string } = {}) {
         id: "question-one",
         type: "single-choice",
         title: "Which answer is correct?",
-        ...(imageSrc === undefined ? {} : { images: [{ src: imageSrc, alt: "A test diagram" }] }),
+        ...(imageSrc === undefined
+          ? {}
+          : {
+              images: [
+                {
+                  src: imageSrc,
+                  alt: "A test diagram",
+                  ...imageDimensions,
+                },
+              ],
+            }),
         options: [
           { text: "This one", isCorrect: true },
           { text: "Not this one", isCorrect: false },

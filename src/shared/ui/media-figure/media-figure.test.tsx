@@ -7,6 +7,7 @@ import { MediaFigure } from "./media-figure";
 
 const IMAGE_SRC =
   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='2' height='1'/%3E";
+const PENDING_IMAGE_SRC = "https://127.0.0.1:1/pending.png";
 
 describe("MediaFigure", () => {
   it("uses lazy, asynchronous image decoding", async () => {
@@ -15,6 +16,53 @@ describe("MediaFigure", () => {
 
     await expect.element(image).toHaveAttribute("loading", "lazy");
     await expect.element(image).toHaveAttribute("decoding", "async");
+    await expect.element(image).not.toHaveAttribute("fetchpriority");
+  });
+
+  it("eagerly fetches a priority Image with high priority", async () => {
+    const screen = await page.render(<MediaFigure src={IMAGE_SRC} alt="Cache tiers" priority />);
+    const image = screen.getByRole("img", { name: "Cache tiers" });
+
+    await expect.element(image).toHaveAttribute("loading", "eager");
+    await expect.element(image).toHaveAttribute("fetchpriority", "high");
+  });
+
+  it("renders measured dimensions so the browser reserves the Image aspect ratio", async () => {
+    const screen = await page.render(
+      <MediaFigure src={PENDING_IMAGE_SRC} alt="Cache tiers" width={640} height={360} />,
+    );
+    const image = screen.getByRole("img", { name: "Cache tiers" });
+
+    await expect.element(image).toHaveAttribute("width", "640");
+    await expect.element(image).toHaveAttribute("height", "360");
+
+    const bounds = image.element().getBoundingClientRect();
+    expect(bounds.width).toBeGreaterThan(0);
+    expect(bounds.width / bounds.height).toBeCloseTo(16 / 9, 2);
+  });
+
+  it("bounds an unmeasured Image until it loads", async () => {
+    const screen = await page.render(<MediaFigure src={PENDING_IMAGE_SRC} alt="Cache tiers" />);
+    const image = screen.getByRole("img", { name: "Cache tiers" });
+
+    await expect.element(image).toHaveAttribute("data-size-pending");
+    expect(getComputedStyle(image.element()).aspectRatio).toBe("16 / 9");
+
+    image.element().dispatchEvent(new Event("load"));
+
+    await expect.element(image).not.toHaveAttribute("data-size-pending");
+    expect(getComputedStyle(image.element()).aspectRatio).toBe("auto");
+  });
+
+  it("caps a portrait Image to the viewport while preserving its aspect ratio", async () => {
+    const screen = await page.render(
+      <MediaFigure src={PENDING_IMAGE_SRC} alt="Portrait diagram" width={600} height={1200} />,
+    );
+    const image = screen.getByRole("img", { name: "Portrait diagram" });
+    const bounds = image.element().getBoundingClientRect();
+
+    expect(bounds.height).toBeLessThanOrEqual(window.innerHeight * 0.7 + 1);
+    expect(getComputedStyle(image.element()).objectFit).toBe("contain");
   });
 
   it("replaces a failed Image with a visible alt-text placeholder", async () => {

@@ -51,6 +51,12 @@ function addCrossFieldAnnotations(schema: JsonSchemaObject) {
   for (const variant of variants) {
     const variantProperties = asObject(variant.properties, "question variant properties");
     const type = asObject(variantProperties.type, "question type schema");
+    const images = asObject(variantProperties.images, "images schema");
+
+    appendDescription(
+      asObject(images.items, "image schema"),
+      `An Image sets \`width\` and \`height\` together or omits both, and the values must be the intrinsic pixel size of the file \`src\` names. ${finalAuthorityNote}`,
+    );
 
     if (type.const === "single-choice") {
       appendDescription(

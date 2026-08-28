@@ -15,7 +15,9 @@
           "src": "inference-flow.svg",
           "alt": "A flow for one generic call: the call site, then collecting a candidate per inference site, then checking the constraint, then deciding how precise to stay. Three outcomes branch off that last step — a plain <T> widens literal values to their base type, a <const T> behaves as if the caller wrote as const so literals and readonly tuples survive, and a parameter with no inference site falls back to its declared default or to unknown when there is none. A note explains NoInfer<T> as “use T here, but do not infer from it”. A second panel covers variance: candidates from covariant positions such as return types are unioned, candidates from contravariant positions — function parameters — are intersected, so the same infer U in two parameter slots yields string & number and collapses to never. A footer works through pluck<T, K extends keyof T>(obj: T, key: K): T[K].",
           "caption": "Where the candidates come from decides whether they are unioned or intersected.",
-          "placement": "explanation"
+          "placement": "explanation",
+          "width": 720,
+          "height": 528
         }
       ],
       "type": "single-choice",
@@ -49,7 +51,9 @@
           "src": "inference-flow.svg",
           "alt": "A flow for one generic call: the call site, then collecting a candidate per inference site, then checking the constraint, then deciding how precise to stay. Three outcomes branch off that last step — a plain <T> widens literal values to their base type, a <const T> behaves as if the caller wrote as const so literals and readonly tuples survive, and a parameter with no inference site falls back to its declared default or to unknown when there is none. A note explains NoInfer<T> as “use T here, but do not infer from it”. A second panel covers variance: candidates from covariant positions such as return types are unioned, candidates from contravariant positions — function parameters — are intersected, so the same infer U in two parameter slots yields string & number and collapses to never. A footer works through pluck<T, K extends keyof T>(obj: T, key: K): T[K].",
           "caption": "Where the candidates come from decides whether they are unioned or intersected.",
-          "placement": "explanation"
+          "placement": "explanation",
+          "width": 720,
+          "height": 528
         }
       ],
       "type": "single-choice",
@@ -83,7 +87,9 @@
           "src": "inference-flow.svg",
           "alt": "A flow for one generic call: the call site, then collecting a candidate per inference site, then checking the constraint, then deciding how precise to stay. Three outcomes branch off that last step — a plain <T> widens literal values to their base type, a <const T> behaves as if the caller wrote as const so literals and readonly tuples survive, and a parameter with no inference site falls back to its declared default or to unknown when there is none. A note explains NoInfer<T> as “use T here, but do not infer from it”. A second panel covers variance: candidates from covariant positions such as return types are unioned, candidates from contravariant positions — function parameters — are intersected, so the same infer U in two parameter slots yields string & number and collapses to never. A footer works through pluck<T, K extends keyof T>(obj: T, key: K): T[K].",
           "caption": "Where the candidates come from decides whether they are unioned or intersected.",
-          "placement": "explanation"
+          "placement": "explanation",
+          "width": 720,
+          "height": 528
         }
       ],
       "type": "single-choice",
@@ -117,7 +123,9 @@
           "src": "conditional-types.svg",
           "alt": "Two mechanisms. Distribution: with type ToArray<T> = T extends any ? T[] : never, ToArray<string | number> is applied to each member and re-unioned into string[] | number[], because the checked type is a naked type parameter. Recursion: with type Flatten<T> = T extends Array<infer Inner> ? Flatten<Inner> : T, number[][][] peels to number[][], then number[], then number, which is not an array and ends the recursion. Two footers add that boolean is itself the union true | false, so Wrap<boolean> gives true[] | false[] rather than boolean[], and that wrapping both sides in a one-element tuple switches distribution off; and that a template-literal pattern splits at the first delimiter, so Head<\"a.b.c\"> is \"a\", while a mapped type's as clause remaps keys with string & K narrowing K to string.",
           "caption": "One detail decides both: whether the checked type is a naked type parameter.",
-          "placement": "explanation"
+          "placement": "explanation",
+          "width": 720,
+          "height": 548
         }
       ],
       "type": "single-choice",
@@ -151,7 +159,9 @@
           "src": "conditional-types.svg",
           "alt": "Two mechanisms. Distribution: with type ToArray<T> = T extends any ? T[] : never, ToArray<string | number> is applied to each member and re-unioned into string[] | number[], because the checked type is a naked type parameter. Recursion: with type Flatten<T> = T extends Array<infer Inner> ? Flatten<Inner> : T, number[][][] peels to number[][], then number[], then number, which is not an array and ends the recursion. Two footers add that boolean is itself the union true | false, so Wrap<boolean> gives true[] | false[] rather than boolean[], and that wrapping both sides in a one-element tuple switches distribution off; and that a template-literal pattern splits at the first delimiter, so Head<\"a.b.c\"> is \"a\", while a mapped type's as clause remaps keys with string & K narrowing K to string.",
           "caption": "One detail decides both: whether the checked type is a naked type parameter.",
-          "placement": "explanation"
+          "placement": "explanation",
+          "width": 720,
+          "height": 548
         }
       ],
       "type": "single-choice",
@@ -185,7 +195,9 @@
           "src": "inference-flow.svg",
           "alt": "A flow for one generic call: the call site, then collecting a candidate per inference site, then checking the constraint, then deciding how precise to stay. Three outcomes branch off that last step — a plain <T> widens literal values to their base type, a <const T> behaves as if the caller wrote as const so literals and readonly tuples survive, and a parameter with no inference site falls back to its declared default or to unknown when there is none. A note explains NoInfer<T> as “use T here, but do not infer from it”. A second panel covers variance: candidates from covariant positions such as return types are unioned, candidates from contravariant positions — function parameters — are intersected, so the same infer U in two parameter slots yields string & number and collapses to never. A footer works through pluck<T, K extends keyof T>(obj: T, key: K): T[K].",
           "caption": "Where the candidates come from decides whether they are unioned or intersected.",
-          "placement": "explanation"
+          "placement": "explanation",
+          "width": 720,
+          "height": 528
         }
       ],
       "type": "single-choice",
@@ -219,7 +231,9 @@
           "src": "conditional-types.svg",
           "alt": "Two mechanisms. Distribution: with type ToArray<T> = T extends any ? T[] : never, ToArray<string | number> is applied to each member and re-unioned into string[] | number[], because the checked type is a naked type parameter. Recursion: with type Flatten<T> = T extends Array<infer Inner> ? Flatten<Inner> : T, number[][][] peels to number[][], then number[], then number, which is not an array and ends the recursion. Two footers add that boolean is itself the union true | false, so Wrap<boolean> gives true[] | false[] rather than boolean[], and that wrapping both sides in a one-element tuple switches distribution off; and that a template-literal pattern splits at the first delimiter, so Head<\"a.b.c\"> is \"a\", while a mapped type's as clause remaps keys with string & K narrowing K to string.",
           "caption": "One detail decides both: whether the checked type is a naked type parameter.",
-          "placement": "explanation"
+          "placement": "explanation",
+          "width": 720,
+          "height": 548
         }
       ],
       "type": "single-choice",
@@ -253,7 +267,9 @@
           "src": "inference-flow.svg",
           "alt": "A flow for one generic call: the call site, then collecting a candidate per inference site, then checking the constraint, then deciding how precise to stay. Three outcomes branch off that last step — a plain <T> widens literal values to their base type, a <const T> behaves as if the caller wrote as const so literals and readonly tuples survive, and a parameter with no inference site falls back to its declared default or to unknown when there is none. A note explains NoInfer<T> as “use T here, but do not infer from it”. A second panel covers variance: candidates from covariant positions such as return types are unioned, candidates from contravariant positions — function parameters — are intersected, so the same infer U in two parameter slots yields string & number and collapses to never. A footer works through pluck<T, K extends keyof T>(obj: T, key: K): T[K].",
           "caption": "Where the candidates come from decides whether they are unioned or intersected.",
-          "placement": "explanation"
+          "placement": "explanation",
+          "width": 720,
+          "height": 528
         }
       ],
       "type": "multiple-choice",
@@ -287,7 +303,9 @@
           "src": "inference-flow.svg",
           "alt": "A flow for one generic call: the call site, then collecting a candidate per inference site, then checking the constraint, then deciding how precise to stay. Three outcomes branch off that last step — a plain <T> widens literal values to their base type, a <const T> behaves as if the caller wrote as const so literals and readonly tuples survive, and a parameter with no inference site falls back to its declared default or to unknown when there is none. A note explains NoInfer<T> as “use T here, but do not infer from it”. A second panel covers variance: candidates from covariant positions such as return types are unioned, candidates from contravariant positions — function parameters — are intersected, so the same infer U in two parameter slots yields string & number and collapses to never. A footer works through pluck<T, K extends keyof T>(obj: T, key: K): T[K].",
           "caption": "Where the candidates come from decides whether they are unioned or intersected.",
-          "placement": "explanation"
+          "placement": "explanation",
+          "width": 720,
+          "height": 528
         }
       ],
       "type": "multiple-choice",
@@ -321,7 +339,9 @@
           "src": "inference-flow.svg",
           "alt": "A flow for one generic call: the call site, then collecting a candidate per inference site, then checking the constraint, then deciding how precise to stay. Three outcomes branch off that last step — a plain <T> widens literal values to their base type, a <const T> behaves as if the caller wrote as const so literals and readonly tuples survive, and a parameter with no inference site falls back to its declared default or to unknown when there is none. A note explains NoInfer<T> as “use T here, but do not infer from it”. A second panel covers variance: candidates from covariant positions such as return types are unioned, candidates from contravariant positions — function parameters — are intersected, so the same infer U in two parameter slots yields string & number and collapses to never. A footer works through pluck<T, K extends keyof T>(obj: T, key: K): T[K].",
           "caption": "Where the candidates come from decides whether they are unioned or intersected.",
-          "placement": "explanation"
+          "placement": "explanation",
+          "width": 720,
+          "height": 528
         }
       ],
       "type": "input",
@@ -341,7 +361,9 @@
           "src": "conditional-types.svg",
           "alt": "Two mechanisms. Distribution: with type ToArray<T> = T extends any ? T[] : never, ToArray<string | number> is applied to each member and re-unioned into string[] | number[], because the checked type is a naked type parameter. Recursion: with type Flatten<T> = T extends Array<infer Inner> ? Flatten<Inner> : T, number[][][] peels to number[][], then number[], then number, which is not an array and ends the recursion. Two footers add that boolean is itself the union true | false, so Wrap<boolean> gives true[] | false[] rather than boolean[], and that wrapping both sides in a one-element tuple switches distribution off; and that a template-literal pattern splits at the first delimiter, so Head<\"a.b.c\"> is \"a\", while a mapped type's as clause remaps keys with string & K narrowing K to string.",
           "caption": "One detail decides both: whether the checked type is a naked type parameter.",
-          "placement": "explanation"
+          "placement": "explanation",
+          "width": 720,
+          "height": 548
         }
       ],
       "type": "input",
@@ -361,7 +383,9 @@
           "src": "conditional-types.svg",
           "alt": "Two mechanisms. Distribution: with type ToArray<T> = T extends any ? T[] : never, ToArray<string | number> is applied to each member and re-unioned into string[] | number[], because the checked type is a naked type parameter. Recursion: with type Flatten<T> = T extends Array<infer Inner> ? Flatten<Inner> : T, number[][][] peels to number[][], then number[], then number, which is not an array and ends the recursion. Two footers add that boolean is itself the union true | false, so Wrap<boolean> gives true[] | false[] rather than boolean[], and that wrapping both sides in a one-element tuple switches distribution off; and that a template-literal pattern splits at the first delimiter, so Head<\"a.b.c\"> is \"a\", while a mapped type's as clause remaps keys with string & K narrowing K to string.",
           "caption": "One detail decides both: whether the checked type is a naked type parameter.",
-          "placement": "explanation"
+          "placement": "explanation",
+          "width": 720,
+          "height": 548
         }
       ],
       "type": "input",

@@ -15,7 +15,9 @@
           "src": "stacking-context-trap.svg",
           "alt": "The root stacking context holds two children: .site-header at z-index 10, which itself contains .dropdown at z-index 9999, and .hero at z-index 20. Only 10 and 20 are compared.",
           "caption": "Only the two root-level siblings are compared: `10` against `20`.",
-          "placement": "explanation"
+          "placement": "explanation",
+          "width": 720,
+          "height": 444
         }
       ],
       "type": "single-choice",
@@ -94,7 +96,9 @@
           "src": "isolation-side-effects.svg",
           "alt": "A four-row comparison. isolation: isolate creates a stacking context, establishes no containing block, and has no other side effects. position: relative with z-index 0 creates a stacking context, becomes a containing block for absolutely positioned descendants, and pins the card to level 0. transform: translateZ(0) creates a stacking context, becomes a containing block for absolutely positioned and fixed descendants, adds a GPU layer, and may blur text. overflow: hidden creates no stacking context, only a block formatting context, and clips the badge and menu.",
           "caption": "All but `overflow: hidden` contain the layers; only `isolation: isolate` costs nothing else.",
-          "placement": "explanation"
+          "placement": "explanation",
+          "width": 720,
+          "height": 456
         }
       ],
       "type": "single-choice",
@@ -142,7 +146,9 @@
           "src": "negative-z-index.svg",
           "alt": "Two paint stacks side by side. Without a stacking context on .parent, the parent background paints above the negative-z child and hides it. With isolation: isolate the parent background paints first and the child sits in front of it.",
           "caption": "`isolation: isolate` changes where the `-1` is resolved, and the child reappears.",
-          "placement": "explanation"
+          "placement": "explanation",
+          "width": 720,
+          "height": 420
         }
       ],
       "type": "single-choice",
@@ -214,7 +220,9 @@
           "src": "paint-order.svg",
           "alt": "The seven painting steps inside one stacking context, bottom to top: the context's own background and border, negative z-index child contexts, in-flow block-level descendants, non-positioned floats, in-flow inline content, z-index 0 and positioned auto, then positive z-index child contexts.",
           "caption": "Step 1 precedes step 2 — a `z-index: -1` child never falls behind its own context's background.",
-          "placement": "explanation"
+          "placement": "explanation",
+          "width": 720,
+          "height": 484
         }
       ],
       "type": "multiple-choice",
@@ -248,7 +256,9 @@
           "src": "fixed-containing-block.svg",
           "alt": "Two browser windows. In the first, .card has no transform and the fixed modal with inset 0 covers the whole viewport. In the second, .card has a transform, so the same modal covers only the card.",
           "caption": "A `transform` on `.card` makes it the containing block, so `inset: 0` measures from the card.",
-          "placement": "explanation"
+          "placement": "explanation",
+          "width": 720,
+          "height": 420
         }
       ],
       "type": "single-choice",
@@ -297,7 +307,9 @@
           "src": "blend-backdrop-isolation.svg",
           "alt": "Two paint stacks side by side, each running bottom to top from the page, to the photo, to the caption. By default the caption's backdrop covers both the photo and the page. With isolation: isolate on the figure, a group boundary encloses the caption and the photo, so the backdrop covers the photo but leaves the page outside.",
           "caption": "`isolation: isolate` resets the backdrop at the `figure`, so the blend stops at the photo.",
-          "placement": "explanation"
+          "placement": "explanation",
+          "width": 720,
+          "height": 420
         }
       ],
       "type": "single-choice",

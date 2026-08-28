@@ -76,7 +76,9 @@
           "src": "request-path.svg",
           "alt": "A GET descends three rows: the private browser cache, the shared CDN edge, then the origin. A fresh browser copy is served with no network at all. Past max-age=60 the request reaches the edge, which is still fresh under s-maxage=600 and returns the body with Age: 200. Past 600 seconds the edge revalidates with If-None-Match: \"v7\"; a matching ETag yields 304 with no body, a differing one yields 200 with a new body and validator.",
           "caption": "The left column is the private row; the middle column is the shared one.",
-          "placement": "explanation"
+          "placement": "explanation",
+          "width": 720,
+          "height": 540
         }
       ],
       "type": "single-choice",
@@ -101,7 +103,9 @@
           "src": "request-path.svg",
           "alt": "A GET descends three rows: the private browser cache, the shared CDN edge, then the origin. A fresh browser copy is served with no network at all. Past max-age=60 the request reaches the edge, which is still fresh under s-maxage=600 and returns the body with Age: 200. Past 600 seconds the edge revalidates with If-None-Match: \"v7\"; a matching ETag yields 304 with no body, a differing one yields 200 with a new body and validator.",
           "caption": "Without `private`, the shared middle row stores the response and replays it to the next visitor.",
-          "placement": "explanation"
+          "placement": "explanation",
+          "width": 720,
+          "height": 540
         }
       ],
       "type": "single-choice",
@@ -126,7 +130,9 @@
           "src": "request-path.svg",
           "alt": "A GET descends three rows: the private browser cache, the shared CDN edge, then the origin. A fresh browser copy is served with no network at all. Past max-age=60 the request reaches the edge, which is still fresh under s-maxage=600 and returns the body with Age: 200. Past 600 seconds the edge revalidates with If-None-Match: \"v7\"; a matching ETag yields 304 with no body, a differing one yields 200 with a new body and validator.",
           "caption": "Two deadlines, one response: 60 s for the browser row, 600 s for the edge row.",
-          "placement": "explanation"
+          "placement": "explanation",
+          "width": 720,
+          "height": 540
         }
       ],
       "type": "single-choice",
@@ -148,7 +154,9 @@
           "src": "request-path.svg",
           "alt": "A GET descends three rows: the private browser cache, the shared CDN edge, then the origin. A fresh browser copy is served with no network at all. Past max-age=60 the request reaches the edge, which is still fresh under s-maxage=600 and returns the body with Age: 200. Past 600 seconds the edge revalidates with If-None-Match: \"v7\"; a matching ETag yields 304 with no body, a differing one yields 200 with a new body and validator.",
           "caption": "The bottom-left branch: the validator still matches, so no body crosses the wire.",
-          "placement": "explanation"
+          "placement": "explanation",
+          "width": 720,
+          "height": 540
         }
       ],
       "type": "input",
@@ -164,7 +172,9 @@
           "src": "request-path.svg",
           "alt": "A GET descends three rows: the private browser cache, the shared CDN edge, then the origin. A fresh browser copy is served with no network at all. Past max-age=60 the request reaches the edge, which is still fresh under s-maxage=600 and returns the body with Age: 200. Past 600 seconds the edge revalidates with If-None-Match: \"v7\"; a matching ETag yields 304 with no body, a differing one yields 200 with a new body and validator.",
           "caption": "The 304 branch carries headers only — the stored copy supplies the body.",
-          "placement": "explanation"
+          "placement": "explanation",
+          "width": 720,
+          "height": 540
         }
       ],
       "type": "single-choice",
@@ -194,7 +204,9 @@
           "src": "request-path.svg",
           "alt": "A GET descends three rows: the private browser cache, the shared CDN edge, then the origin. A fresh browser copy is served with no network at all. Past max-age=60 the request reaches the edge, which is still fresh under s-maxage=600 and returns the body with Age: 200. Past 600 seconds the edge revalidates with If-None-Match: \"v7\"; a matching ETag yields 304 with no body, a differing one yields 200 with a new body and validator.",
           "caption": "The stored `ETag` goes back out as `If-None-Match` on the revalidation arrow.",
-          "placement": "explanation"
+          "placement": "explanation",
+          "width": 720,
+          "height": 540
         }
       ],
       "type": "single-choice",
@@ -287,7 +299,9 @@
           "src": "freshness-timeline.svg",
           "alt": "A timeline of one stored response sent with max-age=600 and stale-while-revalidate=86400: a green FRESH band up to 600 seconds, an orange stale-but-inside-the-window band up to 87,000 seconds, then a dashed EXPIRED band that requires a round trip. A marker at 700 seconds falls inside the orange band. Below, four cards state what stale-while-revalidate, stale-if-error, must-revalidate and immutable each change at the boundary, and a final note gives the 10-percent-of-Date-minus-Last-Modified heuristic for a response with no freshness headers.",
           "caption": "The orange band is the `stale-while-revalidate` window.",
-          "placement": "explanation"
+          "placement": "explanation",
+          "width": 720,
+          "height": 584
         }
       ],
       "type": "input",
@@ -304,7 +318,9 @@
           "src": "freshness-timeline.svg",
           "alt": "A timeline of one stored response sent with max-age=600 and stale-while-revalidate=86400: a green FRESH band up to 600 seconds, an orange stale-but-inside-the-window band up to 87,000 seconds, then a dashed EXPIRED band that requires a round trip. A marker at 700 seconds falls inside the orange band. Below, four cards state what stale-while-revalidate, stale-if-error, must-revalidate and immutable each change at the boundary, and a final note gives the 10-percent-of-Date-minus-Last-Modified heuristic for a response with no freshness headers.",
           "caption": "The 700 s marker sits inside the orange band, not past it.",
-          "placement": "explanation"
+          "placement": "explanation",
+          "width": 720,
+          "height": 584
         }
       ],
       "type": "single-choice",
@@ -334,7 +350,9 @@
           "src": "freshness-timeline.svg",
           "alt": "A timeline of one stored response sent with max-age=600 and stale-while-revalidate=86400: a green FRESH band up to 600 seconds, an orange stale-but-inside-the-window band up to 87,000 seconds, then a dashed EXPIRED band that requires a round trip. A marker at 700 seconds falls inside the orange band. Below, four cards state what stale-while-revalidate, stale-if-error, must-revalidate and immutable each change at the boundary, and a final note gives the 10-percent-of-Date-minus-Last-Modified heuristic for a response with no freshness headers.",
           "caption": "`stale-if-error` is the failure twin of the orange band.",
-          "placement": "explanation"
+          "placement": "explanation",
+          "width": 720,
+          "height": 584
         }
       ],
       "type": "single-choice",
@@ -355,7 +373,9 @@
           "src": "freshness-timeline.svg",
           "alt": "A timeline of one stored response sent with max-age=600 and stale-while-revalidate=86400: a green FRESH band up to 600 seconds, an orange stale-but-inside-the-window band up to 87,000 seconds, then a dashed EXPIRED band that requires a round trip. A marker at 700 seconds falls inside the orange band. Below, four cards state what stale-while-revalidate, stale-if-error, must-revalidate and immutable each change at the boundary, and a final note gives the 10-percent-of-Date-minus-Last-Modified heuristic for a response with no freshness headers.",
           "caption": "`must-revalidate` deletes the orange band: no stale serving, at all.",
-          "placement": "explanation"
+          "placement": "explanation",
+          "width": 720,
+          "height": 584
         }
       ],
       "type": "single-choice",
@@ -383,7 +403,9 @@
           "src": "freshness-timeline.svg",
           "alt": "A timeline of one stored response sent with max-age=600 and stale-while-revalidate=86400: a green FRESH band up to 600 seconds, an orange stale-but-inside-the-window band up to 87,000 seconds, then a dashed EXPIRED band that requires a round trip. A marker at 700 seconds falls inside the orange band. Below, four cards state what stale-while-revalidate, stale-if-error, must-revalidate and immutable each change at the boundary, and a final note gives the 10-percent-of-Date-minus-Last-Modified heuristic for a response with no freshness headers.",
           "caption": "`immutable` acts inside the green band, on the reload path.",
-          "placement": "explanation"
+          "placement": "explanation",
+          "width": 720,
+          "height": 584
         }
       ],
       "type": "single-choice",
@@ -414,7 +436,9 @@
           "src": "freshness-timeline.svg",
           "alt": "A timeline of one stored response sent with max-age=600 and stale-while-revalidate=86400: a green FRESH band up to 600 seconds, an orange stale-but-inside-the-window band up to 87,000 seconds, then a dashed EXPIRED band that requires a round trip. A marker at 700 seconds falls inside the orange band. Below, four cards state what stale-while-revalidate, stale-if-error, must-revalidate and immutable each change at the boundary, and a final note gives the 10-percent-of-Date-minus-Last-Modified heuristic for a response with no freshness headers.",
           "caption": "The blue note: 10% of `Date` − `Last-Modified`.",
-          "placement": "explanation"
+          "placement": "explanation",
+          "width": 720,
+          "height": 584
         }
       ],
       "type": "input",
@@ -472,7 +496,9 @@
           "src": "request-path.svg",
           "alt": "A GET descends three rows: the private browser cache, the shared CDN edge, then the origin. A fresh browser copy is served with no network at all. Past max-age=60 the request reaches the edge, which is still fresh under s-maxage=600 and returns the body with Age: 200. Past 600 seconds the edge revalidates with If-None-Match: \"v7\"; a matching ETag yields 304 with no body, a differing one yields 200 with a new body and validator.",
           "caption": "`Age: 200` against `s-maxage=600` leaves 400 s of edge freshness.",
-          "placement": "explanation"
+          "placement": "explanation",
+          "width": 720,
+          "height": 540
         }
       ],
       "type": "single-choice",
@@ -517,7 +543,9 @@
           "src": "stampede-and-coalescing.svg",
           "alt": "Two panels. Without coalescing, five GET boxes standing in for 5,000 concurrent misses all arrow into one origin box marked 5,000 identical recomputations. With coalescing, the same requests arrow into a single-flight gate labelled one leader, 4,999 waiters, and a single arrow continues to an origin box marked 1 recomputation. Below, four cards name request coalescing, serving stale while revalidating, probabilistic early expiration and TTL jitter, and a final card marks max-age=0 as the opposite of a fix.",
           "caption": "The left panel: every concurrent miss recomputes the same value.",
-          "placement": "explanation"
+          "placement": "explanation",
+          "width": 720,
+          "height": 550
         }
       ],
       "type": "single-choice",
@@ -551,7 +579,9 @@
           "src": "stampede-and-coalescing.svg",
           "alt": "Two panels. Without coalescing, five GET boxes standing in for 5,000 concurrent misses all arrow into one origin box marked 5,000 identical recomputations. With coalescing, the same requests arrow into a single-flight gate labelled one leader, 4,999 waiters, and a single arrow continues to an origin box marked 1 recomputation. Below, four cards name request coalescing, serving stale while revalidating, probabilistic early expiration and TTL jitter, and a final card marks max-age=0 as the opposite of a fix.",
           "caption": "Four cards, one idea — never let N requests do the same work N times.",
-          "placement": "explanation"
+          "placement": "explanation",
+          "width": 720,
+          "height": 550
         }
       ],
       "type": "multiple-choice",
@@ -615,7 +645,9 @@
           "src": "stampede-and-coalescing.svg",
           "alt": "Two panels. Without coalescing, five GET boxes standing in for 5,000 concurrent misses all arrow into one origin box marked 5,000 identical recomputations. With coalescing, the same requests arrow into a single-flight gate labelled one leader, 4,999 waiters, and a single arrow continues to an origin box marked 1 recomputation. Below, four cards name request coalescing, serving stale while revalidating, probabilistic early expiration and TTL jitter, and a final card marks max-age=0 as the opposite of a fix.",
           "caption": "The right panel: one leader fetches, 4,999 waiters share the result.",
-          "placement": "explanation"
+          "placement": "explanation",
+          "width": 720,
+          "height": 550
         }
       ],
       "type": "single-choice",

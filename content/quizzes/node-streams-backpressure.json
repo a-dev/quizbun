@@ -15,7 +15,9 @@
           "src": "stream-classes.svg",
           "alt": "A class map read as extends: Readable, a source you pull chunks out of, and Writable, a sink you push chunks into, both feed into Duplex — one object with a readable side and a writable side — which in turn feeds Transform, a Duplex whose readable side is derived from its writable side. Four cards list the methods you implement: _read(size), _write(chunk, enc, cb), _transform(chunk, enc, cb), and _flush(cb), a Transform's one last push after the final chunk. A note says you call read, write and pipe while Node calls the underscore versions, and that _flush runs before 'end'.",
           "caption": "Transform sits one level under Duplex.",
-          "placement": "explanation"
+          "placement": "explanation",
+          "width": 720,
+          "height": 520
         }
       ],
       "type": "input",
@@ -35,7 +37,9 @@
           "src": "pipe-backpressure.svg",
           "alt": "A pipe from a Readable created by createReadStream to a slow Writable HTTP response, with the writable's internal queue drawn between them as a fill bar against a dashed highWaterMark line. Two panels follow. When the queue is at or above the mark, write(chunk) returns false — the chunk is still accepted and queued — and pipe() calls readable.pause(). When the queue drains below the mark, the 'drain' event fires and pipe() calls readable.resume(). A closing note says ignoring the false only queues more chunks in memory until RSS kills the process, so backpressure guards memory rather than the socket or the disk, and that objectMode counts objects, making the default mark 16 objects instead of 16 KB.",
           "caption": "`false` is a queue-depth signal, not a rejection.",
-          "placement": "explanation"
+          "placement": "explanation",
+          "width": 720,
+          "height": 528
         }
       ],
       "type": "single-choice",
@@ -69,7 +73,9 @@
           "src": "pipe-backpressure.svg",
           "alt": "A pipe from a Readable created by createReadStream to a slow Writable HTTP response, with the writable's internal queue drawn between them as a fill bar against a dashed highWaterMark line. Two panels follow. When the queue is at or above the mark, write(chunk) returns false — the chunk is still accepted and queued — and pipe() calls readable.pause(). When the queue drains below the mark, the 'drain' event fires and pipe() calls readable.resume(). A closing note says ignoring the false only queues more chunks in memory until RSS kills the process, so backpressure guards memory rather than the socket or the disk, and that objectMode counts objects, making the default mark 16 objects instead of 16 KB.",
           "caption": "The queue in the middle is process memory, and nothing else.",
-          "placement": "explanation"
+          "placement": "explanation",
+          "width": 720,
+          "height": 528
         }
       ],
       "type": "single-choice",
@@ -129,7 +135,9 @@
           "src": "stream-classes.svg",
           "alt": "A class map read as extends: Readable, a source you pull chunks out of, and Writable, a sink you push chunks into, both feed into Duplex — one object with a readable side and a writable side — which in turn feeds Transform, a Duplex whose readable side is derived from its writable side. Four cards list the methods you implement: _read(size), _write(chunk, enc, cb), _transform(chunk, enc, cb), and _flush(cb), a Transform's one last push after the final chunk. A note says you call read, write and pipe while Node calls the underscore versions, and that _flush runs before 'end'.",
           "caption": "Four underscore methods, all of them called by Node, not you.",
-          "placement": "explanation"
+          "placement": "explanation",
+          "width": 720,
+          "height": 520
         }
       ],
       "type": "multiple-choice",
@@ -163,7 +171,9 @@
           "src": "pipe-backpressure.svg",
           "alt": "A pipe from a Readable created by createReadStream to a slow Writable HTTP response, with the writable's internal queue drawn between them as a fill bar against a dashed highWaterMark line. Two panels follow. When the queue is at or above the mark, write(chunk) returns false — the chunk is still accepted and queued — and pipe() calls readable.pause(). When the queue drains below the mark, the 'drain' event fires and pipe() calls readable.resume(). A closing note says ignoring the false only queues more chunks in memory until RSS kills the process, so backpressure guards memory rather than the socket or the disk, and that objectMode counts objects, making the default mark 16 objects instead of 16 KB.",
           "caption": "The blue note: the mark counts objects instead of bytes.",
-          "placement": "explanation"
+          "placement": "explanation",
+          "width": 720,
+          "height": 528
         }
       ],
       "type": "input",
@@ -183,7 +193,9 @@
           "src": "pipe-backpressure.svg",
           "alt": "A pipe from a Readable created by createReadStream to a slow Writable HTTP response, with the writable's internal queue drawn between them as a fill bar against a dashed highWaterMark line. Two panels follow. When the queue is at or above the mark, write(chunk) returns false — the chunk is still accepted and queued — and pipe() calls readable.pause(). When the queue drains below the mark, the 'drain' event fires and pipe() calls readable.resume(). A closing note says ignoring the false only queues more chunks in memory until RSS kills the process, so backpressure guards memory rather than the socket or the disk, and that objectMode counts objects, making the default mark 16 objects instead of 16 KB.",
           "caption": "The mark changes unit; each chunk passes through whole.",
-          "placement": "explanation"
+          "placement": "explanation",
+          "width": 720,
+          "height": 528
         }
       ],
       "type": "single-choice",
@@ -217,7 +229,9 @@
           "src": "pipe-backpressure.svg",
           "alt": "A pipe from a Readable created by createReadStream to a slow Writable HTTP response, with the writable's internal queue drawn between them as a fill bar against a dashed highWaterMark line. Two panels follow. When the queue is at or above the mark, write(chunk) returns false — the chunk is still accepted and queued — and pipe() calls readable.pause(). When the queue drains below the mark, the 'drain' event fires and pipe() calls readable.resume(). A closing note says ignoring the false only queues more chunks in memory until RSS kills the process, so backpressure guards memory rather than the socket or the disk, and that objectMode counts objects, making the default mark 16 objects instead of 16 KB.",
           "caption": "Without the pause arrow, the middle box just keeps growing.",
-          "placement": "explanation"
+          "placement": "explanation",
+          "width": 720,
+          "height": 528
         }
       ],
       "type": "single-choice",
@@ -251,7 +265,9 @@
           "src": "pipe-backpressure.svg",
           "alt": "A pipe from a Readable created by createReadStream to a slow Writable HTTP response, with the writable's internal queue drawn between them as a fill bar against a dashed highWaterMark line. Two panels follow. When the queue is at or above the mark, write(chunk) returns false — the chunk is still accepted and queued — and pipe() calls readable.pause(). When the queue drains below the mark, the 'drain' event fires and pipe() calls readable.resume(). A closing note says ignoring the false only queues more chunks in memory until RSS kills the process, so backpressure guards memory rather than the socket or the disk, and that objectMode counts objects, making the default mark 16 objects instead of 16 KB.",
           "caption": "The right panel: the one event that says writing may resume.",
-          "placement": "explanation"
+          "placement": "explanation",
+          "width": 720,
+          "height": 528
         }
       ],
       "type": "single-choice",
@@ -285,7 +301,9 @@
           "src": "stream-classes.svg",
           "alt": "A class map read as extends: Readable, a source you pull chunks out of, and Writable, a sink you push chunks into, both feed into Duplex — one object with a readable side and a writable side — which in turn feeds Transform, a Duplex whose readable side is derived from its writable side. Four cards list the methods you implement: _read(size), _write(chunk, enc, cb), _transform(chunk, enc, cb), and _flush(cb), a Transform's one last push after the final chunk. A note says you call read, write and pipe while Node calls the underscore versions, and that _flush runs before 'end'.",
           "caption": "`_flush` is the last chance before `'end'`.",
-          "placement": "explanation"
+          "placement": "explanation",
+          "width": 720,
+          "height": 520
         }
       ],
       "type": "single-choice",
@@ -319,7 +337,9 @@
           "src": "pipe-backpressure.svg",
           "alt": "A pipe from a Readable created by createReadStream to a slow Writable HTTP response, with the writable's internal queue drawn between them as a fill bar against a dashed highWaterMark line. Two panels follow. When the queue is at or above the mark, write(chunk) returns false — the chunk is still accepted and queued — and pipe() calls readable.pause(). When the queue drains below the mark, the 'drain' event fires and pipe() calls readable.resume(). A closing note says ignoring the false only queues more chunks in memory until RSS kills the process, so backpressure guards memory rather than the socket or the disk, and that objectMode counts objects, making the default mark 16 objects instead of 16 KB.",
           "caption": "`pipe()` wires the pause and resume for you.",
-          "placement": "explanation"
+          "placement": "explanation",
+          "width": 720,
+          "height": 528
         }
       ],
       "type": "single-choice",
