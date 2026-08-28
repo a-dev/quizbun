@@ -1,0 +1,115 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="340" viewBox="0 0 760 340">
+  <style>
+    /* An &lt;img&gt;-embedded SVG cannot see the page's `data-theme`, but it does
+       inherit the embedding document's `color-scheme`, so `prefers-color-scheme`
+       tracks the site theme including an explicit toggle. The presentation
+       attributes below stay as the light fallback for renderers without CSS. */
+    svg {
+      --panel: #f5f7fb;
+      --title: #20242c;
+      --muted: #526173;
+      --edge: #64748b;
+      --card: #ffffff;
+      --grid: #d5dce6;
+      --seg-queued: #cbd5e1;
+      --seg-queued-edge: #64748b;
+      --seg-stalled: #94a3b8;
+      --seg-stalled-edge: #475569;
+      --seg-dns: #d8b4fe;
+      --seg-dns-edge: #9333ea;
+      --seg-connect: #93c5fd;
+      --seg-connect-edge: #2563eb;
+      --seg-tls: #7dd3fc;
+      --seg-tls-edge: #0284c7;
+      --seg-sent: #334155;
+      --seg-sent-edge: #0f172a;
+      --seg-ttfb: #fed7aa;
+      --seg-ttfb-edge: #c2410c;
+      --seg-download: #86efac;
+      --seg-download-edge: #16a34a;
+      --marker: #9333ea;
+      --text-on-dark: #f8fafc;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      svg {
+        --panel: #1a1f27;
+        --title: #e6eaf2;
+        --muted: #9aa8bd;
+        --edge: #8b9bb4;
+        --card: #252b35;
+        --grid: #333c49;
+        --seg-queued: #334155;
+        --seg-queued-edge: #94a3b8;
+        --seg-stalled: #475569;
+        --seg-stalled-edge: #cbd5e1;
+        --seg-dns: #581c87;
+        --seg-dns-edge: #c084fc;
+        --seg-connect: #1e3a5f;
+        --seg-connect-edge: #60a5fa;
+        --seg-tls: #164e63;
+        --seg-tls-edge: #38bdf8;
+        --seg-sent: #0f172a;
+        --seg-sent-edge: #94a3b8;
+        --seg-ttfb: #3a2416;
+        --seg-ttfb-edge: #fb923c;
+        --seg-download: #14321f;
+        --seg-download-edge: #4ade80;
+        --marker: #c084fc;
+        --text-on-dark: #0f172a;
+      }
+    }
+
+    .panel-bg { fill: var(--panel); }
+    .title { fill: var(--title); }
+    .muted { fill: var(--muted); }
+    .edge-line { stroke: var(--edge); }
+    .grid-line { stroke: var(--grid); }
+    .card { fill: var(--card); stroke: var(--edge); }
+    text { font-family: system-ui, sans-serif; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    .seg-queued { fill: var(--seg-queued); stroke: var(--seg-queued-edge); }
+    .seg-stalled { fill: var(--seg-stalled); stroke: var(--seg-stalled-edge); }
+    .seg-dns { fill: var(--seg-dns); stroke: var(--seg-dns-edge); }
+    .seg-connect { fill: var(--seg-connect); stroke: var(--seg-connect-edge); }
+    .seg-tls { fill: var(--seg-tls); stroke: var(--seg-tls-edge); }
+    .seg-sent { fill: var(--seg-sent); stroke: var(--seg-sent-edge); }
+    .seg-ttfb { fill: var(--seg-ttfb); stroke: var(--seg-ttfb-edge); }
+    .seg-download { fill: var(--seg-download); stroke: var(--seg-download-edge); }
+    .marker-line { stroke: var(--marker); }
+    .marker-text { fill: var(--marker); }
+  </style>
+  <rect class="panel-bg" width="760" height="340" rx="20" fill="#f5f7fb" />
+  <text class="title" x="36" y="40" font-size="20" font-weight="700">Three tiny bars before the real request</text>
+  <text class="muted" x="36" y="62" font-size="13.5">Each redirect is a full round trip. Still not one byte of content</text>
+  <text class="muted mono" x="20" y="116.0" font-size="12" text-anchor="start">GET /promo</text>
+    <rect class="seg-dns" x="200.0" y="100" width="24.0" height="24" stroke-width="1.5" />
+    <rect class="seg-connect" x="224.0" y="100" width="24.0" height="24" stroke-width="1.5" />
+    <rect class="seg-tls" x="248.0" y="100" width="24.0" height="24" stroke-width="1.5" />
+    <rect class="seg-ttfb" x="272.0" y="100" width="32.0" height="24" stroke-width="1.5" />
+  <text class="muted mono" x="20" y="150.0" font-size="12" text-anchor="start">GET /promo/2024 (301)</text>
+    <rect class="seg-ttfb" x="304.0" y="134" width="32.0" height="24" stroke-width="1.5" />
+  <text class="muted mono" x="20" y="184.0" font-size="12" text-anchor="start">GET /promo/2024/ (301)</text>
+    <rect class="seg-ttfb" x="336.0" y="168" width="32.0" height="24" stroke-width="1.5" />
+  <text class="muted mono" x="20" y="218.0" font-size="12" text-anchor="start">GET /promo/2024/index (200)</text>
+    <rect class="seg-dns" x="368.0" y="202" width="16.0" height="24" stroke-width="1.5" />
+    <rect class="seg-connect" x="384.0" y="202" width="24.0" height="24" stroke-width="1.5" />
+    <rect class="seg-tls" x="408.0" y="202" width="24.0" height="24" stroke-width="1.5" />
+    <rect class="seg-ttfb" x="432.0" y="202" width="48.0" height="24" stroke-width="1.5" />
+    <rect class="seg-download" x="480.0" y="202" width="80.0" height="24" stroke-width="1.5" />
+  <line class="grid-line" x1="200" y1="248" x2="560.0" y2="248" stroke-width="1.5" />
+  <line class="grid-line" x1="200" y1="244" x2="200" y2="252" stroke-width="1.5" />
+  <text class="muted mono" x="200" y="266" font-size="10.5" text-anchor="middle">0 ms</text>
+  <line class="grid-line" x1="560.0" y1="244" x2="560.0" y2="252" stroke-width="1.5" />
+  <text class="muted mono" x="560.0" y="266" font-size="10.5" text-anchor="middle">225 ms</text>
+  <rect class="seg-dns" x="20" y="283" width="14" height="14" rx="2" stroke-width="1.5" />
+  <text class="muted" x="40" y="294" font-size="11.5">DNS</text>
+  <rect class="seg-connect" x="250" y="283" width="14" height="14" rx="2" stroke-width="1.5" />
+  <text class="muted" x="270" y="294" font-size="11.5">Initial connection</text>
+  <rect class="seg-tls" x="480" y="283" width="14" height="14" rx="2" stroke-width="1.5" />
+  <text class="muted" x="500" y="294" font-size="11.5">TLS</text>
+  <rect class="seg-ttfb" x="20" y="305" width="14" height="14" rx="2" stroke-width="1.5" />
+  <text class="muted" x="40" y="316" font-size="11.5">Waiting (TTFB)</text>
+  <rect class="seg-download" x="250" y="305" width="14" height="14" rx="2" stroke-width="1.5" />
+  <text class="muted" x="270" y="316" font-size="11.5">Content download</text>
+</svg>

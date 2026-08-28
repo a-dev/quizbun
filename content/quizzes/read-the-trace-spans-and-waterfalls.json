@@ -1,0 +1,458 @@
+{
+  "schemaVersion": 1,
+  "id": "read-the-trace-spans-and-waterfalls",
+  "title": "Read the Trace: Spans, Waterfalls & What They Confess",
+  "description": "A distributed trace is a picture of one request's life across every service it touched. Once you can read the shape, the bug is often obvious before you open a single log line. This quiz shows you span waterfalls and asks what went wrong: the staircase, the straggler, the retry storm, the clock skew, the broken handoff. It closes with the sampling tradeoffs that decide whether the trace you need survives long enough to be read.",
+  "language": "en",
+  "tags": ["observability", "tracing", "performance", "debugging", "system-design"],
+  "questions": [
+    {
+      "id": "child-span-nesting-meaning",
+      "title": "In a trace waterfall, what does it mean when Span B is drawn nested inside Span A, indented and starting after A begins?",
+      "type": "single-choice",
+      "options": [
+        { "text": "Span B is a child of Span A: A's operation called out to whatever B represents, and A is still running while it waits.", "isCorrect": true },
+        { "text": "Span B happened after Span A finished, and the indentation just marks the second event.", "isCorrect": false },
+        { "text": "Span B belongs to a different trace that got merged into the same view.", "isCorrect": false },
+        { "text": "Span B is a retry of Span A that only ran because A failed.", "isCorrect": false }
+      ],
+      "explanation": "Nesting encodes a caller and callee relationship, not just sequence. A span drawn indented inside another means the outer operation invoked whatever the inner span represents, and the outer span stays active, waiting, for as long as the inner one runs. Two spans at the same depth that don't overlap are sequential siblings. Nesting says this call happened because of that one, which is the difference between reading a waterfall as a timeline and reading it as a call graph."
+    },
+    {
+      "id": "root-span-duration-not-sum",
+      "title": "The root span of a trace lasts 800 ms. Its two direct children last 150 ms and 200 ms. What can you conclude about the other 450 ms?",
+      "type": "single-choice",
+      "options": [
+        { "text": "It's unaccounted for: work the root span did itself, or time waiting on something with no child span around it, before, after or between the children.", "isCorrect": true },
+        { "text": "It must be a measurement bug, because a root span's duration should equal the sum of its children's durations.", "isCorrect": false },
+        { "text": "It's the network latency of the root span's own instrumentation overhead.", "isCorrect": false },
+        { "text": "The tracer rounded the two children up to fill the parent's box.", "isCorrect": false }
+      ],
+      "explanation": "A parent span's duration is the wall-clock time between its own start and end. Nothing makes it match the sum of its children. The other 450 ms could be local CPU work with no span around it, a gap between the two calls, or setup and teardown the root does before and after it delegates. Treat that leftover as the part of the story the trace isn't telling. A wide, unexplained span is a prompt to add instrumentation, not a bug report."
+    },
+    {
+      "id": "uninstrumented-gap-or-cpu",
+      "title": "What does it usually mean when a parent span is much wider than its one child span, with large gaps of unexplained time on both sides of the child?",
+      "description": "The waterfall below shows one parent span with a single, much shorter child span nested inside it.",
+      "type": "single-choice",
+      "images": [
+        {
+          "src": "long-span-no-children.svg",
+          "alt": "A wide parent span labeled checkout.process, with a much shorter child span labeled payment.charge nested near its middle, leaving large gaps of unexplained time before and after the child"
+        }
+      ],
+      "options": [
+        { "text": "Local CPU work inside the parent, or a call to something nobody instrumented, such as a library or a subprocess. The trace alone can't tell you which.", "isCorrect": true },
+        { "text": "The child span's clock is wrong, so its start and end timestamps don't line up with the parent.", "isCorrect": false },
+        { "text": "The parent span was sampled but the child wasn't, so the child's true duration is being under-reported.", "isCorrect": false },
+        { "text": "The gap is dead time where the process was suspended by the OS scheduler, and every tracer reports this precisely.", "isCorrect": false }
+      ],
+      "explanation": "A gap with no span around it is invisible to the trace by definition. It could be real CPU work, like parsing or serialization or a tight loop, or a call to something nobody wrapped in a span: a native library, a shelled-out process, a client SDK with no tracing hooks. The waterfall tells you time is missing and roughly where. It can't tell you why. The move is the same every time: put a span around the suspect code path and look again, rather than guessing from the shape."
+    },
+    {
+      "id": "sibling-gap-diagnosis",
+      "title": "What could explain a visible gap in time between two sibling spans that share the same parent, when nothing else appears in the trace during that gap?",
+      "description": "Both spans below are children of `svc-a.request`, one after the other, with a stretch of empty time between them.",
+      "type": "single-choice",
+      "images": [
+        {
+          "src": "sibling-gap.svg",
+          "alt": "Two sibling spans, step1 and step2, both children of svc-a.request, with an empty gap of time between the end of step1 and the start of step2"
+        }
+      ],
+      "options": [
+        { "text": "Time between the two calls that produced no span of its own. A queue wait, a GC pause and lock contention are all common causes.", "isCorrect": true },
+        { "text": "The gap is always network latency between two remote calls.", "isCorrect": false },
+        { "text": "step2 was sampled out and then sampled back in, which the renderer draws as a gap.", "isCorrect": false },
+        { "text": "The tracer buffers spans before exporting them, and the gap is that export delay, not real elapsed time.", "isCorrect": false }
+      ],
+      "explanation": "A gap between siblings is real elapsed time that nothing was instrumented to explain. Anything that stalls the thread without making a traced call can produce it: waiting on a queue or thread pool, a garbage collection pause, waiting on a lock, plain CPU scheduling delay under load. It isn't automatically network latency, since a remote call would normally show up as its own span. The fix is the same as for an oversized span: add events or child spans around the suspected step, so the next trace explains itself instead of going quiet."
+    },
+    {
+      "id": "trace-timeline-vs-log-timeline",
+      "title": "Why might a trace waterfall and a service's log timestamps disagree about when something happened?",
+      "type": "single-choice",
+      "options": [
+        { "text": "Logs are usually written and flushed asynchronously by whatever process and clock produced them, while a trace's span timestamps are recorded by the tracer at the exact moment each operation starts and ends.", "isCorrect": true },
+        { "text": "Traces are always more accurate because they use atomic clocks.", "isCorrect": false },
+        { "text": "Logs cannot include timestamps at all, so there is nothing to compare.", "isCorrect": false },
+        { "text": "The two are always identical once you round to the nearest second.", "isCorrect": false }
+      ],
+      "explanation": "Log lines are often batched and flushed later than the event they describe, stamped by whatever clock the writing process has, and sometimes reordered by asynchronous handlers. A trace is built to be a timeline: each span's start and end are captured the instant the operation begins and finishes, and the pieces are stitched together by parent and child relationships rather than by line order. That puts a trace closer to the real causal order of events. Distributed clocks add quirks of their own between services, which a later question covers."
+    },
+    {
+      "id": "span-attributes-vs-events",
+      "title": "What is the difference between a span attribute and a span event?",
+      "type": "single-choice",
+      "options": [
+        { "text": "An attribute is a static key-value fact about the whole span, like `http.status_code`; an event is a timestamped point-in-time occurrence recorded within the span's duration, like a cache miss at the 120 ms mark.", "isCorrect": true },
+        { "text": "Attributes only exist on the root span; events only exist on child spans.", "isCorrect": false },
+        { "text": "Events are just attributes that were renamed for backward compatibility with older tracing libraries.", "isCorrect": false },
+        { "text": "An attribute records something that happened once; an event can hold multiple values that change over the span's lifetime.", "isCorrect": false }
+      ],
+      "explanation": "Attributes describe the span as a whole. They carry no timestamp of their own and apply to the entire operation. Events mark something that happened during the span, at one instant, without the cost of creating a new span for it: an exception caught, a retry attempted, a cache miss. This is standard OpenTelemetry vocabulary, and the split matters when you read a waterfall, because it tells you what gets drawn on screen and what hides in an event list you have to click into."
+    },
+    {
+      "id": "staircase-n-plus-one",
+      "title": "What does it usually mean when a parent span contains many identical, same-duration child spans running one after another, filling most of the parent's time?",
+      "description": "The waterfall below shows `GET /orders` with eight near-identical `db.query` spans back to back underneath it.",
+      "type": "single-choice",
+      "images": [
+        {
+          "src": "n-plus-one-staircase.svg",
+          "alt": "A parent span labeled GET /orders, with eight identical db.query child spans of the same width running one after another beneath it, like a staircase"
+        }
+      ],
+      "options": [
+        { "text": "An N+1 query: the code is looping over a list and issuing one query per item instead of a single query for the whole batch.", "isCorrect": true },
+        { "text": "A single slow query that the tracer accidentally reported as many separate spans.", "isCorrect": false },
+        { "text": "A retry storm where a client keeps re-sending the same request because of an error.", "isCorrect": false },
+        { "text": "A fan-out where independent work was deliberately split up for parallelism.", "isCorrect": false }
+      ],
+      "explanation": "Many spans with the same operation name and roughly the same duration, running flush against each other, is the classic N+1 silhouette: code looping over a collection and issuing one query per item instead of one query for the set. Batch the query, or use a data loader that coalesces per-item requests, and the staircase collapses into a single wider span. Two lookalikes to rule out: a retry storm has gaps between repeats that grow rather than none at all, and a fan-out has the repeated calls overlapping in time rather than running in sequence."
+    },
+    {
+      "id": "n-plus-one-behind-cache",
+      "title": "Two traces for the same endpoint and the same code path look very different: one shows a staircase of several database queries, the other shows a single short span. What's the most likely explanation?",
+      "description": "Both waterfalls below are drawn on the same time scale so they can be compared directly.",
+      "type": "single-choice",
+      "images": [
+        {
+          "src": "warm-vs-cold-cache.svg",
+          "alt": "Two waterfalls on the same time scale: trace A shows handle-request with a staircase of six db.query spans; trace B shows handle-request with a single short cache.get span",
+          "caption": "Both traces hit the same endpoint and the same code."
+        }
+      ],
+      "options": [
+        { "text": "Trace A missed the cache, so the N+1 loop ran against the database; trace B hit the cache, replacing every one of those queries with a single fast lookup.", "isCorrect": true },
+        { "text": "The endpoint has two entirely different implementations, and the two traces are unrelated.", "isCorrect": false },
+        { "text": "Trace B was sampled at a lower rate, so most of its spans were dropped before export.", "isCorrect": false },
+        { "text": "The database was down during trace A, so every query in the loop retried automatically.", "isCorrect": false }
+      ],
+      "explanation": "An N+1 loop can hide behind a warm cache. The loop still runs, but each iteration is now a fast uniform cache lookup instead of a slow uniform database query, and when the cache absorbs the whole loop into one call the staircase collapses into a single span, like trace B here. Review a handful of traces from normal warm traffic and you can miss the pattern completely. It surfaces on a cold cache, on an eviction, or on the first request after a deploy, which is when it hurts most."
+    },
+    {
+      "id": "serial-awaits-should-fanout",
+      "title": "The three child spans below have no data dependency on each other. None of their inputs come from another's output. Yet the trace shows them running one after another instead of at the same time. What's happening?",
+      "description": "The parent is `GET /dashboard`; the three children are `get-user`, `get-orders`, and `get-recommendations`.",
+      "type": "single-choice",
+      "images": [
+        {
+          "src": "serial-awaits.svg",
+          "alt": "A parent span GET /dashboard with three independent child spans, get-user, get-orders, and get-recommendations, running one after another with no overlap"
+        },
+        {
+          "src": "serial-vs-parallel.svg",
+          "alt": "The same three calls shown before and after the fix: serial, ending at 450 ms, and parallel, ending at 200 ms",
+          "caption": "After the fix, the three calls overlap and the parent shrinks to the slowest one.",
+          "placement": "explanation"
+        }
+      ],
+      "options": [
+        { "text": "The code `await`s each call before starting the next, serializing three calls that could have run concurrently.", "isCorrect": true },
+        { "text": "The three services share a physical server, so they can never execute at the same time.", "isCorrect": false },
+        { "text": "The tracer always draws sibling spans one after another for readability, even when the underlying calls overlapped.", "isCorrect": false },
+        { "text": "Context propagation only supports one outgoing call per parent span, so the rest had to wait their turn.", "isCorrect": false }
+      ],
+      "explanation": "Awaiting a call blocks the next line from starting, whether or not that line depends on the result. Three independent calls awaited one at a time cost the sum of their durations. Started together, with `Promise.all` or structured concurrency, then awaited as a group, they cost the duration of the slowest one. This is among the most common shapes in a waterfall and among the easiest to fix, because nothing outside the service changes. You just stop throwing away concurrency you already had."
+    },
+    {
+      "id": "serial-awaits-after-fix",
+      "title": "After fixing the serialized-awaits problem above by starting all three calls before awaiting any of them, what should the new trace's parent duration be closest to?",
+      "type": "single-choice",
+      "options": [
+        { "text": "About the same as the single slowest child call, since the three now run concurrently.", "isCorrect": true },
+        { "text": "About the same as the sum of the three original child durations, since the same work still has to happen.", "isCorrect": false },
+        { "text": "Roughly zero, since concurrent calls no longer count toward the parent's duration.", "isCorrect": false },
+        { "text": "Exactly the average of the three original child durations.", "isCorrect": false }
+      ],
+      "explanation": "Run independent branches at the same time and the wall-clock cost is bounded by the slowest branch, not by the sum. The total work is unchanged; the waiting collapses. It is the same rule behind fan-out parent durations elsewhere in this quiz: a join waits for the longest of its concurrent children, never their total."
+    },
+    {
+      "id": "fanout-straggler",
+      "title": "A fan-out to five independent services: four return in about 50 ms, one takes 310 ms. The parent span's duration is 310 ms wide. Why?",
+      "description": "All five children below start at the same time, as direct children of `aggregate`.",
+      "type": "single-choice",
+      "images": [
+        {
+          "src": "fanout-straggler.svg",
+          "alt": "A parent span aggregate with five child spans starting at the same time; four are short and similar in length, one is much longer and highlighted in a different color"
+        }
+      ],
+      "options": [
+        { "text": "The parent has to wait for every one of its children to finish before it can respond, so its duration is set by the slowest one, not by the average.", "isCorrect": true },
+        { "text": "The parent's own clock started late, so it only appears to end after the slow child.", "isCorrect": false },
+        { "text": "The four fast children were sampled out, and their true durations were actually much longer.", "isCorrect": false },
+        { "text": "The 310 ms child retried three times, and the parent duration only reflects its final attempt.", "isCorrect": false }
+      ],
+      "explanation": "When a span fans out to independent children and joins on all of them, its duration is the maximum of the children's, not their average and not their sum. That is the straggler problem. One slow dependency, even one that is usually fast, can dominate the whole join, which is why aggregation endpoints so often show worse tail latency than any single service they call. A later question in this quiz puts numbers on how much a wide fan-out amplifies it."
+    },
+    {
+      "id": "straggler-p99-consequences",
+      "title": "A parent span fans out to many independent children and waits for all of them to finish (a join). Which of these statements are true?",
+      "type": "multiple-choice",
+      "options": [
+        { "text": "The parent's p99 latency is driven by the slowest child's tail, not by the children's typical latency.", "isCorrect": true },
+        { "text": "Adding more independent children to the fan-out, all else equal, can only make the parent's tail latency worse, never better.", "isCorrect": true },
+        { "text": "If every child has a p99 latency of 100 ms, the parent's own p99 latency is also 100 ms.", "isCorrect": false },
+        { "text": "A single very slow child among many fast ones can dominate the parent's total time, even if that child is rarely slow.", "isCorrect": true }
+      ],
+      "explanation": "A join waits for the maximum of its children, so its tail is set by whichever child happens to be slow on that request. Add more independent children and you add more chances that one of them is the slow one, which is the arithmetic a later question asks you to run. A parent is not as fast as its typical child. A dependency that is slow only rarely still dominates the requests where it happens to be the straggler, so the parent's p99 comes out worse than any single child's."
+    },
+    {
+      "id": "retry-storm",
+      "title": "The waterfall shows the same child span repeated several times, each with a longer gap before the next one than the last. What does this pattern usually mean?",
+      "description": "The parent is `publish-event`; the repeated child is `call-webhook`.",
+      "type": "single-choice",
+      "images": [
+        {
+          "src": "retry-storm.svg",
+          "alt": "A parent span publish-event with the same call-webhook child span repeated four times, with the gap before each successive repeat growing larger than the last"
+        }
+      ],
+      "options": [
+        { "text": "A retry loop with backoff: each attempt is failing or timing out, and the growing gaps are the backoff delay before the next retry.", "isCorrect": true },
+        { "text": "A batch job intentionally spacing out identical work to avoid overloading a downstream service.", "isCorrect": false },
+        { "text": "Clock skew making a single call appear to repeat itself in the waterfall.", "isCorrect": false },
+        { "text": "The tracer deduplicated a span incorrectly and drew it several times by mistake.", "isCorrect": false }
+      ],
+      "explanation": "The same child span, same name and roughly the same shape, repeating with gaps that grow, often exponentially, is a retry loop with backoff. The call keeps failing or timing out, and the widening gap is the deliberate delay before the next attempt. Deliberately spaced-out scheduled work looks different: it doesn't normally repeat one operation under a single parent with delays that keep doubling. Note how much of the parent's latency budget the whole sequence eats. That is worth flagging even when the last attempt succeeds."
+    },
+    {
+      "id": "clock-skew",
+      "title": "A child span appears to start 30 ms before its parent span starts, even though the service that produced the child is healthy and its own logs show it started only after receiving the request. What's the most likely explanation?",
+      "description": "Both spans below are drawn on the same timeline, with the parent's start time marked.",
+      "type": "single-choice",
+      "images": [
+        {
+          "src": "clock-skew.svg",
+          "alt": "Two spans on a shared timeline: gateway.request and svc-b.handle, where svc-b.handle's bar begins to the left of a marked line showing where gateway.request begins"
+        }
+      ],
+      "options": [
+        { "text": "Clock skew: the two spans were timestamped by different machines, and small differences between those machines' clocks make the timeline slightly inconsistent without any real causality violation.", "isCorrect": true },
+        { "text": "The trace collector has a bug that causes the timeline to loop backward.", "isCorrect": false },
+        { "text": "The child span belongs to a request that had not even been sent yet.", "isCorrect": false },
+        { "text": "Context propagation failed, so this child was attached to the wrong parent at random.", "isCorrect": false }
+      ],
+      "explanation": "Span timestamps come from whatever machine created the span, using that machine's clock. Perfect synchronization is hard, between NTP drift, VM clock jumps and container scheduling delays, so a small negative overlap at a service boundary is common and doesn't mean the request traveled backward in time. A large or systematic skew is worth chasing as an infrastructure problem. Thirty milliseconds is noise, not a bug in the request."
+    },
+    {
+      "id": "broken-propagation",
+      "title": "You expect a trace to continue from `checkout-api` into `shipping-service`, but instead the trace simply ends at `checkout-api`, and a completely separate trace starts fresh inside `shipping-service` at roughly the same moment. What's the most likely cause?",
+      "type": "single-choice",
+      "images": [
+        {
+          "src": "broken-propagation.svg",
+          "alt": "Two separate span trees drawn side by side with no connecting edge: checkout-api.request with its child inventory-service.call on the left, and shipping-service.request with its child shipping-service.call on the right"
+        },
+        {
+          "src": "traceparent-propagation.svg",
+          "alt": "Two diagrams of a traceparent header crossing a service boundary: one where the header is forwarded and both services share a trace id, and one where the header is dropped and the second service mints a new trace id",
+          "placement": "explanation"
+        }
+      ],
+      "options": [
+        { "text": "Context propagation is broken at that service boundary: the `traceparent` header (or equivalent) isn't being forwarded, so `shipping-service` starts a brand-new trace instead of continuing the existing one.", "isCorrect": true },
+        { "text": "The two services are sampled at different rates, which simply makes one trace look shorter than the other.", "isCorrect": false },
+        { "text": "`shipping-service` is slower than `checkout-api`, so its span is drawn separately for readability.", "isCorrect": false },
+        { "text": "The two span trees belong to different requests entirely and just happen to overlap in time by coincidence.", "isCorrect": false }
+      ],
+      "explanation": "Distributed tracing depends on forwarding trace context across every network hop, usually a `traceparent` header carrying the trace id and parent span id. If a proxy strips headers, a message broker doesn't carry them through, or one client SDK was never wired up for tracing, the callee has no context to continue. It mints a new trace id and becomes its own root. Nothing errors. A trace just stops, and a second, apparently unrelated one starts at almost the same moment."
+    },
+    {
+      "id": "broken-propagation-signs",
+      "title": "Which of the following, seen in a tracing system, are signs of broken context propagation somewhere in the request path?",
+      "type": "multiple-choice",
+      "options": [
+        { "text": "A trace that simply stops at a service boundary, with no child span for a call you know the code makes.", "isCorrect": true },
+        { "text": "A second, apparently unrelated root span, with a different trace id, that starts at almost the same moment the missing call would have happened.", "isCorrect": true },
+        { "text": "A message-queue consumer's spans never appearing as descendants of the producer's trace, even though the producer effectively waits on the message being processed.", "isCorrect": true },
+        { "text": "A parent span whose child span appears indented and starts slightly after the parent begins.", "isCorrect": false }
+      ],
+      "explanation": "Three signatures give it away: a continuation that never arrives, an orphaned root trace appearing right when the missing call should have happened, and queue or async hops that never link back to their producer. Queues are the classic blind spot, since nothing carries context across them the way an HTTP header does on a direct call. The last option describes healthy nesting. A child indented and starting just after its parent is what a correctly propagated call looks like."
+    },
+    {
+      "id": "lying-span",
+      "title": "A span named `resize-image` takes 480 ms out of a 500 ms parent. A developer says 'image resizing must be really slow.' Looking at the code, the `resize-image` span actually wraps both the resize operation and a network upload of the result. What does this teach about reading a span's duration?",
+      "description": "The waterfall below shows only what the trace can see from the outside: one child span filling almost the entire parent.",
+      "type": "single-choice",
+      "images": [
+        {
+          "src": "lying-span.svg",
+          "alt": "A parent span process-image with a single child span, resize-image, that fills nearly the entire width of the parent"
+        }
+      ],
+      "options": [
+        { "text": "A span's duration tells you how long the wrapped code ran, not what that code was doing at every moment. Wrap too much and the label points at the wrong operation.", "isCorrect": true },
+        { "text": "The duration is always accurate for exactly the operation named by the span, so the network upload must actually be the fast part.", "isCorrect": false },
+        { "text": "This is impossible; tracers always split a wrapped function into one span per line of code automatically.", "isCorrect": false },
+        { "text": "The fix is simply to rename the span to `resize-image-and-upload` and stop investigating further.", "isCorrect": false }
+      ],
+      "explanation": "The lying span isn't lying about elapsed time. It reports exactly how long the wrapped code took. The trap is that someone wrapped more logic than the name implies, so the label points at the wrong operation. Narrow the span's boundaries, or split it into a child span per real sub-step, until the waterfall's story matches what the code does. Renaming it `resize-image-and-upload` is more honest and still tells you nothing about which half took the 480 ms."
+    },
+    {
+      "id": "async-handoff",
+      "title": "The `http.request` span ends at 120 ms, but a `send-email` span for the same request starts at 150 ms, drawn off to the side and connected by a link rather than nested inside the request span. What does this shape usually represent?",
+      "type": "single-choice",
+      "images": [
+        {
+          "src": "async-handoff.svg",
+          "alt": "http.request ends, and afterward a separate span, send-email, appears in its own row, connected to http.request by a dashed link rather than being nested inside it"
+        }
+      ],
+      "options": [
+        { "text": "Work that continues after the response was already sent: a background or fire-and-forget task, captured as a linked span because it isn't a normal parent-child call inside the request's lifetime.", "isCorrect": true },
+        { "text": "A bug where the tracer lost track of which span is the true parent.", "isCorrect": false },
+        { "text": "The email was sent before the response, and the diagram's ordering is wrong.", "isCorrect": false },
+        { "text": "This always means the request will time out, since the email span outlives the request span.", "isCorrect": false }
+      ],
+      "explanation": "Most tracers support span links for work that is causally related but not a blocking call, usually background or queued work kicked off during a request and never awaited before the response goes out. It sits detached in time, starting after the parent finished, joined by a link instead of nesting, with a duration that says nothing about how long the client waited. That combination is how you tell 'the system is still working on this' apart from 'the client was waiting for this'."
+    },
+    {
+      "id": "async-handoff-signs",
+      "title": "Which of the following would make you suspect a span represents async handoff work, rather than blocking work the parent waited on?",
+      "type": "multiple-choice",
+      "options": [
+        { "text": "The span starts after the span representing the HTTP response has already ended.", "isCorrect": true },
+        { "text": "The span is connected to the trace via a link, rather than being nested as a normal child.", "isCorrect": true },
+        { "text": "The span's total duration has no effect on how long the client waited for its response.", "isCorrect": true },
+        { "text": "The span is nested directly inside the request span and ends before the request span does.", "isCorrect": false }
+      ],
+      "explanation": "The three true statements are what async handoff looks like: the work starts after the response is gone, it joins the trace by a link instead of nesting, and its duration never reached the client. The last option describes ordinary synchronous work, a child nested inside its parent and finishing first. That is the opposite case, and the client waited for it."
+    },
+    {
+      "id": "connection-pool-exhaustion",
+      "title": "Six database query spans in the same trace each show the same pattern: a long, uniform stretch of waiting before the query actually runs, followed by a short burst of real work. What does the uniform wait at the head of every span suggest?",
+      "type": "single-choice",
+      "images": [
+        {
+          "src": "pool-exhaustion.svg",
+          "alt": "Six db.query spans, each drawn as a dashed waiting segment of the same length followed by a short solid segment representing the query actually running",
+          "caption": "The dashed portion is time spent waiting; the solid portion is the query itself."
+        }
+      ],
+      "options": [
+        { "text": "Connection pool exhaustion: each query is waiting for a free connection from a saturated pool before it can even start, and that wait is roughly the same for everyone competing for the same limited pool.", "isCorrect": true },
+        { "text": "Each query is doing the same amount of real work, so the wait must be a rendering artifact of the trace viewer.", "isCorrect": false },
+        { "text": "The queries are being retried a fixed number of times before succeeding.", "isCorrect": false },
+        { "text": "The database itself is evenly rate-limiting every query by the same fixed delay.", "isCorrect": false }
+      ],
+      "explanation": "A uniform wait at the head of many concurrent spans, all competing for the same scarce resource, means pool exhaustion rather than slow work. The resource might be database connections, worker threads, or a semaphore. Tell it apart from a retry storm, whose gaps grow between repeats of one call, and from an N+1 staircase, whose operations run flush one after another. The fix is usually pool sizing, better connection reuse, or issuing fewer queries per request, and that last one may well be an N+1 problem upstream."
+    },
+    {
+      "id": "head-sampling-cant-filter",
+      "title": "A team samples 1% of traces with head-based sampling, and wants to keep every trace for a specific customer id. They add that filter to the sampler. Why does this often fail to work as intended?",
+      "type": "single-choice",
+      "options": [
+        { "text": "Head-based sampling decides whether to keep a trace at the root span, often before the customer id is known, so the sampler can't reliably act on it.", "isCorrect": true },
+        { "text": "Head-based sampling is only compatible with numeric attributes, and customer ids are usually strings.", "isCorrect": false },
+        { "text": "1% is too low a sample rate for head-based sampling to function at all.", "isCorrect": false },
+        { "text": "Head-based sampling always samples 100% of traces regardless of configuration.", "isCorrect": false }
+      ],
+      "explanation": "Head-based sampling decides keep or drop at the root, and that decision propagates unchanged to every descendant span. If the attribute you want to filter on shows up later, resolved after authentication or attached to a downstream child, it isn't available when the decision has to be made. Filtering on attributes like that needs tail-based sampling, which waits for the whole trace before choosing."
+    },
+    {
+      "id": "tail-sampling-tradeoff",
+      "title": "What is the main cost of tail-based sampling, which decides whether to keep a trace only after the trace has completed?",
+      "type": "single-choice",
+      "images": [
+        {
+          "src": "sampling-decision-point.svg",
+          "alt": "Two identical trace shapes, one with the sampling decision marked at the root before any children run, the other with the decision marked only after every child span has finished",
+          "placement": "explanation"
+        }
+      ],
+      "options": [
+        { "text": "Every span of every trace must be buffered somewhere until the whole trace finishes, which costs memory and infrastructure, especially for long-running or high-throughput traces.", "isCorrect": true },
+        { "text": "Tail-based sampling cannot keep slow or error traces, only average ones.", "isCorrect": false },
+        { "text": "It requires every service in the request path to sample at exactly the same fixed percentage.", "isCorrect": false },
+        { "text": "It only works for synchronous, single-service requests.", "isCorrect": false }
+      ],
+      "explanation": "Tail-based sampling can bias toward the traces you care about, the slow ones and the failing ones, because it waits to see the outcome before deciding. That costs infrastructure. A collector holds every span of every in-flight trace until the trace finishes, then scores it and keeps or drops it. That is a far heavier, stateful pipeline than head-based sampling's instant coin flip at the root."
+    },
+    {
+      "id": "no-traces-for-incident",
+      "title": "During an incident review, someone says 'we have no traces for the outage.' What is the most likely underlying reason?",
+      "type": "single-choice",
+      "options": [
+        { "text": "Head-based sampling was keeping only a small fixed percentage of traces, and the requests affected by the incident simply weren't part of that random sample.", "isCorrect": true },
+        { "text": "Tracing systems always stop recording during an outage, as a built-in safety mechanism.", "isCorrect": false },
+        { "text": "Traces are deleted automatically whenever an error status code is recorded.", "isCorrect": false },
+        { "text": "The service must have been using metrics instead of traces, so no traces could ever have existed.", "isCorrect": false }
+      ],
+      "explanation": "With a low fixed head-sampling rate, the requests that mattered most during an incident were no more likely to be kept than any others. At 1%, the odds that any particular slice of bad traffic survived are poor. Hence the usual answers: raise the rate temporarily during risky periods, move to tail-based sampling so errors and slow traces get kept on purpose, or keep a force-sample path available for live debugging."
+    },
+    {
+      "id": "signal-choice-frequency",
+      "title": "You need to know how often a particular error code occurred across all traffic over the past week, aggregated by hour. Which telemetry type is best suited to answer this directly?",
+      "type": "single-choice",
+      "options": [
+        { "text": "Metrics: a counter or rate aggregated over time is what metrics are built for, with no need to store or scan individual traces.", "isCorrect": true },
+        { "text": "Traces: pull every trace from the past week and count the ones containing that error.", "isCorrect": false },
+        { "text": "Logs: parsing raw log lines from scratch beats a pre-aggregated counter.", "isCorrect": false },
+        { "text": "Span events: attach an event to every span and count events at query time.", "isCorrect": false }
+      ],
+      "explanation": "Learn the three-signal split and most tooling questions answer themselves. Metrics answer how often and how much, cheaply and at volume, because they are pre-aggregated when written. Traces answer where one request spent its time. Logs answer what happened, in detail, for one thing. You can answer a how-often question from traces or raw logs, but it is slow and wasteful next to a counter built for the question."
+    },
+    {
+      "id": "cardinality-attribute-vs-label",
+      "title": "A request's user id is fine to attach as a span attribute, but would be dangerous to use as a metric label. Which of these explain why?",
+      "type": "multiple-choice",
+      "options": [
+        { "text": "Metric systems typically create a new time series for every unique combination of label values, so a high-cardinality label like a user id can create an unbounded number of time series.", "isCorrect": true },
+        { "text": "Traces are stored and queried per-request, so one more distinct attribute value on one span doesn't multiply state anywhere else in the system.", "isCorrect": true },
+        { "text": "Span attributes are never indexed by any tracing backend, so cardinality is irrelevant there.", "isCorrect": false },
+        { "text": "Metric backends can suffer serious performance and cost problems, or silently drop data, once label cardinality explodes.", "isCorrect": true }
+      ],
+      "explanation": "Cardinality is the difference. Metrics pre-aggregate into one time series per unique combination of label values, so an unbounded label like a user id or a raw URL multiplies series without limit and degrades or breaks the backend. Traces store and query each span independently instead of pre-aggregating into a fixed set of series, so one more distinct value costs almost nothing. Not literally nothing: many tracing backends do index some attributes. The cost model is just far gentler than a cardinality explosion."
+    },
+    {
+      "id": "pick-the-right-signal",
+      "title": "Which of these questions would you best answer by reading an individual trace, rather than by using metrics or logs?",
+      "type": "multiple-choice",
+      "options": [
+        { "text": "\"For this one slow request, which downstream call actually consumed the time?\"", "isCorrect": true },
+        { "text": "\"Across which services does time get spent, on the critical path, for this kind of request?\"", "isCorrect": true },
+        { "text": "\"What is the 99th percentile latency for this endpoint over the last 24 hours?\"", "isCorrect": false },
+        { "text": "\"What was the exact stack trace and error message when this specific request failed?\"", "isCorrect": false }
+      ],
+      "explanation": "A trace shows the causal shape of one request across every service it touched, which is what you need to find where its time went, or which service sits on its critical path. A percentile over 24 hours of traffic is an aggregation job, and that is what metrics are for. The exact error text and stack trace for one failure is a logging job; a trace can link to it but doesn't hold it."
+    },
+    {
+      "id": "fanout-slow-probability",
+      "title": "A parent span fans out to 5 independent downstream calls. Each call independently has a 2% chance of being the slow straggler for that request (that is, a 98% chance of finishing within its own p99 threshold). Assuming independence, what is the probability, as a whole number of percent, that at least one of the 5 calls is the straggler?",
+      "description": "Use `P(at least one slow) = 1 - (0.98)^5`. Give your answer as a whole number of percent, for example `10` for 10%.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [10],
+        "tolerance": 1
+      },
+      "explanation": "`1 - 0.98^5 ≈ 1 - 0.904 = 0.096`, about 10%. This is the arithmetic behind the straggler problem from earlier. Each dependency is reliable on its own, but a wide fan-out multiplies the chances that one of them is slow on any given request, and since the parent waits for all five, that one unlucky call sets the parent's latency. It is why aggregation endpoints show worse tail latency than any of the services they call, and why the fixes are hedged requests, per-call timeouts with a fallback, or a narrower fan-out, rather than asking every dependency to be faster."
+    },
+    {
+      "id": "parallelize-savings",
+      "title": "A trace shows three independent calls made serially, one after another: 120 ms, 260 ms, and 90 ms, for a parent duration of 470 ms. If these were fixed to run in parallel instead, roughly how many milliseconds would the parent's duration shrink by?",
+      "description": "Assume no added overhead from parallelizing, and that the parallel duration is bounded by the slowest of the three calls.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [210],
+        "tolerance": 5
+      },
+      "explanation": "Parallel duration is the largest of the three calls, `260 ms`. Serial duration was the sum, `470 ms`. The saving is `470 - 260 = 210 ms`. Parallelizing turns a sum into a maximum, because the calls stop blocking each other. The saving is biggest when the calls are close in size. When one call already dominates the total, you gain less, because that same call still sets the floor."
+    },
+    {
+      "id": "straggler-parent-duration",
+      "title": "A fan-out parent waits on 4 independent children with durations 45 ms, 52 ms, 310 ms, and 60 ms. Assuming the parent does no other work of its own and simply waits for all four to finish, what is the parent span's duration, in milliseconds?",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [310],
+        "tolerance": 5
+      },
+      "explanation": "A join's duration is the maximum of its children, not their sum and not their average, so the parent is bound entirely by the 310 ms child. The other three finishing fast changes nothing. This is the straggler shape from earlier, stripped down to arithmetic: whichever child is slowest on a given request becomes the parent's duration."
+    }
+  ]
+}

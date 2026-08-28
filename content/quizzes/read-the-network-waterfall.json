@@ -1,0 +1,772 @@
+{
+  "schemaVersion": 1,
+  "id": "read-the-network-waterfall",
+  "title": "Read the Network Waterfall",
+  "description": "The network panel already knows why your page is slow. It just says so in a language most people never learned to read. This quiz teaches the bars: what each segment of a request means, which requests hold up the render, and which \"optimization\" only moved the problem two rows down.",
+  "language": "en",
+  "tags": [
+    "web-performance",
+    "frontend",
+    "http",
+    "networking",
+    "browser"
+  ],
+  "questions": [
+    {
+      "id": "anatomy-segment-order",
+      "title": "Reading one request bar from left to right, which lists its possible stages in the correct order?",
+      "description": "Not every request shows every stage. A cached response or a reused connection skips several. But when a stage does appear, it appears in this order.",
+      "type": "single-choice",
+      "images": [
+        {
+          "src": "waterfall-bar-anatomy.svg",
+          "alt": "One request bar exploded into eight labeled segments: Queued, Stalled, DNS, Initial connection, TLS, Request sent, Waiting (TTFB), Content download",
+          "caption": "The reference figure for this quiz. Every question below points back to these eight segments.",
+          "placement": "explanation"
+        }
+      ],
+      "options": [
+        {
+          "text": "Queued → Stalled → DNS → Initial connection → TLS → Request sent → Waiting (TTFB) → Content download",
+          "isCorrect": true
+        },
+        {
+          "text": "DNS → Queued → TLS → Initial connection → Request sent → Content download → Waiting (TTFB)",
+          "isCorrect": false
+        },
+        {
+          "text": "Stalled → Queued → Initial connection → DNS → TLS → Waiting (TTFB) → Request sent → Content download",
+          "isCorrect": false
+        },
+        {
+          "text": "Initial connection → TLS → DNS → Queued → Stalled → Request sent → Content download → Waiting (TTFB)",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The order is just what has to happen before bytes can move. The browser waits for permission to send anything at all (Queued, Stalled). It finds the server (DNS). It opens a pipe, with TLS on top if the connection is encrypted (Initial connection, TLS). It writes the request (Request sent). It waits for the server to think and for the reply to come back (Waiting, or TTFB). Only then does the body arrive (Content download).\n\nChrome DevTools, Firefox and WebPageTest all draw the bar this way because it mirrors the real sequence of events, not a display convention someone picked. A request can skip stages in the middle: no DNS or connection segments means the browser reused a connection it already had. It can never show them out of order.",
+      "references": "[Chrome DevTools: Network features reference — Timing tab](https://developer.chrome.com/docs/devtools/network/reference/)"
+    },
+    {
+      "id": "anatomy-stalled-vs-waiting",
+      "title": "One request has a long Stalled segment, another a long Waiting (TTFB) segment. What's the practical difference?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Stalled is contention on the client: no free connection yet, or the browser holding the request back on purpose. Waiting is server think time plus one round trip. One fix frees up the client, the other speeds up the server or its data access.",
+          "isCorrect": true
+        },
+        {
+          "text": "They mean the same thing. Different tools just label identical behavior differently.",
+          "isCorrect": false
+        },
+        {
+          "text": "Stalled always indicates a network outage; Waiting always indicates a slow disk on the server.",
+          "isCorrect": false
+        },
+        {
+          "text": "Stalled happens after the response starts arriving; Waiting happens before the request is even sent.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Both segments look like nothing is happening, and they send you looking in opposite directions.\n\nStalled happens before the request is sent. The browser has decided to make this request but can't yet, usually because it's waiting for a free connection (see the HTTP/1.1 six-connection limit later in this quiz). Look at the client, and at how many parallel requests you're making.\n\nWaiting (TTFB) happens after the request is sent. The bytes are on the wire and the browser is waiting for the server to process them and send the first byte back. Look at the server: application logic, cache warmth, how far away the edge node is.",
+      "references": "[MDN: Time to first byte](https://developer.mozilla.org/en-US/docs/Glossary/Time_to_first_byte)"
+    },
+    {
+      "id": "anatomy-fat-ttfb-static",
+      "title": "style.css is a static file with no server-side logic, yet its Waiting (TTFB) segment is surprisingly long. What does that suggest?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The server or CDN edge is slow to respond even to static content: a cold cache at that edge, an overloaded origin being hit on a cache miss, or a file that isn't served from the fast edge cache you assumed it was.",
+          "isCorrect": true
+        },
+        {
+          "text": "Static files never have a Waiting segment, so this must be a rendering bug in the DevTools panel.",
+          "isCorrect": false
+        },
+        {
+          "text": "The file is being compressed at an unusually high compression level.",
+          "isCorrect": false
+        },
+        {
+          "text": "The browser is deliberately deprioritizing static assets to save bandwidth for scripts.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "TTFB is server think time plus one round trip, and every HTTP response has one. Static or dynamic, the server still has to receive the request, find the file, and start writing a response, even when finding it is a single filesystem read. A fat TTFB on a static file usually means the request missed a fast cache: an unpopulated edge node, a fall-through to a slower origin, or a CDN that isn't caching that file type the way you think it is. Compression changes the size of the response, which shows up in Content download, not in how long the server takes to start.",
+      "references": "[MDN: Time to first byte](https://developer.mozilla.org/en-US/docs/Glossary/Time_to_first_byte)"
+    },
+    {
+      "id": "anatomy-slow-download-small-file",
+      "title": "A 12 KB JSON response has an unusually long Content download segment. What are the two most likely explanations?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The connection is short on bandwidth or high on latency (throttling, a poor network path), or the response isn't compressed and is moving far more than 12 KB of actual bytes on the wire.",
+          "isCorrect": true
+        },
+        {
+          "text": "The server took a long time to think before it started responding.",
+          "isCorrect": false
+        },
+        {
+          "text": "DNS resolution failed partway through and had to be retried.",
+          "isCorrect": false
+        },
+        {
+          "text": "A render-blocking script upstream delayed this request from starting.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Content download measures how long bytes take to arrive once the server has already started sending them. It is pure transfer time. For a file that small to drag, either the pipe is narrow or unreliable, or the file is bigger on the wire than its logical size suggests, usually because gzip or Brotli never got applied and uncompressed JSON is moving at several times its compressed size. Server think time lives in Waiting. DNS failures show up as failed or retried DNS segments. Whatever delayed the request from starting is a Stalled or Queued problem, not a download one."
+    },
+    {
+      "id": "anatomy-no-connection-segments",
+      "title": "A request's bar starts right at Waiting, with no Queued, DNS, Initial connection or TLS segments before it. Which of these explain that? (Select all that apply.)",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "The browser reused an already-open, persistent (keep-alive) connection to the same origin, so it didn't need to resolve DNS or renegotiate a connection.",
+          "isCorrect": true
+        },
+        {
+          "text": "This is a later stream on an HTTP/2 (or HTTP/3) connection, multiplexed onto a connection an earlier request already opened.",
+          "isCorrect": true
+        },
+        {
+          "text": "The response came entirely from the disk cache, so no request was actually sent.",
+          "isCorrect": false
+        },
+        {
+          "text": "dns-prefetch resolved the hostname during idle time before the request was made.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Skipping connection setup is almost always connection reuse. The browser already has a live connection to that origin, either an HTTP/1.1 keep-alive or a stream on an existing HTTP/2 connection, so there is nothing left to set up and the bar goes straight to writing the request. A disk-cache hit looks different rather than similar: the browser never sends a request, so DevTools shows a near-instant entry labeled \"(disk cache)\" with no Waiting segment either. That is not a normal bar missing its first few pieces. And `dns-prefetch` only removes the DNS segment. A request it helped would still show Initial connection and TLS."
+    },
+    {
+      "id": "anatomy-ttfb-round-trip",
+      "title": "TTFB is server processing time plus how many network round trip(s)?",
+      "description": "Assume a simple request over an already-open connection: no redirects, no retries, no packet loss.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [
+          1
+        ]
+      },
+      "explanation": "TTFB (Time To First Byte) covers one round trip: the request travels to the server, the server thinks, and the first byte of the response travels back. One trip out, one trip back, with processing in the middle. That is why TTFB is so sensitive to distance. A server on the other side of the planet adds real milliseconds to every request no matter how fast its code runs, and shortening that distance is the whole reason a CDN puts edge nodes near users.",
+      "references": "[MDN: Time to first byte](https://developer.mozilla.org/en-US/docs/Glossary/Time_to_first_byte)"
+    },
+    {
+      "id": "anatomy-cache-vs-304",
+      "title": "How do a memory cache hit, a disk cache hit, and a 304 Not Modified response typically look different from each other in the waterfall?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Memory cache resolves near-instantly with no network segments. Disk cache is also fast but reads from storage first. A 304 still makes a full request and gets a real Waiting segment; the server just replies \"unchanged\" instead of resending the body, so Content download is tiny or absent.",
+          "isCorrect": true
+        },
+        {
+          "text": "All three look identical, because none of them ever touch the network.",
+          "isCorrect": false
+        },
+        {
+          "text": "A 304 is the fastest of the three, because the browser skips the round trip entirely.",
+          "isCorrect": false
+        },
+        {
+          "text": "Disk cache always takes longer than downloading the file fresh over the network.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Three different amounts of work, so three different shapes. A memory cache hit comes straight from RAM with no network activity at all, and DevTools shows a plain entry rather than a segmented bar. A disk cache hit is also network-free but reads from storage, so it can be slightly slower while still showing no network segments. A 304 Not Modified does go over the network: the browser sends a conditional request carrying `If-None-Match` or `If-Modified-Since`, the server checks whether the resource changed, and replies with a status and no body if it hasn't. So a 304 has a real Waiting (TTFB) segment, plus Connect and TLS if the connection wasn't already open, and a near-zero Content download, because all that comes back is the confirmation."
+    },
+    {
+      "id": "staircase-chained-discovery",
+      "title": "Looking at this waterfall, why doesn't icons.woff2 start downloading until after both index.html and app.css have finished?",
+      "type": "single-choice",
+      "images": [
+        {
+          "src": "staircase-chained-discovery.svg",
+          "alt": "Three request bars forming a staircase: index.html, then app.css starting after it finishes, then icons.woff2 starting after app.css finishes",
+          "caption": "Each row starts only once the row above it reveals it."
+        }
+      ],
+      "options": [
+        {
+          "text": "The browser can only discover a resource once it has parsed the file that references it. The font is loaded through an @import inside app.css, and app.css isn't found until index.html has been parsed far enough to request it.",
+          "isCorrect": true
+        },
+        {
+          "text": "The browser deliberately throttles font requests to save bandwidth for higher-priority assets.",
+          "isCorrect": false
+        },
+        {
+          "text": "The server enforces a strict per-client request queue that serializes every asset type.",
+          "isCorrect": false
+        },
+        {
+          "text": "The font file is too large for the connection's initial congestion window, so it waits for a later one.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "This shape is the staircase: a chain of discoveries where each step only starts once the one above it reveals it. The HTML has to be parsed before the browser knows `app.css` exists. `app.css` has to be downloaded and parsed before the browser can see the `@import` pointing at the font. Nothing is being throttled or queued on purpose. Every step really did have to wait, because the information needed to make the next request didn't exist yet. Shorten the chain instead: inline critical CSS, replace `@import` with a single `<link>`, or use `<link rel=\"preload\">` to name a deeply nested resource before the browser would find it on its own.",
+      "references": "[web.dev: Preload critical assets](https://web.dev/articles/preload-critical-assets)"
+    },
+    {
+      "id": "wall-of-six-http1",
+      "title": "script7.js and script8.js sit Stalled for a long time before anything else happens. What causes it?",
+      "type": "single-choice",
+      "images": [
+        {
+          "src": "http1-connection-limit.svg",
+          "alt": "Eight script requests over HTTP/1.1; the first six start immediately, script7 and script8 sit Stalled until a connection frees up",
+          "caption": "All eight requests target the same origin."
+        }
+      ],
+      "options": [
+        {
+          "text": "HTTP/1.1 caps simultaneous connections per origin, at six in most browsers. script7 and script8 wait for one of the first six to finish and free a connection.",
+          "isCorrect": true
+        },
+        {
+          "text": "The server is applying rate limiting to those two specific files.",
+          "isCorrect": false
+        },
+        {
+          "text": "Those two files happen to be larger and simply take longer to transfer.",
+          "isCorrect": false
+        },
+        {
+          "text": "The browser is waiting for user interaction before it will request them.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "This is the wall of six. Under HTTP/1.1 browsers cap how many connections they will open to one origin, so the seventh and eighth requests have nowhere to go until an earlier one finishes and frees a connection. The wait shows up as Stalled rather than as a slow transfer: once they start, those files may well download in a perfectly ordinary amount of time. Two workarounds defined the HTTP/1.1 era, and both exist to get around this ceiling. Domain sharding split assets across fake subdomains to buy more parallel connections. Bundling merged many small files into a few large ones."
+    },
+    {
+      "id": "wall-of-six-http2",
+      "title": "The same eight scripts are requested again, this time over HTTP/2. What changed?",
+      "type": "single-choice",
+      "images": [
+        {
+          "src": "http2-multiplexed.svg",
+          "alt": "The same eight script requests over HTTP/2; only script1 pays for connection setup, the rest start almost immediately on the same connection",
+          "caption": "Same eight files, same origin, one connection."
+        }
+      ],
+      "options": [
+        {
+          "text": "All eight requests share one connection, so only the first pays for DNS and connection setup. Every other request starts as soon as that shared connection is ready, instead of queuing for a free slot.",
+          "isCorrect": true
+        },
+        {
+          "text": "HTTP/2 makes every individual file smaller, so downloads finish faster.",
+          "isCorrect": false
+        },
+        {
+          "text": "HTTP/2 eliminates the need for a TLS handshake entirely.",
+          "isCorrect": false
+        },
+        {
+          "text": "Each request still opens its own connection, but the connections now happen in parallel instead of one at a time.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "This is multiplexing. HTTP/2 carries many independent streams over one physical connection, so the six-per-origin ceiling doesn't apply: there is no queue to wait in, because there is no per-request connection to run out of. The first request pays the one-time cost of DNS, the TCP handshake and TLS, and everything after it rides the connection that is already open. Notice what didn't change. The files aren't smaller, and TLS didn't disappear. Multiplexing lifts the limit on connection count, not the bandwidth underneath it, and eight streams sharing one pipe still compete for the same bytes per second.",
+      "references": "[Wikipedia: HTTP/2 — Multiplexing](https://en.wikipedia.org/wiki/HTTP/2)"
+    },
+    {
+      "id": "late-lcp-image",
+      "title": "hero.jpg is this page's LCP candidate, but its request starts long after index.html finished downloading. What is the most likely cause?",
+      "type": "single-choice",
+      "images": [
+        {
+          "src": "late-lcp-image.svg",
+          "alt": "A waterfall where hero.jpg starts only after bundle.js has been downloading for a while, with an LCP marker line at the point hero.jpg finishes",
+          "caption": "index.html and app.css finish early; bundle.js runs, then hero.jpg finally starts."
+        }
+      ],
+      "options": [
+        {
+          "text": "bundle.js runs first and injects the `<img>` tag at runtime. The preload scanner only reads the raw markup, so there was no image tag for it to find while parsing.",
+          "isCorrect": true
+        },
+        {
+          "text": "The image file itself is unusually large.",
+          "isCorrect": false
+        },
+        {
+          "text": "The server intentionally delays image responses to prioritize scripts.",
+          "isCorrect": false
+        },
+        {
+          "text": "The image is hosted on a third-party CDN with no DNS caching available.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The preload scanner reads ahead through the raw HTML looking for resources to fetch early, but it can only see what is written in the markup. When JavaScript injects an `<img>` after the fact, which component frameworks do constantly, the scanner has nothing to find and the image isn't discovered until the script that creates it has run. Everything downstream slides back with it, including LCP, which can't be measured until the largest visible element has painted. File size and hosting can stretch the download once it starts. Neither explains why the request begins so late. That is a discovery problem, not a transfer one."
+    },
+    {
+      "id": "render-blocking-css",
+      "title": "A page has one stylesheet, loaded with a plain `<link rel=\"stylesheet\">` in `<head>` and no other attributes. Which changes would remove it from the render-blocking path? (Select all that apply.)",
+      "description": "```html\n<head>\n  <link rel=\"stylesheet\" href=\"app.css\">\n</head>\n```",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "Add a media attribute that doesn't match the current viewport (for example media=\"print\"), so the browser still downloads the file but at low priority, without blocking first paint on it.",
+          "isCorrect": true
+        },
+        {
+          "text": "Inline the styles needed for the above-the-fold content directly in the HTML, and load the rest of the stylesheet without it blocking initial render.",
+          "isCorrect": true
+        },
+        {
+          "text": "Move the `<link>` tag to the very end of `<body>`, right before the closing tag.",
+          "isCorrect": false
+        },
+        {
+          "text": "Add the defer attribute to the `<link>` tag, the same way you would on a `<script>`.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A render-blocking stylesheet sits between the HTML and first paint because the browser wants the complete CSSOM before it paints anything; without it you get a flash of unstyled content. A non-matching media query sidesteps that legitimately, since the spec only blocks render on stylesheets that apply to the current conditions, so a print-only sheet downloads without holding up the page. Inlining critical CSS works for a different reason: the styles needed for first paint are already in the HTML, so nothing external has to arrive first. Moving the `<link>` to the end of `<body>` doesn't remove the block. The browser still fetches and applies it before painting what follows, and now discovery is late too, which usually makes things worse. `defer` isn't valid on `<link rel=\"stylesheet\">` at all; it only affects when a `<script>` executes.",
+      "references": "[MDN: script element — async and defer](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/script)"
+    },
+    {
+      "id": "async-defer-blocking-script",
+      "title": "Three scripts load with different attributes. Which one pauses the HTML parser for both its download and its execution, blocking everything after it?",
+      "description": "```html\n<script src=\"a.js\"></script>\n<script src=\"b.js\" async></script>\n<script src=\"c.js\" defer></script>\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "a.js: a plain script with no attribute halts parsing for the whole time it takes to download and then run.",
+          "isCorrect": true
+        },
+        {
+          "text": "b.js: async downloads alongside parsing and runs the moment it's ready, pausing the parser only for that execution, not for the download.",
+          "isCorrect": false
+        },
+        {
+          "text": "c.js: defer downloads alongside parsing and runs only after parsing has finished.",
+          "isCorrect": false
+        },
+        {
+          "text": "All three block the parser identically, regardless of the attribute.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A plain `<script>` with no `async` and no `defer` is the worst case for parsing. The browser stops, fetches the file, runs it top to bottom, and only then returns to the document, because the script might call `document.write` or otherwise depend on running exactly where it sits. An `async` script downloads in the background while parsing continues and pauses the parser only at the moment it executes, whenever that turns out to be, which makes its order relative to other scripts unpredictable. A `defer` script also downloads in the background, but it waits until parsing is finished, and deferred scripts run in document order. That predictability is why `defer` is usually the safer default for anything that doesn't need to run immediately.",
+      "references": "[MDN: script element — async and defer](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/script)"
+    },
+    {
+      "id": "third-party-handshake-tax",
+      "title": "widget.js and app.js are roughly the same file size, yet widget.js's bar is much wider. What does the extra width represent?",
+      "type": "single-choice",
+      "images": [
+        {
+          "src": "third-party-handshake-tax.svg",
+          "alt": "Two request bars of similar total data: app.js on the same origin with only Waiting and Download, widget.js on a third-party origin with DNS, connection, TLS, Waiting, and Download",
+          "caption": "app.js reuses an already-open connection; widget.js opens a brand new one."
+        }
+      ],
+      "options": [
+        {
+          "text": "widget.js loads from a new third-party origin (ads.example.com), so the browser resolves DNS and opens a fresh TCP and TLS connection before it can ask for the file. None of that shows on app.js, whose connection is already warm.",
+          "isCorrect": true
+        },
+        {
+          "text": "widget.js is compressed less efficiently than app.js.",
+          "isCorrect": false
+        },
+        {
+          "text": "widget.js is queued behind other requests on the same connection.",
+          "isCorrect": false
+        },
+        {
+          "text": "The server hosting widget.js has slower disks.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "This is the third-party handshake tax. Talking to an origin the browser hasn't met costs DNS resolution, a TCP handshake, and for HTTPS a TLS handshake, all before a single byte of the response moves. A request to your own origin skips it, because that connection is almost always open already from an earlier request on the page. The tax is charged per origin, not per request and not per byte. A page with a dozen small third-party scripts spread across a dozen hostnames can lose more time to handshakes than to downloads, which is why consolidating those origins, or self-hosting what you can, moves the number."
+    },
+    {
+      "id": "redirect-chain",
+      "title": "This request ends in a 200, but three tiny bars come before it. What are those three bars, and what do they cost?",
+      "type": "single-choice",
+      "images": [
+        {
+          "src": "redirect-chain.svg",
+          "alt": "Three small redirect request bars before a final, full request that actually downloads content",
+          "caption": "GET /promo redirects twice before finally reaching the real page."
+        }
+      ],
+      "options": [
+        {
+          "text": "Each is a redirect response, a 301 or similar. Every one is a full round trip before the browser even knows the final URL: pure latency, no content.",
+          "isCorrect": true
+        },
+        {
+          "text": "They are automatic retries after failed connection attempts.",
+          "isCorrect": false
+        },
+        {
+          "text": "They are speculative preconnects the browser made on its own.",
+          "isCorrect": false
+        },
+        {
+          "text": "They are the DNS, TCP, and TLS segments of the final request, drawn as separate rows.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A redirect chain is a pile of tiny, near-empty round trips sitting in front of the request you meant to make. Each response carries almost no body, just a status code and a `Location` header, but the browser still sends the request, waits for the reply, and starts over at the new URL. Three redirects means three full round trips of latency before any useful content moves. Fix them at the source by correcting the original link, rather than treating them as background noise.",
+      "references": "[MDN: HTTP 301 status](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/301)"
+    },
+    {
+      "id": "font-display-foit-fout",
+      "title": "Comparing block and swap in this font-loading timeline, which statements are true? (Select all that apply.)",
+      "type": "multiple-choice",
+      "images": [
+        {
+          "src": "font-display-timeline.svg",
+          "alt": "Two timelines for the same font load: block shows invisible text until the web font is ready, swap shows a fallback font immediately that later swaps to the web font",
+          "caption": "Same font file, same load time. Only what you see while it loads changes.",
+          "placement": "explanation"
+        }
+      ],
+      "options": [
+        {
+          "text": "With block, or FOIT (flash of invisible text), text in that font stays invisible until the web font loads or a short timeout passes.",
+          "isCorrect": true
+        },
+        {
+          "text": "With swap, or FOUT (flash of unstyled text), a fallback font shows immediately, then swaps to the web font once it loads.",
+          "isCorrect": true
+        },
+        {
+          "text": "Both strategies change how long the font file itself takes to download.",
+          "isCorrect": false
+        },
+        {
+          "text": "swap guarantees there is no layout shift when the fonts swap.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`font-display` never touches the network. The font file downloads at the same speed either way. All it decides is what the browser shows during the gap between \"the text is ready to paint\" and \"the web font has arrived\". `block` hides the text, risking FOIT if the font is slow. `swap` shows a fallback right away and swaps later, risking FOUT, a visible change of typeface mid-read. Neither is free: swap trades invisible text for a visible jump, and if the fallback has different letter widths than the web font, that jump becomes real layout shift. `size-adjust` and carefully matched fallback metrics exist to shrink it.",
+      "references": "[web.dev: Best practices for fonts](https://web.dev/articles/font-best-practices)"
+    },
+    {
+      "id": "short-waterfall-main-thread",
+      "title": "A page's waterfall finishes in under a second, every request completes quickly, and nothing looks stalled. The page still feels sluggish to interact with. What does the waterfall alone not show you?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Time spent running JavaScript on the main thread after the network work is done. The network can be fast and quiet while script execution and layout still block interaction.",
+          "isCorrect": true
+        },
+        {
+          "text": "The exact number of DNS lookups the page performed.",
+          "isCorrect": false
+        },
+        {
+          "text": "Whether the connection used HTTP/2 or HTTP/3.",
+          "isCorrect": false
+        },
+        {
+          "text": "Whether the responses were compressed.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A waterfall tells you the network's side of the story: when bytes moved and how long they took. Once the last response has arrived it has nothing more to show. The browser may still have a pile of JavaScript to parse, compile and run, plus layout and style work, all of it on the main thread, all of it able to keep the page from answering a click. A short, clean waterfall next to a sluggish page points at the main thread, not the network, and the answer is in a JavaScript profiler or the Performance panel's main-thread timeline rather than the Network panel."
+    },
+    {
+      "id": "preconnect-vs-dns-prefetch",
+      "title": "What's the practical difference between preconnect and dns-prefetch?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "preconnect warms up DNS resolution, the TCP handshake, and (for HTTPS) the TLS handshake; dns-prefetch only resolves the hostname to an IP address and stops there.",
+          "isCorrect": true
+        },
+        {
+          "text": "dns-prefetch does everything preconnect does, just faster.",
+          "isCorrect": false
+        },
+        {
+          "text": "preconnect only works over HTTP; dns-prefetch only works over HTTPS.",
+          "isCorrect": false
+        },
+        {
+          "text": "They are two names browsers use for the exact same behavior.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Both hints get a head start on connecting to an origin. They just get different distances down the road. `dns-prefetch` is the cheap one: it resolves the hostname to an IP address ahead of time and saves a round trip. `preconnect` also opens the TCP connection and, for HTTPS, finishes the TLS handshake, so when the real request arrives only the request and response remain. That extra work costs something per origin, which is why `preconnect` belongs on origins you are confident you will use soon. The next question is about where that line falls."
+    },
+    {
+      "id": "preconnect-worth-it",
+      "title": "When is adding preconnect actually worth it? (Select all that apply.)",
+      "type": "multiple-choice",
+      "images": [
+        {
+          "src": "preconnect-vs-preload.svg",
+          "alt": "Bars showing what preconnect removes (DNS, connection, TLS) and what preload removes (late discovery) from a request's timeline",
+          "caption": "preconnect shortens the front of the bar. preload starts the bar earlier.",
+          "placement": "explanation"
+        }
+      ],
+      "options": [
+        {
+          "text": "You are confident the origin gets used very soon: a font host, or an API you call on load.",
+          "isCorrect": true
+        },
+        {
+          "text": "The connection would otherwise start cold at the exact moment it's needed, so warming it in advance saves measurable time.",
+          "isCorrect": true
+        },
+        {
+          "text": "You want to warm up every third-party origin referenced anywhere on the page, just in case one of them gets used.",
+          "isCorrect": false
+        },
+        {
+          "text": "The browser already has an open, reusable connection to that origin from an earlier request.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`preconnect` is a targeted tool. The connection it opens costs a socket, some memory, and, if nothing uses it, the setup time itself. Browsers budget for a handful of preconnects and quietly ignore the rest. It pays off when you can name the origin, know it's needed soon, and know it would otherwise start cold at the worst possible moment. Preconnecting \"just in case\" is the own-goal: a small early budget of bandwidth and connections gets spread across origins that may never be used, starving the ones that mattered. And if the connection is already open, there is nothing left to warm."
+    },
+    {
+      "id": "preload-hint-name",
+      "title": "Which resource hint fetches a resource at high priority without executing or applying it?",
+      "description": "Answer with the value used in `<link rel=\"...\">`.",
+      "type": "input",
+      "validation": {
+        "mode": "text",
+        "acceptedAnswers": [
+          "preload"
+        ]
+      },
+      "explanation": "`preload` tells the browser \"fetch this now, at high priority\" and nothing more. A script isn't executed, a stylesheet isn't applied, an image isn't rendered. That split is the useful part: it moves a resource's discovery time earlier without changing what happens once it arrives. Reach for it when the parser would otherwise find something too late, like a font hidden behind an `@import`, or an image that JavaScript injects."
+    },
+    {
+      "id": "prefetch-next-navigation",
+      "title": "What is prefetch actually for, and at what priority does it run?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Fetching a resource the next navigation will probably need, for a page the user hasn't visited yet, at idle or low priority so it doesn't compete with the current page.",
+          "isCorrect": true
+        },
+        {
+          "text": "Fetching the current page's most critical resources at the highest available priority.",
+          "isCorrect": false
+        },
+        {
+          "text": "Warming a DNS, TCP, and TLS connection for the origin the current page is already on.",
+          "isCorrect": false
+        },
+        {
+          "text": "Re-downloading an already-cached resource to keep the cached copy from going stale.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`prefetch` is the only hint that looks forward. It's a bet on where the user goes next, not on what the current page needs now. Since the user may never go there, browsers fetch at low or idle priority and stay out of the way of anything the current page is still loading. That is the opposite instinct from `preload`, which is for something you already know this page needs urgently."
+    },
+    {
+      "id": "modulepreload-need",
+      "title": "Why does a JavaScript module graph specifically benefit from modulepreload, more than a single preload tag would help?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "A module's imports aren't known until the browser parses that module. Without modulepreload each nested import is discovered one round trip at a time: the same chained discovery as CSS @import, in JavaScript.",
+          "isCorrect": true
+        },
+        {
+          "text": "modulepreload automatically bundles the entire module graph into a single file.",
+          "isCorrect": false
+        },
+        {
+          "text": "modulepreload is required before ES modules can run in the browser at all.",
+          "isCorrect": false
+        },
+        {
+          "text": "A regular preload tag can't fetch a JavaScript file, only stylesheets and images.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "ES modules form a dependency graph the browser can only walk one step at a time. It fetches and parses `main.js` before it can see that `main.js` imports `utils.js`, then fetches that before finding its imports, and on down. It's the staircase from earlier in this quiz, in JavaScript instead of CSS. Preloading the entry module alone doesn't help, because everything below it is still discovered one hop at a time. `modulepreload` names the deeper parts of the graph up front, so nested modules fetch alongside the entry module instead of behind it. A plain `preload` can fetch a script file, but it treats it as one flat resource and leaves the graph problem untouched."
+    },
+    {
+      "id": "fetchpriority-discovery-vs-priority",
+      "title": "An `<img>` tag has `fetchpriority=\"high\"` set on it. What does that attribute actually change?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The priority the browser gives the request once it has found it, not how early it finds it or when the request starts.",
+          "isCorrect": true
+        },
+        {
+          "text": "The exact moment the browser discovers the image while parsing the HTML.",
+          "isCorrect": false
+        },
+        {
+          "text": "Whether the image is fetched at all before the user interacts with the page.",
+          "isCorrect": false
+        },
+        {
+          "text": "The compression level applied to the image response.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "When a request is found, and how urgently it's treated once found, are two different things, and `fetchpriority` only touches the second. An image buried deep in the DOM or injected late by JavaScript won't be found any sooner because you marked it high; that is a job for `preload`. What changes is scheduling. Once the browser knows about the request, a high-priority image competes better for bandwidth against everything else in flight, which matters for an LCP candidate the browser would otherwise treat as just another image."
+    },
+    {
+      "id": "resource-hint-own-goals",
+      "title": "Which of these are genuine resource-hint own-goals? (Select all that apply.)",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "Preloading a font the current page never uses. It downloads at high priority and delays something that was needed.",
+          "isCorrect": true
+        },
+        {
+          "text": "Adding preconnect for eight third-party origins on one page, splitting a small early connection budget eight ways instead of spending it where it counts.",
+          "isCorrect": true
+        },
+        {
+          "text": "Using preload with an as value that doesn't match how the resource is later requested, so the browser can't match its own preload to the real request and fetches the bytes twice.",
+          "isCorrect": true
+        },
+        {
+          "text": "Using preconnect for the single origin that serves this page's LCP image.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Every hint spends something: bandwidth, a connection slot, or priority. Each of these mistakes spends it on the wrong thing. An unused preloaded font is pure waste, competing for bandwidth with what the page actually renders. Preconnecting to eight origins splits a budget browsers keep small on purpose across targets that mostly won't pay off. And `preload`'s cache lookup is keyed partly on `as`, so a wrong or missing value means the browser doesn't recognize its own preloaded response when the real request comes, and downloads the same bytes again. Preconnecting to the single origin that serves your LCP image is the opposite case: targeted, predictable, and worth it."
+    },
+    {
+      "id": "multiplexing-vs-bandwidth",
+      "title": "HTTP/2 multiplexes many requests over one connection. What does multiplexing NOT solve?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Bandwidth contention. Concurrent streams share one finite pipe, so the total bytes per second is unchanged and heavy traffic still slows everything down together.",
+          "isCorrect": true
+        },
+        {
+          "text": "The six-connections-per-origin limit that HTTP/1.1 imposes.",
+          "isCorrect": false
+        },
+        {
+          "text": "The head-of-line blocking seen in an HTTP/1.1 request queue on a single connection.",
+          "isCorrect": false
+        },
+        {
+          "text": "The need to open a brand new connection for every single request.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Multiplexing solves a connection-count problem, not a bandwidth one. The two blur together because both look like \"this is taking longer than it should\". HTTP/2 does remove the six-per-origin ceiling, and it does remove the request-queue head-of-line blocking HTTP/1.1 suffers when one slow response holds up everything behind it on the same connection. None of that changes how many bytes per second the network path can carry. Ask for more data than the connection can deliver and multiplexing just means everything arrives a little slower together, instead of a few things arriving fast while the rest sit in a visible queue.",
+      "references": "[Wikipedia: HTTP/2](https://en.wikipedia.org/wiki/HTTP/2)"
+    },
+    {
+      "id": "hol-blocking-by-protocol",
+      "title": "Where does head-of-line (HOL) blocking live in each of these? (Select all that apply.)",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "HTTP/1.1 without pipelining: at the connection level. A slow response blocks every request queued behind it on that connection.",
+          "isCorrect": true
+        },
+        {
+          "text": "HTTP/2 over TCP: at the transport layer. TCP guarantees in-order delivery, so one lost packet stalls every multiplexed stream on the connection until it is retransmitted, logically independent or not.",
+          "isCorrect": true
+        },
+        {
+          "text": "HTTP/3 over QUIC: nowhere. QUIC eliminated head-of-line blocking in every situation.",
+          "isCorrect": false
+        },
+        {
+          "text": "HTTP/2 over TCP: nowhere. HTTP/2's multiplexing works independently of whatever TCP is doing underneath.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Head-of-line blocking keeps moving down the stack, one layer per protocol generation. HTTP/1.1 blocks at the application level: one connection, one request in flight, so a slow response holds up everything queued behind it. HTTP/2 fixes that with multiplexing, then runs into TCP, whose in-order delivery guarantee means one lost packet stalls every stream on the connection until the retransmission lands. Same problem, one layer down. QUIC gives each stream its own loss recovery over UDP, so a lost packet only stalls the stream it belonged to. That is narrower than \"head-of-line blocking is gone\": ordering dependencies inside a single stream can still block at the application level, whatever the transport does.",
+      "references": "[Wikipedia: Head-of-line blocking](https://en.wikipedia.org/wiki/Head-of-line_blocking)"
+    },
+    {
+      "id": "domain-sharding-http1-vs-http2",
+      "title": "Domain sharding, splitting assets across asset1.example.com, asset2.example.com and so on, used to help pages under HTTP/1.1. Why does it usually hurt under HTTP/2?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "HTTP/2 already multiplexes effectively unlimited requests over one connection per origin. Sharding forces several separate connections, each paying its own handshake, and stops HTTP/2 from prioritizing requests against each other across them.",
+          "isCorrect": true
+        },
+        {
+          "text": "HTTP/2 doesn't support multiple domains on the same page at all.",
+          "isCorrect": false
+        },
+        {
+          "text": "Domain sharding was never effective, even under HTTP/1.1.",
+          "isCorrect": false
+        },
+        {
+          "text": "HTTP/2 requires exactly six domains to be present in order to function correctly.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Sharding was a real fix for a real limitation. Fake subdomains let the browser open more parallel connections than the six-per-origin cap allowed. HTTP/2 removes the reason it existed, since one connection carries as many concurrent streams as you need, and that turns the workaround into a liability. Every extra origin now costs its own DNS lookup, TCP handshake and TLS negotiation, and it splits requests across connections that can't be prioritized against each other the way streams on one connection can. Moving to HTTP/2 usually means consolidating origins, undoing the sharding HTTP/1.1 rewarded."
+    },
+    {
+      "id": "server-push-early-hints",
+      "title": "HTTP/2 Server Push let a server send resources before the browser asked for them. It's now deprecated and removed from most browsers. What replaced it?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "103 Early Hints: an informational response sent before the final one, listing resources to preload or preconnect, so the browser can start early without the server forcing bytes it may not want.",
+          "isCorrect": true
+        },
+        {
+          "text": "An unchanged push mechanism carried over directly into HTTP/3.",
+          "isCorrect": false
+        },
+        {
+          "text": "Nothing. There is now no way to hint resources before the final response headers arrive.",
+          "isCorrect": false
+        },
+        {
+          "text": "Service workers, which now push resources directly from the server to the client.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Server Push went away because it was hard to use well. Servers pushed resources the browser already had cached, wasting bandwidth, and had no reliable way to know what the client actually needed. 103 Early Hints solves the same problem, starting important fetches before the final response is ready, without that waste. The server sends an informational 103 response while it is still assembling the real one, carrying `Link` headers with the same hints you would otherwise write into the HTML: `preload`, `preconnect`. The browser acts on them immediately, often saving a round trip of discovery time, and it still decides what to fetch. Nothing gets pushed at it.",
+      "references": "[MDN: HTTP 103 status](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/103)"
+    },
+    {
+      "id": "http2-waterfall-statements",
+      "title": "Which statements about an HTTP/2 waterfall, many requests over one connection, are true? (Select all that apply.)",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "Only the very first request on that connection pays for DNS, the TCP handshake, and the TLS handshake.",
+          "isCorrect": true
+        },
+        {
+          "text": "If the total data requested exceeds the connection's available bandwidth, adding more concurrent streams won't make them all finish sooner.",
+          "isCorrect": true
+        },
+        {
+          "text": "Because there's no per-origin connection limit anymore, HTTP/2 removes bandwidth as a bottleneck entirely.",
+          "isCorrect": false
+        },
+        {
+          "text": "Every request still queues behind a six-connection limit, exactly as it would under HTTP/1.1.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Separate what the single shared connection buys from what it doesn't. It buys a one-time connection cost: DNS, TCP and TLS happen once, on the first request, and every stream after that reuses what is open. It does not buy bandwidth. Multiplexing controls how many requests can be in flight, not how many bytes per second the path can carry, so a bandwidth-bound page stays bandwidth-bound however many streams you open. And the six-connection queue is the HTTP/1.1 behavior this connection model exists to get around; it doesn't apply to streams on a shared HTTP/2 connection."
+    }
+  ]
+}
