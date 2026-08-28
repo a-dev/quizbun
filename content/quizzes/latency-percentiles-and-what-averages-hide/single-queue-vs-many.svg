@@ -1,0 +1,90 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="420" viewBox="0 0 720 420">
+  <style>
+    svg {
+      --panel: #f5f7fb;
+      --title: #20242c;
+      --muted: #526173;
+      --edge: #64748b;
+      --card: #ffffff;
+      --busy: #c2410c;
+      --idle: #16a34a;
+      --pool: #2563eb;
+    }
+    @media (prefers-color-scheme: dark) {
+      svg {
+        --panel: #1a1f27;
+        --title: #e6eaf2;
+        --muted: #9aa8bd;
+        --edge: #8b9bb4;
+        --card: #252b35;
+        --busy: #fb923c;
+        --idle: #4ade80;
+        --pool: #60a5fa;
+      }
+    }
+    .panel { fill: var(--panel); }
+    .title { fill: var(--title); }
+    .muted { fill: var(--muted); }
+    .server { fill: var(--card); stroke: var(--edge); }
+  </style>
+
+  <rect class="panel" width="720" height="420" rx="20" fill="#f5f7fb" />
+  <text class="title" x="36" y="40" fill="#20242c" font-family="system-ui, sans-serif" font-size="19" font-weight="700">
+    Ten separate queues vs. one shared queue
+  </text>
+
+  <g font-family="system-ui, sans-serif" font-size="12">
+    <text class="muted" x="180" y="66" fill="#526173" text-anchor="middle" font-size="13" font-weight="700">ten separate queues</text>
+
+    <!-- three representative single-server queues with uneven backlog -->
+    <g>
+      <rect class="server" x="240" y="86" width="46" height="30" rx="6" fill="#ffffff" stroke="#64748b" stroke-width="1.5" />
+      <text x="263" y="106" text-anchor="middle" fill="#526173">s1</text>
+      <rect x="20" y="92" width="16" height="18" rx="3" fill="#c2410c" /><rect x="42" y="92" width="16" height="18" rx="3" fill="#c2410c" />
+      <rect x="64" y="92" width="16" height="18" rx="3" fill="#c2410c" /><rect x="86" y="92" width="16" height="18" rx="3" fill="#c2410c" />
+      <rect x="108" y="92" width="16" height="18" rx="3" fill="#c2410c" /><rect x="130" y="92" width="16" height="18" rx="3" fill="#c2410c" />
+      <rect x="152" y="92" width="16" height="18" rx="3" fill="#c2410c" />
+      <text x="90" y="128" text-anchor="middle" fill="#c2410c" font-weight="700">long wait</text>
+    </g>
+
+    <g>
+      <rect class="server" x="240" y="146" width="46" height="30" rx="6" fill="#ffffff" stroke="#64748b" stroke-width="1.5" />
+      <text x="263" y="166" text-anchor="middle" fill="#526173">s2</text>
+      <rect x="90" y="152" width="16" height="18" rx="3" fill="#16a34a" />
+      <text x="90" y="188" text-anchor="middle" fill="#16a34a" font-weight="700">short wait</text>
+    </g>
+
+    <g>
+      <rect class="server" x="240" y="206" width="46" height="30" rx="6" fill="#ffffff" stroke="#64748b" stroke-width="1.5" />
+      <text x="263" y="226" text-anchor="middle" fill="#526173">s3</text>
+      <text x="90" y="226" text-anchor="middle" fill="#16a34a" font-weight="700">idle, no requests waiting</text>
+    </g>
+
+    <text class="muted" x="180" y="260" fill="#526173" text-anchor="middle">
+      &#8230; and 7 more servers, each with its own unrelated backlog
+    </text>
+
+    <line x1="20" y1="290" x2="700" y2="290" stroke="#64748b" stroke-width="1" stroke-dasharray="2 4" />
+
+    <text class="muted" x="180" y="322" fill="#526173" text-anchor="middle" font-size="13" font-weight="700">one shared queue, ten servers</text>
+
+    <!-- single serpentine queue feeding a row of servers -->
+    <g>
+      <rect x="20" y="336" width="16" height="18" rx="3" fill="#2563eb" /><rect x="42" y="336" width="16" height="18" rx="3" fill="#2563eb" />
+      <rect x="64" y="336" width="16" height="18" rx="3" fill="#2563eb" /><rect x="86" y="336" width="16" height="18" rx="3" fill="#2563eb" />
+      <text x="53" y="372" text-anchor="middle" fill="#2563eb" font-weight="700">one line, next server takes next request</text>
+    </g>
+
+    <g>
+      <rect class="server" x="240" y="330" width="40" height="26" rx="5" fill="#ffffff" stroke="#64748b" stroke-width="1.5" /><text x="260" y="348" text-anchor="middle" fill="#526173">s1</text>
+      <rect class="server" x="290" y="330" width="40" height="26" rx="5" fill="#ffffff" stroke="#64748b" stroke-width="1.5" /><text x="310" y="348" text-anchor="middle" fill="#526173">s2</text>
+      <rect class="server" x="340" y="330" width="40" height="26" rx="5" fill="#ffffff" stroke="#64748b" stroke-width="1.5" /><text x="360" y="348" text-anchor="middle" fill="#526173">s3</text>
+      <rect class="server" x="390" y="330" width="40" height="26" rx="5" fill="#ffffff" stroke="#64748b" stroke-width="1.5" /><text x="410" y="348" text-anchor="middle" fill="#526173">&#8230;</text>
+      <rect class="server" x="440" y="330" width="40" height="26" rx="5" fill="#ffffff" stroke="#64748b" stroke-width="1.5" /><text x="460" y="348" text-anchor="middle" fill="#526173">s10</text>
+    </g>
+
+    <text class="muted" x="36" y="404" fill="#526173" font-size="12">
+      Same total arrivals, same total capacity. Pooling into one queue removes the bad luck of picking a backed-up line.
+    </text>
+  </g>
+</svg>

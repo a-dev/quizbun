@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="360" viewBox="0 0 720 360">
+  <style>
+    svg {
+      --panel: #f5f7fb;
+      --title: #20242c;
+      --muted: #526173;
+      --edge: #64748b;
+      --curve: #0284c7;
+      --median: #16a34a;
+      --mean: #c2410c;
+    }
+    @media (prefers-color-scheme: dark) {
+      svg {
+        --panel: #1a1f27;
+        --title: #e6eaf2;
+        --muted: #9aa8bd;
+        --edge: #8b9bb4;
+        --curve: #38bdf8;
+        --median: #4ade80;
+        --mean: #fb923c;
+      }
+    }
+    .panel { fill: var(--panel); }
+    .title { fill: var(--title); }
+    .muted { fill: var(--muted); }
+    .curve { stroke: var(--curve); }
+    .median-line { stroke: var(--median); }
+    .mean-line { stroke: var(--mean); }
+    .median-text { fill: var(--median); }
+    .mean-text { fill: var(--mean); }
+  </style>
+
+  <rect class="panel" width="720" height="360" rx="20" fill="#f5f7fb" />
+  <text class="title" x="36" y="42" fill="#20242c" font-family="system-ui, sans-serif" font-size="19" font-weight="700">
+    Right-skewed latency: the mean is pulled toward the tail
+  </text>
+
+  <g font-family="system-ui, sans-serif">
+    <line x1="50" y1="300" x2="670" y2="300" class="edge" stroke="#64748b" stroke-width="2" />
+
+    <path class="curve" d="M60,300 C90,120 130,60 170,60 C220,60 250,140 300,220 C350,280 420,298 500,300 C560,301 620,301 660,300"
+          fill="none" stroke="#0284c7" stroke-width="3" />
+
+    <line class="median-line" x1="185" y1="55" x2="185" y2="300" stroke="#16a34a" stroke-width="2.5" stroke-dasharray="7 5" />
+    <text class="median-text" x="185" y="42" fill="#16a34a" font-size="14" font-weight="700" text-anchor="middle">median</text>
+
+    <line class="mean-line" x1="300" y1="55" x2="300" y2="300" stroke="#c2410c" stroke-width="2.5" stroke-dasharray="7 5" />
+    <text class="mean-text" x="330" y="42" fill="#c2410c" font-size="14" font-weight="700" text-anchor="middle">mean</text>
+
+    <path d="M195,80 C240,70 270,72 292,80" fill="none" stroke="#526173" stroke-width="1.5" marker-end="url(#arrow)" />
+    <defs>
+      <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+        <path d="M0,0 L6,3 L0,6 Z" fill="#526173" />
+      </marker>
+    </defs>
+    <text class="muted" x="245" y="66" fill="#526173" font-size="12" text-anchor="middle">a few slow requests pull it right</text>
+
+    <text class="muted" x="36" y="336" fill="#526173" font-size="13">
+      Most requests cluster near the fast end; a long thin tail of slow ones drags the average above the middle value.
+    </text>
+  </g>
+</svg>

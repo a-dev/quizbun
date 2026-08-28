@@ -58,45 +58,45 @@
     Four level names, three behaviours
   </text>
   <text class="muted" x="36" y="64" fill="#526173" font-family="system-ui, sans-serif" font-size="14">
-    What a stock PostgreSQL server actually does with each name you can type.
+    What a stock PostgreSQL server does with each name you can type.
   </text>
 
   <g font-family="system-ui, sans-serif" text-anchor="start">
     <rect class="card" x="36" y="92" width="648" height="72" rx="12" fill="#ffffff" stroke="#64748b" stroke-width="2" stroke-dasharray="5 4" />
     <text class="muted" x="52" y="118" fill="#526173" font-size="14" font-weight="700" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">READ UNCOMMITTED</text>
-    <text class="muted" x="52" y="138" fill="#526173" font-size="12">Accepted for compatibility, then treated exactly as READ COMMITTED.</text>
-    <text class="muted" x="52" y="155" fill="#526173" font-size="12">PostgreSQL will not show you an uncommitted row at any level.</text>
+    <text class="muted" x="52" y="138" fill="#526173" font-size="12">Accepted for compatibility, then treated as READ COMMITTED.</text>
+    <text class="muted" x="52" y="155" fill="#526173" font-size="12">PostgreSQL never shows you an uncommitted row, at any level.</text>
 
     <rect class="info-box" x="36" y="172" width="648" height="72" rx="12" fill="#dbeafe" stroke="#2563eb" stroke-width="2" />
-    <text class="info-text" x="52" y="198" fill="#172554" font-size="14" font-weight="700" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">READ COMMITTED  <tspan font-family="system-ui, sans-serif" font-size="12">— the default when you just BEGIN</tspan></text>
-    <text class="info-text" x="52" y="218" fill="#172554" font-size="12">A fresh snapshot is taken at the start of every <tspan font-style="italic">statement</tspan>, not of the transaction.</text>
-    <text class="info-text" x="52" y="235" fill="#172554" font-size="12">So the same query, run twice in one transaction, may legitimately differ.</text>
+    <text class="info-text" x="52" y="198" fill="#172554" font-size="14" font-weight="700" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">READ COMMITTED  <tspan font-family="system-ui, sans-serif" font-size="12">, the default with plain BEGIN</tspan></text>
+    <text class="info-text" x="52" y="218" fill="#172554" font-size="12">A new snapshot starts at every <tspan font-style="italic">statement</tspan>, not the transaction.</text>
+    <text class="info-text" x="52" y="235" fill="#172554" font-size="12">The same query, run twice in one transaction, can return different results.</text>
 
     <rect class="card" x="36" y="252" width="648" height="72" rx="12" fill="#ffffff" stroke="#64748b" stroke-width="2" />
-    <text class="title" x="52" y="278" fill="#20242c" font-size="14" font-weight="700" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">REPEATABLE READ  <tspan font-family="system-ui, sans-serif" font-size="12" class="muted" fill="#526173">— snapshot isolation</tspan></text>
+    <text class="title" x="52" y="278" fill="#20242c" font-size="14" font-weight="700" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">REPEATABLE READ  <tspan font-family="system-ui, sans-serif" font-size="12" class="muted" fill="#526173">, snapshot isolation</tspan></text>
     <text class="muted" x="52" y="298" fill="#526173" font-size="12">One snapshot for the whole transaction: no dirty read, no non-repeatable read,</text>
-    <text class="muted" x="52" y="315" fill="#526173" font-size="12">and no phantom either. Write skew and lost update still get through.</text>
+    <text class="muted" x="52" y="315" fill="#526173" font-size="12">and no phantom. Write skew and lost update still happen.</text>
 
     <rect class="ok-box" x="36" y="332" width="648" height="72" rx="12" fill="#dcfce7" stroke="#16a34a" stroke-width="2" />
-    <text class="ok-text" x="52" y="358" fill="#14532d" font-size="14" font-weight="700" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">SERIALIZABLE  <tspan font-family="system-ui, sans-serif" font-size="12">— snapshot isolation plus SSI</tspan></text>
-    <text class="ok-text" x="52" y="378" fill="#14532d" font-size="12">It watches for dangerous read/write structures among running transactions and</text>
-    <text class="ok-text" x="52" y="395" fill="#14532d" font-size="12">aborts one of them — rather than taking the locks that two-phase locking would.</text>
+    <text class="ok-text" x="52" y="358" fill="#14532d" font-size="14" font-weight="700" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">SERIALIZABLE  <tspan font-family="system-ui, sans-serif" font-size="12">, snapshot isolation plus SSI</tspan></text>
+    <text class="ok-text" x="52" y="378" fill="#14532d" font-size="12">It watches running transactions for dangerous read/write patterns and</text>
+    <text class="ok-text" x="52" y="395" fill="#14532d" font-size="12">aborts one, instead of taking the locks two-phase locking would.</text>
 
-    <text class="title" x="36" y="428" fill="#20242c" font-size="13" font-weight="700">An aborted transaction is not a bug here. It is the mechanism, so the client must retry:</text>
+    <text class="title" x="36" y="428" fill="#20242c" font-size="13" font-weight="700">An aborted transaction is not a bug. It is the mechanism, so the client retries:</text>
 
     <rect class="accent-box" x="36" y="440" width="316" height="62" rx="12" fill="#ffedd5" stroke="#c2410c" stroke-width="2" />
     <text class="accent-text" x="52" y="464" fill="#9a3412" font-size="13.5" font-weight="700" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">40001</text>
-    <text class="accent-text" x="52" y="482" fill="#9a3412" font-size="11.5">serialization_failure — could not be</text>
+    <text class="accent-text" x="52" y="482" fill="#9a3412" font-size="11.5">serialization_failure: could not be</text>
     <text class="accent-text" x="52" y="497" fill="#9a3412" font-size="11.5">serialized; retry the whole transaction</text>
 
     <rect class="accent-box" x="368" y="440" width="316" height="62" rx="12" fill="#ffedd5" stroke="#c2410c" stroke-width="2" />
     <text class="accent-text" x="384" y="464" fill="#9a3412" font-size="13.5" font-weight="700" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">40P01</text>
-    <text class="accent-text" x="384" y="482" fill="#9a3412" font-size="11.5">deadlock_detected — a cycle of waits;</text>
-    <text class="accent-text" x="384" y="497" fill="#9a3412" font-size="11.5">one side was aborted, so retry that one</text>
+    <text class="accent-text" x="384" y="482" fill="#9a3412" font-size="11.5">deadlock_detected: a cycle of waits;</text>
+    <text class="accent-text" x="384" y="497" fill="#9a3412" font-size="11.5">one side was aborted; retry that one</text>
 
     <rect class="card" x="36" y="516" width="648" height="92" rx="12" fill="#ffffff" stroke="#64748b" stroke-width="2" />
-    <text class="title" x="52" y="540" fill="#20242c" font-size="12.5" font-weight="700">SSI only sees transactions that are themselves SERIALIZABLE. One writer left at the default is invisible to it.</text>
+    <text class="title" x="52" y="540" fill="#20242c" font-size="12.5" font-weight="700">SSI only sees transactions that are SERIALIZABLE. A writer left at the default is invisible to it.</text>
     <text class="muted" x="52" y="562" fill="#526173" font-size="12.5">Elsewhere the same names mean other things: Oracle's SERIALIZABLE is snapshot isolation, not serializability,</text>
-    <text class="muted" x="52" y="580" fill="#526173" font-size="12.5">and MySQL's InnoDB defaults to REPEATABLE READ rather than READ COMMITTED. Read the manual, not the name.</text>
+    <text class="muted" x="52" y="580" fill="#526173" font-size="12.5">and MySQL's InnoDB defaults to REPEATABLE READ, not READ COMMITTED. Read the manual, not the name.</text>
   </g>
 </svg>

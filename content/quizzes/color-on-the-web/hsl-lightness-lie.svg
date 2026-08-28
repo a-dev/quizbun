@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="320" viewBox="0 0 640 320">
+  <!-- House convention exception: the two swatches are the specimen. Their fills
+       are literal sRGB values and must never re-theme; only the panel and
+       caption text follow prefers-color-scheme. -->
+  <style>
+    svg {
+      --panel: #f5f7fb;
+      --title: #20242c;
+      --muted: #526173;
+      --edge: #64748b;
+    }
+    @media (prefers-color-scheme: dark) {
+      svg {
+        --panel: #1a1f27;
+        --title: #e6eaf2;
+        --muted: #9aa8bd;
+        --edge: #8b9bb4;
+      }
+    }
+    .panel { fill: var(--panel); }
+    .title { fill: var(--title); }
+    .muted { fill: var(--muted); }
+    .edge { stroke: var(--edge); }
+    text { font-family: system-ui, sans-serif; }
+  </style>
+
+  <rect class="panel" width="640" height="320" rx="20" fill="#f5f7fb" />
+  <text class="title" x="32" y="42" fill="#20242c" font-size="18" font-weight="700">Both panels: hsl(_ 100% 50%)</text>
+
+  <rect class="edge" x="48" y="72" width="248" height="176" rx="8" fill="#ffff00" stroke="#64748b" stroke-width="1.5" />
+  <rect class="edge" x="344" y="72" width="248" height="176" rx="8" fill="#0000ff" stroke="#64748b" stroke-width="1.5" />
+
+  <text class="muted" x="172" y="280" fill="#526173" font-size="15" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, monospace">hsl(60 100% 50%)</text>
+  <text class="muted" x="468" y="280" fill="#526173" font-size="15" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, monospace">hsl(240 100% 50%)</text>
+</svg>

@@ -1,0 +1,86 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="400" viewBox="0 0 720 400">
+  <style>
+    svg {
+      --panel: #f5f7fb;
+      --title: #20242c;
+      --muted: #526173;
+      --edge: #64748b;
+      --sill: #cbd5e1;
+      --sill-line: #64748b;
+      --wall: #e2e8f0;
+      --water: #0284c7;
+      --water-text: #0369a1;
+      --bad: #c2410c;
+      --bad-text: #9a3412;
+      --good: #16a34a;
+      --good-text: #15803d;
+    }
+    @media (prefers-color-scheme: dark) {
+      svg {
+        --panel: #1a1f27;
+        --title: #e6eaf2;
+        --muted: #9aa8bd;
+        --edge: #8b9bb4;
+        --sill: #3a4557;
+        --sill-line: #8b9bb4;
+        --wall: #2a3140;
+        --water: #38bdf8;
+        --water-text: #7dd3fc;
+        --bad: #fb923c;
+        --bad-text: #fdba74;
+        --good: #4ade80;
+        --good-text: #86efac;
+      }
+    }
+    .panel { fill: var(--panel); }
+    .title { fill: var(--title); font-family: system-ui, sans-serif; font-weight: 700; }
+    .muted { fill: var(--muted); font-family: system-ui, sans-serif; }
+    .label { fill: var(--title); font-family: system-ui, sans-serif; font-weight: 600; }
+    .sill { fill: var(--sill); stroke: var(--sill-line); stroke-width: 1.5; }
+    .wall { fill: var(--wall); stroke: var(--edge); stroke-width: 1.5; }
+    .water { stroke: var(--water); stroke-width: 3; fill: none; }
+    .bad-text { fill: var(--bad-text); font-family: system-ui, sans-serif; font-weight: 700; }
+    .good-text { fill: var(--good-text); font-family: system-ui, sans-serif; font-weight: 700; }
+  </style>
+
+  <rect class="panel" width="720" height="400" rx="20" />
+  <text class="title" x="36" y="40" font-size="19">Surface tension carries water back to the wall, unless it is broken</text>
+
+  <g font-family="system-ui, sans-serif">
+    <!-- LEFT: no drip groove -->
+    <g>
+      <rect class="wall" x="60" y="60" width="30" height="90" />
+      <rect class="sill" x="60" y="150" width="220" height="24" />
+      <circle cx="230" cy="170" r="4" fill="var(--water)" />
+      <path class="water" d="M 230 170 C 200 178, 130 178, 92 168 C 82 165, 78 172, 82 180" />
+      <path class="water" d="M 82 180 V 220" stroke-dasharray="4 5" />
+      <text class="bad-text" x="170" y="255" font-size="14" text-anchor="middle">No groove</text>
+      <text class="muted" x="170" y="272" font-size="12" text-anchor="middle">Water clings to the underside,</text>
+      <text class="muted" x="170" y="287" font-size="12" text-anchor="middle">tracks back, and streaks or</text>
+      <text class="muted" x="170" y="302" font-size="12" text-anchor="middle">soaks the wall below</text>
+    </g>
+
+    <!-- RIGHT: with drip groove -->
+    <g>
+      <rect class="wall" x="420" y="60" width="30" height="90" />
+      <rect class="sill" x="420" y="150" width="220" height="24" />
+      <!-- groove notch near the outer edge -->
+      <path d="M 580 174 v -6 q 0 -6 -6 -6 h -6 q -6 0 -6 6 v 6 z" fill="var(--panel)" stroke="var(--sill-line)" stroke-width="1.5" />
+      <circle cx="590" cy="170" r="4" fill="var(--water)" />
+      <path class="water" d="M 590 170 C 585 176, 580 176, 574 174" />
+      <path class="water" d="M 574 174 V 230" stroke-dasharray="4 5" marker-end="url(#arrow2)" />
+      <text class="good-text" x="530" y="255" font-size="14" text-anchor="middle">Drip groove</text>
+      <text class="muted" x="530" y="272" font-size="12" text-anchor="middle">The groove breaks the surface</text>
+      <text class="muted" x="530" y="287" font-size="12" text-anchor="middle">tension, so water drips straight</text>
+      <text class="muted" x="530" y="302" font-size="12" text-anchor="middle">down clear of the wall</text>
+    </g>
+
+    <defs>
+      <marker id="arrow2" markerWidth="8" markerHeight="8" refX="4" refY="7" orient="auto">
+        <path d="M0,0 L8,0 L4,8 Z" fill="var(--water)" />
+      </marker>
+    </defs>
+
+    <text class="label" x="360" y="360" font-size="13" text-anchor="middle">Same sill, same rain, the underside detail decides where water goes</text>
+  </g>
+</svg>

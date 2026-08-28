@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="400" viewBox="0 0 720 400">
+  <style>
+    svg {
+      --panel: #f5f7fb;
+      --title: #20242c;
+      --muted: #526173;
+      --edge: #64748b;
+      --curve: #2563eb;
+      --lookup: #c2410c;
+    }
+    @media (prefers-color-scheme: dark) {
+      svg {
+        --panel: #1a1f27;
+        --title: #e6eaf2;
+        --muted: #9aa8bd;
+        --edge: #8b9bb4;
+        --curve: #60a5fa;
+        --lookup: #fb923c;
+      }
+    }
+    .panel { fill: var(--panel); }
+    .title { fill: var(--title); }
+    .muted { fill: var(--muted); }
+    .curve { stroke: var(--curve); }
+    .lookup { stroke: var(--lookup); }
+    .lookup-text { fill: var(--lookup); }
+  </style>
+
+  <rect class="panel" width="720" height="400" rx="20" fill="#f5f7fb" />
+  <text class="title" x="36" y="42" fill="#20242c" font-family="system-ui, sans-serif" font-size="19" font-weight="700">
+    Reading percentiles off a CDF
+  </text>
+
+  <g font-family="system-ui, sans-serif">
+    <!-- axes -->
+    <line x1="70" y1="60" x2="70" y2="340" stroke="#64748b" stroke-width="2" />
+    <line x1="70" y1="340" x2="660" y2="340" stroke="#64748b" stroke-width="2" />
+    <text class="muted" x="46" y="66" fill="#526173" font-size="12" text-anchor="end">100%</text>
+    <text class="muted" x="46" y="344" fill="#526173" font-size="12" text-anchor="end">0%</text>
+    <text class="muted" x="30" y="200" fill="#526173" font-size="13" text-anchor="middle" transform="rotate(-90 30 200)">fraction of requests &#8804; x</text>
+    <text class="muted" x="365" y="372" fill="#526173" font-size="13" text-anchor="middle">latency &#8594;</text>
+
+    <!-- cumulative curve, S-shaped -->
+    <path class="curve" d="M70,340 C130,335 170,300 220,240 C270,180 300,120 350,90 C420,55 500,64 660,66"
+          fill="none" stroke="#2563eb" stroke-width="3" />
+
+    <!-- lookup guides: p50 -->
+    <line class="lookup" x1="220" y1="240" x2="220" y2="340" stroke="#c2410c" stroke-width="1.5" stroke-dasharray="5 4" />
+    <line class="lookup" x1="70" y1="240" x2="220" y2="240" stroke="#c2410c" stroke-width="1.5" stroke-dasharray="5 4" />
+    <text class="lookup-text" x="220" y="358" fill="#c2410c" font-size="13" font-weight="700" text-anchor="middle">p50</text>
+
+    <!-- lookup guides: p95 -->
+    <line class="lookup" x1="330" y1="100" x2="330" y2="340" stroke="#c2410c" stroke-width="1.5" stroke-dasharray="5 4" />
+    <line class="lookup" x1="70" y1="100" x2="330" y2="100" stroke="#c2410c" stroke-width="1.5" stroke-dasharray="5 4" />
+    <text class="lookup-text" x="330" y="358" fill="#c2410c" font-size="13" font-weight="700" text-anchor="middle">p95</text>
+
+    <!-- lookup guides: p99 -->
+    <line class="lookup" x1="470" y1="72" x2="470" y2="340" stroke="#c2410c" stroke-width="1.5" stroke-dasharray="5 4" />
+    <line class="lookup" x1="70" y1="72" x2="470" y2="72" stroke="#c2410c" stroke-width="1.5" stroke-dasharray="5 4" />
+    <text class="lookup-text" x="470" y="358" fill="#c2410c" font-size="13" font-weight="700" text-anchor="middle">p99</text>
+
+    <text class="muted" x="36" y="392" fill="#526173" font-size="12">
+      Pick a height on the y-axis, follow it to the curve, then straight down: that's the percentile's latency value.
+    </text>
+  </g>
+</svg>

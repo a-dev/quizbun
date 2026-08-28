@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="260" viewBox="0 0 720 260">
+  <style>
+    svg {
+      --panel: #f5f7fb;
+      --title: #20242c;
+      --muted: #526173;
+      --edge: #64748b;
+      --byte: #ffffff;
+      --window: #dbeafe;
+      --window-edge: #2563eb;
+      --lookahead: #fde68a;
+      --lookahead-edge: #c2410c;
+      --match: #bbf7d0;
+      --match-edge: #16a34a;
+      --accent-text: #9a3412;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      svg {
+        --panel: #1a1f27;
+        --title: #e6eaf2;
+        --muted: #9aa8bd;
+        --edge: #8b9bb4;
+        --byte: #252b35;
+        --window: #1e3a5f;
+        --window-edge: #60a5fa;
+        --lookahead: #4b3a12;
+        --lookahead-edge: #fb923c;
+        --match: #14532d;
+        --match-edge: #4ade80;
+        --accent-text: #fdba74;
+      }
+    }
+
+    .panel { fill: var(--panel); }
+    .title { fill: var(--title); }
+    .muted { fill: var(--muted); }
+    .edge { stroke: var(--edge); }
+    .byte { fill: var(--byte); stroke: var(--edge); }
+    .window { fill: var(--window); stroke: var(--window-edge); }
+    .lookahead { fill: var(--lookahead); stroke: var(--lookahead-edge); }
+    .match { fill: var(--match); stroke: var(--match-edge); }
+    .accent-text { fill: var(--accent-text); }
+  </style>
+
+  <rect class="panel" width="720" height="260" rx="20" fill="#f5f7fb" />
+  <text class="title" x="36" y="38" fill="#20242c" font-family="system-ui, sans-serif" font-size="19" font-weight="700">
+    LZ77: matching the lookahead against the sliding window
+  </text>
+
+  <g font-family="ui-monospace, monospace" text-anchor="middle">
+    <!-- already-output bytes: X B C X Y Z (window) then current match B C X starting -->
+    <rect class="byte" x="40" y="90" width="46" height="46" fill="#ffffff" stroke="#64748b" />
+    <text class="title" x="63" y="119" fill="#20242c" font-size="18">…</text>
+
+    <rect class="window" x="90" y="90" width="46" height="46" fill="#dbeafe" stroke="#2563eb" stroke-width="2" />
+    <text class="title" x="113" y="119" fill="#20242c" font-size="18" font-weight="700">B</text>
+    <rect class="window" x="136" y="90" width="46" height="46" fill="#dbeafe" stroke="#2563eb" stroke-width="2" />
+    <text class="title" x="159" y="119" fill="#20242c" font-size="18" font-weight="700">C</text>
+    <rect class="window" x="182" y="90" width="46" height="46" fill="#dbeafe" stroke="#2563eb" stroke-width="2" />
+    <text class="title" x="205" y="119" fill="#20242c" font-size="18" font-weight="700">X</text>
+    <rect class="window" x="228" y="90" width="46" height="46" fill="#dbeafe" stroke="#2563eb" stroke-width="2" />
+    <text class="title" x="251" y="119" fill="#20242c" font-size="18" font-weight="700">Y</text>
+    <rect class="window" x="274" y="90" width="46" height="46" fill="#dbeafe" stroke="#2563eb" stroke-width="2" />
+    <text class="title" x="297" y="119" fill="#20242c" font-size="18" font-weight="700">Z</text>
+
+    <!-- lookahead -->
+    <rect class="lookahead" x="366" y="90" width="46" height="46" fill="#fde68a" stroke="#c2410c" stroke-width="2" />
+    <text class="title" x="389" y="119" fill="#20242c" font-size="18" font-weight="700">B</text>
+    <rect class="lookahead" x="412" y="90" width="46" height="46" fill="#fde68a" stroke="#c2410c" stroke-width="2" />
+    <text class="title" x="435" y="119" fill="#20242c" font-size="18" font-weight="700">C</text>
+    <rect class="lookahead" x="458" y="90" width="46" height="46" fill="#fde68a" stroke="#c2410c" stroke-width="2" />
+    <text class="title" x="481" y="119" fill="#20242c" font-size="18" font-weight="700">X</text>
+
+    <rect class="byte" x="504" y="90" width="46" height="46" fill="#ffffff" stroke="#64748b" />
+    <text class="title" x="527" y="119" fill="#20242c" font-size="18">…</text>
+  </g>
+
+  <g font-family="system-ui, sans-serif" text-anchor="middle">
+    <text class="muted" x="205" y="70" fill="#526173" font-size="13">window (already output)</text>
+    <text class="accent-text" x="435" y="70" fill="#9a3412" font-size="13">lookahead (about to be encoded)</text>
+
+    <!-- match arrow from lookahead back to matching window bytes -->
+    <path d="M389 150 C 389 190, 113 190, 113 150" fill="none" stroke="#16a34a" stroke-width="3" stroke-linecap="round" />
+    <path d="m 121 158 -10 -12 16 -2" fill="none" stroke="#16a34a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+    <text class="accent-text" x="251" y="212" fill="#9a3412" font-size="15" font-weight="700">back-reference: (distance=5, length=3)</text>
+    <text class="muted" x="251" y="234" fill="#526173" font-size="13">"BCX" appeared 5 bytes back, so copy 3 bytes from there instead of storing it again</text>
+  </g>
+</svg>

@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="560" height="560" viewBox="0 0 560 560">
+  <!-- House convention exception: the wheel markers and arc-sample dots are the
+       specimen — real OKLCH-to-sRGB conversions at fixed L/C. Their fills are
+       literal and must never re-theme; only the panel, ring, and labels follow
+       prefers-color-scheme. -->
+  <style>
+    svg {
+      --panel: #f5f7fb;
+      --title: #20242c;
+      --muted: #526173;
+      --edge: #64748b;
+      --ring: #d5dce6;
+      --short-line: #c2410c;
+      --long-line: #2563eb;
+    }
+    @media (prefers-color-scheme: dark) {
+      svg {
+        --panel: #1a1f27;
+        --title: #e6eaf2;
+        --muted: #9aa8bd;
+        --edge: #8b9bb4;
+        --ring: #333c49;
+        --short-line: #fb923c;
+        --long-line: #60a5fa;
+      }
+    }
+    .panel { fill: var(--panel); }
+    .title { fill: var(--title); }
+    .muted { fill: var(--muted); }
+    .edge { stroke: var(--edge); }
+    .ring { stroke: var(--ring); }
+    .short-line { stroke: var(--short-line); }
+    .long-line { stroke: var(--long-line); }
+    text { font-family: system-ui, sans-serif; }
+  </style>
+
+  <rect class="panel" width="560" height="560" rx="20" fill="#f5f7fb" />
+  <text class="title" x="32" y="42" fill="#20242c" font-size="18" font-weight="700">20° to 280°: two possible arcs</text>
+
+  <circle class="ring" cx="280" cy="320" r="200" fill="none" stroke="#d5dce6" stroke-width="2" stroke-dasharray="3 7" />
+
+  <!-- shorter arc: 20 -> 355 -> 330 -> 305 -> 280 (100°), same circle -->
+  <path class="short-line" d="M 348.4,132.1 L 262.6,120.8 L 180,146.8 L 116.2,205.3 L 83,285.3"
+        fill="none" stroke="#c2410c" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" />
+
+  <!-- longer arc: 20 -> 85 -> 150 -> 215 -> 280 (260°), same circle -->
+  <path class="long-line" d="M 348.4,132.1 L 479.2,302.6 L 380,493.2 L 165.3,483.8 L 83,285.3"
+        fill="none" stroke="#2563eb" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" />
+
+  <!-- endpoints -->
+  <circle cx="348.4" cy="132.1" r="16" fill="#f58a8b" class="edge" stroke="#64748b" stroke-width="1.5" />
+  <circle cx="83" cy="285.3" r="16" fill="#9ea4ff" class="edge" stroke="#64748b" stroke-width="1.5" />
+  <text class="muted" x="368" y="128" fill="#526173" font-size="13">20°</text>
+  <text class="muted" x="83" y="316" fill="#526173" font-size="13" text-anchor="middle">280°</text>
+
+  <!-- shorter arc samples -->
+  <circle cx="262.6" cy="120.8" r="11" fill="#ee8ab2" class="edge" stroke="#64748b" stroke-width="1.5" />
+  <circle cx="180" cy="146.8" r="11" fill="#dc8fd5" class="edge" stroke="#64748b" stroke-width="1.5" />
+  <circle cx="116.2" cy="205.3" r="11" fill="#c198f0" class="edge" stroke="#64748b" stroke-width="1.5" />
+
+  <!-- longer arc samples -->
+  <circle cx="479.2" cy="302.6" r="11" fill="#d4a73e" class="edge" stroke="#64748b" stroke-width="1.5" />
+  <circle cx="380" cy="493.2" r="11" fill="#6cc581" class="edge" stroke="#64748b" stroke-width="1.5" />
+  <circle cx="165.3" cy="483.8" r="11" fill="#15c2e1" class="edge" stroke="#64748b" stroke-width="1.5" />
+
+  <g font-size="13">
+    <rect x="32" y="500" width="18" height="6" fill="#c2410c" />
+    <text class="muted" x="56" y="507" fill="#526173">shorter · 100° · through magenta/violet</text>
+  </g>
+  <g font-size="13">
+    <rect x="32" y="522" width="18" height="6" fill="#2563eb" />
+    <text class="muted" x="56" y="529" fill="#526173">longer · 260° · through yellow/green/cyan</text>
+  </g>
+</svg>

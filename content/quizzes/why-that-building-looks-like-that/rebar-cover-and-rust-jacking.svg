@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="420" viewBox="0 0 720 420">
+  <style>
+    svg {
+      --panel: #f5f7fb;
+      --title: #20242c;
+      --muted: #526173;
+      --edge: #64748b;
+      --concrete: #d5dce6;
+      --concrete-line: #94a3b8;
+      --steel: #475569;
+      --rust: #c2410c;
+      --rust-text: #9a3412;
+      --crack: #dc2626;
+      --good-text: #15803d;
+    }
+    @media (prefers-color-scheme: dark) {
+      svg {
+        --panel: #1a1f27;
+        --title: #e6eaf2;
+        --muted: #9aa8bd;
+        --edge: #8b9bb4;
+        --concrete: #3a4557;
+        --concrete-line: #64748b;
+        --steel: #cbd5e1;
+        --rust: #fb923c;
+        --rust-text: #fdba74;
+        --crack: #f87171;
+        --good-text: #86efac;
+      }
+    }
+    .panel { fill: var(--panel); }
+    .title { fill: var(--title); font-family: system-ui, sans-serif; font-weight: 700; }
+    .muted { fill: var(--muted); font-family: system-ui, sans-serif; }
+    .label { fill: var(--title); font-family: system-ui, sans-serif; font-weight: 600; }
+    .concrete { fill: var(--concrete); stroke: var(--concrete-line); stroke-width: 1.5; }
+    .steel { fill: var(--steel); }
+    .rust-text { fill: var(--rust-text); font-family: system-ui, sans-serif; font-weight: 700; }
+    .good-text { fill: var(--good-text); font-family: system-ui, sans-serif; font-weight: 700; }
+  </style>
+
+  <rect class="panel" width="720" height="420" rx="20" />
+  <text class="title" x="36" y="40" font-size="19">Rebar cover: the concrete between steel and air</text>
+
+  <g font-family="system-ui, sans-serif">
+    <!-- LEFT: intact cover -->
+    <g>
+      <rect class="concrete" x="70" y="80" width="240" height="140" />
+      <circle cx="190" cy="180" r="12" class="steel" />
+      <!-- cover distance marker -->
+      <line x1="190" y1="80" x2="190" y2="168" stroke="var(--edge)" stroke-width="1.5" stroke-dasharray="3 3" />
+      <path d="M 184 84 h 12 M 184 164 h 12" stroke="var(--edge)" stroke-width="1.5" />
+      <text class="muted" x="205" y="126" font-size="12">cover</text>
+      <text class="good-text" x="190" y="250" font-size="14" text-anchor="middle">Adequate cover</text>
+      <text class="muted" x="190" y="267" font-size="12" text-anchor="middle">Alkaline concrete keeps a</text>
+      <text class="muted" x="190" y="282" font-size="12" text-anchor="middle">passive film on the steel</text>
+    </g>
+
+    <!-- RIGHT: rust jacking -->
+    <g>
+      <rect class="concrete" x="410" y="80" width="240" height="140" />
+      <!-- spall gap at surface above rebar -->
+      <path d="M 500 80 L 490 100 L 545 105 L 560 80 Z" fill="var(--panel)" />
+      <!-- cracks radiating from bar to surface -->
+      <path d="M 505 168 L 495 100" stroke="var(--crack)" stroke-width="2.5" fill="none" />
+      <path d="M 545 168 L 558 100" stroke="var(--crack)" stroke-width="2.5" fill="none" />
+      <!-- expanded rusted bar, larger radius -->
+      <circle cx="525" cy="178" r="17" fill="var(--rust)" />
+      <text class="rust-text" x="525" y="250" font-size="14" text-anchor="middle">Rust jacking</text>
+      <text class="muted" x="525" y="267" font-size="12" text-anchor="middle">Rust can take up several times</text>
+      <text class="muted" x="525" y="282" font-size="12" text-anchor="middle">the steel's original volume</text>
+      <text class="muted" x="525" y="297" font-size="12" text-anchor="middle">and splits the cover off</text>
+    </g>
+
+    <path d="M 330 150 H 390" stroke="var(--edge)" stroke-width="3" fill="none" marker-end="url(#arrow3)" />
+    <text class="muted" x="360" y="140" font-size="12" text-anchor="middle">years of chloride</text>
+    <text class="muted" x="360" y="115" font-size="12" text-anchor="middle">or carbonation</text>
+    <defs>
+      <marker id="arrow3" markerWidth="8" markerHeight="8" refX="5" refY="4" orient="auto">
+        <path d="M0,0 L8,4 L0,8 Z" fill="var(--edge)" />
+      </marker>
+    </defs>
+
+    <text class="label" x="360" y="360" font-size="13" text-anchor="middle">Too little cover is a durability failure long before it is a strength failure</text>
+  </g>
+</svg>

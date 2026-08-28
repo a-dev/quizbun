@@ -1,0 +1,817 @@
+{
+  "schemaVersion": 1,
+  "id": "latency-percentiles-and-what-averages-hide",
+  "title": "p50, p95, p99: What Averages Hide",
+  "description": "Your average response time is 120 ms and your users are angry. This Quiz is about the gap between those two facts: how latency distributions really look, which statistics survive aggregation, and why a queue that is 90% busy is much worse than one that is 80% busy.",
+  "language": "en",
+  "tags": [
+    "performance",
+    "observability",
+    "statistics",
+    "system-design",
+    "queueing"
+  ],
+  "questions": [
+    {
+      "id": "what-p99-means",
+      "title": "If a service's p99 latency for the last hour is 250 ms, what does that number mean, precisely?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "99% of requests in that hour completed in 250 ms or less, and up to 1% took longer.",
+          "isCorrect": true
+        },
+        {
+          "text": "The typical, most common request takes 250 ms.",
+          "isCorrect": false
+        },
+        {
+          "text": "No request in that hour took longer than 250 ms.",
+          "isCorrect": false
+        },
+        {
+          "text": "99% of requests took at least 250 ms.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A percentile is a rank in a specific measured population. p99 = 250 ms means: sort every request from that hour by latency, and 250 ms is the value at the 99th-percentile rank — 99% of requests finished at or below it, and up to 1% took longer. It says nothing about the *typical* request (that's closer to the median), and it explicitly allows a tail above it. It's also tied to the window it was computed over: \"p99 for the last hour\" and \"p99 for the last week\" are different statistics computed from different populations of requests, even if both happen to read 250 ms."
+    },
+    {
+      "id": "percentiles-dont-average",
+      "title": "Server A and Server B each report a p99 latency of 100 ms over the same hour. If you merge their traffic into one pool, what is the combined p99?",
+      "description": "Assume both servers logged the same number of requests.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "It cannot be determined from the two p99 values alone — it could be higher, lower, or equal to 100 ms.",
+          "isCorrect": true
+        },
+        {
+          "text": "Also 100 ms, since both servers agree.",
+          "isCorrect": false
+        },
+        {
+          "text": "200 ms, because you add the two p99s together.",
+          "isCorrect": false
+        },
+        {
+          "text": "50 ms, because you average the two p99s.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "It's tempting to treat 100 ms as a shared fact about the merged traffic, but a percentile is a statistic derived from the *shape* of a distribution, not a value you can algebraically combine with another percentile. Two pools can each have a p99 of 100 ms while their slowest 1% look completely different: if A's slow tail sits far above 100 ms and B's sits just barely above it, the merged pool's 99th-percentile rank could land above, at, or even below 100 ms depending on how the two tails interleave once combined. The only way to know the real merged p99 is to recompute it from the underlying merged data — raw samples, or same-bucketed histograms — never from the two reported p99 numbers themselves."
+    },
+    {
+      "id": "percentiles-dont-add-over-time",
+      "title": "A dashboard shows a p99 of 300 ms for each of the last 24 hours. Is the daily p99 also 300 ms?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Not necessarily — the daily p99 must be recomputed from all 24 hours of underlying data; it isn't the average, or any other simple combination, of the hourly p99s.",
+          "isCorrect": true
+        },
+        {
+          "text": "Yes, since every hour reported the same value.",
+          "isCorrect": false
+        },
+        {
+          "text": "Yes, the daily p99 equals the mean of the 24 hourly p99s.",
+          "isCorrect": false
+        },
+        {
+          "text": "No — the daily p99 is always higher than every hourly p99.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "This is the same fallacy as merging two servers' percentiles, just across time buckets instead of hosts. The day's 99th-percentile rank is drawn from the full day's requests, and how the 24 hourly slow-tails interleave determines the answer — the daily p99 could match 300 ms, or differ from it, depending on details the hourly p99 numbers alone don't capture. Getting the true daily p99 requires recomputing it from raw data or merged histograms spanning the whole day, exactly as in the cross-server case."
+    },
+    {
+      "id": "what-can-be-merged",
+      "title": "Which of these statistics can be correctly combined across two data sources — for example, two hosts, or two time buckets — using simple arithmetic?",
+      "description": "Select all that apply.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "Request counts",
+          "isCorrect": true
+        },
+        {
+          "text": "Sums of latency",
+          "isCorrect": true
+        },
+        {
+          "text": "Histogram bucket counts",
+          "isCorrect": true
+        },
+        {
+          "text": "Percentiles, like p50, p95, or p99",
+          "isCorrect": false
+        },
+        {
+          "text": "Medians",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Counts, sums, and histogram bucket counts are additive: each is a total built up one observation at a time, so merging two sources means literally adding the corresponding numbers. Percentiles and medians are not additive — they're derived from the shape of a distribution, and correctly combining two distributions requires recomputing from the full underlying data. This is exactly why observability systems store histograms internally rather than pre-computed percentiles: histograms merge safely across hosts, shards, and time windows, and percentiles get computed from the merged histogram only at query time."
+    },
+    {
+      "id": "bucket-boundary-error",
+      "title": "A metrics backend stores latency as histogram buckets (for example, 0–10 ms, 10–25 ms, 25–50 ms, 50–100 ms, …) instead of raw samples. What's true about a p99 computed from those buckets?",
+      "images": [
+        {
+          "src": "histogram-vs-percentiles.svg",
+          "alt": "A latency histogram with bars of varying width, and p50, p95, and p99 marked as points that fall inside specific buckets rather than at exact values",
+          "placement": "explanation"
+        }
+      ],
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "It's an estimate — the real value could be anywhere inside whichever bucket holds the 99th-percentile rank, and wider buckets mean more possible error.",
+          "isCorrect": true
+        },
+        {
+          "text": "It's exact, as long as the bucket boundaries are evenly spaced.",
+          "isCorrect": false
+        },
+        {
+          "text": "It's always an overestimate of the true p99.",
+          "isCorrect": false
+        },
+        {
+          "text": "It's always an underestimate of the true p99.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Once observations are collapsed into a bucket, you know how many requests fell inside it but not where inside it each one landed, so computing a percentile from bucketed data means interpolating — usually linearly — within whichever bucket contains the target rank. The resulting error is bounded by that bucket's width, but its direction depends on where within the bucket the true observations actually clustered, so it isn't systematically biased high or low. This is why histogram schemes put narrower buckets in the latency ranges that matter most for a given service, trading storage for precision exactly where the percentiles that get watched actually fall."
+    },
+    {
+      "id": "max-is-real-but-useless-slo",
+      "title": "Why is the maximum observed latency a real, meaningful signal, but usually a bad choice for a service-level objective (SLO) target?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "It's real because it's an actual request that happened, but it's dominated by rare one-off outliers — a GC pause, a cold cache, a network blip — so it's noisy, easy to blow past by chance, and doesn't represent normal operation.",
+          "isCorrect": true
+        },
+        {
+          "text": "It's not a real signal — the max is usually a measurement artifact, not an actual request.",
+          "isCorrect": false
+        },
+        {
+          "text": "It's a bad SLO target because it always equals infinity in practice.",
+          "isCorrect": false
+        },
+        {
+          "text": "It's a bad SLO target because the max only exists for finite datasets.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The maximum is worth looking at — it's a genuine worst case, and a sudden change in it can flag a real new failure mode. But as a target for \"is the service healthy,\" it's extremely sensitive to sample size and to rare, often unrelated causes: one unlucky request from a single retry, a cold TLS handshake, or a brief scheduler hiccup can spike the max without anything being systemically wrong. Percentile targets like p99 or p99.9 are far more stable because they describe a consistent *fraction* of traffic rather than a single extreme observation, which is what makes them usable as an ongoing target rather than a triage signal."
+    },
+    {
+      "id": "combining-fleet-percentiles",
+      "title": "You want an accurate p99 for your service across all 200 hosts in the fleet, not just one host. Which approaches actually produce a correct fleet-wide p99?",
+      "description": "Select all that apply.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "Merge the raw per-request latency samples from all hosts, then compute p99 on the merged set.",
+          "isCorrect": true
+        },
+        {
+          "text": "Merge each host's latency histogram, using the same bucket boundaries everywhere, into one combined histogram, then compute p99 from that.",
+          "isCorrect": true
+        },
+        {
+          "text": "Average the 200 hosts' individually reported p99 values.",
+          "isCorrect": false
+        },
+        {
+          "text": "Take the maximum of the 200 hosts' individually reported p99 values.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Correctness here requires working with data that's additive — raw samples, or histograms sharing the same bucket boundaries — and recomputing the percentile from the merged result. Averaging or maxing values that are already percentiles is the same fallacy as merging two servers' or two hours' p99s: a percentile isn't an additive quantity, so no arithmetic applied only to already-reduced percentile numbers, however plausible it sounds, recovers the true combined percentile."
+    },
+    {
+      "id": "right-skew-mean-vs-median",
+      "title": "Latency distributions are typically right-skewed: a hard floor near zero, and a long tail of slow requests stretching out to the right. What does that imply about mean vs. median latency?",
+      "images": [
+        {
+          "src": "right-skewed-mean-vs-median.svg",
+          "alt": "A right-skewed latency distribution with the median marked near the peak and the mean marked further right, pulled toward the tail",
+          "placement": "explanation"
+        }
+      ],
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The mean is pulled higher than the median, because a few very slow requests drag the average up while most requests cluster near the fast end.",
+          "isCorrect": true
+        },
+        {
+          "text": "The mean and median are always equal for latency data.",
+          "isCorrect": false
+        },
+        {
+          "text": "The median is pulled higher than the mean.",
+          "isCorrect": false
+        },
+        {
+          "text": "Skew has no effect on the relationship between mean and median.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The mean is sensitive to extreme values — a handful of five-second requests move the average noticeably even among thousands of fast ones. The median only cares about which observation sits in the middle of the sorted list, regardless of how far the tail stretches beyond it. For right-skewed data like latency, this pulls mean above median, and the gap between them grows with how heavy the tail is. That's why \"average response time\" can look fine even while a meaningful slice of users are having a bad time — the mean absorbs and dilutes the tail instead of exposing it."
+    },
+    {
+      "id": "bimodal-single-percentile",
+      "title": "A service's latency has two clear humps: most requests hit a warm cache and finish in about 5 ms, and the rest miss the cache and take about 200 ms. Why does a single percentile like p90 poorly describe this distribution?",
+      "images": [
+        {
+          "src": "bimodal-latency.svg",
+          "alt": "A latency distribution with two separate humps: a tall narrow hump near 5 ms for cache hits, and a shorter wider hump near 200 ms for cache misses",
+          "placement": "explanation"
+        }
+      ],
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Because a single number can't distinguish \"p90 sits just past the fast hump\" from \"p90 sits inside the slow hump\" — those describe very different systems, and the percentile alone hides which mode the tail belongs to.",
+          "isCorrect": true
+        },
+        {
+          "text": "Because bimodal distributions don't have a p90 at all.",
+          "isCorrect": false
+        },
+        {
+          "text": "Because percentiles only work for normally distributed data.",
+          "isCorrect": false
+        },
+        {
+          "text": "Because the cache-miss requests should be excluded from the calculation.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A percentile still exists for a bimodal distribution — it's still just a rank in the sorted list — but a single point loses the fact that there are two separate populations with different causes behind them. Whether p90 lands just above the fast hump or deep inside the slow one depends entirely on the cache hit rate at that moment: a small drop in hit rate can suddenly push p90 from 6 ms to 190 ms even though neither hump itself moved at all, which looks like a dramatic regression in the percentile chart but is really just a shift in *how many* requests take the slow path. Tracking the hit rate and each mode's latency separately explains far more than watching one blended percentile."
+    },
+    {
+      "id": "rising-p50-flat-p99-diagnosis",
+      "title": "This week, p50 latency rose from 40 ms to 90 ms, but p99 latency stayed flat at 800 ms. What kind of problem does that pattern usually point to?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Something is slowing down requests broadly — most requests, not just the tail — since the change shows up in the middle of the distribution rather than only at the extreme.",
+          "isCorrect": true
+        },
+        {
+          "text": "A rare, isolated issue affecting a tiny fraction of requests, like one bad host.",
+          "isCorrect": false
+        },
+        {
+          "text": "Nothing changed — p50 and p99 always move together.",
+          "isCorrect": false
+        },
+        {
+          "text": "The p99 measurement is broken, since p50 and p99 should always move in the same direction.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "p50 reflects what the *typical* request experiences. If it moves while p99 doesn't, whatever slowed things down is affecting most of the traffic, not a rare subset — the tail was probably already dominated by some separate, unrelated cause that this change didn't touch. Good suspects for this pattern are changes on the common code path: extra serialization work, a newly-synchronous call, a database query plan regression, or added middleware — not a rare event like a single unhealthy host or an occasional GC pause, which would move the tail without touching the median. Contrast this with the opposite pattern, where p50 stays flat and p99 rises."
+    },
+    {
+      "id": "flat-p50-rising-p99-statements",
+      "title": "p50 latency stays flat at 40 ms, but p99 latency climbs from 300 ms to 1200 ms. Which statements about this pattern are true?",
+      "description": "Select all that apply.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "A small fraction of requests are getting much slower, while the typical request is unaffected.",
+          "isCorrect": true
+        },
+        {
+          "text": "Likely causes include periodic pauses like GC, a subset of unhealthy hosts, or slow paths hit only by some requests, such as cache misses or retries.",
+          "isCorrect": true
+        },
+        {
+          "text": "Most users are unaffected, even though the tail metric looks alarming.",
+          "isCorrect": true
+        },
+        {
+          "text": "This means the median measurement must be wrong, since a real regression would show up there too.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "This is the mirror image of a rising p50 with a flat p99: here the median is untouched, which means whatever's happening is confined to a subset of requests or is intermittent rather than systemic. It's still worth investigating — that slice of users is genuinely having a much worse experience, and something like an unhealthy host, periodic GC pauses, or a slow fallback path is a real bug — but the diagnosis and fix differ from a broad regression. Chasing this by looking at the common code path (where the median lives) would be looking in the wrong place; the fix is in whatever narrow path or subset of hosts the tail requests are taking."
+    },
+    {
+      "id": "cdf-reading",
+      "title": "The chart below shows a CDF: cumulative fraction of requests on the y-axis against latency on the x-axis, with arrows showing how to read off p50, p95, and p99. What does a CDF make easier to read directly than a raw histogram does?",
+      "description": "The diagram shows the same latency data plotted as a rising cumulative curve, with dashed lookup lines for p50, p95, and p99.",
+      "images": [
+        {
+          "src": "cdf-reading.svg",
+          "alt": "A CDF curve rising from 0 to 1 across increasing latency, with dashed lookup lines showing where p50, p95, and p99 fall on the curve",
+          "placement": "question"
+        }
+      ],
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "For a given latency value, what fraction of requests finished at or below it — reading percentiles directly off the curve.",
+          "isCorrect": true
+        },
+        {
+          "text": "Where the distribution's modes, or humps, are.",
+          "isCorrect": false
+        },
+        {
+          "text": "The exact count of requests in each latency bucket.",
+          "isCorrect": false
+        },
+        {
+          "text": "The mean latency.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A CDF plots cumulative probability, so any horizontal line at height X marks the latency value where X% of requests have finished — percentiles become a direct lookup: pick the height, read off the latency underneath it. A histogram is better for seeing *shape*: how many modes there are and how wide each hump is, because it shows density rather than accumulated mass. A CDF tends to compress a bimodal shape into a subtle double-bend that's easy to miss, so the practical rule is: use a histogram when you need to see structure, and a CDF when you need to read off a specific percentile precisely."
+    },
+    {
+      "id": "bimodal-causes",
+      "title": "Which of these are realistic, commonly seen causes of bimodal — two-humped — latency distributions in a web service?",
+      "description": "Select all that apply.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "Cache hit vs. cache miss for the same endpoint",
+          "isCorrect": true
+        },
+        {
+          "text": "A garbage-collection pause vs. no pause",
+          "isCorrect": true
+        },
+        {
+          "text": "A cold connection needing a new TLS handshake vs. a reused warm connection",
+          "isCorrect": true
+        },
+        {
+          "text": "Requests routed to a nearby region vs. a distant region",
+          "isCorrect": true
+        },
+        {
+          "text": "Random measurement noise with no structural cause",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Every one of the four true options describes a real branch in the request path: every request takes one of two (or more) genuinely distinct routes with meaningfully different cost, and that structural split is exactly what produces separated humps in the distribution. Pure random noise around a single mechanism instead produces a unimodal distribution — typically right-skewed, with one peak and a tail, not two separated peaks. A second hump is evidence that there are two different populations of requests, not evidence of noise."
+    },
+    {
+      "id": "fanout-100-calls-1-percent-slow",
+      "title": "A page load makes 100 independent backend calls in parallel. Each individual call has a p99 latency threshold — meaning 1% of calls, independently, exceed it and count as \"slow.\" Assuming independence, what percentage of page loads see at least one slow call?",
+      "description": "Round to the nearest whole percent.",
+      "images": [
+        {
+          "src": "fanout-amplification.svg",
+          "alt": "One page node fanning out to many parallel backend calls, with one call highlighted as slow and the page's total latency shown as bounded by that one slow call",
+          "placement": "explanation"
+        }
+      ],
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [
+          63
+        ],
+        "tolerance": 3
+      },
+      "explanation": "P(at least one slow call) = 1 − P(no slow calls) = 1 − (0.99)^100 ≈ 1 − 0.366 ≈ 63.4%. Even though each dependency is individually fast 99% of the time, the chance of hitting at least one slow one compounds across 100 independent calls — a page's experienced tail can be far worse than any single call's own p99 would suggest. Fan-out width is itself a tail-latency risk factor, independent of how fast any individual dependency is."
+    },
+    {
+      "id": "max-of-n-not-mean-of-n",
+      "title": "When a page waits on N backend calls issued in parallel, the page's total latency is the maximum of the N call latencies, not their average. What does that imply as N grows?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The page's tail latency gets worse — even if every individual call is fast on average, the chance that at least one of the N calls lands in its own slow tail rises with N.",
+          "isCorrect": true
+        },
+        {
+          "text": "The page's latency gets better, since parallel calls average out each other's slowness.",
+          "isCorrect": false
+        },
+        {
+          "text": "N has no effect on page latency, since the calls run at the same time.",
+          "isCorrect": false
+        },
+        {
+          "text": "The page's typical, median latency rises proportionally with N, at the same rate as the tail.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Because the page waits for a maximum rather than an average, adding more parallel calls can only push that maximum up or leave it the same — never down. Every extra call is another independent chance to draw a slow outlier. The median is much less affected, since most calls land near their own fast, typical latency, so it takes a lot more calls before the *typical* max shifts noticeably. The tail — p95, p99 — shifts far sooner, because it only takes one slow call among many to set the page's total latency."
+    },
+    {
+      "id": "tail-set-by-slowest-dependency",
+      "title": "Why is a system's overall tail latency generally determined by its slowest dependency, not by its average dependency?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Because a request usually can't finish until every dependency it calls has responded, so the request's latency is bounded below by whichever dependency took longest for that particular request.",
+          "isCorrect": true
+        },
+        {
+          "text": "Because slow dependencies are always called first in the request path.",
+          "isCorrect": false
+        },
+        {
+          "text": "Because monitoring tools average all dependencies together automatically.",
+          "isCorrect": false
+        },
+        {
+          "text": "Because the fastest dependency's latency is subtracted from the total.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "For any set of calls a request must wait on — whether issued serially or in parallel — that request's total latency is at least the maximum of the dependency latencies it hit that time. A single slow dependency, even one with a low *average* latency that's rarely the bottleneck, can dominate the tail for the fraction of requests where it happens to be slow on that particular call. Improving the average latency of an already-fast, reliable dependency does little for the p99; the tail only moves when you fix whichever dependency has the worst tail behavior, regardless of how good its average looks."
+    },
+    {
+      "id": "hedging-and-retries-effects",
+      "title": "Which of these are true about hedged requests — sending a duplicate request after a short delay and taking whichever response comes back first — or retries, as a way to reduce tail latency?",
+      "description": "Select all that apply.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "They can reduce the tail by giving a slow call a second, independent chance to finish quickly.",
+          "isCorrect": true
+        },
+        {
+          "text": "They increase total load on the backend, since some requests are now served more than once.",
+          "isCorrect": true
+        },
+        {
+          "text": "They stop helping, or make things worse, once the backend is broadly overloaded, since duplicate requests add load precisely when there's no slack to absorb it.",
+          "isCorrect": true
+        },
+        {
+          "text": "They eliminate tail latency entirely, with no trade-offs.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Hedging works well when slowness has an independent, random cause — a GC pause on one host, a transient network blip — because the second attempt is unlikely to hit the same bad luck. It works poorly, or actively backfires, when the slowness comes from a shared cause like overload: adding duplicate requests during overload adds more load, worsening the exact condition that caused the slowness in the first place. This is the same mechanism behind a retry storm, and it's why hedging policies are usually paired with limits — cap the extra load, and back off entirely once error rates or latency signal systemic trouble rather than one-off bad luck."
+    },
+    {
+      "id": "fanout-scaling-n20",
+      "title": "Same setup, but the page only fans out to 20 independent backend calls instead of 100, still each with a 1% independent chance of being the slow one. What percentage of page loads now see at least one slow call?",
+      "description": "Round to the nearest whole percent.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [
+          18
+        ],
+        "tolerance": 3
+      },
+      "explanation": "1 − (0.99)^20 ≈ 1 − 0.818 ≈ 18.2%. Compare this to the 100-call case, which came out to about 63%: cutting fan-out from 100 down to 20 calls doesn't cut the slow-page rate by 5×, it cuts it by roughly 3.5×, because the relationship is exponential in N rather than linear. The practical lesson is that reducing the number of calls on a page's critical path has outsized returns on tail latency — more than the raw drop in dependency count would suggest."
+    },
+    {
+      "id": "fanout-with-hedging-reduced-rate",
+      "title": "With the same 100 independent backend calls, hedging cuts each call's effective chance of being \"slow\" from 1% down to 0.1% — the hedge catches almost all of the independent slowness. What percentage of page loads now see at least one slow call?",
+      "description": "Round to the nearest whole percent.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [
+          9.5
+        ],
+        "tolerance": 2
+      },
+      "explanation": "1 − (0.999)^100 ≈ 1 − 0.905 ≈ 9.5%. Dropping the per-call slow rate by 10× (1% to 0.1%) drops the page-level slow rate from about 63% to about 9.5% — roughly a 6–7× improvement, not a 10× one, because the compounding across 100 calls is exponential rather than linear. Getting further wins from here means also reducing the number of calls on the critical path, not just improving each call's individual reliability."
+    },
+    {
+      "id": "littles-law-statement",
+      "title": "Little's Law relates the average number of requests in a system (L), the average arrival or throughput rate (λ), and the average time each request spends in the system (W). Which equation is it?",
+      "images": [
+        {
+          "src": "littles-law.svg",
+          "alt": "A box labeled 'system' with arrivals entering at rate lambda, a count L of requests in flight inside the box, and departures leaving after an average time W",
+          "placement": "explanation"
+        }
+      ],
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "L = λW",
+          "isCorrect": true
+        },
+        {
+          "text": "L = λ / W",
+          "isCorrect": false
+        },
+        {
+          "text": "W = λL",
+          "isCorrect": false
+        },
+        {
+          "text": "λ = LW",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Little's Law says the average number of items in a system equals the rate at which items arrive multiplied by the average time each item spends there. It holds for any stable queueing system, regardless of the arrival pattern, the service-time distribution, or the number of servers — which is what makes it so widely useful: measure any two of L, λ, and W, and the third is fixed by the other two."
+    },
+    {
+      "id": "littles-law-find-w",
+      "title": "A service handles 200 requests per second on average (λ), and on average has 50 requests concurrently in flight (L). Using Little's Law, what is the average time each request spends in the system (W), in milliseconds?",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [
+          250
+        ],
+        "tolerance": 10
+      },
+      "explanation": "W = L / λ = 50 / 200 requests per second = 0.25 seconds = 250 ms. This direction of Little's Law is useful for inferring latency from concurrency and throughput when per-request latency isn't directly measured — or as a sanity check against a latency number you do measure directly."
+    },
+    {
+      "id": "littles-law-find-l",
+      "title": "A service handles 500 requests per second on average (λ), and each request takes an average of 100 ms to complete (W). Using Little's Law, how many requests are concurrently in flight in the system on average (L)?",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [
+          50
+        ],
+        "tolerance": 2
+      },
+      "explanation": "L = λW = 500 requests/sec × 0.1 sec = 50. This direction is the one used for capacity planning: given a target throughput and an expected latency, Little's Law tells you how much concurrency — in-flight requests, open connections, worker threads, whatever holds a request while it's being processed — the system needs to be provisioned for."
+    },
+    {
+      "id": "utilization-hockey-stick-reading",
+      "title": "The chart below plots average queueing wait time against server utilization (ρ), annotated at 50%, 80%, 90%, and 95% busy. Based on the shape of that curve, what happens to wait time as utilization rises from 80% to 90% to 95%?",
+      "description": "The diagram shows queueing wait time against utilization from 0 to 100%, with points marked at 50%, 80%, 90%, and 95%.",
+      "images": [
+        {
+          "src": "utilization-hockey-stick.svg",
+          "alt": "A line chart of queueing wait time against server utilization from 0 to 100%, curving sharply upward as utilization approaches 100%, with points marked at 50%, 80%, 90%, and 95%",
+          "placement": "question"
+        }
+      ],
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "It grows much faster than linearly — each additional point of utilization adds more wait time than the last, especially past roughly 80%.",
+          "isCorrect": true
+        },
+        {
+          "text": "It grows at a steady, constant rate regardless of the starting utilization.",
+          "isCorrect": false
+        },
+        {
+          "text": "It stays roughly flat until 100% utilization, then jumps suddenly with no warning beforehand.",
+          "isCorrect": false
+        },
+        {
+          "text": "It decreases, since a busier server has less idle overhead per request.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "For a simple single-server queue, expected wait time scales with ρ / (1 − ρ), which grows without bound as ρ approaches 1. Going from 50% to 80% utilization roughly quadruples that delay factor (from 1 to 4), but going from 80% to 95% takes it from 4 to 19 — almost a 5× jump for a smaller absolute increase in utilization. That's the \"hockey stick\": the closer a system runs to full capacity, the more brutally each additional bit of load costs in wait time, well before utilization actually reaches 100%."
+    },
+    {
+      "id": "delay-factor-at-rho-95",
+      "title": "Using ρ / (1 − ρ) as a relative queueing-delay factor, where higher means more wait, what is its value at ρ = 0.95?",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [
+          19
+        ],
+        "tolerance": 1
+      },
+      "explanation": "0.95 / (1 − 0.95) = 0.95 / 0.05 = 19. Compare that to ρ = 0.8, where the factor is 0.8 / 0.2 = 4, and ρ = 0.5, where it's 0.5 / 0.5 = 1. The factor is 1 at 50% utilization, 4 at 80%, and 19 at 95% — the numeric backbone of the hockey-stick shape: equal-sized steps in utilization produce wildly unequal steps in delay once a system is running past roughly 70–80% busy."
+    },
+    {
+      "id": "why-avg-sizing-fails-at-2x",
+      "title": "A system is provisioned to handle exactly its average load, with no spare capacity. Why does it tend to fall over — not just slow down a bit — once real traffic hits roughly 2× that average?",
+      "description": "Select all that apply.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "Real traffic isn't perfectly smooth; bursts above the average push utilization toward 100%, where wait time grows nonlinearly as utilization approaches 1.",
+          "isCorrect": true
+        },
+        {
+          "text": "With zero spare capacity, there's no buffer to absorb even brief bursts without a growing backlog.",
+          "isCorrect": true
+        },
+        {
+          "text": "Once arrivals exceed service capacity for any sustained stretch, the queue grows without bound — the system doesn't degrade gracefully, it falls behind and stays behind.",
+          "isCorrect": true
+        },
+        {
+          "text": "The system's total capacity actually doubles automatically once load reaches 2× average.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A system sized only for its average load is really sized to run near 100% utilization during any above-average stretch — exactly where, per the ρ/(1−ρ) relationship, small increases in load produce disproportionate increases in wait time. Once arrivals genuinely exceed capacity, not just utilization near 1 but ρ actually greater than 1, queued work accumulates faster than it can drain: the backlog, and the latency of everything stuck behind it, grows without bound until load drops or capacity is added. This is why systems are usually sized with headroom well above the observed average, not exactly at it."
+    },
+    {
+      "id": "variability-worsens-queueing",
+      "title": "Two systems have the exact same average utilization, say 80%, and the exact same average service time per request. One has highly variable service times — some requests take 1 ms, others take 500 ms. The other has nearly constant service times — every request takes about the same time. Which statements are true?",
+      "description": "Select all that apply.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "The high-variability system has worse average queueing delay, even though its mean utilization and mean service time match the other system's.",
+          "isCorrect": true
+        },
+        {
+          "text": "Variability in service time, or in arrival spacing, adds queueing delay on top of what utilization alone predicts.",
+          "isCorrect": true
+        },
+        {
+          "text": "This is why approximations like Kingman's formula include a variability term, not just the utilization term ρ / (1 − ρ).",
+          "isCorrect": true
+        },
+        {
+          "text": "Since both systems have the same average utilization, they must have the same average wait time.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Queueing delay depends on more than how busy a server is on average. A server with highly variable service times is sometimes idle and sometimes stuck behind a pile of slow work, and that pile takes disproportionately long to clear compared to steady, predictable work arriving at the same average rate. This is the Kingman's-formula insight: variance in the service-time and arrival distributions multiplies the basic utilization-driven delay, so two systems that look identical on paper — same ρ, same mean service time — can have very different real-world wait times."
+    },
+    {
+      "id": "single-queue-vs-many-numbers",
+      "title": "Ten checkout servers each get their own separate queue of waiting requests, versus the same ten servers fed by one shared queue, where the next free server pulls the next waiting request. Assuming the same total arrival rate and the same per-server capacity, which arrangement gives lower average wait time, and why?",
+      "images": [
+        {
+          "src": "single-queue-vs-many.svg",
+          "alt": "Two panels: on the left, ten separate queues each feeding its own server with uneven queue lengths; on the right, one shared serpentine queue feeding the same ten servers",
+          "placement": "explanation"
+        }
+      ],
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The single shared queue — it eliminates the case where one server's queue is backed up while another sits idle, so no arriving request is stuck waiting behind a slow line just because of which line it happened to join.",
+          "isCorrect": true
+        },
+        {
+          "text": "The ten separate queues — smaller, dedicated queues always clear faster than one large shared queue.",
+          "isCorrect": false
+        },
+        {
+          "text": "They're mathematically identical, since the total arrival rate and total capacity are the same either way.",
+          "isCorrect": false
+        },
+        {
+          "text": "The ten separate queues — a shared queue creates contention that slows every server down.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "With ten separate single-server queues, load imbalance is inevitable: pure chance means some queues get a run of arrivals while others sit briefly idle, and a request stuck behind a temporarily long queue waits even though a server two lines over is free. A single shared queue removes that bad luck entirely — any waiting request is served by the next available server, so the system behaves like one queue with ten times the capacity rather than ten small, independent copies of the same queue. For the same total arrival rate and total capacity, average wait time under that pooled arrangement is lower. This is the same arithmetic behind why a single serpentine line usually clears faster on average than several separate lines feeding the same number of servers — it's a consequence of pooling capacity, not a matter of which queue feels fairer."
+    },
+    {
+      "id": "batching-latency-throughput-tradeoff",
+      "title": "A write path can batch several items into one database call. Larger batches mean fewer, more efficient calls — higher throughput — but each item waits longer for its batch to fill, meaning higher latency. Where does this trade-off's practical crossover point usually sit?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Wherever the marginal throughput gained from a bigger batch stops being worth the marginal latency it adds — for many workloads that's a fairly small batch size or a short time-based flush window, not the largest batch the system can technically hold.",
+          "isCorrect": true
+        },
+        {
+          "text": "Always at the maximum batch size the system can hold, since bigger batches are strictly better.",
+          "isCorrect": false
+        },
+        {
+          "text": "Always at a batch size of exactly one, since batching never actually helps.",
+          "isCorrect": false
+        },
+        {
+          "text": "There is no crossover — throughput and latency don't trade off against each other in batching.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Throughput gains from batching taper off quickly: going from a batch size of 1 to 10 helps a lot by amortizing per-call overhead, but going from 1,000 to 2,000 barely moves the needle further, since that overhead is already mostly amortized. Meanwhile, the latency added by waiting for a batch to fill keeps growing roughly in proportion to how long the wait is. In practice this is why batch writers cap on both size and time — flush when either the batch is full or a maximum wait has elapsed, whichever comes first — since the size cap captures most of the throughput win while the time cap bounds the worst-case latency any single item pays waiting for others to join it."
+    },
+    {
+      "id": "coordinated-omission-definition",
+      "title": "The timeline below shows a load generator's intended request schedule, evenly spaced, against when it actually issues requests, during a stall where the target service stops responding for a while. Based on that gap, what is \"coordinated omission\"?",
+      "description": "The diagram shows an intended, evenly-spaced request timeline against the load generator's actual request timeline, with a gap where no requests are issued during the stall.",
+      "images": [
+        {
+          "src": "coordinated-omission.svg",
+          "alt": "Two timelines: an intended, evenly-spaced request schedule on top, and the load generator's actual request timeline below it, which pauses entirely during a service stall and then resumes",
+          "placement": "question"
+        }
+      ],
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "A load generator that waits for each response before sending the next request stops issuing new requests during a stall — so the requests that would have measured the stall's worst effect are the very ones that never get sent.",
+          "isCorrect": true
+        },
+        {
+          "text": "A bug where the load generator sends too many requests at once, overwhelming the target.",
+          "isCorrect": false
+        },
+        {
+          "text": "A scheduling algorithm that coordinates requests across multiple load generators.",
+          "isCorrect": false
+        },
+        {
+          "text": "A measurement technique that deliberately skips slow requests to keep results clean.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A naive, closed-loop load generator issues request N+1 only after receiving the response to request N. If the service stalls for five seconds, that generator simply waits — it doesn't queue up the requests it \"should\" have sent during those five seconds and fire them off afterward. Every request it does eventually send once the stall clears measures normal-looking latency, so the stall itself, and the burst of would-be requests that were entirely skipped, never shows up in the data at all. The name comes from Gil Tene: the missing requests are \"coordinated\" with the very stall they should have measured, so they end up omitted rather than recorded as slow."
+    },
+    {
+      "id": "coordinated-omission-effect",
+      "title": "What effect does coordinated omission have on latency percentiles measured by a closed-loop load generator — one that waits for each response before sending the next request?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "It understates the tail — the percentiles look better than what real, independently-arriving users would actually experience during a stall.",
+          "isCorrect": true
+        },
+        {
+          "text": "It overstates the tail — percentiles look worse than reality.",
+          "isCorrect": false
+        },
+        {
+          "text": "It has no effect on percentiles, only on throughput numbers.",
+          "isCorrect": false
+        },
+        {
+          "text": "It only affects the mean, never the percentiles.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The requests missing during a stall are exactly the ones that would have reported the worst latencies. A real user's browser doesn't politely wait for the previous request to finish before making the next one — in production, requests keep arriving on their own schedule, piling up and eventually getting served with high latency once the stall clears. Since the closed-loop generator never sent those requests, they never appear in the measured distribution at all, so the reported p99 — and, in a bad enough stall, even the p50 — looks better than what real, open-loop traffic would show. Correcting for this means using an open-loop load generator that issues requests on a fixed schedule regardless of outstanding responses, or explicitly correcting recorded latencies for the requests that should have been sent but weren't."
+    },
+    {
+      "id": "client-vs-server-observed-gap",
+      "title": "A request's server-side handler logs 40 ms of processing time, but the client's own timer, from clicking a button to receiving the response, measured 180 ms for the same request. What does that 140 ms gap most likely contain?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Time outside the server's handler: network transit, DNS and TLS setup, load-balancer or proxy queueing, and time the request spent waiting before the handler code actually started running.",
+          "isCorrect": true
+        },
+        {
+          "text": "Clock drift between the client and server, which is typically on the order of hundreds of milliseconds.",
+          "isCorrect": false
+        },
+        {
+          "text": "Nothing real — the discrepancy is always a measurement bug.",
+          "isCorrect": false
+        },
+        {
+          "text": "Time spent by the client rendering the response after it arrived, which should always be excluded from any latency definition.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Server-side handler timing only covers the specific code path a team chose to instrument, typically starting once a request has already reached application code — it misses everything before that: DNS resolution, the TCP and TLS handshake, network transit in both directions, and time spent queued at a load balancer or proxy before the handler even begins. That gap is real, is often the majority of what a user actually experiences, and is exactly why \"our server's p99 is fast\" and \"our users' experienced latency is fast\" can be very different claims. Client-side or real-user-monitoring measurements are needed to see the full picture."
+    },
+    {
+      "id": "slo-needs-window-and-target",
+      "title": "Why does a well-formed latency SLO need both a measurement window, for example \"over any rolling 30 days,\" and a target, for example \"p99 under 500 ms,\" rather than just a bare number?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Without a window, the same target can be trivially met or trivially failed depending on how much data and what time range it's computed over — a single bad minute reads very differently as \"p99 in the last minute\" versus \"p99 over the last 30 days.\"",
+          "isCorrect": true
+        },
+        {
+          "text": "The window is only needed for legal or compliance reasons, not for the statistic to make sense.",
+          "isCorrect": false
+        },
+        {
+          "text": "A target alone is always sufficient; the window is an optional decoration.",
+          "isCorrect": false
+        },
+        {
+          "text": "Windows are needed only for throughput SLOs, never for latency SLOs.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A percentile is computed over some set of observations, so \"p99 under 500 ms\" is meaningless without saying which observations. A five-minute window during a brief outage produces a wildly different p99 than a thirty-day window covering the same outage, and both are technically correct answers to different questions. The window also determines how much a brief bad period can move the number — a five-minute stall barely dents a thirty-day p99 but completely dominates a five-minute one — so choosing the window is itself a decision about how much short-term pain the SLO is meant to tolerate before it counts as violated."
+    },
+    {
+      "id": "error-budget-999-30days",
+      "title": "An SLO targets 99.9% availability, measured over a rolling 30-day window. How many minutes of downtime does that allow within those 30 days?",
+      "description": "Round to one decimal place. (30 days = 43,200 minutes.)",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [
+          43.2
+        ],
+        "tolerance": 1
+      },
+      "explanation": "Allowed downtime = (1 − 0.999) × 43,200 minutes = 0.001 × 43,200 = 43.2 minutes. This is the SLO's \"error budget\": the amount of unreliability it explicitly permits before it's considered violated. Turning an abstract percentage into a concrete, spendable quantity is useful in practice — a team can knowingly \"spend\" some of that 43.2 minutes on a risky deploy or a planned migration, and knows exactly how much room for accidental incidents remains in the rest of the window."
+    }
+  ]
+}

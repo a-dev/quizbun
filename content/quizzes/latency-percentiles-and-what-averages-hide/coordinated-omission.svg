@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="340" viewBox="0 0 720 340">
+  <style>
+    svg {
+      --panel: #f5f7fb;
+      --title: #20242c;
+      --muted: #526173;
+      --edge: #64748b;
+      --tick: #2563eb;
+      --stall: #c2410c;
+    }
+    @media (prefers-color-scheme: dark) {
+      svg {
+        --panel: #1a1f27;
+        --title: #e6eaf2;
+        --muted: #9aa8bd;
+        --edge: #8b9bb4;
+        --tick: #60a5fa;
+        --stall: #fb923c;
+      }
+    }
+    .panel { fill: var(--panel); }
+    .title { fill: var(--title); }
+    .muted { fill: var(--muted); }
+    .tick { fill: var(--tick); stroke: var(--tick); }
+    .stall-band { fill: var(--stall); }
+    .stall-text { fill: var(--stall); }
+  </style>
+
+  <rect class="panel" width="720" height="340" rx="20" fill="#f5f7fb" />
+  <text class="title" x="36" y="42" fill="#20242c" font-family="system-ui, sans-serif" font-size="19" font-weight="700">
+    Intended vs. actual request timeline, during a stall
+  </text>
+
+  <g font-family="system-ui, sans-serif">
+    <!-- stall band -->
+    <rect class="stall-band" x="330" y="70" width="150" height="220" fill="#c2410c" fill-opacity="0.12" />
+    <text class="stall-text" x="405" y="86" fill="#c2410c" font-size="13" font-weight="700" text-anchor="middle">service stalls</text>
+
+    <!-- intended, evenly spaced -->
+    <text class="muted" x="60" y="130" fill="#526173" font-size="13">intended</text>
+    <line x1="150" y1="140" x2="670" y2="140" stroke="#64748b" stroke-width="2" />
+    <g class="tick" fill="#2563eb">
+      <circle cx="170" cy="140" r="6" /><circle cx="230" cy="140" r="6" /><circle cx="290" cy="140" r="6" />
+      <circle cx="350" cy="140" r="6" /><circle cx="410" cy="140" r="6" /><circle cx="470" cy="140" r="6" />
+      <circle cx="530" cy="140" r="6" /><circle cx="590" cy="140" r="6" /><circle cx="650" cy="140" r="6" />
+    </g>
+
+    <!-- actual, stops during the stall -->
+    <text class="muted" x="60" y="240" fill="#526173" font-size="13">actual</text>
+    <line x1="150" y1="250" x2="670" y2="250" stroke="#64748b" stroke-width="2" />
+    <g class="tick" fill="#2563eb">
+      <circle cx="170" cy="250" r="6" /><circle cx="230" cy="250" r="6" /><circle cx="290" cy="250" r="6" />
+      <!-- gap: no requests sent while the service is stalled -->
+      <circle cx="490" cy="250" r="6" /><circle cx="550" cy="250" r="6" /><circle cx="610" cy="250" r="6" /><circle cx="665" cy="250" r="6" />
+    </g>
+
+    <!-- missing ticks, ghosted -->
+    <g fill="none" stroke="#c2410c" stroke-width="2" stroke-dasharray="3 3">
+      <circle cx="350" cy="250" r="6" /><circle cx="410" cy="250" r="6" /><circle cx="470" cy="250" r="6" />
+    </g>
+    <text class="stall-text" x="410" y="278" fill="#c2410c" font-size="12" text-anchor="middle">3 requests never sent, never measured</text>
+
+    <text class="muted" x="36" y="320" fill="#526173" font-size="12">
+      A closed-loop generator waits for each response before sending the next, so it goes silent for the whole stall instead of queuing up.
+    </text>
+  </g>
+</svg>

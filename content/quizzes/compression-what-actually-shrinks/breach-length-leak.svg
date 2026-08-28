@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="360" viewBox="0 0 720 360">
+  <style>
+    svg {
+      --panel: #f5f7fb;
+      --title: #20242c;
+      --muted: #526173;
+      --grid: #d5dce6;
+      --axis: #64748b;
+      --bar: #93c5fd;
+      --bar-edge: #2563eb;
+      --hit: #fca5a5;
+      --hit-edge: #c2410c;
+      --hit-text: #9a3412;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      svg {
+        --panel: #1a1f27;
+        --title: #e6eaf2;
+        --muted: #9aa8bd;
+        --grid: #333c49;
+        --axis: #8b9bb4;
+        --bar: #2d5d96;
+        --bar-edge: #60a5fa;
+        --hit: #7f1d1d;
+        --hit-edge: #fb923c;
+        --hit-text: #fdba74;
+      }
+    }
+
+    .panel { fill: var(--panel); }
+    .title { fill: var(--title); }
+    .muted { fill: var(--muted); }
+    .grid { stroke: var(--grid); }
+    .axis { stroke: var(--axis); }
+    .bar { fill: var(--bar); stroke: var(--bar-edge); }
+    .hit { fill: var(--hit); stroke: var(--hit-edge); }
+    .hit-text { fill: var(--hit-text); }
+  </style>
+
+  <rect class="panel" width="720" height="360" rx="20" fill="#f5f7fb" />
+  <text class="title" x="36" y="38" fill="#20242c" font-family="system-ui, sans-serif" font-size="19" font-weight="700">
+    Compressed response length across attacker guesses
+  </text>
+  <text class="muted" x="36" y="60" fill="#526173" font-family="system-ui, sans-serif" font-size="13">
+    Guessing the secret's next character, one letter at a time
+  </text>
+
+  <g font-family="system-ui, sans-serif">
+    <line class="axis" x1="70" y1="90" x2="70" y2="300" stroke="#64748b" stroke-width="2" />
+    <line class="axis" x1="70" y1="300" x2="670" y2="300" stroke="#64748b" stroke-width="2" />
+
+    <!-- bars for guesses a..g, with 'c' being the correct match (shorter bar) -->
+    <g text-anchor="middle" font-family="ui-monospace, monospace" font-size="14">
+      <rect class="bar" x="100" y="140" width="60" height="160" fill="#93c5fd" stroke="#2563eb" stroke-width="2" />
+      <text class="muted" x="130" y="318" fill="#526173">guess: a</text>
+
+      <rect class="bar" x="180" y="136" width="60" height="164" fill="#93c5fd" stroke="#2563eb" stroke-width="2" />
+      <text class="muted" x="210" y="318" fill="#526173">guess: b</text>
+
+      <rect class="hit" x="260" y="200" width="60" height="100" fill="#fca5a5" stroke="#c2410c" stroke-width="3" />
+      <text class="hit-text" x="290" y="318" fill="#9a3412" font-weight="700">guess: c</text>
+
+      <rect class="bar" x="340" y="138" width="60" height="162" fill="#93c5fd" stroke="#2563eb" stroke-width="2" />
+      <text class="muted" x="370" y="318" fill="#526173">guess: d</text>
+
+      <rect class="bar" x="420" y="142" width="60" height="158" fill="#93c5fd" stroke="#2563eb" stroke-width="2" />
+      <text class="muted" x="450" y="318" fill="#526173">guess: e</text>
+
+      <rect class="bar" x="500" y="139" width="60" height="161" fill="#93c5fd" stroke="#2563eb" stroke-width="2" />
+      <text class="muted" x="530" y="318" fill="#526173">guess: f</text>
+
+      <rect class="bar" x="580" y="141" width="60" height="159" fill="#93c5fd" stroke="#2563eb" stroke-width="2" />
+      <text class="muted" x="610" y="318" fill="#526173">guess: g</text>
+    </g>
+
+    <text class="hit-text" x="290" y="188" fill="#9a3412" font-size="13" font-weight="700" text-anchor="middle">shorter!</text>
+    <text class="muted" x="20" y="200" fill="#526173" font-size="12" transform="rotate(-90 20 200)" text-anchor="middle">compressed length</text>
+    <text class="muted" x="360" y="344" fill="#526173" font-size="13" text-anchor="middle">A correct guess compresses better. The dip marks the right next character</text>
+  </g>
+</svg>

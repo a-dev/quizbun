@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="400" viewBox="0 0 720 400">
+  <style>
+    svg {
+      --panel: #f5f7fb;
+      --title: #20242c;
+      --muted: #526173;
+      --edge: #64748b;
+      --card: #ffffff;
+      --grid: #d5dce6;
+      --bar: #0284c7;
+      --accent: #c2410c;
+    }
+    @media (prefers-color-scheme: dark) {
+      svg {
+        --panel: #1a1f27;
+        --title: #e6eaf2;
+        --muted: #9aa8bd;
+        --edge: #8b9bb4;
+        --card: #252b35;
+        --grid: #333c49;
+        --bar: #38bdf8;
+        --accent: #fb923c;
+      }
+    }
+    .panel { fill: var(--panel); }
+    .title { fill: var(--title); }
+    .muted { fill: var(--muted); }
+    .bar { fill: var(--bar); }
+    .axis { stroke: var(--edge); }
+    .marker { stroke: var(--accent); }
+    .accent-text { fill: var(--accent); }
+  </style>
+
+  <rect class="panel" width="720" height="400" rx="20" fill="#f5f7fb" />
+  <text class="title" x="36" y="42" fill="#20242c" font-family="system-ui, sans-serif" font-size="19" font-weight="700">
+    Latency histogram: bucketed counts, right-skewed
+  </text>
+
+  <g font-family="system-ui, sans-serif">
+    <line class="axis" x1="40" y1="340" x2="660" y2="340" stroke="#64748b" stroke-width="2" />
+
+    <!-- bars: heights represent counts per bucket -->
+    <rect class="bar" x="50" y="220" width="70" height="120" fill="#0284c7" />
+    <rect class="bar" x="134" y="120" width="70" height="220" fill="#0284c7" />
+    <rect class="bar" x="218" y="140" width="70" height="200" fill="#0284c7" />
+    <rect class="bar" x="302" y="200" width="70" height="140" fill="#0284c7" />
+    <rect class="bar" x="386" y="260" width="70" height="80" fill="#0284c7" />
+    <rect class="bar" x="470" y="300" width="70" height="40" fill="#0284c7" />
+    <rect class="bar" x="554" y="325" width="70" height="15" fill="#0284c7" />
+
+    <!-- bucket labels -->
+    <g class="muted" fill="#526173" font-size="12" text-anchor="middle">
+      <text x="85" y="358">0&#8211;10 ms</text>
+      <text x="169" y="358">10&#8211;25 ms</text>
+      <text x="253" y="358">25&#8211;50 ms</text>
+      <text x="337" y="358">50&#8211;100 ms</text>
+      <text x="421" y="358">100&#8211;200 ms</text>
+      <text x="505" y="358">200&#8211;400 ms</text>
+      <text x="589" y="358">400&#8211;800 ms</text>
+    </g>
+
+    <!-- percentile markers, landing inside a bucket rather than at an exact point -->
+    <line class="marker" x1="265" y1="60" x2="265" y2="340" stroke="#c2410c" stroke-width="2" stroke-dasharray="6 5" />
+    <text class="accent-text" x="265" y="52" fill="#c2410c" font-size="13" font-weight="700" text-anchor="middle">p50 &#8776; 42 ms</text>
+
+    <line class="marker" x1="430" y1="88" x2="430" y2="340" stroke="#c2410c" stroke-width="2" stroke-dasharray="6 5" />
+    <text class="accent-text" x="430" y="80" fill="#c2410c" font-size="13" font-weight="700" text-anchor="middle">p95 &#8776; 160 ms</text>
+
+    <line class="marker" x1="505" y1="116" x2="505" y2="340" stroke="#c2410c" stroke-width="2" stroke-dasharray="6 5" />
+    <text class="accent-text" x="590" y="108" fill="#c2410c" font-size="13" font-weight="700" text-anchor="middle">p99 &#8776; 310 ms</text>
+
+    <text class="muted" x="36" y="386" fill="#526173" font-size="12">
+      Each marker falls somewhere inside its bucket. The exact request that set it isn't recorded, only the bucket it landed in.
+    </text>
+  </g>
+</svg>

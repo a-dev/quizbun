@@ -58,26 +58,26 @@
     <text class="muted" x="372" y="195" fill="#526173" font-size="11.5">application computes 100 − 20</text>
     <text class="title" x="52" y="214" fill="#20242c" font-size="11.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">UPDATE … SET balance = 90;  COMMIT</text>
     <text class="title" x="372" y="233" fill="#20242c" font-size="11.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">UPDATE … SET balance = 80;  COMMIT</text>
-    <text class="accent-text" x="52" y="266" fill="#9a3412" font-size="12" font-weight="700">Final balance: 80. T1's −10 never happened — both wrote from the same stale read.</text>
+    <text class="accent-text" x="52" y="266" fill="#9a3412" font-size="12" font-weight="700">Final balance: 80. T1's −10 never happened. Both wrote from the same stale read.</text>
     <rect class="card" x="36" y="304" width="648" height="200" rx="12" fill="#ffffff" stroke="#64748b" stroke-width="2" />
     <text class="title" x="52" y="330" fill="#20242c" font-size="15" font-weight="700">Write skew</text>
-    <text class="muted" x="52" y="349" fill="#526173" font-size="11.5">REPEATABLE READ, i.e. snapshot isolation · the rule is that one doctor must stay on call</text>
+    <text class="muted" x="52" y="349" fill="#526173" font-size="11.5">REPEATABLE READ (snapshot isolation) · rule: one doctor must stay on call</text>
     <text class="muted" x="52" y="372" fill="#526173" font-size="11" font-weight="700">ALICE</text>
     <text class="muted" x="372" y="372" fill="#526173" font-size="11" font-weight="700">BOB</text>
     <path class="edge-line" d="M364,360 L364,456" stroke="#64748b" stroke-width="1.5" stroke-dasharray="4 4" fill="none" />
     <text class="title" x="52" y="392" fill="#20242c" font-size="11.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">SELECT count(*) WHERE on_call → 2</text>
     <text class="title" x="372" y="392" fill="#20242c" font-size="11.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">SELECT count(*) WHERE on_call → 2</text>
-    <text class="muted" x="52" y="411" fill="#526173" font-size="11.5">2 ≥ 2, so it is safe for me to leave</text>
-    <text class="muted" x="372" y="411" fill="#526173" font-size="11.5">2 ≥ 2, so it is safe for me to leave</text>
+    <text class="muted" x="52" y="411" fill="#526173" font-size="11.5">2 ≥ 2, so leaving is safe</text>
+    <text class="muted" x="372" y="411" fill="#526173" font-size="11.5">2 ≥ 2, so leaving is safe</text>
     <text class="title" x="52" y="430" fill="#20242c" font-size="11.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">UPDATE doctors SET on_call = false</text>
     <text class="title" x="372" y="430" fill="#20242c" font-size="11.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">UPDATE doctors SET on_call = false</text>
     <text class="title" x="52" y="449" fill="#20242c" font-size="11.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">  WHERE name = 'Alice';  COMMIT</text>
     <text class="title" x="372" y="449" fill="#20242c" font-size="11.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">  WHERE name = 'Bob';  COMMIT</text>
-    <text class="accent-text" x="52" y="472" fill="#9a3412" font-size="12" font-weight="700">Both commit and nobody is on call. Because they wrote different rows,</text>
-    <text class="accent-text" x="52" y="490" fill="#9a3412" font-size="12" font-weight="700">first-committer-wins saw no conflict — yet each read a premise the other then destroyed.</text>
+    <text class="accent-text" x="52" y="472" fill="#9a3412" font-size="12" font-weight="700">Both commit and nobody is on call. They wrote different rows,</text>
+    <text class="accent-text" x="52" y="490" fill="#9a3412" font-size="12" font-weight="700">so first-committer-wins missed it. Each read a premise the other destroyed.</text>
     <rect class="card" x="36" y="520" width="648" height="200" rx="12" fill="#ffffff" stroke="#64748b" stroke-width="2" />
     <text class="title" x="52" y="546" fill="#20242c" font-size="15" font-weight="700">The phantom a row lock cannot hold</text>
-    <text class="muted" x="52" y="565" fill="#526173" font-size="11.5">READ COMMITTED · two requests for the same room and the same hour</text>
+    <text class="muted" x="52" y="565" fill="#526173" font-size="11.5">READ COMMITTED · two requests for the same room and hour</text>
     <text class="muted" x="52" y="588" fill="#526173" font-size="11" font-weight="700">SESSION A</text>
     <text class="muted" x="372" y="588" fill="#526173" font-size="11" font-weight="700">SESSION B</text>
     <path class="edge-line" d="M364,576 L364,672" stroke="#64748b" stroke-width="1.5" stroke-dasharray="4 4" fill="none" />
@@ -89,7 +89,7 @@
     <text class="title" x="372" y="646" fill="#20242c" font-size="11.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">INSERT INTO bookings (room_id, during)</text>
     <text class="title" x="52" y="665" fill="#20242c" font-size="11.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">COMMIT</text>
     <text class="title" x="372" y="665" fill="#20242c" font-size="11.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">COMMIT</text>
-    <text class="accent-text" x="52" y="688" fill="#9a3412" font-size="12" font-weight="700">FOR UPDATE can only lock rows that exist, and there were none — so both inserted.</text>
-    <text class="accent-text" x="52" y="706" fill="#9a3412" font-size="12" font-weight="700">Guard it with an exclusion constraint, or SERIALIZABLE, which locks the predicate not the rows.</text>
+    <text class="accent-text" x="52" y="688" fill="#9a3412" font-size="12" font-weight="700">FOR UPDATE can only lock rows that exist. There were none, so both inserted.</text>
+    <text class="accent-text" x="52" y="706" fill="#9a3412" font-size="12" font-weight="700">Fix: an exclusion constraint, or SERIALIZABLE, which locks the predicate, not the rows.</text>
   </g>
 </svg>

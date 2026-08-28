@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="300" viewBox="0 0 720 300">
+  <style>
+    svg {
+      --panel: #f5f7fb;
+      --title: #20242c;
+      --muted: #526173;
+      --edge: #64748b;
+      --card: #ffffff;
+      --accent1: #2563eb;
+      --accent2: #c2410c;
+    }
+    @media (prefers-color-scheme: dark) {
+      svg {
+        --panel: #1a1f27;
+        --title: #e6eaf2;
+        --muted: #9aa8bd;
+        --edge: #8b9bb4;
+        --card: #252b35;
+        --accent1: #60a5fa;
+        --accent2: #fb923c;
+      }
+    }
+    .panel { fill: var(--panel); }
+    .card { fill: var(--card); stroke: var(--edge); }
+    .muted { fill: var(--muted); }
+    .edge { stroke: var(--edge); }
+    text { font-family: system-ui, sans-serif; }
+  </style>
+
+  <rect class="panel" width="720" height="300" rx="20" fill="#f5f7fb" />
+  <rect class="card" x="24" y="24" width="672" height="252" rx="16" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+
+  <!-- input shaft (straight) -->
+  <rect x="70" y="140" width="180" height="22" rx="8" fill="#ffffff" stroke="#2563eb" stroke-width="4" />
+  <path d="M60 151 H30" class="edge" stroke="#64748b" stroke-width="4" stroke-linecap="round" />
+  <path d="m40 142 -12 9 12 9" class="edge" stroke="#64748b" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+  <text class="muted" x="150" y="120" text-anchor="middle" font-size="13" fill="#526173">input shaft (driven)</text>
+
+  <!-- cross pivot -->
+  <g transform="translate(260,151)">
+    <rect x="-22" y="-6" width="44" height="12" rx="4" fill="#20242c" />
+    <rect x="-6" y="-22" width="12" height="44" rx="4" fill="#20242c" />
+    <circle r="8" fill="#c2410c" />
+  </g>
+
+  <!-- output shaft (angled downward) -->
+  <g transform="translate(260,151) rotate(18)">
+    <rect x="0" y="-11" width="180" height="22" rx="8" fill="#ffffff" stroke="#526173" stroke-width="4" />
+  </g>
+  <text class="muted" x="440" y="230" text-anchor="middle" font-size="13" fill="#526173">output shaft (angled)</text>
+
+  <!-- angle marker -->
+  <path d="M330 151 A70 70 0 0 1 316 173" fill="none" stroke="#526173" stroke-width="2" stroke-dasharray="3 3" />
+  <text class="muted" x="345" y="145" font-size="12" fill="#526173">angle</text>
+</svg>

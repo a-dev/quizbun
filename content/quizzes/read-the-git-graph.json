@@ -1,0 +1,487 @@
+{
+  "schemaVersion": 1,
+  "id": "read-the-git-graph",
+  "title": "Read the Git Graph: Commits, Parents & What Rewriting Really Does",
+  "description": "Git is a graph, not a timeline. Almost every confusing thing it does makes sense the moment you can see the parent pointers. This quiz gives you the graph before a command and asks what the graph looks like after — covering merge shapes, rebase and cherry-pick, and the commit-range syntax that trips up even experienced users. Recovery (reflog, reset --hard rescues) is out of scope by design.",
+  "language": "en",
+  "tags": ["git", "version-control", "collaboration", "dag"],
+  "questions": [
+    {
+      "id": "commit-is-a-snapshot",
+      "title": "What does a Git commit object actually store?",
+      "description": "Think about what Git has to read to reconstruct your files at any given commit.",
+      "type": "single-choice",
+      "options": [
+        { "text": "A full snapshot of every tracked file's content at that point, plus a pointer to its parent commit(s).", "isCorrect": true },
+        { "text": "A diff describing only the lines that changed since the parent commit.", "isCorrect": false },
+        { "text": "A list of changed file paths and line numbers, without any content.", "isCorrect": false },
+        { "text": "A diff plus the commit message, with no reference to the parent.", "isCorrect": false }
+      ],
+      "explanation": "A commit points at a tree object describing the full state of the repository at that moment, not a delta from the previous commit. Git deduplicates storage internally — unchanged files reuse the same blob — so this doesn't cost as much space as it sounds like, but conceptually each commit is a complete, standalone snapshot. Every diff you see (in `git diff`, `git log -p`, GitHub's PR view) is *computed on the fly* by comparing two snapshots; it is never read directly from disk. That's also why commits carry parent pointers at all: without them, there would be no way to know which snapshot to diff against, or in what order commits form a history.",
+      "references": "[Git Book: Git Objects](https://git-scm.com/book/en/v2/Git-Internals-Git-Objects)"
+    },
+    {
+      "id": "branch-pointer-facts",
+      "title": "Which statements about a Git branch name (like `main` or `feature`) are true?",
+      "description": "Select every statement that correctly describes what a branch actually is.",
+      "type": "multiple-choice",
+      "options": [
+        { "text": "It points to exactly one commit: the branch's current tip.", "isCorrect": true },
+        { "text": "Creating a branch copies the existing commits into a separate, independent history.", "isCorrect": false },
+        { "text": "Deleting a branch name does not delete the commit objects it used to point to.", "isCorrect": true },
+        { "text": "Two different branch names can point at the same commit at the same time.", "isCorrect": true },
+        { "text": "The branch pointer moves forward automatically whenever you commit while that branch is checked out.", "isCorrect": true }
+      ],
+      "explanation": "A branch is nothing more than a movable label — 40-odd bytes naming one commit SHA, stored in `.git/refs/heads/`. Creating a branch just writes a new label at the current commit; it copies no history, and any number of labels can point at the same commit simultaneously (this is exactly what happens right after you create a branch — the new name and the old one point to the same tip until you commit). Committing while a branch is checked out advances that one label to the new commit. And because a branch is only a label, deleting it removes the label, not the commits — the commit objects stay in the object database until nothing reachable references them, which is a separate concern from the branch name itself.",
+      "references": "[Git Book: Git Branching — What a Branch Is](https://git-scm.com/book/en/v2/Git-Branching-Branches-in-a-Nutshell)"
+    },
+    {
+      "id": "head-tracks-current-branch",
+      "title": "In the normal, non-detached case, what does `HEAD` point to?",
+      "type": "single-choice",
+      "options": [
+        { "text": "The branch you currently have checked out, which in turn points to a commit.", "isCorrect": true },
+        { "text": "A commit directly, never a branch name.", "isCorrect": false },
+        { "text": "Whichever commit is newest across every branch in the repository.", "isCorrect": false },
+        { "text": "The default branch configured on the remote.", "isCorrect": false }
+      ],
+      "explanation": "`HEAD` is a symbolic reference — a pointer to a pointer. Normally it holds the name of your current branch (e.g. `ref: refs/heads/main`), and that branch label holds the actual commit SHA. This indirection is exactly why committing \"just works\": Git updates the branch that `HEAD` names, and `HEAD` itself never has to change. It's also why `HEAD` can point at a *commit* directly instead — that's detached `HEAD`, and it changes how the next commit behaves.",
+      "references": "[Git Book: Git Branching — HEAD](https://git-scm.com/book/en/v2/Git-Branching-Branches-in-a-Nutshell)"
+    },
+    {
+      "id": "detached-head-on-checkout",
+      "title": "You run `git checkout a1b2c3d`, where `a1b2c3d` is a commit SHA, not a branch name. What changes on the graph?",
+      "type": "single-choice",
+      "options": [
+        { "text": "`HEAD` now points directly at commit `a1b2c3d` instead of at a branch label — this is detached `HEAD`.", "isCorrect": true },
+        { "text": "A new branch named `a1b2c3d` is created automatically and checked out.", "isCorrect": false },
+        { "text": "The current branch's tip is force-moved to `a1b2c3d`.", "isCorrect": false },
+        { "text": "Nothing changes on the graph; only the working-tree files update.", "isCorrect": false }
+      ],
+      "explanation": "Checking out a commit directly (rather than a branch name) leaves `HEAD` referencing that commit's SHA instead of a branch — no branch label moves, and none is created. This is detached `HEAD`. It's a completely normal, supported state for looking around old history or building something you'll turn into a branch later; the only thing to know is that if you commit while detached, the new commit is initially reachable only from `HEAD` itself, not from any branch, until you either create a branch there or switch away.",
+      "references": "[Git Documentation: git-checkout — Detached HEAD](https://git-scm.com/docs/git-checkout#_detached_head)"
+    },
+    {
+      "id": "reachability-of-a-commit",
+      "title": "\"Commit X is on branch `main`\" is really a claim about ancestry. Which statements about that claim are true?",
+      "type": "multiple-choice",
+      "options": [
+        { "text": "It means commit X is an ancestor of `main`'s tip — reachable by following parent pointers from the tip.", "isCorrect": true },
+        { "text": "It means commit X's SHA is literally written inside the file that stores the `main` ref.", "isCorrect": false },
+        { "text": "A single commit can be \"on\" more than one branch at the same time.", "isCorrect": true },
+        { "text": "Once a commit is reachable from `main`, it stays reachable from `main` forever, even if `main`'s tip is later moved backward.", "isCorrect": false }
+      ],
+      "explanation": "Reachability is defined purely by parent pointers: starting from a branch's tip and walking parents (and parents of parents, and so on for merge commits), you eventually visit every commit \"on\" that branch. The ref file itself stores only the tip SHA — nothing else — so \"on the branch\" is a derived, computed relationship, not stored data. Because it's computed from the *current* tip, it's dynamic: a commit reachable from `main` today can stop being reachable if something later moves `main`'s pointer to point elsewhere (a rebase, or a reset onto an earlier commit) so that walking parents from the new tip no longer passes through it. And nothing stops the same commit from being an ancestor of several different branch tips simultaneously — that's exactly the situation before two branches diverge.",
+      "references": "[Git Documentation: git-merge-base — reachability](https://git-scm.com/docs/git-merge-base)"
+    },
+    {
+      "id": "merge-commit-parent-order",
+      "title": "You're on `main` and run `git merge feature`, creating a merge commit. That commit has two parents. Which one is `main`'s previous tip?",
+      "description": "A merge commit is distinguished from a regular commit by having more than one parent pointer.",
+      "type": "single-choice",
+      "options": [
+        { "text": "The first parent — the branch you were checked out on when you ran the merge.", "isCorrect": true },
+        { "text": "The second parent — Git always records the checked-out branch's old tip last.", "isCorrect": false },
+        { "text": "Parent order is arbitrary and not something Git tracks consistently.", "isCorrect": false },
+        { "text": "There's only one parent recorded; the second branch's history is discarded.", "isCorrect": false }
+      ],
+      "explanation": "Git always makes the commit you were *on* the first parent and the commit you're merging *in* the second parent. This ordering isn't cosmetic — it's what `git log --first-parent` relies on to walk \"only the mainline,\" and what `git rebase`'s merge strategies and `git revert -m` reference when they need to say which side of a merge is authoritative. If you swap which branch you're standing on before merging, the parent order swaps too.",
+      "references": "[Git Documentation: git-merge](https://git-scm.com/docs/git-merge)"
+    },
+    {
+      "id": "log-order-not-chronological",
+      "title": "Why can plain `git log` output on a merge-heavy repository look jumbled, with commits from different branches interleaved in a confusing order?",
+      "type": "single-choice",
+      "options": [
+        { "text": "By default, `git log` sorts by each commit's own commit date, which doesn't guarantee a parent is shown only after all of its children — clock differences, rebases, and cherry-picks can all produce commit dates that don't match graph order.", "isCorrect": true },
+        { "text": "By default, `git log` guarantees strict topological order: a commit's parents are always listed only after all of that commit's children.", "isCorrect": false },
+        { "text": "`git log` ignores commit dates entirely and instead sorts by SHA.", "isCorrect": false },
+        { "text": "`git log` shows commits in a random order unless `--graph` is passed.", "isCorrect": false }
+      ],
+      "explanation": "Plain `git log` shows commits in reverse chronological order by commit timestamp — nothing more. That sounds like it should match the graph, but commit dates aren't a reliable stand-in for graph position: a rebase replays a commit with a *new* commit date, a cherry-pick can carry an old author date forward, and ordinary clock skew between two contributors' machines can put a child's commit date before its parent's. `--date-order` fixes the ordering guarantee (no parent shown before all its children) while still sorting by date among what's available; `--topo-order` goes further and avoids interleaving separate lines of history, showing one branch's run of commits together before hopping to another; `--graph` just draws the ASCII lanes and is usually combined with one of the two ordering flags rather than replacing them.",
+      "references": "[Git Documentation: git-log — Commit Ordering](https://git-scm.com/docs/git-log#_commit_ordering)"
+    },
+    {
+      "id": "fast-forward-merge-condition",
+      "title": "On this graph, running `git merge feature` while checked out on `main` can complete as a fast-forward. What makes that possible?",
+      "images": [
+        {
+          "src": "merge-ff-before.svg",
+          "alt": "Three commits in a line: c3a91f0, then e7b2a44, then 9f04d1c. main points at c3a91f0 with HEAD attached; feature points at 9f04d1c, the tip of the line."
+        },
+        {
+          "src": "merge-ff-after.svg",
+          "alt": "The same three commits in a line, unchanged. Now both main and feature point at 9f04d1c, the last commit. No new commit was added.",
+          "placement": "explanation"
+        }
+      ],
+      "type": "single-choice",
+      "options": [
+        { "text": "`main`'s tip is a direct ancestor of `feature`'s tip, so Git can just slide `main`'s pointer forward along the existing line.", "isCorrect": true },
+        { "text": "`feature` has fewer commits than `main` does.", "isCorrect": false },
+        { "text": "The two branches share no common ancestor at all.", "isCorrect": false },
+        { "text": "Git always fast-forwards when only two branches are involved, regardless of graph shape.", "isCorrect": false }
+      ],
+      "explanation": "A fast-forward is possible exactly when the branch you're merging *into* hasn't moved since the branch you're merging *in* diverged from it — in other words, `main`'s tip already appears somewhere on `feature`'s line of ancestry. When that's true, there's no actual work to combine: Git just moves the `main` label up to `feature`'s tip. No new commit is created, and the two branches end up pointing at the identical commit, as the after-graph shows. The moment `main` has even one commit that `feature` doesn't share, a fast-forward is impossible and Git must create a real merge commit instead (see the next graph).",
+      "references": "[Git Book: Basic Branching and Merging — Fast-forward](https://git-scm.com/book/en/v2/Git-Branching-Basic-Branching-and-Merging)"
+    },
+    {
+      "id": "force-a-merge-commit",
+      "title": "Which flag, added to `git merge`, forces Git to always create a real merge commit — even when a fast-forward is possible?",
+      "description": "Answer with the flag exactly as you'd type it, including the leading dashes.",
+      "type": "input",
+      "validation": {
+        "mode": "text",
+        "acceptedAnswers": ["--no-ff"]
+      },
+      "explanation": "`--no-ff` tells Git to skip the fast-forward shortcut and always record a dedicated merge commit with two parents, even when the tip-sliding shortcut was available. Teams use this to preserve the fact that a feature genuinely existed as a separate line of work — with a plain fast-forward, that history flattens into `main`'s line and looks, after the fact, as if the commits had been written directly on `main` all along. The trade-off is an extra commit and a slightly busier graph in exchange for that preserved structure."
+    },
+    {
+      "id": "true-merge-creates-two-parents",
+      "title": "On this graph, can `git merge feature` fast-forward while checked out on `main`?",
+      "images": [
+        {
+          "src": "merge-true-before.svg",
+          "alt": "A graph diverging from common ancestor b7e21a0. main continues through d4f8c32 to tip a1c9e75. feature continues separately through f209b6d to tip 7cd44e1."
+        },
+        {
+          "src": "merge-true-after.svg",
+          "alt": "The same diverged graph, now joined by a new commit 3b6a0f9 with two parent arrows: one labeled 1st parent going to a1c9e75 (main's former tip), one labeled 2nd parent going to 7cd44e1 (feature's tip). main now points at 3b6a0f9.",
+          "placement": "explanation"
+        }
+      ],
+      "type": "single-choice",
+      "options": [
+        { "text": "No — `main` has commits that `feature` doesn't share, so Git must create a new merge commit with two parents.", "isCorrect": true },
+        { "text": "Yes — Git fast-forwards to whichever branch has the more recent commit.", "isCorrect": false },
+        { "text": "No — Git refuses to merge these branches at all until one is rebased.", "isCorrect": false },
+        { "text": "Yes, but only after `main`'s extra commits are silently dropped.", "isCorrect": false }
+      ],
+      "explanation": "A fast-forward requires `main`'s tip to already sit on `feature`'s line of ancestry. Here it doesn't: `main` advanced to `d4f8c32` and `a1c9e75` after the branches split, so those commits exist only on `main`'s side. Git can't represent \"combine two divergent histories\" by moving a pointer — it has to create a genuinely new commit whose snapshot merges both sides, and that commit needs two parent pointers to record where each side's work came from. Nothing is dropped: both `a1c9e75` and `7cd44e1` remain fully reachable, now as the two parents of the new merge commit `3b6a0f9`.",
+      "references": "[Git Book: Basic Branching and Merging](https://git-scm.com/book/en/v2/Git-Branching-Basic-Branching-and-Merging)"
+    },
+    {
+      "id": "first-parent-only-view",
+      "title": "On a merge-heavy repository, what does `git log --first-parent` show?",
+      "type": "single-choice",
+      "options": [
+        { "text": "Only the mainline: each merge commit, but not the individual commits that were merged in from feature branches.", "isCorrect": true },
+        { "text": "Only commits that have more than one parent.", "isCorrect": false },
+        { "text": "The complete history, including every commit from every branch that was ever merged in.", "isCorrect": false },
+        { "text": "Commits sorted by SHA rather than by ancestry.", "isCorrect": false }
+      ],
+      "explanation": "`--first-parent` walks backward from `HEAD` but, at every merge commit, follows only the first parent — the branch you were standing on when you merged. Since a feature branch's individual commits are typically reachable from a merge commit only through its *second* parent, they're skipped entirely. The result reads like a changelog of \"one line per feature, in the order it landed on main,\" which is exactly why release-note tooling favors it — but it comes at the cost of hiding the internal commit-by-commit story of how each feature was actually built.",
+      "references": "[Git Documentation: git-log --first-parent](https://git-scm.com/docs/git-log#Documentation/git-log.txt---first-parent)"
+    },
+    {
+      "id": "squash-merge-mechanism",
+      "title": "You run `git merge --squash feature` and then commit on `main`. What does the resulting graph look like?",
+      "images": [
+        {
+          "src": "squash-merge-ancestry.svg",
+          "alt": "main advances from 5e8a19c to a new commit 2d6f0b1 with a single parent arrow back to 5e8a19c. feature's commits c40b7e2 and 91fd3a6 sit separately below, with no edge connecting 91fd3a6 to 2d6f0b1, labeled 'no edge — not an ancestor'."
+        }
+      ],
+      "type": "single-choice",
+      "options": [
+        { "text": "One new commit on `main`, with `main`'s previous tip as its only parent — feature's own commits are never linked in as ancestors.", "isCorrect": true },
+        { "text": "A normal merge commit on `main` with two parents, one of them feature's tip.", "isCorrect": false },
+        { "text": "`feature`'s tip becomes `main`'s new tip, as if fast-forwarded.", "isCorrect": false },
+        { "text": "Nothing changes on `main` until `feature` is deleted.", "isCorrect": false }
+      ],
+      "explanation": "`--squash` computes the combined diff of everything on `feature` and stages it, but it does **not** perform a merge — it leaves you to make one ordinary commit yourself, with `main`'s previous tip as the only parent. Feature's own commits (`c40b7e2`, `91fd3a6`) are never referenced by the new commit at all; they simply sit off to the side, unconnected. This is the mechanism behind a well-known trap: because none of `feature`'s commits are ancestors of `main`, Git has no record that this work was ever incorporated. If you keep committing on `feature` and later run a normal `git merge feature`, Git will try to merge the *entire* branch again — including the part you already squashed in — often producing conflicts or duplicate-looking changes, because as far as ancestry is concerned, `feature` still looks completely unmerged.",
+      "references": "[Git Documentation: git-merge --squash](https://git-scm.com/docs/git-merge#Documentation/git-merge.txt---squash)"
+    },
+    {
+      "id": "squash-merge-facts",
+      "title": "Which statements about `git merge --squash` are true?",
+      "type": "multiple-choice",
+      "options": [
+        { "text": "It creates one new commit on the current branch containing the combined changes from the other branch.", "isCorrect": true },
+        { "text": "The new commit's parent is the current branch's previous tip only — the other branch's commits are not parents.", "isCorrect": true },
+        { "text": "The other branch's original commits become ancestors of the new commit.", "isCorrect": false },
+        { "text": "`git log --merges` (which lists commits with more than one parent) will not show the squash commit, because it only has one parent.", "isCorrect": true }
+      ],
+      "explanation": "Squashing intentionally throws away the shape of the other branch's history in exchange for one clean commit — that's the entire point of using it. Structurally, the new commit is indistinguishable from any other single-parent commit: it has one parent (the branch's own previous tip), it doesn't reference the source branch's commits, and tools that specifically look for multi-parent commits (`--merges`) won't flag it as a merge at all. That's also exactly why it later confuses a genuine merge: nothing in the object graph records that the squashed work came from `feature`.",
+      "references": "[Git Documentation: git-merge --squash](https://git-scm.com/docs/git-merge#Documentation/git-merge.txt---squash)"
+    },
+    {
+      "id": "merge-base-identify",
+      "title": "On this graph, which commit is the merge base of `main` and `feature`?",
+      "images": [
+        {
+          "src": "merge-base.svg",
+          "alt": "A graph where main and feature both descend from a shared commit b4f0a1c. main continues through d8e2f91 to tip a93c5b0. feature continues separately through f1a7c44 to tip 7c30de1."
+        }
+      ],
+      "type": "single-choice",
+      "options": [
+        { "text": "`b4f0a1c`", "isCorrect": true },
+        { "text": "`d8e2f91`", "isCorrect": false },
+        { "text": "`a93c5b0`", "isCorrect": false },
+        { "text": "`f1a7c44`", "isCorrect": false }
+      ],
+      "explanation": "The merge base is the best common ancestor of two commits — the most recent commit reachable by following parent pointers from *both* tips. Here, walking back from `main`'s tip (`a93c5b0`) you pass through `d8e2f91` and reach `b4f0a1c`; walking back from `feature`'s tip (`7c30de1`) you pass through `f1a7c44` and reach the very same `b4f0a1c`. Nothing closer to either tip is shared by both, so that's the merge base — exactly what `git merge-base main feature` would print. It's the implicit \"before\" snapshot that a three-way merge diffs each side against, and it's also the boundary three-dot range syntax uses to decide what counts as \"new\" on either side.",
+      "references": "[Git Documentation: git-merge-base](https://git-scm.com/docs/git-merge-base)"
+    },
+    {
+      "id": "rebase-creates-new-commits",
+      "title": "You're checked out on `feature` and run `git rebase main`. What happens to `feature`'s three commits, and what does the branch look like afterward?",
+      "images": [
+        {
+          "src": "rebase-before.svg",
+          "alt": "main runs from 1f5c8a0 to tip 6e9d2b7. feature branches from 1f5c8a0 through 8c3f105 and e51a9c4 to tip 2d0f7b3, with HEAD attached to feature."
+        },
+        {
+          "src": "rebase-after.svg",
+          "alt": "main is unchanged, ending at 6e9d2b7. Three new commits, 9b21e6a, c74d802, and 5f8a3e1, extend straight out from 6e9d2b7 in a single line, with feature and HEAD now at 5f8a3e1. Below, the original commits 8c3f105, e51a9c4, and 2d0f7b3 appear faded and disconnected, labeled: original commits — unreferenced, not deleted.",
+          "placement": "explanation"
+        }
+      ],
+      "type": "single-choice",
+      "options": [
+        { "text": "Git replays them as three brand-new commits with new SHAs, sitting directly on top of `main`'s current tip; the originals become unreferenced but aren't immediately deleted.", "isCorrect": true },
+        { "text": "The same three commits, unchanged, are simply relinked so that `main`'s tip becomes their parent.", "isCorrect": false },
+        { "text": "The three commits are squashed into a single new commit on top of `main`.", "isCorrect": false },
+        { "text": "`main`'s own commits are rewritten to sit before `feature`'s rebase point.", "isCorrect": false }
+      ],
+      "explanation": "A rebase doesn't move existing commits — it *replays* them. Git takes each commit's diff in order, applies it on top of the new base, and creates a fresh commit object for the result. A commit object's SHA is derived from its content, including its parent pointer, so changing the parent (from `1f5c8a0` to `6e9d2b7`) necessarily produces a different SHA even though the file changes are identical. The original three commits aren't deleted — nothing in Git deletes objects as a side effect of an ordinary command — they simply stop being referenced by any branch once `feature` moves to point at the new commits, which is why the after-graph draws them faded and off to the side rather than erased.",
+      "references": "[Git Book: Rebasing](https://git-scm.com/book/en/v2/Git-Branching-Rebasing)"
+    },
+    {
+      "id": "rebase-onto-three-args",
+      "title": "`git rebase --onto main featureX topic` is run while `topic` was accidentally branched from `featureX` instead of from `main`. Which of `topic`'s commits actually get replayed?",
+      "images": [
+        {
+          "src": "rebase-onto.svg",
+          "alt": "main ends at 7b1e942. featureX branches from main through a08d3c6 to tip e4f7b19. topic branches from featureX's tip through c92a0f5 to tip 5d6e831, where HEAD is attached."
+        }
+      ],
+      "type": "single-choice",
+      "options": [
+        { "text": "Commits reachable from `topic` but not from `featureX` — `c92a0f5` and `5d6e831` — replayed on top of `main`.", "isCorrect": true },
+        { "text": "Every commit reachable from `topic`, including `featureX`'s own commits.", "isCorrect": false },
+        { "text": "Only the single commit at `topic`'s tip, `5d6e831`.", "isCorrect": false },
+        { "text": "Commits reachable from `featureX` but not from `topic`.", "isCorrect": false }
+      ],
+      "explanation": "The three-argument form `git rebase --onto <newbase> <upstream> <branch>` replays exactly the commits in the range `<upstream>..<branch>` — everything reachable from `branch` that isn't already reachable from `upstream` — on top of `<newbase>`. Here that range is `featureX..topic`, which is `c92a0f5` and `5d6e831`: `topic`'s own work, excluding everything it inherited from `featureX`. This is the standard fix for \"I branched off the wrong thing\": it moves just the commits that are actually yours onto the base you meant to use, without dragging `featureX`'s commits along and without needing to hand-pick them individually.",
+      "references": "[Git Documentation: git-rebase --onto](https://git-scm.com/docs/git-rebase#Documentation/git-rebase.txt---ontonewbase)"
+    },
+    {
+      "id": "interactive-rebase-actions",
+      "title": "In an interactive rebase todo list, which statements about the available actions are true?",
+      "description": "```\npick a1b2c3d Add validation\npick e4f5a6b Fix typo in validation message\npick 9c0d1e2 Add tests for validation\n```",
+      "type": "multiple-choice",
+      "options": [
+        { "text": "Reordering two `pick` lines changes the order those commits are replayed in the resulting history.", "isCorrect": true },
+        { "text": "Deleting a commit's line (or marking it `drop`) removes that change from the resulting history entirely.", "isCorrect": true },
+        { "text": "Marking a commit `squash` combines it with the commit listed immediately *below* it in the todo list.", "isCorrect": false },
+        { "text": "Marking a commit `fixup` combines it with the previous commit and discards its own commit message.", "isCorrect": true }
+      ],
+      "explanation": "The todo list is executed top to bottom, and each line's action is applied relative to what's already been replayed *above* it — so `squash` and `fixup` always combine a commit with the one **above** it, not below. Getting this backward is a common mistake, since it's easy to assume the list reads like a merge target list rather than a replay sequence. Reordering lines genuinely changes replay order (and can introduce new conflicts if a later commit's diff no longer applies cleanly against the earlier state), while dropping a line — or deleting it outright, which the rebase todo format treats the same as marking it `drop` — simply omits that change from the new history, as if it had never been committed. `squash` keeps both commit messages for you to edit into one; `fixup` folds the change in silently and throws its message away.",
+      "references": "[Git Documentation: git-rebase — Interactive Mode](https://git-scm.com/docs/git-rebase#_interactive_mode)"
+    },
+    {
+      "id": "cherry-pick-duplicates-work",
+      "title": "You run `git cherry-pick b7e0c93` to bring one commit from `feature` onto `main`. What's true about the result?",
+      "images": [
+        {
+          "src": "cherry-pick-duplicate.svg",
+          "alt": "main advances from 0a4f8d2 to a new commit f3d891a, connected by a dashed line labeled 'same change, different SHA' to b7e0c93 on the separate feature line, which continues on to 9c1a7f4."
+        }
+      ],
+      "type": "single-choice",
+      "options": [
+        { "text": "A new commit is created on `main` with a different SHA, carrying the same change — the same logical edit now exists twice in the graph, at two different commits.", "isCorrect": true },
+        { "text": "The original commit `b7e0c93` is moved from `feature` onto `main`.", "isCorrect": false },
+        { "text": "`main` and `feature` now share `b7e0c93` as a common commit.", "isCorrect": false },
+        { "text": "Nothing changes until `feature` is later merged into `main`.", "isCorrect": false }
+      ],
+      "explanation": "Cherry-pick works like a one-commit rebase: it takes `b7e0c93`'s diff and applies it as a brand-new commit (`f3d891a`) with `main`'s current tip as its parent. Because the parent differs from the original, the new commit gets a new SHA even though the file changes it introduces are identical. `b7e0c93` itself is untouched and still lives on `feature` — it isn't moved, and the two branches don't end up sharing it. The practical upshot is that the same logical change now exists as two distinct commit objects in the graph, which is exactly the setup that can confuse a later merge.",
+      "references": "[Git Documentation: git-cherry-pick](https://git-scm.com/docs/git-cherry-pick)"
+    },
+    {
+      "id": "cherry-pick-then-merge",
+      "title": "After cherry-picking a commit from `feature` onto `main` (as in the previous graph), you later run an ordinary `git merge feature`. What can happen?",
+      "type": "single-choice",
+      "options": [
+        { "text": "Git can show that same change as a conflict, or merge it in a confusing-looking way — it has no record that `f3d891a` on `main` and `b7e0c93` on `feature` are \"the same\" change, since they're different commit objects.", "isCorrect": true },
+        { "text": "Git automatically recognizes the duplicate by comparing diffs and always skips it cleanly.", "isCorrect": false },
+        { "text": "The merge fails outright and cannot be completed until one commit is deleted.", "isCorrect": false },
+        { "text": "`feature`'s branch pointer silently moves to match `main`.", "isCorrect": false }
+      ],
+      "explanation": "Git's three-way merge reasons about commit ancestry, not content equivalence. Since `f3d891a` (on `main`) and `b7e0c93` (on `feature`) are unrelated objects as far as the graph is concerned — neither is an ancestor of the other — a later merge doesn't know they represent the same logical edit. Depending on what else changed nearby, this can surface as a real conflict on lines that are, in effect, already applied, or as a merge that silently reapplies the same change in a way that looks redundant in the history. It's rarely fatal, but it's exactly the kind of surprising diff that makes people distrust their own merge tooling — and the fix is usually just to resolve it by keeping `main`'s version, since the change is already there.",
+      "references": "[Git Documentation: git-cherry-pick](https://git-scm.com/docs/git-cherry-pick)"
+    },
+    {
+      "id": "shared-branch-rewrite-consequences",
+      "title": "A shared branch is rebased and force-pushed. A teammate already has the old history locally. Which statements about the effect on them are true?",
+      "images": [
+        {
+          "src": "force-push-divergence.svg",
+          "alt": "Two panels sharing the commit c1d4a80. The left panel, labeled main (yours), continues to 9e2f6c3. The right panel, labeled origin/main, continues instead through two different new commits, 4b8a7d5 and 7f1c093."
+        }
+      ],
+      "type": "multiple-choice",
+      "options": [
+        { "text": "Their local branch and the rewritten remote branch now share no common tip; an ordinary `git pull` will try to merge two histories that describe the same logical work in different commits.", "isCorrect": true },
+        { "text": "Git on the remote automatically detects the rewrite and silently discards the teammate's old commits for them.", "isCorrect": false },
+        { "text": "Their local branch still holds the pre-rewrite commits until they take some action to move away from them.", "isCorrect": true },
+        { "text": "The safest usual fix is to reset their local branch onto the new remote tip — after saving any work of their own that only exists locally — rather than merging the two diverging histories together.", "isCorrect": true }
+      ],
+      "explanation": "A rewrite-and-force-push changes what `origin/main` points at, but it has no way to reach into a teammate's machine — their local `main` keeps pointing exactly where it did before, at commits that origin no longer has. That's the divergence in the diagram: same shared starting point, two different endings. A plain `pull` tries to reconcile two histories that Git has no reason to think are related the same way you know they are, which typically produces a tangle of duplicate-looking commits rather than a clean result. The conventional fix is to treat the rewritten remote as authoritative — set the local branch to match it — after making sure nothing locally-only would be lost by doing so.",
+      "references": "[Git Documentation: git-push — Force-Pushing](https://git-scm.com/docs/git-push#_force_pushing_and_ff_only)"
+    },
+    {
+      "id": "force-with-lease-race",
+      "title": "What does `git push --force-with-lease` protect against that plain `git push --force` does not?",
+      "type": "single-choice",
+      "options": [
+        { "text": "Overwriting commits that someone else already pushed to the remote branch after your last fetch — commits you haven't even seen yet.", "isCorrect": true },
+        { "text": "Losing your own uncommitted local changes.", "isCorrect": false },
+        { "text": "Accidentally pushing to the wrong remote URL.", "isCorrect": false },
+        { "text": "Conflicts that occur during the rebase itself, before you push.", "isCorrect": false }
+      ],
+      "explanation": "Before updating the remote ref, `--force-with-lease` checks that the remote branch still points at the commit you last saw locally (your remote-tracking ref) — and refuses to push if it's moved. That's the exact race it guards against: you rebase and force-push, but between your last fetch and your push, someone else pushed new work to that same branch. Plain `--force` overwrites unconditionally, silently discarding whatever they added; `--force-with-lease` fails loudly instead, so you fetch, see their new commits, and reconcile deliberately. It doesn't protect uncommitted local changes (unrelated to pushing) or catch remote-URL mistakes — those aren't races over shared branch state.",
+      "references": "[Git Documentation: git-push --force-with-lease](https://git-scm.com/docs/git-push#Documentation/git-push.txt---force-with-lease)"
+    },
+    {
+      "id": "two-dot-range-select",
+      "title": "Which commits does `git log main..feature` include on this graph? Select every commit it lists.",
+      "images": [
+        {
+          "src": "two-dot-vs-three-dot.svg",
+          "alt": "main and feature both descend from base 2f8b6d4. main continues through a75c810 to tip 68e0937. feature continues separately through c40d1a2 and 9d5e7b6 to tip 0a83fc1."
+        }
+      ],
+      "type": "multiple-choice",
+      "options": [
+        { "text": "`c40d1a2`", "isCorrect": true },
+        { "text": "`9d5e7b6`", "isCorrect": true },
+        { "text": "`0a83fc1`", "isCorrect": true },
+        { "text": "`a75c810`", "isCorrect": false },
+        { "text": "`68e0937`", "isCorrect": false },
+        { "text": "`2f8b6d4`", "isCorrect": false }
+      ],
+      "explanation": "Two-dot notation `A..B` means \"commits reachable from `B` that are not reachable from `A`.\" Walking back from `feature`'s tip, you pass through `0a83fc1`, `9d5e7b6`, and `c40d1a2` before reaching the shared base — and none of those three are reachable from `main`, so all three are included. `main`'s own commits (`a75c810`, `68e0937`) are excluded because the range only cares about `feature`'s side, and the shared base `2f8b6d4` is excluded because it's reachable from `main` too. In practice, this range answers \"what does `feature` have that `main` doesn't yet\" — the commits a merge or rebase would need to bring across.",
+      "references": "[Git Documentation: git-rev-list — Commit Range](https://git-scm.com/docs/git-rev-list#Documentation/git-rev-list.txt-emltrevAgtltrevBemandemltrevBgt--notltrevAgtem)"
+    },
+    {
+      "id": "three-dot-range-select",
+      "title": "Which commits does `git log main...feature` (three dots) include on the same graph? Select every commit it lists.",
+      "images": [
+        {
+          "src": "two-dot-vs-three-dot.svg",
+          "alt": "main and feature both descend from base 2f8b6d4. main continues through a75c810 to tip 68e0937. feature continues separately through c40d1a2 and 9d5e7b6 to tip 0a83fc1."
+        }
+      ],
+      "type": "multiple-choice",
+      "options": [
+        { "text": "`a75c810`", "isCorrect": true },
+        { "text": "`68e0937`", "isCorrect": true },
+        { "text": "`c40d1a2`", "isCorrect": true },
+        { "text": "`9d5e7b6`", "isCorrect": true },
+        { "text": "`0a83fc1`", "isCorrect": true },
+        { "text": "`2f8b6d4`", "isCorrect": false }
+      ],
+      "explanation": "For `git log`, three-dot notation `A...B` is the symmetric difference: every commit reachable from *either* `main` or `feature`, except commits reachable from *both*. That excludes only the shared base `2f8b6d4` — every other commit on either line qualifies, so all five of `main`'s and `feature`'s own commits are listed (in no particular guaranteed order between the two branches, which is part of why this form is used to review \"what's different between these two lines of work\" rather than \"what does one have that the other lacks\"). Compare this to the two-dot version of the same graph: two dots gave you only `feature`'s three commits; three dots gives you all five non-shared commits from both sides.",
+      "references": "[Git Documentation: git-rev-list — Symmetric Difference](https://git-scm.com/docs/git-rev-list#Documentation/git-rev-list.txt-emltrevgtemltrevgt)"
+    },
+    {
+      "id": "diff-vs-log-three-dot-trap",
+      "title": "For `git diff main...feature` (three dots), is the comparison the same symmetric-difference commit set that `git log main...feature` produces?",
+      "description": "This is a genuine, well-documented inconsistency between the two commands — not a trick of wording.",
+      "type": "single-choice",
+      "options": [
+        { "text": "No — `git diff A...B` compares `B`'s snapshot against the merge base of `A` and `B`, a single two-way diff at one point, unlike `git log A...B`'s multi-commit symmetric difference.", "isCorrect": true },
+        { "text": "Yes — three dots mean exactly the same thing to both `git diff` and `git log`.", "isCorrect": false },
+        { "text": "`git diff` doesn't accept three-dot syntax at all; it silently falls back to two dots.", "isCorrect": false },
+        { "text": "Three dots make `git diff` print one diff per commit in the range, the same way `git log -p` would.", "isCorrect": false }
+      ],
+      "explanation": "This is one of Git's sharper edges: identical syntax, genuinely different meaning depending on the command. `git log A...B` walks a *set of commits* — the symmetric difference described in the previous questions. `git diff A...B` does something else entirely: it computes the merge base of `A` and `B`, then shows a single, ordinary two-way diff between that merge base and `B`'s snapshot. In effect, `git diff main...feature` answers \"what has `feature` changed since it diverged from `main`,\" ignoring anything `main` has done since — which is exactly the diff you usually want when reviewing a feature branch (you don't want `main`'s unrelated changes cluttering the review). `git diff main..feature` (two dots, or no dots at all — `git diff` treats plain two-argument diff the same as two-dot) instead diffs the two tips directly, snapshot to snapshot, which *does* include main's unrelated changes as part of the delta. Knowing this distinction is often the difference between a clean, reviewable diff and a confusing one full of noise from the wrong branch.",
+      "references": "[Git Documentation: git-diff — Two Dots vs Three Dots](https://git-scm.com/docs/git-diff#Documentation/git-diff.txt-emgitdiffemltoptionsgtltcommitgtltcommitgt--ltpathgt82308203)"
+    },
+    {
+      "id": "caret-dot-long-form",
+      "title": "`^main feature` (equivalently, `git log ^main feature`) is the long form of which two-dot expression?",
+      "type": "single-choice",
+      "options": [
+        { "text": "`main..feature`", "isCorrect": true },
+        { "text": "`main...feature`", "isCorrect": false },
+        { "text": "`feature..main`", "isCorrect": false },
+        { "text": "`main^feature`", "isCorrect": false }
+      ],
+      "explanation": "`^rev` excludes everything reachable from `rev`; a bare `rev` includes everything reachable from it. So `^main feature` means \"everything reachable from `feature`, minus everything reachable from `main`\" — which is precisely the definition of the two-dot range `main..feature`. The two-dot form is just sugar for this longer, more explicit syntax; `^` and bare revisions can also be combined with more than two references at once (`^a ^b c d`), which two-dot notation can't express, since two-dot syntax only ever takes exactly two endpoints.",
+      "references": "[Git Documentation: git-rev-list — Commit Limiting](https://git-scm.com/docs/git-rev-list#Documentation/git-rev-list.txt-Commitlimiting)"
+    },
+    {
+      "id": "log-not-equivalence",
+      "title": "`git log branch --not main` selects the same commits as which range expression?",
+      "type": "single-choice",
+      "options": [
+        { "text": "`main..branch`", "isCorrect": true },
+        { "text": "`branch..main`", "isCorrect": false },
+        { "text": "`main...branch`", "isCorrect": false },
+        { "text": "`branch...main`", "isCorrect": false }
+      ],
+      "explanation": "`--not` prefixes every revision that follows it with `^`, so `branch --not main` is exactly `branch ^main` — commits reachable from `branch`, excluding commits reachable from `main`. That's the same set the caret long-form question defined, and the same set `main..branch` defines: the range always reads as \"exclude the left side, include the right.\" `--not` is most useful when you want to exclude more than one ref at once, or exclude a ref that's computed rather than typed literally (`--not $(git for-each-ref ...)`), which the terse dot syntax can't express as cleanly.",
+      "references": "[Git Documentation: git-rev-list — --not](https://git-scm.com/docs/git-rev-list#Documentation/git-rev-list.txt---not)"
+    },
+    {
+      "id": "range-across-merge-base-graph",
+      "title": "Using the merge-base graph from earlier, which commits does `git log main...feature` (three dots) include? Select every commit it lists.",
+      "images": [
+        {
+          "src": "merge-base.svg",
+          "alt": "A graph where main and feature both descend from a shared commit b4f0a1c. main continues through d8e2f91 to tip a93c5b0. feature continues separately through f1a7c44 to tip 7c30de1."
+        }
+      ],
+      "type": "multiple-choice",
+      "options": [
+        { "text": "`d8e2f91`", "isCorrect": true },
+        { "text": "`a93c5b0`", "isCorrect": true },
+        { "text": "`f1a7c44`", "isCorrect": true },
+        { "text": "`7c30de1`", "isCorrect": true },
+        { "text": "`b4f0a1c`", "isCorrect": false }
+      ],
+      "explanation": "Three-dot notation excludes only what both sides share — here, the merge base `b4f0a1c` you identified earlier. Every other commit on the graph is unique to one side or the other: `d8e2f91` and `a93c5b0` exist only on `main`, `f1a7c44` and `7c30de1` exist only on `feature`, so all four are included. This is the general shape of the symmetric-difference range: exactly one commit excluded (the merge base) whenever both branches are simple straight lines with no earlier internal divergence, regardless of how many commits each side has added.",
+      "references": "[Git Documentation: git-rev-list — Symmetric Difference](https://git-scm.com/docs/git-rev-list#Documentation/git-rev-list.txt-emltrevgtemltrevgt)"
+    },
+    {
+      "id": "range-after-rebase",
+      "title": "Using the after-rebase graph from earlier, what does `git log main..feature` return now?",
+      "images": [
+        {
+          "src": "rebase-after.svg",
+          "alt": "main ends at 6e9d2b7. Three new commits, 9b21e6a, c74d802, and 5f8a3e1, extend from 6e9d2b7 in a line, with feature at the tip. The original pre-rebase commits appear faded and disconnected."
+        }
+      ],
+      "type": "multiple-choice",
+      "options": [
+        { "text": "`9b21e6a`", "isCorrect": true },
+        { "text": "`c74d802`", "isCorrect": true },
+        { "text": "`5f8a3e1`", "isCorrect": true },
+        { "text": "`6e9d2b7`", "isCorrect": false },
+        { "text": "`1f5c8a0`", "isCorrect": false }
+      ],
+      "explanation": "The rebase moved `feature` onto `main`'s tip, but it didn't move `main` at all — `main..feature` still just asks \"what's reachable from `feature` but not from `main`,\" and after the rebase that's the three freshly replayed commits. Notice the contrast with what a *merge* would do to this same range: merging `feature` into `main` would make every one of `feature`'s commits reachable from `main` too, collapsing `main..feature` down to empty. A rebase never does that on its own — it only ever changes what `feature` points at, so `main..feature` keeps returning `feature`'s own commits (now with new SHAs) until something actually brings that work onto `main`.",
+      "references": "[Git Documentation: git-rev-list — Commit Range](https://git-scm.com/docs/git-rev-list#Documentation/git-rev-list.txt-emltrevAgtltrevBemandemltrevBgt--notltrevAgtem)"
+    },
+    {
+      "id": "count-commits-in-range",
+      "title": "On the main/feature graph from the two-dot and three-dot questions, how many commits does `git log --oneline main..feature` print?",
+      "images": [
+        {
+          "src": "two-dot-vs-three-dot.svg",
+          "alt": "main and feature both descend from base 2f8b6d4. main continues through a75c810 to tip 68e0937. feature continues separately through c40d1a2 and 9d5e7b6 to tip 0a83fc1."
+        }
+      ],
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [3]
+      },
+      "explanation": "`main..feature` lists `c40d1a2`, `9d5e7b6`, and `0a83fc1` — every commit reachable from `feature` that isn't reachable from `main` — so `--oneline` prints exactly one line per commit, three lines total. Piping that through `wc -l` is a genuinely common way people count how far a branch has drifted from another before deciding whether a rebase or merge is going to be a small change or a large one."
+    }
+  ]
+}

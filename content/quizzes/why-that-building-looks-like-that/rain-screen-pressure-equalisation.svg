@@ -1,0 +1,100 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="420" viewBox="0 0 720 420">
+  <style>
+    svg {
+      --panel: #f5f7fb;
+      --title: #20242c;
+      --muted: #526173;
+      --edge: #64748b;
+      --panel-skin: #94a3b8;
+      --panel-skin-line: #475569;
+      --cavity: #e0f2fe;
+      --backup: #cbd5e1;
+      --backup-line: #64748b;
+      --wind: #9333ea;
+      --wind-text: #7e22ce;
+      --water: #0284c7;
+      --water-text: #0369a1;
+    }
+    @media (prefers-color-scheme: dark) {
+      svg {
+        --panel: #1a1f27;
+        --title: #e6eaf2;
+        --muted: #9aa8bd;
+        --edge: #8b9bb4;
+        --panel-skin: #64748b;
+        --panel-skin-line: #cbd5e1;
+        --cavity: #0c2a3d;
+        --backup: #3a4557;
+        --backup-line: #8b9bb4;
+        --wind: #c084fc;
+        --wind-text: #d8b4fe;
+        --water: #38bdf8;
+        --water-text: #7dd3fc;
+      }
+    }
+    .panel { fill: var(--panel); }
+    .title { fill: var(--title); font-family: system-ui, sans-serif; font-weight: 700; }
+    .muted { fill: var(--muted); font-family: system-ui, sans-serif; }
+    .label { fill: var(--title); font-family: system-ui, sans-serif; font-weight: 600; }
+    .skin { fill: var(--panel-skin); stroke: var(--panel-skin-line); stroke-width: 1.5; }
+    .backup { fill: var(--backup); stroke: var(--backup-line); stroke-width: 1.5; }
+    .wind-text { fill: var(--wind-text); font-family: system-ui, sans-serif; font-weight: 700; }
+    .water-text { fill: var(--water-text); font-family: system-ui, sans-serif; font-weight: 700; }
+  </style>
+
+  <rect class="panel" width="720" height="420" rx="20" />
+  <text class="title" x="36" y="40" font-size="19">Rain screen: an open, vented cavity equalises pressure</text>
+
+  <g font-family="system-ui, sans-serif">
+    <!-- outer rainscreen panel with a joint gap -->
+    <rect class="skin" x="130" y="90" width="60" height="130" />
+    <rect class="skin" x="130" y="230" width="60" height="130" />
+
+    <!-- cavity -->
+    <rect x="190" y="90" width="46" height="270" fill="var(--cavity)" stroke="var(--edge)" stroke-width="1.5" />
+    <!-- top and bottom vents -->
+    <rect x="190" y="84" width="46" height="8" fill="var(--cavity)" stroke="var(--edge)" stroke-width="1.5" />
+    <rect x="190" y="360" width="46" height="8" fill="var(--cavity)" stroke="var(--edge)" stroke-width="1.5" />
+    <text class="muted" x="213" y="78" font-size="11" text-anchor="middle">vent</text>
+    <text class="muted" x="213" y="385" font-size="11" text-anchor="middle">vent</text>
+
+    <!-- backup wall / air barrier -->
+    <rect class="backup" x="236" y="90" width="34" height="270" />
+    <text class="muted" x="253" y="80" font-size="11" text-anchor="middle">air barrier</text>
+
+    <!-- wind pressure arrows hitting the outer skin, and equal pressure inside cavity -->
+    <path d="M 60 155 H 125" stroke="var(--wind)" stroke-width="4" fill="none" marker-end="url(#wArrow)" />
+    <path d="M 60 300 H 125" stroke="var(--wind)" stroke-width="4" fill="none" marker-end="url(#wArrow)" />
+    <text class="wind-text" x="30" y="200" font-size="13" text-anchor="middle">wind</text>
+    <text class="wind-text" x="30" y="217" font-size="13" text-anchor="middle">pressure</text>
+
+    <!-- equalised pressure indicator inside cavity: small opposing arrows near-cancelling -->
+    <path d="M 200 220 h 26" stroke="var(--wind)" stroke-width="2.5" fill="none" marker-end="url(#wArrowSmall)" opacity="0.6" />
+    <text class="muted" x="213" y="200" font-size="10.5" text-anchor="middle">cavity pressure</text>
+    <text class="muted" x="213" y="245" font-size="10.5" text-anchor="middle">≈ outside pressure</text>
+
+    <!-- water gets through the joint but drains, not pushed through -->
+    <circle cx="188" cy="230" r="4" fill="var(--water)" />
+    <path d="M 188 230 V 355" stroke="var(--water)" stroke-width="2.5" fill="none" stroke-dasharray="4 5" marker-end="url(#dArrow)" />
+    <text class="water-text" x="290" y="250" font-size="13">Water that gets past the</text>
+    <text class="water-text" x="290" y="267" font-size="13">outer skin drains down and</text>
+    <text class="water-text" x="290" y="284" font-size="13">out, not driven through</text>
+    <text class="water-text" x="290" y="301" font-size="13">the wall, because there is no</text>
+    <text class="water-text" x="290" y="318" font-size="13">pressure difference pushing it</text>
+
+    <defs>
+      <marker id="wArrow" markerWidth="8" markerHeight="8" refX="5" refY="4" orient="auto">
+        <path d="M0,0 L8,4 L0,8 Z" fill="var(--wind)" />
+      </marker>
+      <marker id="wArrowSmall" markerWidth="6" markerHeight="6" refX="4" refY="3" orient="auto">
+        <path d="M0,0 L6,3 L0,6 Z" fill="var(--wind)" />
+      </marker>
+      <marker id="dArrow" markerWidth="8" markerHeight="8" refX="4" refY="7" orient="auto">
+        <path d="M0,0 L8,0 L4,8 Z" fill="var(--water)" />
+      </marker>
+    </defs>
+
+    <text class="label" x="160" y="90" font-size="11" text-anchor="middle">outer</text>
+    <text class="label" x="160" y="76" font-size="11" text-anchor="middle">skin</text>
+  </g>
+</svg>

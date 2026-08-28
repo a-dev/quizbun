@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="300" viewBox="0 0 800 300">
+    <style>
+    /* An &lt;img&gt;-embedded SVG cannot see the page's `data-theme`, but it does
+       inherit the embedding document's `color-scheme`, so `prefers-color-scheme`
+       tracks the site theme including an explicit toggle. The presentation
+       attributes below stay as the light fallback for renderers without CSS. */
+    svg {{
+      --panel: #f5f7fb;
+      --title: #20242c;
+      --muted: #526173;
+      --edge: #64748b;
+      --card: #ffffff;
+      --grid: #d5dce6;
+      --a1: #16a34a; --a1-l: #bbf7d0;
+      --a2: #0284c7; --a2-l: #bae6fd;
+      --a3: #2563eb; --a3-l: #bfdbfe;
+      --a4: #9333ea; --a4-l: #e9d5ff;
+      --a5: #c2410c; --a5-l: #fed7aa;
+      --danger: #dc2626; --danger-l: #fecaca;
+    }}
+
+    @media (prefers-color-scheme: dark) {{
+      svg {{
+        --panel: #1a1f27;
+        --title: #e6eaf2;
+        --muted: #9aa8bd;
+        --edge: #8b9bb4;
+        --card: #252b35;
+        --grid: #333c49;
+        --a1: #4ade80; --a1-l: #14532d;
+        --a2: #38bdf8; --a2-l: #0c4a6e;
+        --a3: #60a5fa; --a3-l: #1e3a5f;
+        --a4: #c084fc; --a4-l: #581c87;
+        --a5: #fb923c; --a5-l: #7c2d12;
+        --danger: #f87171; --danger-l: #7f1d1d;
+      }}
+    }}
+
+    .panel-bg {{ fill: var(--panel); }}
+    .title {{ fill: var(--title); }}
+    .subtitle {{ fill: var(--muted); }}
+    .muted {{ fill: var(--muted); }}
+    .grid-line {{ stroke: var(--grid); }}
+    text {{ font-family: system-ui, sans-serif; }}
+    .mono {{ font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }}
+    .bar-1 {{ fill: var(--a1-l); stroke: var(--a1); }}
+    .bar-2 {{ fill: var(--a2-l); stroke: var(--a2); }}
+    .bar-3 {{ fill: var(--a3-l); stroke: var(--a3); }}
+    .bar-4 {{ fill: var(--a4-l); stroke: var(--a4); }}
+    .bar-5 {{ fill: var(--a5-l); stroke: var(--a5); }}
+    .bar-danger {{ fill: var(--danger-l); stroke: var(--danger); }}
+    .card {{ fill: var(--card); stroke: var(--edge); }}
+  </style>
+
+  <rect class="panel-bg" width="800" height="300" rx="20" fill="#f5f7fb" />
+  <text class="title" x="32" y="38" font-size="19" font-weight="700" fill="#20242c">Two separate span trees at almost the same moment</text>
+  <text class="subtitle" x="32" y="60" font-size="13" fill="#526173">No edge connects them; each has its own trace id</text>
+  <rect class="bar-3" x="40.0" y="100.0" width="296.5" height="34.0" rx="6" fill="#bfdbfe" stroke="#2563eb" stroke-width="1.5" />
+  <text class="muted mono" x="40.0" y="92.0" font-size="11.5" font-weight="400" text-anchor="start">checkout-api.request</text>
+  <rect class="bar-2" x="82.4" y="146.0" width="169.4" height="34.0" rx="6" fill="#bae6fd" stroke="#0284c7" stroke-width="1.5" />
+  <text class="muted mono" x="82.4" y="138.0" font-size="11.5" font-weight="400" text-anchor="start">inventory-service.call</text>
+  <line class="grid-line" x1="389.4" y1="82.0" x2="389.4" y2="190.0" stroke="#d5dce6" stroke-width="1.5" stroke-dasharray="4 4" />
+  <rect class="bar-4" x="442.4" y="100.0" width="296.5" height="34.0" rx="6" fill="#e9d5ff" stroke="#9333ea" stroke-width="1.5" />
+  <text class="muted mono" x="442.4" y="92.0" font-size="11.5" font-weight="400" text-anchor="start">shipping-service.request</text>
+  <rect class="bar-1" x="484.7" y="146.0" width="190.6" height="34.0" rx="6" fill="#bbf7d0" stroke="#16a34a" stroke-width="1.5" />
+  <text class="muted mono" x="484.7" y="138.0" font-size="11.5" font-weight="400" text-anchor="start">shipping-service.call</text>
+  <line class="grid-line" x1="40.0" y1="214.0" x2="760.0" y2="214.0" stroke="#d5dce6" stroke-width="1.5" />
+  <line class="grid-line" x1="40.0" y1="210.0" x2="40.0" y2="218.0" stroke="#d5dce6" stroke-width="1.5" />
+  <text class="muted mono" x="40.0" y="236.0" font-size="10.5" font-weight="400" text-anchor="middle">0 ms</text>
+  <line class="grid-line" x1="145.9" y1="210.0" x2="145.9" y2="218.0" stroke="#d5dce6" stroke-width="1.5" />
+  <text class="muted mono" x="145.9" y="236.0" font-size="10.5" font-weight="400" text-anchor="middle">50</text>
+  <line class="grid-line" x1="251.8" y1="210.0" x2="251.8" y2="218.0" stroke="#d5dce6" stroke-width="1.5" />
+  <text class="muted mono" x="251.8" y="236.0" font-size="10.5" font-weight="400" text-anchor="middle">100</text>
+  <line class="grid-line" x1="357.6" y1="210.0" x2="357.6" y2="218.0" stroke="#d5dce6" stroke-width="1.5" />
+  <text class="muted mono" x="357.6" y="236.0" font-size="10.5" font-weight="400" text-anchor="middle">150</text>
+  <line class="grid-line" x1="463.5" y1="210.0" x2="463.5" y2="218.0" stroke="#d5dce6" stroke-width="1.5" />
+  <text class="muted mono" x="463.5" y="236.0" font-size="10.5" font-weight="400" text-anchor="middle">200</text>
+  <line class="grid-line" x1="569.4" y1="210.0" x2="569.4" y2="218.0" stroke="#d5dce6" stroke-width="1.5" />
+  <text class="muted mono" x="569.4" y="236.0" font-size="10.5" font-weight="400" text-anchor="middle">250</text>
+  <line class="grid-line" x1="675.3" y1="210.0" x2="675.3" y2="218.0" stroke="#d5dce6" stroke-width="1.5" />
+  <text class="muted mono" x="675.3" y="236.0" font-size="10.5" font-weight="400" text-anchor="middle">300</text>
+  </svg>

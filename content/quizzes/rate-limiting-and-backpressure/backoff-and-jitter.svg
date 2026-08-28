@@ -60,7 +60,7 @@
     Backing off without starting a herd
   </text>
   <text class="muted" x="36" y="64" fill="#526173" font-family="system-ui, sans-serif" font-size="14">
-    <tspan font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">delay = base × 2^attempt</tspan>, with <tspan font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">base = 100</tspan> ms and no jitter.
+    <tspan font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">delay = base × 2^attempt</tspan>, <tspan font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">base = 100</tspan> ms, no jitter.
   </text>
 
   <g font-family="system-ui, sans-serif" text-anchor="middle">
@@ -86,7 +86,7 @@
   </g>
 
   <text class="title" x="36" y="178" fill="#20242c" font-family="system-ui, sans-serif" font-size="15" font-weight="700">
-    Now let thousands of clients fail at the same moment
+    Thousands of clients fail at once
   </text>
 
   <g font-family="system-ui, sans-serif">
@@ -98,7 +98,7 @@
     <rect class="card" x="36" y="264" width="648" height="64" rx="12" fill="#ffffff" stroke="#64748b" stroke-width="2" />
     <text class="title" x="52" y="294" fill="#20242c" font-size="13.5" font-weight="700">with jitter</text>
     <text class="muted" x="52" y="312" fill="#526173" font-size="11.5">randomized delay</text>
-    <text class="ok-text" x="430" y="282" fill="#14532d" font-size="11.5" font-weight="700" text-anchor="middle">the same load, smeared across the interval</text>
+    <text class="ok-text" x="430" y="282" fill="#14532d" font-size="11.5" font-weight="700" text-anchor="middle">load spread across the interval</text>
   </g>
 
   <g fill="none" class="edge-line" stroke="#64748b" stroke-width="1.5">
@@ -122,13 +122,13 @@
   <g font-family="system-ui, sans-serif">
     <rect class="card" x="36" y="352" width="316" height="58" rx="12" fill="#ffffff" stroke="#64748b" stroke-width="2" />
     <text class="title" x="52" y="376" fill="#20242c" font-size="13.5" font-weight="700">429 Too Many Requests</text>
-    <text class="muted" x="52" y="395" fill="#526173" font-size="11.5">this client is over its own quota — it's you</text>
+    <text class="muted" x="52" y="395" fill="#526173" font-size="11.5">this client exceeded its own quota</text>
 
     <rect class="card" x="368" y="352" width="316" height="58" rx="12" fill="#ffffff" stroke="#64748b" stroke-width="2" />
     <text class="title" x="384" y="376" fill="#20242c" font-size="13.5" font-weight="700">503 Service Unavailable</text>
-    <text class="muted" x="384" y="395" fill="#526173" font-size="11.5">the upstream is shedding for everyone — it's me</text>
+    <text class="muted" x="384" y="395" fill="#526173" font-size="11.5">the upstream is shedding load for everyone</text>
 
     <rect class="info-box" x="36" y="424" width="648" height="46" rx="12" fill="#dbeafe" stroke="#2563eb" stroke-width="2" />
-    <text class="info-text" x="52" y="452" fill="#172554" font-size="13"><tspan font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-weight="700">Retry-After</tspan> takes two forms only: <tspan font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">120</tspan> (delay-seconds) or an HTTP-date. No duration strings.</text>
+    <text class="info-text" x="52" y="452" fill="#172554" font-size="13"><tspan font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-weight="700">Retry-After</tspan> has two forms: <tspan font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">120</tspan> (delay-seconds) or an HTTP-date. No duration strings.</text>
   </g>
 </svg>

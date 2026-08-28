@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="360" viewBox="0 0 720 360">
+  <style>
+    svg {
+      --panel: #f5f7fb;
+      --title: #20242c;
+      --muted: #526173;
+      --pipe: #94a3b8;
+      --pipe-edge: #475569;
+      --valve: #16a34a;
+      --valve-text: #15803d;
+      --relief: #9333ea;
+      --relief-text: #7e22ce;
+      --flow: #0284c7;
+    }
+    @media (prefers-color-scheme: dark) {
+      svg {
+        --panel: #1a1f27;
+        --title: #e6eaf2;
+        --muted: #9aa8bd;
+        --pipe: #64748b;
+        --pipe-edge: #cbd5e1;
+        --valve: #4ade80;
+        --valve-text: #86efac;
+        --relief: #c084fc;
+        --relief-text: #e9d5ff;
+        --flow: #38bdf8;
+      }
+    }
+    .panel { fill: var(--panel); }
+    .title { fill: var(--title); }
+    .muted { fill: var(--muted); }
+    .pipe { fill: var(--pipe); stroke: var(--pipe-edge); }
+    .valve { fill: var(--valve); stroke: var(--pipe-edge); }
+    .valve-text { fill: var(--valve-text); }
+    .relief { fill: var(--relief); stroke: var(--pipe-edge); }
+    .relief-text { fill: var(--relief-text); }
+    .flow { stroke: var(--flow); fill: var(--flow); }
+  </style>
+
+  <rect class="panel" width="720" height="360" rx="20" fill="#f5f7fb" />
+  <text class="title" x="36" y="44" fill="#20242c" font-family="system-ui, sans-serif" font-size="19" font-weight="700">
+    Two one-way valves, and a vent between them
+  </text>
+
+  <g font-family="system-ui, sans-serif" text-anchor="middle">
+    <!-- main pipe run -->
+    <rect class="pipe" x="80" y="160" width="560" height="40" fill="#94a3b8" stroke="#475569" stroke-width="2" />
+    <text class="muted" x="120" y="145" fill="#526173" font-size="13" text-anchor="start">clean supply</text>
+    <text class="muted" x="600" y="145" fill="#526173" font-size="13" text-anchor="end">sprinklers, hoses…</text>
+
+    <!-- flow arrow forward -->
+    <path class="flow" d="M100 180 L150 180" stroke="#0284c7" stroke-width="4" marker-end="url(#arrow)" />
+
+    <!-- check valve 1 -->
+    <g transform="translate(260,180)">
+      <rect class="valve" x="-24" y="-30" width="48" height="60" rx="8" fill="#16a34a" stroke="#475569" stroke-width="2" />
+      <path d="M-10 -10 L10 0 L-10 10 Z" fill="#f5f7fb" />
+      <text class="valve-text" x="0" y="55" fill="#15803d" font-size="13" font-weight="700">check valve 1</text>
+    </g>
+
+    <!-- relief zone -->
+    <g transform="translate(360,180)">
+      <rect class="relief" x="-40" y="-30" width="80" height="60" rx="8" fill="#9333ea" fill-opacity="0.15" stroke="#9333ea" stroke-width="2" stroke-dasharray="6 4" />
+      <path d="M0 -30 V-90" stroke="#9333ea" stroke-width="4" fill="none" />
+      <path d="M-14 -90 L0 -110 L14 -90 Z" fill="#9333ea" />
+      <text class="relief-text" x="0" y="-118" fill="#7e22ce" font-size="13" font-weight="700">relief valve vents to air</text>
+      <text class="relief-text" x="0" y="55" fill="#7e22ce" font-size="12">monitored zone</text>
+    </g>
+
+    <!-- check valve 2 -->
+    <g transform="translate(460,180)">
+      <rect class="valve" x="-24" y="-30" width="48" height="60" rx="8" fill="#16a34a" stroke="#475569" stroke-width="2" />
+      <path d="M-10 -10 L10 0 L-10 10 Z" fill="#f5f7fb" />
+      <text class="valve-text" x="0" y="55" fill="#15803d" font-size="13" font-weight="700">check valve 2</text>
+    </g>
+
+    <path class="flow" d="M500 180 L560 180" stroke="#0284c7" stroke-width="4" marker-end="url(#arrow)" />
+
+    <defs>
+      <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+        <path d="M0,0 L0,6 L9,3 z" fill="#0284c7" />
+      </marker>
+    </defs>
+
+    <text class="muted" x="360" y="330" fill="#526173" font-size="13">
+      if pressure reverses, the zone between the valves drains to atmosphere before dirty water can reach the supply
+    </text>
+  </g>
+</svg>

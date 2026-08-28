@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="300" viewBox="0 0 760 300">
+  <style>
+    svg {
+      --panel: #f5f7fb;
+      --title: #20242c;
+      --muted: #526173;
+      --edge: #64748b;
+      --card: #ffffff;
+      --accent1: #2563eb;
+      --accent2: #c2410c;
+    }
+    @media (prefers-color-scheme: dark) {
+      svg {
+        --panel: #1a1f27;
+        --title: #e6eaf2;
+        --muted: #9aa8bd;
+        --edge: #8b9bb4;
+        --card: #252b35;
+        --accent1: #60a5fa;
+        --accent2: #fb923c;
+      }
+    }
+    .panel { fill: var(--panel); }
+    .card { fill: var(--card); stroke: var(--edge); }
+    .muted { fill: var(--muted); }
+    .edge { stroke: var(--edge); }
+    text { font-family: system-ui, sans-serif; }
+  </style>
+
+  <rect class="panel" width="760" height="300" rx="20" fill="#f5f7fb" />
+
+  <!-- three positions across one cycle -->
+  <g transform="translate(20,20)">
+    <rect class="card" width="226" height="260" rx="14" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <text class="muted" x="113" y="26" text-anchor="middle" font-size="13" fill="#526173">pin outside slot</text>
+    <!-- driven slotted wheel: locked -->
+    <circle cx="113" cy="150" r="60" fill="none" stroke="#20242c" stroke-width="4" />
+    <path d="M113 90 V150 H160" stroke="#20242c" stroke-width="6" fill="none" stroke-linecap="round" />
+    <path d="M113 210 V150" stroke="#20242c" stroke-width="6" fill="none" stroke-linecap="round" opacity="0" />
+    <!-- driving wheel with locking disc + pin -->
+    <circle cx="113" cy="230" r="0" opacity="0" />
+    <g transform="translate(113,150)">
+      <circle cx="0" cy="105" r="42" fill="none" stroke="#2563eb" stroke-width="8" />
+      <circle cx="0" cy="63" r="6" fill="#c2410c" stroke="#c2410c" />
+    </g>
+    <path d="M113 40 H85" class="edge" stroke="#64748b" stroke-width="4" stroke-linecap="round" />
+    <path d="m95 31 -12 9 12 9" class="edge" stroke="#64748b" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+    <text class="muted" x="113" y="245" text-anchor="middle" font-size="12" fill="#526173">driven wheel: still</text>
+  </g>
+
+  <g transform="translate(267,20)">
+    <rect class="card" width="226" height="260" rx="14" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <text class="muted" x="113" y="26" text-anchor="middle" font-size="13" fill="#526173">pin entering slot</text>
+    <circle cx="113" cy="150" r="60" fill="none" stroke="#20242c" stroke-width="4" transform="rotate(-20 113 150)" />
+    <path d="M113 90 V150 H160" stroke="#20242c" stroke-width="6" fill="none" stroke-linecap="round" transform="rotate(-20 113 150)" />
+    <g transform="translate(113,150) rotate(35)">
+      <circle cx="0" cy="105" r="42" fill="none" stroke="#2563eb" stroke-width="8" />
+      <circle cx="0" cy="63" r="6" fill="#c2410c" stroke="#c2410c" />
+    </g>
+    <path d="M113 40 H85" class="edge" stroke="#64748b" stroke-width="4" stroke-linecap="round" />
+    <path d="m95 31 -12 9 12 9" class="edge" stroke="#64748b" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+    <text class="muted" x="113" y="245" text-anchor="middle" font-size="12" fill="#526173">driven wheel: stepping</text>
+  </g>
+
+  <g transform="translate(514,20)">
+    <rect class="card" width="226" height="260" rx="14" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <text class="muted" x="113" y="26" text-anchor="middle" font-size="13" fill="#526173">pin left slot</text>
+    <circle cx="113" cy="150" r="60" fill="none" stroke="#20242c" stroke-width="4" transform="rotate(-90 113 150)" />
+    <path d="M113 90 V150 H160" stroke="#20242c" stroke-width="6" fill="none" stroke-linecap="round" transform="rotate(-90 113 150)" />
+    <g transform="translate(113,150) rotate(90)">
+      <circle cx="0" cy="105" r="42" fill="none" stroke="#2563eb" stroke-width="8" />
+      <circle cx="0" cy="63" r="6" fill="#c2410c" stroke="#c2410c" />
+    </g>
+    <path d="M113 40 H85" class="edge" stroke="#64748b" stroke-width="4" stroke-linecap="round" />
+    <path d="m95 31 -12 9 12 9" class="edge" stroke="#64748b" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+    <text class="muted" x="113" y="245" text-anchor="middle" font-size="12" fill="#526173">driven wheel: still again</text>
+  </g>
+</svg>

@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="360" viewBox="0 0 720 360">
+  <style>
+    svg {
+      --panel: #f5f7fb;
+      --title: #20242c;
+      --muted: #526173;
+      --edge: #64748b;
+      --card: #ffffff;
+      --bit-bg: #e2e8f0;
+      --bit-text: #172554;
+      --accent: #c2410c;
+      --accent-text: #9a3412;
+      --ok: #16a34a;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      svg {
+        --panel: #1a1f27;
+        --title: #e6eaf2;
+        --muted: #9aa8bd;
+        --edge: #8b9bb4;
+        --card: #252b35;
+        --bit-bg: #333c49;
+        --bit-text: #dbeafe;
+        --accent: #fb923c;
+        --accent-text: #fdba74;
+        --ok: #4ade80;
+      }
+    }
+
+    .panel { fill: var(--panel); }
+    .title { fill: var(--title); }
+    .muted { fill: var(--muted); }
+    .edge { stroke: var(--edge); }
+    .card { fill: var(--card); stroke: var(--edge); }
+    .bit { fill: var(--bit-bg); }
+    .bit-text { fill: var(--bit-text); }
+    .accent { fill: var(--accent-text); }
+    .accent-edge { stroke: var(--accent); }
+    .ok { fill: var(--ok); }
+  </style>
+
+  <rect class="panel" width="720" height="360" rx="20" fill="#f5f7fb" />
+  <text class="title" x="36" y="40" fill="#20242c" font-family="system-ui, sans-serif" font-size="19" font-weight="700">
+    Codes A=0, B=01: decoding the bits 0 1 0
+  </text>
+  <text class="muted" x="36" y="62" fill="#526173" font-family="system-ui, sans-serif" font-size="14">
+    01 starts with A's own codeword 0, so the code is not prefix-free.
+  </text>
+
+  <g font-family="ui-monospace, monospace" text-anchor="middle">
+    <rect class="bit" x="300" y="78" width="42" height="42" rx="6" fill="#e2e8f0" />
+    <text class="bit-text" x="321" y="106" fill="#172554" font-size="20" font-weight="700">0</text>
+    <rect class="bit" x="344" y="78" width="42" height="42" rx="6" fill="#e2e8f0" />
+    <text class="bit-text" x="365" y="106" fill="#172554" font-size="20" font-weight="700">1</text>
+    <rect class="bit" x="388" y="78" width="42" height="42" rx="6" fill="#e2e8f0" />
+    <text class="bit-text" x="409" y="106" fill="#172554" font-size="20" font-weight="700">0</text>
+  </g>
+
+  <g font-family="system-ui, sans-serif">
+    <line class="edge" x1="360" y1="130" x2="200" y2="180" stroke="#64748b" stroke-width="2" />
+    <line class="edge" x1="360" y1="130" x2="520" y2="180" stroke="#64748b" stroke-width="2" />
+
+    <rect class="card" x="60" y="182" width="280" height="150" rx="14" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <text class="title" x="200" y="212" fill="#20242c" font-size="15" font-weight="700">Reading 1: greedy on "0" first</text>
+    <text class="muted" x="80" y="242" fill="#526173" font-size="14" font-family="ui-monospace, monospace">A (0)  then leftover "10"</text>
+    <text class="accent" x="80" y="268" fill="#9a3412" font-size="14">"10" matches no codeword.</text>
+    <text class="accent" x="80" y="288" fill="#9a3412" font-size="14">Stuck, or forced to guess.</text>
+
+    <rect class="card" x="380" y="182" width="280" height="150" rx="14" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <text class="title" x="520" y="212" fill="#20242c" font-size="15" font-weight="700">Reading 2: wait for "01" first</text>
+    <text class="muted" x="400" y="242" fill="#526173" font-size="14" font-family="ui-monospace, monospace">B (01)  then A (0)</text>
+    <text class="ok" x="400" y="268" fill="#16a34a" font-size="14">Parses cleanly as B then A.</text>
+    <text class="ok" x="400" y="288" fill="#16a34a" font-size="14">Valid, but a different meaning.</text>
+  </g>
+
+  <text class="muted" x="360" y="352" fill="#526173" font-family="system-ui, sans-serif" font-size="13" text-anchor="middle">
+    Same bits, two valid parses. The code alone can't say which one was meant.
+  </text>
+</svg>
