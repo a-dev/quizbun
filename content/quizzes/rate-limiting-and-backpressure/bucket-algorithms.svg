@@ -82,7 +82,7 @@
 
   <g font-family="system-ui, sans-serif" text-anchor="middle">
     <text class="title" x="192" y="110" fill="#20242c" font-size="16" font-weight="700">Token bucket</text>
-    <text class="muted" x="192" y="128" fill="#526173" font-size="11.5">capacity 20 · refills 5 tokens per second</text>
+    <text class="muted" x="192" y="128" fill="#526173" font-size="11.5">capacity 20 · refill 5 tokens/s</text>
     <text class="title" x="528" y="110" fill="#20242c" font-size="16" font-weight="700">Leaky bucket</text>
     <text class="muted" x="528" y="128" fill="#526173" font-size="11.5">a queue that drains at a fixed rate</text>
 
@@ -104,14 +104,14 @@
     <text class="muted" x="592" y="284" fill="#526173" font-size="10.5" text-anchor="start">steady drain</text>
 
     <text class="title" x="192" y="308" fill="#20242c" font-size="12.5" font-weight="700">Full bucket → 20 pass at once.</text>
-    <text class="muted" x="192" y="326" fill="#526173" font-size="12">Then the cap is the 5 / s refill.</text>
+    <text class="muted" x="192" y="326" fill="#526173" font-size="12">Then capped at the 5 / s refill.</text>
     <text class="title" x="528" y="308" fill="#20242c" font-size="12.5" font-weight="700">Bursts are absorbed, not passed on.</text>
     <text class="muted" x="528" y="326" fill="#526173" font-size="12">Overflow past capacity is dropped.</text>
   </g>
 
   <g font-family="system-ui, sans-serif" text-anchor="start">
     <rect class="accent-box" x="36" y="352" width="648" height="56" rx="12" fill="#ffedd5" stroke="#c2410c" stroke-width="2" />
-    <text class="accent-text" x="52" y="376" fill="#9a3412" font-size="13" font-weight="700">Token bucket meters what may <tspan font-style="italic">enter</tspan>: a burst up to capacity is allowed, then the refill rate rules.</text>
-    <text class="accent-text" x="52" y="396" fill="#9a3412" font-size="13" font-weight="700">Leaky bucket meters what may <tspan font-style="italic">leave</tspan>: a constant drain, so the output never bursts at all.</text>
+    <text class="accent-text" x="52" y="376" fill="#9a3412" font-size="13" font-weight="700">Token bucket meters what may <tspan font-style="italic">enter</tspan>: a burst up to capacity, then the refill rate rules.</text>
+    <text class="accent-text" x="52" y="396" fill="#9a3412" font-size="13" font-weight="700">Leaky bucket meters what may <tspan font-style="italic">leave</tspan>: a constant drain, so output never bursts.</text>
   </g>
 </svg>

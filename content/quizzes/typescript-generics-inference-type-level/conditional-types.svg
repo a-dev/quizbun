@@ -60,7 +60,7 @@
   <rect class="panel" width="720" height="548" rx="20" fill="#f5f7fb" />
 
   <text class="title" x="36" y="42" fill="#20242c" font-family="system-ui, sans-serif" font-size="20" font-weight="700">A conditional type splits over unions and recurses on itself</text>
-  <text class="muted" x="36" y="66" fill="#526173" font-family="system-ui, sans-serif" font-size="14">Both behaviours hinge on one detail: whether the checked type is a naked type parameter.</text>
+  <text class="muted" x="36" y="66" fill="#526173" font-family="system-ui, sans-serif" font-size="14">Both cases hinge on one thing: whether the checked type is a naked type parameter.</text>
   <rect class="card" x="36" y="88" width="316" height="268" rx="12" fill="#ffffff" stroke="#64748b" stroke-width="2" />
   <text class="title" x="54" y="114" fill="#20242c" font-family="system-ui, sans-serif" font-size="13" font-weight="700">Distribution</text>
   <text class="muted" x="54" y="138" fill="#526173" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="10" font-weight="700">type ToArray&lt;T&gt; =</text>
@@ -73,8 +73,8 @@
   <path class="edge-line" d="M194,250 V262" fill="none" stroke="#64748b" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)" />
   <rect class="good-box" x="54" y="264" width="280" height="32" rx="8" fill="#dcfce7" stroke="#16a34a" stroke-width="2" />
   <text class="good-text" x="194" y="285" fill="#14532d" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="10.5" font-weight="700" text-anchor="middle">string[] | number[]</text>
-  <text class="muted" x="54" y="330" fill="#526173" font-family="system-ui, sans-serif" font-size="10">A naked type parameter is applied to each union member,</text>
-  <text class="muted" x="54" y="344" fill="#526173" font-family="system-ui, sans-serif" font-size="10">then the results are unioned back together.</text>
+  <text class="muted" x="54" y="330" fill="#526173" font-family="system-ui, sans-serif" font-size="10">A naked type parameter runs against each union member,</text>
+  <text class="muted" x="54" y="344" fill="#526173" font-family="system-ui, sans-serif" font-size="10">then the results union back together.</text>
   <rect class="card" x="368" y="88" width="316" height="268" rx="12" fill="#ffffff" stroke="#64748b" stroke-width="2" />
   <text class="title" x="386" y="114" fill="#20242c" font-family="system-ui, sans-serif" font-size="13" font-weight="700">Recursion</text>
   <text class="muted" x="386" y="138" fill="#526173" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="10" font-weight="700">type Flatten&lt;T&gt; = T extends</text>
@@ -90,15 +90,15 @@
   <text class="info-text" x="530" y="261" fill="#172554" font-family="system-ui, sans-serif" font-size="10">Inner = number</text>
   <rect class="good-box" x="386" y="276" width="130" height="24" rx="6" fill="#dcfce7" stroke="#16a34a" stroke-width="2" />
   <text class="good-text" x="451" y="293" fill="#14532d" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="10.5" font-weight="700" text-anchor="middle">number</text>
-  <text class="good-text" x="530" y="293" fill="#14532d" font-family="system-ui, sans-serif" font-size="10">not an array — stop</text>
-  <text class="muted" x="386" y="330" fill="#526173" font-family="system-ui, sans-serif" font-size="10">Each pass peels exactly one array layer. The false branch</text>
-  <text class="muted" x="386" y="344" fill="#526173" font-family="system-ui, sans-serif" font-size="10">is the base case, and it returns number.</text>
+  <text class="good-text" x="530" y="293" fill="#14532d" font-family="system-ui, sans-serif" font-size="10">not an array, stop</text>
+  <text class="muted" x="386" y="330" fill="#526173" font-family="system-ui, sans-serif" font-size="10">Each pass peels one array layer. The false branch is</text>
+  <text class="muted" x="386" y="344" fill="#526173" font-family="system-ui, sans-serif" font-size="10">the base case, and it returns number.</text>
   <rect class="accent-box" x="36" y="372" width="316" height="148" rx="12" fill="#ffedd5" stroke="#c2410c" stroke-width="2" />
   <text class="accent-text" x="54" y="398" fill="#9a3412" font-family="system-ui, sans-serif" font-size="12.5" font-weight="700">boolean is a union too</text>
   <text class="accent-text" x="54" y="422" fill="#9a3412" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="10.5" font-weight="700">Wrap&lt;boolean&gt;</text>
   <text class="accent-text" x="160" y="422" fill="#9a3412" font-family="system-ui, sans-serif" font-size="10.5">distributes over true | false,</text>
   <text class="accent-text" x="54" y="438" fill="#9a3412" font-family="system-ui, sans-serif" font-size="10.5">so the result is true[] | false[], never boolean[].</text>
-  <text class="accent-text" x="54" y="466" fill="#9a3412" font-family="system-ui, sans-serif" font-size="10.5">To switch distribution off, wrap both sides in a one-element</text>
+  <text class="accent-text" x="54" y="466" fill="#9a3412" font-family="system-ui, sans-serif" font-size="10.5">To turn distribution off, wrap both sides in a one-element</text>
   <text class="accent-text" x="54" y="482" fill="#9a3412" font-family="system-ui, sans-serif" font-size="10.5">tuple:</text>
   <text class="accent-text" x="96" y="482" fill="#9a3412" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="10.5" font-weight="700">[T] extends [any] ? T[] : never</text>
   <text class="accent-text" x="54" y="504" fill="#9a3412" font-family="system-ui, sans-serif" font-size="10">The parameter is no longer naked, so the union stays whole.</text>

@@ -81,12 +81,12 @@
     <text class="accent-text" x="300" y="206" fill="#9a3412" font-size="11.5">runs between every phase</text>
 
     <rect class="phase" x="160" y="244" width="280" height="90" rx="12" fill="#dbeafe" stroke="#2563eb" stroke-width="2" />
-    <text class="phase-label" x="300" y="266" fill="#172554" font-size="14" font-weight="700">1st — process.nextTick queue</text>
+    <text class="phase-label" x="300" y="266" fill="#172554" font-size="14" font-weight="700">1st: process.nextTick queue</text>
     <text class="muted" x="300" y="286" fill="#526173" font-size="11.5">drains completely before moving on</text>
     <text class="muted" x="300" y="310" fill="#526173" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="13">spin() → spin() → spin() → …</text>
 
     <rect class="phase" x="160" y="358" width="280" height="70" rx="12" fill="#dbeafe" stroke="#2563eb" stroke-width="2" />
-    <text class="phase-label" x="300" y="382" fill="#172554" font-size="14" font-weight="700">2nd — Promise / queueMicrotask</text>
+    <text class="phase-label" x="300" y="382" fill="#172554" font-size="14" font-weight="700">2nd: Promise / queueMicrotask</text>
     <text class="muted" x="300" y="406" fill="#526173" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="13">p.then() → queueMicrotask() → …</text>
 
     <rect class="card" x="160" y="452" width="280" height="56" rx="12" fill="#ffffff" stroke="#64748b" stroke-width="2" />
@@ -99,14 +99,14 @@
     <text class="accent-text" x="490" y="270" fill="#9a3412" font-size="15" font-weight="700">Why recursion</text>
     <text class="accent-text" x="490" y="290" fill="#9a3412" font-size="15" font-weight="700">starves the loop</text>
     <text class="accent-text" x="490" y="316" fill="#9a3412" font-size="13">Each spin() enqueues</text>
-    <text class="accent-text" x="490" y="337" fill="#9a3412" font-size="13">another spin() — queue 1</text>
+    <text class="accent-text" x="490" y="337" fill="#9a3412" font-size="13">another spin(), queue 1</text>
     <text class="accent-text" x="490" y="358" fill="#9a3412" font-size="13">never reaches empty.</text>
     <text class="accent-text" x="490" y="379" fill="#9a3412" font-size="13">So poll never runs:</text>
     <text class="accent-text" x="490" y="400" fill="#9a3412" font-size="13">no new I/O, no timers.</text>
   </g>
 
   <g font-family="system-ui, sans-serif" text-anchor="start">
-    <text class="muted" x="36" y="540" fill="#526173" font-size="13">`process.nextTick` is not a libuv phase — it has no slot in the phase wheel.</text>
+    <text class="muted" x="36" y="540" fill="#526173" font-size="13">`process.nextTick` is not a libuv phase. It has no slot in the phase wheel.</text>
     <text class="muted" x="36" y="560" fill="#526173" font-size="13">It drains at every checkpoint instead, always before Promise / `queueMicrotask`.</text>
   </g>
 </svg>

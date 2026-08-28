@@ -89,26 +89,26 @@
   <text class="accent-text" x="288" y="296" fill="#9a3412" font-family="system-ui, sans-serif" font-size="9.5">the declared</text>
   <text class="accent-text" x="288" y="308" fill="#9a3412" font-family="system-ui, sans-serif" font-size="9.5">default, or</text>
   <text class="accent-text" x="288" y="320" fill="#9a3412" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="9.5">unknown if none</text>
-  <text class="muted" x="54" y="350" fill="#526173" font-family="system-ui, sans-serif" font-size="10">NoInfer&lt;T&gt; marks a parameter “use T here, but do not infer</text>
-  <text class="muted" x="54" y="366" fill="#526173" font-family="system-ui, sans-serif" font-size="10">from it” — the fix for a stray literal widening the union.</text>
+  <text class="muted" x="54" y="350" fill="#526173" font-family="system-ui, sans-serif" font-size="10">NoInfer&lt;T&gt; marks a parameter "use T here, don't infer from</text>
+  <text class="muted" x="54" y="366" fill="#526173" font-family="system-ui, sans-serif" font-size="10">it," fixing a stray literal that widens the union.</text>
   <rect class="card" x="452" y="88" width="232" height="288" rx="12" fill="#ffffff" stroke="#64748b" stroke-width="2" />
   <text class="title" x="470" y="114" fill="#20242c" font-family="system-ui, sans-serif" font-size="12.5" font-weight="700">One infer, two positions</text>
   <text class="muted" x="470" y="140" fill="#526173" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="10" font-weight="700">(x: infer U, y: infer U)</text>
   <text class="muted" x="470" y="154" fill="#526173" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="10" font-weight="700">  =&gt; void</text>
   <rect class="good-box" x="470" y="172" width="196" height="44" rx="8" fill="#dcfce7" stroke="#16a34a" stroke-width="2" />
-  <text class="good-text" x="482" y="190" fill="#14532d" font-family="system-ui, sans-serif" font-size="9.5" font-weight="700">covariant — return types</text>
+  <text class="good-text" x="482" y="190" fill="#14532d" font-family="system-ui, sans-serif" font-size="9.5" font-weight="700">covariant, return types</text>
   <text class="good-text" x="482" y="206" fill="#14532d" font-family="system-ui, sans-serif" font-size="9.5">candidates are unioned</text>
   <rect class="accent-box" x="470" y="224" width="196" height="44" rx="8" fill="#ffedd5" stroke="#c2410c" stroke-width="2" />
-  <text class="accent-text" x="482" y="242" fill="#9a3412" font-family="system-ui, sans-serif" font-size="9.5" font-weight="700">contravariant — parameters</text>
+  <text class="accent-text" x="482" y="242" fill="#9a3412" font-family="system-ui, sans-serif" font-size="9.5" font-weight="700">contravariant, parameters</text>
   <text class="accent-text" x="482" y="258" fill="#9a3412" font-family="system-ui, sans-serif" font-size="9.5">candidates are intersected</text>
   <text class="muted" x="470" y="292" fill="#526173" font-family="system-ui, sans-serif" font-size="10">Both slots here are parameters, so</text>
-  <text class="muted" x="470" y="306" fill="#526173" font-family="system-ui, sans-serif" font-size="10">U is string &amp; number — and no value</text>
+  <text class="muted" x="470" y="306" fill="#526173" font-family="system-ui, sans-serif" font-size="10">U is string &amp; number, and no value</text>
   <text class="muted" x="470" y="320" fill="#526173" font-family="system-ui, sans-serif" font-size="10">is both, so it collapses to never.</text>
   <text class="muted" x="470" y="348" fill="#526173" font-family="system-ui, sans-serif" font-size="9.5">Variance is not a detail here; it is</text>
   <text class="muted" x="470" y="362" fill="#526173" font-family="system-ui, sans-serif" font-size="9.5">the whole answer.</text>
   <rect class="info-box" x="36" y="392" width="648" height="106" rx="12" fill="#dbeafe" stroke="#2563eb" stroke-width="2" />
   <text class="info-text" x="54" y="416" fill="#172554" font-family="system-ui, sans-serif" font-size="13" font-weight="700">A constraint is what turns a generic into a compile-time check</text>
   <text class="info-text" x="54" y="440" fill="#172554" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="11" font-weight="700">function pluck&lt;T, K extends keyof T&gt;(obj: T, key: K): T[K]</text>
-  <text class="info-text" x="54" y="462" fill="#172554" font-family="system-ui, sans-serif" font-size="10.5">T is inferred from obj, so keyof T is the union of that object's actual keys and a key it does not have fails to compile — before the</text>
-  <text class="info-text" x="54" y="480" fill="#172554" font-family="system-ui, sans-serif" font-size="10.5">code ever runs. The return type T[K] is an indexed access: it resolves to the type stored at that exact key, not to a union of all of them.</text>
+  <text class="info-text" x="54" y="462" fill="#172554" font-family="system-ui, sans-serif" font-size="10.5">T is inferred from obj, so keyof T is the union of that object's actual keys. Passing a key it lacks fails to compile, before the</text>
+  <text class="info-text" x="54" y="480" fill="#172554" font-family="system-ui, sans-serif" font-size="10.5">code ever runs. T[K] is an indexed access: it resolves to the type at that exact key, not a union of all of them.</text>
 </svg>

@@ -86,7 +86,7 @@
 
     <rect class="field" x="396" y="108" width="288" height="64" fill="#dbeafe" stroke="#2563eb" stroke-width="2" />
     <text class="field-label" x="540" y="140" fill="#172554" font-size="14" font-weight="700">opcode</text>
-    <text class="muted" x="540" y="158" fill="#526173" font-size="10.5">4 bits — see registry below</text>
+    <text class="muted" x="540" y="158" fill="#526173" font-size="10.5">4 bits, see registry below</text>
   </g>
 
   <g font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" text-anchor="middle">
@@ -107,7 +107,7 @@
   </g>
 
   <text class="muted" x="36" y="290" fill="#526173" font-family="system-ui, sans-serif" font-size="13" font-weight="600">
-    Extended payload length — only present when `payload len` signals an escape:
+    Extended payload length, present only when `payload len` signals an escape:
   </text>
 
   <g font-family="system-ui, sans-serif">
@@ -124,24 +124,24 @@
 
   <g font-family="system-ui, sans-serif">
     <rect class="optional" x="36" y="410" width="648" height="70" rx="12" fill="#f5f7fb" stroke="#64748b" stroke-width="2" stroke-dasharray="6 5" />
-    <text class="optional-label" x="56" y="438" fill="#526173" font-size="14" font-weight="700">Masking key — 4 bytes (32 bits)</text>
-    <text class="muted" x="56" y="458" fill="#526173" font-size="12">present only when MASK = 1 — mandatory client→server, forbidden server→client</text>
+    <text class="optional-label" x="56" y="438" fill="#526173" font-size="14" font-weight="700">Masking key, 4 bytes (32 bits)</text>
+    <text class="muted" x="56" y="458" fill="#526173" font-size="12">present only when MASK = 1, mandatory client→server, forbidden server→client</text>
   </g>
 
   <g font-family="system-ui, sans-serif">
     <rect class="optional" x="36" y="498" width="648" height="70" rx="12" fill="#f5f7fb" stroke="#64748b" stroke-width="2" stroke-dasharray="6 5" />
-    <text class="optional-label" x="56" y="526" fill="#526173" font-size="14" font-weight="700">Payload data — 0 to 2⁶⁴−1 bytes</text>
+    <text class="optional-label" x="56" y="526" fill="#526173" font-size="14" font-weight="700">Payload data, 0 to 2⁶⁴−1 bytes</text>
     <text class="muted" x="56" y="546" fill="#526173" font-size="12">if masked: payload[i] XOR masking-key[i mod 4], byte by byte</text>
   </g>
 
   <g font-family="system-ui, sans-serif">
     <rect class="example-box" x="36" y="586" width="648" height="94" rx="12" fill="#ffedd5" stroke="#c2410c" stroke-width="2" />
-    <text class="accent-text" x="56" y="612" fill="#9a3412" font-size="14" font-weight="700">Worked example — header bytes 0x81 0x85</text>
+    <text class="accent-text" x="56" y="612" fill="#9a3412" font-size="14" font-weight="700">Worked example: header bytes 0x81 0x85</text>
     <text class="muted" x="56" y="634" fill="#526173" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="12">0x81 = 1000 0001 → FIN=1, RSV=000, opcode=0x1 (text)</text>
     <text class="muted" x="56" y="654" fill="#526173" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="12">0x85 = 1000 0101 → MASK=1, payload len=5 (literal, no escape)</text>
   </g>
 
   <text class="muted" x="36" y="712" fill="#526173" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="12">
-    opcode registry — 0x0 continuation · 0x1 text · 0x2 binary · 0x8 close · 0x9 ping · 0xA pong
+    opcode registry: 0x0 continuation · 0x1 text · 0x2 binary · 0x8 close · 0x9 ping · 0xA pong
   </text>
 </svg>

@@ -50,7 +50,7 @@
     What busts the build cache
   </text>
   <text class="muted" x="36" y="64" fill="#526173" font-family="system-ui, sans-serif" font-size="14">
-    A layer's cache dies when its key changes — and so does every layer above it.
+    A layer's cache dies when its key changes, and so does every layer above it.
   </text>
 
   <g font-family="system-ui, sans-serif">
@@ -60,9 +60,9 @@
     <text class="accent-text" x="52" y="158" fill="#9a3412" font-size="12" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">COPY . /app</text>
     <text class="accent-text" x="52" y="176" fill="#9a3412" font-size="12" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">RUN npm ci</text>
     <text class="accent-text" x="52" y="212" fill="#9a3412" font-size="11.5">Editing any file changes the COPY layer,</text>
-    <text class="accent-text" x="52" y="228" fill="#9a3412" font-size="11.5">and every layer above it is invalidated —</text>
-    <text class="accent-text" x="52" y="244" fill="#9a3412" font-size="11.5">so the install runs again on every build,</text>
-    <text class="accent-text" x="52" y="260" fill="#9a3412" font-size="11.5">even when no dependency changed.</text>
+    <text class="accent-text" x="52" y="228" fill="#9a3412" font-size="11.5">and invalidates every layer above it.</text>
+    <text class="accent-text" x="52" y="244" fill="#9a3412" font-size="11.5">so the install reruns on every build,</text>
+    <text class="accent-text" x="52" y="260" fill="#9a3412" font-size="11.5">even with no dependency change.</text>
 
     <rect class="ok-box" x="368" y="88" width="316" height="184" rx="12" fill="#dcfce7" stroke="#16a34a" stroke-width="2" />
     <text class="ok-text" x="384" y="112" fill="#14532d" font-size="13.5" font-weight="700">Dependencies first</text>
@@ -83,19 +83,19 @@
     <rect class="card" x="368" y="290" width="316" height="96" rx="12" fill="#ffffff" stroke="#64748b" stroke-width="2" />
     <text class="title" x="384" y="314" fill="#20242c" font-size="13" font-weight="700">A <tspan font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">RUN</tspan>'s key is the command string</text>
     <text class="muted" x="384" y="334" fill="#526173" font-size="11.5">Nothing more. A lone <tspan font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">apt-get update</tspan> matches</text>
-    <text class="muted" x="384" y="350" fill="#526173" font-size="11.5">last week's and reuses a stale index — put it</text>
+    <text class="muted" x="384" y="350" fill="#526173" font-size="11.5">last week's and reuses a stale index. Put it</text>
     <text class="muted" x="384" y="366" fill="#526173" font-size="11.5">in the same <tspan font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">RUN</tspan> as the install.</text>
 
     <rect class="card" x="36" y="402" width="316" height="90" rx="12" fill="#ffffff" stroke="#64748b" stroke-width="2" />
     <text class="title" x="52" y="426" fill="#20242c" font-size="13" font-weight="700" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">--mount=type=secret</text>
     <text class="muted" x="52" y="446" fill="#526173" font-size="11.5">Keeps the value out of the image and out of</text>
-    <text class="muted" x="52" y="462" fill="#526173" font-size="11.5">the cache key — which also means rotating a</text>
+    <text class="muted" x="52" y="462" fill="#526173" font-size="11.5">the cache key, which also means rotating a</text>
     <text class="muted" x="52" y="478" fill="#526173" font-size="11.5">secret does not invalidate that step.</text>
 
     <rect class="card" x="368" y="402" width="316" height="90" rx="12" fill="#ffffff" stroke="#64748b" stroke-width="2" />
     <text class="title" x="384" y="426" fill="#20242c" font-size="13" font-weight="700" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">--mount=type=cache</text>
     <text class="muted" x="384" y="446" fill="#526173" font-size="11.5">Needs BuildKit, and what the mount holds is</text>
-    <text class="muted" x="384" y="462" fill="#526173" font-size="11.5">never part of the resulting image — treat it</text>
+    <text class="muted" x="384" y="462" fill="#526173" font-size="11.5">never part of the resulting image. Treat it</text>
     <text class="muted" x="384" y="478" fill="#526173" font-size="11.5">as a speed-up that may simply be empty.</text>
   </g>
 </svg>
