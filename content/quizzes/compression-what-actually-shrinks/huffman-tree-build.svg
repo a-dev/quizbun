@@ -1,0 +1,122 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="620" viewBox="0 0 1000 620">
+  <style>
+    svg {
+      --panel: #f5f7fb;
+      --title: #20242c;
+      --muted: #526173;
+      --edge: #64748b;
+      --node: #ffffff;
+      --node-edge: #64748b;
+      --leaf: #dbeafe;
+      --leaf-edge: #2563eb;
+      --leaf-label: #172554;
+      --bit: #9333ea;
+      --code-bg: #f0eafc;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      svg {
+        --panel: #1a1f27;
+        --title: #e6eaf2;
+        --muted: #9aa8bd;
+        --edge: #8b9bb4;
+        --node: #252b35;
+        --node-edge: #8b9bb4;
+        --leaf: #1e3a5f;
+        --leaf-edge: #60a5fa;
+        --leaf-label: #dbeafe;
+        --bit: #c084fc;
+        --code-bg: #2a2140;
+      }
+    }
+
+    .panel { fill: var(--panel); }
+    .title { fill: var(--title); }
+    .muted { fill: var(--muted); }
+    .edge { stroke: var(--edge); }
+    .node { fill: var(--node); stroke: var(--node-edge); }
+    .leaf { fill: var(--leaf); stroke: var(--leaf-edge); }
+    .leaf-label { fill: var(--leaf-label); }
+    .bit { fill: var(--bit); }
+    .code-bg { fill: var(--code-bg); stroke: var(--leaf-edge); }
+  </style>
+
+  <rect class="panel" width="1000" height="620" rx="20" fill="#f5f7fb" />
+  <text class="title" x="36" y="42" fill="#20242c" font-family="system-ui, sans-serif" font-size="20" font-weight="700">
+    Huffman tree: merge the two smallest, repeat, then read off codes
+  </text>
+
+  <g font-family="system-ui, sans-serif" text-anchor="middle">
+    <!-- edges (drawn first, under nodes) -->
+    <line class="edge" x1="130" y1="265" x2="310" y2="150" stroke="#64748b" stroke-width="3" />
+    <line class="edge" x1="130" y1="265" x2="310" y2="380" stroke="#64748b" stroke-width="3" />
+    <line class="edge" x1="310" y1="380" x2="490" y2="270" stroke="#64748b" stroke-width="3" />
+    <line class="edge" x1="310" y1="380" x2="490" y2="490" stroke="#64748b" stroke-width="3" />
+    <line class="edge" x1="490" y1="270" x2="670" y2="230" stroke="#64748b" stroke-width="3" />
+    <line class="edge" x1="490" y1="270" x2="670" y2="310" stroke="#64748b" stroke-width="3" />
+    <line class="edge" x1="490" y1="490" x2="670" y2="430" stroke="#64748b" stroke-width="3" />
+    <line class="edge" x1="490" y1="490" x2="670" y2="550" stroke="#64748b" stroke-width="3" />
+    <line class="edge" x1="670" y1="430" x2="850" y2="390" stroke="#64748b" stroke-width="3" />
+    <line class="edge" x1="670" y1="430" x2="850" y2="470" stroke="#64748b" stroke-width="3" />
+
+    <!-- bit labels -->
+    <text class="bit" x="205" y="188" fill="#9333ea" font-size="16" font-weight="700">0</text>
+    <text class="bit" x="205" y="345" fill="#9333ea" font-size="16" font-weight="700">1</text>
+    <text class="bit" x="385" y="305" fill="#9333ea" font-size="16" font-weight="700">0</text>
+    <text class="bit" x="385" y="455" fill="#9333ea" font-size="16" font-weight="700">1</text>
+    <text class="bit" x="565" y="228" fill="#9333ea" font-size="16" font-weight="700">0</text>
+    <text class="bit" x="565" y="308" fill="#9333ea" font-size="16" font-weight="700">1</text>
+    <text class="bit" x="565" y="428" fill="#9333ea" font-size="16" font-weight="700">0</text>
+    <text class="bit" x="565" y="548" fill="#9333ea" font-size="16" font-weight="700">1</text>
+    <text class="bit" x="745" y="388" fill="#9333ea" font-size="16" font-weight="700">0</text>
+    <text class="bit" x="745" y="468" fill="#9333ea" font-size="16" font-weight="700">1</text>
+
+    <!-- internal nodes -->
+    <circle class="node" cx="130" cy="265" r="34" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <text class="title" x="130" y="271" fill="#20242c" font-size="18" font-weight="700">100</text>
+
+    <circle class="node" cx="310" cy="380" r="30" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <text class="title" x="310" y="386" fill="#20242c" font-size="16" font-weight="700">55</text>
+
+    <circle class="node" cx="490" cy="270" r="28" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <text class="title" x="490" y="276" fill="#20242c" font-size="15" font-weight="700">25</text>
+
+    <circle class="node" cx="490" cy="490" r="28" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <text class="title" x="490" y="496" fill="#20242c" font-size="15" font-weight="700">30</text>
+
+    <circle class="node" cx="670" cy="430" r="26" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <text class="title" x="670" y="436" fill="#20242c" font-size="14" font-weight="700">14</text>
+
+    <!-- leaves -->
+    <rect class="leaf" x="270" y="120" width="80" height="60" rx="10" fill="#dbeafe" stroke="#2563eb" stroke-width="2" />
+    <text class="leaf-label" x="310" y="147" fill="#172554" font-size="17" font-weight="700">a</text>
+    <text class="leaf-label" x="310" y="167" fill="#172554" font-size="13">45</text>
+
+    <rect class="leaf" x="630" y="200" width="80" height="60" rx="10" fill="#dbeafe" stroke="#2563eb" stroke-width="2" />
+    <text class="leaf-label" x="670" y="227" fill="#172554" font-size="17" font-weight="700">c</text>
+    <text class="leaf-label" x="670" y="247" fill="#172554" font-size="13">12</text>
+
+    <rect class="leaf" x="630" y="280" width="80" height="60" rx="10" fill="#dbeafe" stroke="#2563eb" stroke-width="2" />
+    <text class="leaf-label" x="670" y="307" fill="#172554" font-size="17" font-weight="700">b</text>
+    <text class="leaf-label" x="670" y="327" fill="#172554" font-size="13">13</text>
+
+    <rect class="leaf" x="630" y="520" width="80" height="60" rx="10" fill="#dbeafe" stroke="#2563eb" stroke-width="2" />
+    <text class="leaf-label" x="670" y="547" fill="#172554" font-size="17" font-weight="700">d</text>
+    <text class="leaf-label" x="670" y="567" fill="#172554" font-size="13">16</text>
+
+    <rect class="leaf" x="810" y="360" width="80" height="60" rx="10" fill="#dbeafe" stroke="#2563eb" stroke-width="2" />
+    <text class="leaf-label" x="850" y="387" fill="#172554" font-size="17" font-weight="700">f</text>
+    <text class="leaf-label" x="850" y="407" fill="#172554" font-size="13">5</text>
+
+    <rect class="leaf" x="810" y="440" width="80" height="60" rx="10" fill="#dbeafe" stroke="#2563eb" stroke-width="2" />
+    <text class="leaf-label" x="850" y="467" fill="#172554" font-size="17" font-weight="700">e</text>
+    <text class="leaf-label" x="850" y="487" fill="#172554" font-size="13">9</text>
+  </g>
+
+  <g font-family="system-ui, sans-serif">
+    <rect class="code-bg" x="36" y="62" width="928" height="34" rx="8" fill="#f0eafc" stroke="#2563eb" stroke-width="1" />
+    <text class="muted" x="52" y="85" fill="#526173" font-size="15" font-family="ui-monospace, monospace">
+      Resulting codes:  a=0   c=100   b=101   d=111   f=1100   e=1101
+    </text>
+  </g>
+</svg>

@@ -1,0 +1,90 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="400" viewBox="0 0 720 400">
+  <style>
+    svg {
+      --panel: #f5f7fb;
+      --title: #20242c;
+      --muted: #526173;
+      --soil: #e7e0cf;
+      --soil-edge: #b8ac86;
+      --pipe: #64748b;
+      --pipe-edge: #334155;
+      --anode: #c2410c;
+      --anode-text: #9a3412;
+      --wire: #2563eb;
+      --electron: #16a34a;
+    }
+    @media (prefers-color-scheme: dark) {
+      svg {
+        --panel: #1a1f27;
+        --title: #e6eaf2;
+        --muted: #9aa8bd;
+        --soil: #3a3324;
+        --soil-edge: #6b6247;
+        --pipe: #94a3b8;
+        --pipe-edge: #e2e8f0;
+        --anode: #fb923c;
+        --anode-text: #fdba74;
+        --wire: #60a5fa;
+        --electron: #4ade80;
+      }
+    }
+    .panel { fill: var(--panel); }
+    .title { fill: var(--title); }
+    .muted { fill: var(--muted); }
+    .soil { fill: var(--soil); stroke: var(--soil-edge); }
+    .pipe { fill: var(--pipe); stroke: var(--pipe-edge); }
+    .anode { fill: var(--anode); stroke: var(--pipe-edge); }
+    .anode-text { fill: var(--anode-text); }
+    .wire { stroke: var(--wire); fill: none; }
+    .electron { fill: var(--electron); stroke: var(--electron); }
+  </style>
+
+  <rect class="panel" width="720" height="400" rx="20" fill="#f5f7fb" />
+  <text class="title" x="36" y="44" fill="#20242c" font-family="system-ui, sans-serif" font-size="19" font-weight="700">
+    The anode corrodes on purpose, so the pipe doesn't
+  </text>
+
+  <g font-family="system-ui, sans-serif">
+    <!-- surface line -->
+    <line x1="60" y1="150" x2="660" y2="150" stroke="#526173" stroke-width="2" />
+    <text class="muted" x="70" y="140" fill="#526173" font-size="12">ground surface</text>
+
+    <!-- soil block -->
+    <rect class="soil" x="60" y="150" width="600" height="190" fill="#e7e0cf" stroke="#b8ac86" stroke-width="2" />
+
+    <!-- test post at surface -->
+    <rect x="150" y="95" width="18" height="55" rx="4" fill="#94a3b8" stroke="#334155" stroke-width="1.5" />
+    <text class="muted" x="159" y="85" fill="#526173" font-size="12" text-anchor="middle">test post</text>
+
+    <!-- buried pipeline -->
+    <rect class="pipe" x="140" y="270" width="360" height="46" rx="20" fill="#64748b" stroke="#334155" stroke-width="2" />
+    <text x="320" y="298" fill="#f5f7fb" font-size="14" font-weight="700" text-anchor="middle">steel pipeline — stays intact</text>
+
+    <!-- sacrificial anode -->
+    <g transform="translate(600,255)">
+      <ellipse class="anode" cx="0" cy="0" rx="34" ry="24" fill="#c2410c" stroke="#334155" stroke-width="2" />
+      <text x="0" y="48" fill="#9a3412" class="anode-text" font-size="13" font-weight="700" text-anchor="middle">zinc/magnesium anode</text>
+      <text x="0" y="65" fill="#526173" class="muted" font-size="12" text-anchor="middle">— corrodes instead</text>
+    </g>
+
+    <!-- wires connecting test post, pipe, anode -->
+    <path class="wire" d="M159 150 V180 H320 V270" stroke="#2563eb" stroke-width="3" fill="none" />
+    <path class="wire" d="M420 293 H600 V279" stroke="#2563eb" stroke-width="3" fill="none" />
+
+    <!-- electron flow arrow anode -> pipe -->
+    <g stroke="#16a34a" stroke-width="3">
+      <path d="M578 268 Q520 250 460 270" fill="none" marker-end="url(#e-arrow)" />
+    </g>
+    <text x="520" y="235" fill="#15803d" font-size="12" font-weight="700" text-anchor="middle">electrons flow to the pipe</text>
+
+    <defs>
+      <marker id="e-arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+        <path d="M0,0 L0,6 L9,3 z" fill="#16a34a" />
+      </marker>
+    </defs>
+
+    <text class="muted" x="360" y="380" fill="#526173" font-size="13" text-anchor="middle">
+      the more reactive metal supplies electrons through the wire, keeping the pipe's surface from oxidizing
+    </text>
+  </g>
+</svg>

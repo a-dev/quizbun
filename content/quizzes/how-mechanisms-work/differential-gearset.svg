@@ -1,0 +1,94 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="320" viewBox="0 0 760 320">
+  <style>
+    svg {
+      --panel: #f5f7fb;
+      --title: #20242c;
+      --muted: #526173;
+      --edge: #64748b;
+      --card: #ffffff;
+      --accent1: #2563eb;
+      --accent2: #c2410c;
+    }
+    @media (prefers-color-scheme: dark) {
+      svg {
+        --panel: #1a1f27;
+        --title: #e6eaf2;
+        --muted: #9aa8bd;
+        --edge: #8b9bb4;
+        --card: #252b35;
+        --accent1: #60a5fa;
+        --accent2: #fb923c;
+      }
+    }
+    .panel { fill: var(--panel); }
+    .card { fill: var(--card); stroke: var(--edge); }
+    .edge { stroke: var(--edge); fill: none; }
+    .muted { fill: var(--muted); }
+    .accent1 { fill: var(--accent1); stroke: var(--accent1); }
+    .accent2 { fill: var(--accent2); stroke: var(--accent2); }
+    text { font-family: system-ui, sans-serif; }
+  </style>
+
+  <rect class="panel" width="760" height="320" rx="20" fill="#f5f7fb" />
+
+  <!-- Left panel: driving straight -->
+  <g transform="translate(20,20)">
+    <rect class="card" width="350" height="280" rx="16" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <text class="muted" x="175" y="30" text-anchor="middle" font-size="14" fill="#526173">driving straight</text>
+
+    <!-- ring gear (input) -->
+    <circle cx="175" cy="150" r="70" fill="none" stroke="#64748b" stroke-width="10" stroke-dasharray="6 6" class="edge" />
+    <path d="M60 150 H30" class="edge" stroke="#64748b" stroke-width="4" stroke-linecap="round" />
+    <path d="m40 141 -12 9 12 9" class="edge" stroke="#64748b" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+    <text class="muted" x="60" y="120" text-anchor="middle" font-size="12" fill="#526173">driven</text>
+
+    <!-- carrier + spider gears -->
+    <circle cx="175" cy="150" r="14" class="accent1" fill="#2563eb" />
+    <circle cx="175" cy="122" r="10" fill="#ffffff" stroke="#2563eb" stroke-width="3" />
+    <circle cx="175" cy="178" r="10" fill="#ffffff" stroke="#2563eb" stroke-width="3" />
+
+    <!-- side gears + shafts -->
+    <circle cx="130" cy="150" r="16" fill="#ffffff" stroke="#20242c" stroke-width="3" />
+    <circle cx="220" cy="150" r="16" fill="#ffffff" stroke="#20242c" stroke-width="3" />
+    <rect x="60" y="144" width="55" height="12" rx="4" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <rect x="235" y="144" width="55" height="12" rx="4" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <circle cx="55" cy="150" r="16" fill="none" stroke="#20242c" stroke-width="4" />
+    <circle cx="295" cy="150" r="16" fill="none" stroke="#20242c" stroke-width="4" />
+
+    <!-- equal speed arrows -->
+    <path d="M55 195 v20" class="edge" stroke="#526173" stroke-width="3" stroke-linecap="round" />
+    <path d="m47 205 8 12 8 -12" class="edge" stroke="#526173" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+    <path d="M295 195 v20" class="edge" stroke="#526173" stroke-width="3" stroke-linecap="round" />
+    <path d="m287 205 8 12 8 -12" class="edge" stroke="#526173" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+    <text class="muted" x="175" y="260" text-anchor="middle" font-size="13" fill="#526173">both wheels turn at the same rate</text>
+  </g>
+
+  <!-- Right panel: turning -->
+  <g transform="translate(390,20)">
+    <rect class="card" width="350" height="280" rx="16" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <text class="muted" x="175" y="30" text-anchor="middle" font-size="14" fill="#526173">turning a corner</text>
+
+    <circle cx="175" cy="150" r="70" fill="none" stroke="#64748b" stroke-width="10" stroke-dasharray="6 6" class="edge" />
+    <path d="M60 150 H30" class="edge" stroke="#64748b" stroke-width="4" stroke-linecap="round" />
+    <path d="m40 141 -12 9 12 9" class="edge" stroke="#64748b" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+    <text class="muted" x="60" y="120" text-anchor="middle" font-size="12" fill="#526173">driven</text>
+
+    <circle cx="175" cy="150" r="14" class="accent1" fill="#2563eb" />
+    <circle cx="175" cy="122" r="10" fill="#ffffff" stroke="#2563eb" stroke-width="3" transform="rotate(-25 175 122)" />
+    <circle cx="175" cy="178" r="10" fill="#ffffff" stroke="#2563eb" stroke-width="3" transform="rotate(-25 175 178)" />
+
+    <circle cx="130" cy="150" r="16" fill="#ffffff" stroke="#20242c" stroke-width="3" />
+    <circle cx="220" cy="150" r="16" fill="#ffffff" stroke="#20242c" stroke-width="3" />
+    <rect x="60" y="144" width="55" height="12" rx="4" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <rect x="235" y="144" width="55" height="12" rx="4" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <circle cx="55" cy="150" r="16" fill="none" stroke="#20242c" stroke-width="4" />
+    <circle cx="295" cy="150" r="16" fill="none" stroke="#20242c" stroke-width="4" />
+
+    <!-- unequal speed arrows: inner short, outer long -->
+    <path d="M55 195 v10" class="edge" stroke="#c2410c" stroke-width="3" stroke-linecap="round" />
+    <path d="m48 202 7 10 7 -10" class="edge" stroke="#c2410c" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+    <path d="M295 195 v30" class="edge" stroke="#c2410c" stroke-width="3" stroke-linecap="round" />
+    <path d="m287 215 8 12 8 -12" class="edge" stroke="#c2410c" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+    <text class="muted" x="175" y="270" text-anchor="middle" font-size="13" fill="#526173">the two wheels turn at different rates</text>
+  </g>
+</svg>

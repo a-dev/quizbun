@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="400" viewBox="0 0 720 400">
+  <style>
+    svg {
+      --panel: #f5f7fb;
+      --title: #20242c;
+      --muted: #526173;
+      --road: #cbd5e1;
+      --road-edge: #94a3b8;
+      --loop: #2563eb;
+      --loop-text: #1d4ed8;
+      --car: #64748b;
+      --car-edge: #334155;
+      --cabinet: #16a34a;
+      --cabinet-text: #15803d;
+    }
+    @media (prefers-color-scheme: dark) {
+      svg {
+        --panel: #1a1f27;
+        --title: #e6eaf2;
+        --muted: #9aa8bd;
+        --road: #333c49;
+        --road-edge: #4b5563;
+        --loop: #60a5fa;
+        --loop-text: #93c5fd;
+        --car: #94a3b8;
+        --car-edge: #e2e8f0;
+        --cabinet: #4ade80;
+        --cabinet-text: #86efac;
+      }
+    }
+    .panel { fill: var(--panel); }
+    .title { fill: var(--title); }
+    .muted { fill: var(--muted); }
+    .road { fill: var(--road); stroke: var(--road-edge); }
+    .loop { stroke: var(--loop); fill: none; }
+    .loop-text { fill: var(--loop-text); }
+    .car { fill: var(--car); stroke: var(--car-edge); }
+    .cabinet { fill: var(--cabinet); }
+    .cabinet-text { fill: var(--cabinet-text); }
+  </style>
+
+  <rect class="panel" width="720" height="400" rx="20" fill="#f5f7fb" />
+  <text class="title" x="36" y="44" fill="#20242c" font-family="system-ui, sans-serif" font-size="19" font-weight="700">
+    A car's steel body changes the loop's inductance
+  </text>
+
+  <g font-family="system-ui, sans-serif">
+    <!-- road surface, top-down -->
+    <rect class="road" x="60" y="90" width="420" height="220" fill="#cbd5e1" stroke="#94a3b8" stroke-width="2" />
+    <text class="muted" x="270" y="335" fill="#526173" font-size="13" text-anchor="middle">stop-line lane, viewed from above</text>
+
+    <!-- sawcut loop rectangle -->
+    <rect class="loop" x="130" y="140" width="280" height="120" rx="6" fill="none" stroke="#2563eb" stroke-width="4" stroke-dasharray="2 6" stroke-linecap="round" />
+    <text class="loop-text" x="270" y="130" fill="#1d4ed8" font-size="13" font-weight="700" text-anchor="middle">wire loop sawn into the asphalt</text>
+
+    <!-- car sitting on loop -->
+    <g transform="translate(270,200)">
+      <rect class="car" x="-90" y="-38" width="180" height="76" rx="14" fill="#64748b" stroke="#334155" stroke-width="2" />
+      <rect x="-55" y="-38" width="60" height="30" rx="6" fill="none" stroke="#334155" stroke-width="2" />
+      <text x="0" y="6" fill="#f5f7fb" font-size="13" font-weight="700" text-anchor="middle">steel vehicle body</text>
+    </g>
+
+    <!-- wire out to cabinet -->
+    <path d="M410 200 H560" stroke="#526173" stroke-width="3" fill="none" />
+    <g transform="translate(600,200)">
+      <rect class="cabinet" x="-40" y="-45" width="80" height="90" rx="8" fill="#16a34a" />
+      <text x="0" y="-55" fill="#526173" font-size="12" text-anchor="middle" class="muted">detector cabinet</text>
+      <text x="0" y="6" fill="#f5f7fb" font-size="24" font-weight="700" text-anchor="middle">L↓</text>
+    </g>
+
+    <text class="muted" x="360" y="360" fill="#526173" font-size="13" text-anchor="middle">
+      the metal mass lowers the loop's inductance; the detector
+    </text>
+    <text class="muted" x="360" y="378" fill="#526173" font-size="13" text-anchor="middle">
+      reads that drop as "vehicle present"
+    </text>
+  </g>
+</svg>

@@ -1,0 +1,868 @@
+{
+  "schemaVersion": 1,
+  "id": "color-on-the-web",
+  "title": "Color on the Web: Gamut, Gamma & Why Your Gradient Goes Gray",
+  "description": "`#808080` is not half as bright as white, a 50%-lightness yellow and a 50%-lightness blue are nothing alike, and a blue-to-yellow gradient turns gray in the middle for a reason. This Quiz is about what color values actually mean once they leave your stylesheet — gamut, transfer functions, perceptual color spaces, and what contrast ratios do and do not measure.",
+  "language": "en",
+  "tags": ["css", "color", "frontend", "accessibility", "design"],
+  "questions": [
+    {
+      "id": "hex-808080-is-not-half-bright",
+      "title": "Which ramp below steps through equal amounts of *physical light*, and where does `#808080` actually fall?",
+      "description": "Two five-step gray ramps, Ramp A and Ramp B. One steps through equal hex numbers. The other steps through equal amounts of the light a screen actually emits.",
+      "images": [
+        {
+          "src": "srgb-gray-ramp.svg",
+          "alt": "Two five-step gray ramps labeled Ramp A and Ramp B, each swatch captioned with its hex code. Ramp A: #000000, #404040, #808080, #c0c0c0, #ffffff. Ramp B: #000000, #898989, #bcbcbc, #e1e1e1, #ffffff.",
+          "placement": "question"
+        }
+      ],
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Ramp A is the equal-hex ramp and contains `#808080`. Equal *light* steps look like Ramp B instead, so `#808080` emits only about a fifth of white's light, not half.",
+          "isCorrect": true
+        },
+        {
+          "text": "Ramp B is the equal-hex ramp, and `#808080` genuinely emits half of white's light — Ramp A only looks even because of rounding.",
+          "isCorrect": false
+        },
+        {
+          "text": "Both ramps emit identical light at every step; the hex numbers differ only because of display calibration drift.",
+          "isCorrect": false
+        },
+        {
+          "text": "`#808080` can't be compared to white in terms of emitted light, because sRGB hex values don't correspond to any physical quantity.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "sRGB values are *gamma-encoded*: the number you write is not proportional to the light a pixel emits. To go from an encoded channel value to the actual light output (linear light), you apply the sRGB transfer function — roughly a power curve with exponent 2.4 for most of the range. `#808080` is `128/255 ≈ 0.502` encoded, and decoding that gives a relative luminance of about `0.216` — roughly a fifth of white's light, not half.\n\nThat's exactly what Ramp A vs. Ramp B shows. Ramp A steps through equal *encoded* numbers (`0, 64, 128, 192, 255`) and, because gamma encoding is built to be roughly perceptually even, it also looks like a smooth, evenly-spaced gray scale to your eye — `#808080` sits right in its middle. Ramp B steps through equal amounts of *physical light* instead (`0%, 25%, 50%, 75%, 100%` of white's output, re-encoded so a screen can display them) — and because the eye is far more sensitive to differences among dark tones than light ones, those equal-light steps look bunched up near white and rush past the shadows. The true halfway point of physical light is Ramp B's middle swatch, `#bcbcbc`, not `#808080`.\n\nThis is also why '50% opacity black over white' and '#808080' are not the same gray, and why math done directly on encoded numbers — averaging two hex colors, resizing an image — quietly gets the light wrong.",
+      "references": "[MDN: CSS color value and the sRGB transfer function](https://developer.mozilla.org/en-US/docs/Web/CSS/color_value/color) · [Bartosz Ciechanowski: Color spaces](https://ciechanow.ski/color-spaces/)"
+    },
+    {
+      "id": "gamma-encoded-vs-linear-light",
+      "title": "You need to add two overlapping light sources together, like a stage light shining onto an already-lit surface. Which values do you have to use for the math to come out right?",
+      "description": "sRGB values in a stylesheet or an image file are gamma-encoded, not the light itself.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Linear-light values — decode the encoded numbers first, add the actual light quantities, then re-encode the result.",
+          "isCorrect": true
+        },
+        {
+          "text": "The encoded sRGB numbers directly — physical light adds the same way the stored 0–255 values do.",
+          "isCorrect": false
+        },
+        {
+          "text": "It doesn't matter, as long as you clamp the result to 0–255 afterward.",
+          "isCorrect": false
+        },
+        {
+          "text": "Neither — light intensities can only be combined by a color-managed printer or camera, never in software.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Physics doesn't know about gamma curves. Two light sources add linearly: twice the photons is twice the light. But the numbers stored in an sRGB file or written in CSS are *encoded* — compressed by a power curve — specifically so that 8 bits can represent gradations the eye actually cares about, allocating more of those 256 steps to the shadows where human vision is more sensitive to relative differences.\n\nSo any operation that is really about combining amounts of light — additive blending, computing how bright an overlap is, simulating a light source — has to decode the encoded values to linear light first, do the arithmetic there, then re-encode for storage or display. Skipping that step and adding the encoded numbers directly produces a result that looks plausible but is measurably wrong, usually darker and muddier than the true combined light would be.",
+      "references": "[MDN: CSS color value and the sRGB transfer function](https://developer.mozilla.org/en-US/docs/Web/CSS/color_value/color)"
+    },
+    {
+      "id": "gamma-space-blending-symptoms",
+      "title": "Which of these are real visible symptoms of blending or resizing images directly on their gamma-encoded values, instead of converting to linear light first?",
+      "description": "Select every statement below that is a genuine consequence of skipping the decode-blend-reencode step.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "A downscaled photo looks slightly darker and muddier than the original, especially in high-contrast areas.",
+          "isCorrect": true
+        },
+        {
+          "text": "Antialiased light text on a dark background can look noticeably thinner than dark text on a light background at the same font weight.",
+          "isCorrect": true
+        },
+        {
+          "text": "JPEG compression artifacts (blocky patches) become more visible.",
+          "isCorrect": false
+        },
+        {
+          "text": "A soft box-shadow or blur can develop a faint dark seam where it overlaps a bright edge.",
+          "isCorrect": true
+        }
+      ],
+      "explanation": "Resizing and blurring both work by averaging nearby pixels. Do that averaging on encoded (gamma) values and the result is systematically too dark, because the encoding compresses the bright end of the range — a straightforward numeric average therefore underestimates the true averaged light. That's the muddy-downscale and dark-seam-in-a-blur symptoms.\n\nAntialiasing has the same root cause from a different angle: an antialiased edge is a partial-coverage blend between the foreground and background colors. Blending in gamma space biases that blend toward the darker of the two colors, so white text edges over black lose light and read as thinner strokes than black text edges over white, even though the two situations are geometrically identical.\n\nJPEG blockiness is unrelated — it comes from lossy DCT quantization of frequency data, not from which space blending happens in, so that option doesn't belong on this list.",
+      "references": "[Eric Brasseur: Gamma error in picture scaling](http://www.ericbrasseur.org/gamma.html)"
+    },
+    {
+      "id": "eight-bit-channel-values",
+      "title": "How many distinct values can a single 8-bit color channel represent?",
+      "description": "Each of the R, G, and B channels in a typical sRGB image or CSS `rgb()` value is stored with 8 bits.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [256]
+      },
+      "explanation": "8 bits give `2⁸ = 256` distinct values per channel, `0` through `255`. Multiply that across three channels and you get roughly 16.7 million possible sRGB colors — plenty for most content, but a finite ladder, not a continuum.\n\nThat finiteness is exactly where banding comes from: a smooth gradient that should sweep through hundreds of intermediate shades over a wide panel might only have room for a dozen or two distinct 8-bit steps across a *shallow* range (say, dark gray to slightly-less-dark gray), and the eye can easily see the boundary between one flat band and the next.",
+      "references": "[MDN: `<color>` value syntax](https://developer.mozilla.org/en-US/docs/Web/CSS/color_value)"
+    },
+    {
+      "id": "banding-and-dithering",
+      "title": "A shallow gradient shows visible stepped bands on an 8-bit display. Adding dither hides the banding without changing the color depth at all. What is dithering actually doing?",
+      "description": "The gradient spans only a narrow range of luminance, so it has few distinct 8-bit steps to work with.",
+      "images": [
+        {
+          "src": "banding-and-dither.svg",
+          "alt": "Two identical shallow gradient bars from dark gray to a slightly lighter gray. The top bar is rendered in six visible hard-edged steps, showing banding. The bottom bar has the same six underlying steps but is overlaid with fine dot dither noise, which visually smooths the steps into what reads as a continuous gradient.",
+          "placement": "explanation"
+        }
+      ],
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "It adds a small amount of noise near each band boundary, scattering pixels between the two neighboring values so your eye spatially averages them into a smoother-looking transition.",
+          "isCorrect": true
+        },
+        {
+          "text": "It quietly upgrades the image to 10-bit or 16-bit per channel so more steps are available.",
+          "isCorrect": false
+        },
+        {
+          "text": "It blurs the gradient slightly, which is a separate effect that happens to also hide banding.",
+          "isCorrect": false
+        },
+        {
+          "text": "It reorders the existing bands from darkest to lightest so the eye can't detect the boundary.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Dithering doesn't add any new color values — you're still limited to the same 256 levels per channel. What it does is break up the *sharp edge* between one flat band and the next by scattering pixels of the two neighboring values across the boundary in a noise or ordered pattern. Your visual system does its own spatial averaging over small areas, so a checkerboard of value 40 and value 41 pixels reads as something in between, and the hard edge that your eye would otherwise lock onto disappears.\n\nIt's a genuinely different mechanism from blurring: a blur mixes color *values* together (creating new, actually-intermediate pixels), while dithering keeps the original discrete values and only rearranges *where* they sit. That's also why dithered images still compress reasonably well — the noise is structured, not random static — while a blurred gradient would have literally introduced new intermediate colors.",
+      "references": "[Surma: Dithering on the Web](https://surma.dev/things/ditherpunk/)"
+    },
+    {
+      "id": "premultiplied-alpha-fix",
+      "title": "A semi-transparent PNG edge gets a visible dark or light fringe after resizing or blending. Switching the compositing math to *premultiplied* alpha fixes it. What was premultiplied alpha actually correcting?",
+      "description": "\"Straight\" (non-premultiplied) alpha stores each pixel's own RGB color and a separate alpha value; premultiplied alpha stores RGB values that have already been scaled by that pixel's alpha.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "In straight alpha, fully transparent pixels can hold arbitrary, meaningless RGB values, and linear filtering (resizing, mip-mapping, blending) averages those meaningless colors into the visible result along the edge.",
+          "isCorrect": true
+        },
+        {
+          "text": "Straight alpha can only represent fully opaque or fully transparent pixels, never partial transparency.",
+          "isCorrect": false
+        },
+        {
+          "text": "Premultiplied alpha stores more bits per channel, so it simply has less rounding error at the edges.",
+          "isCorrect": false
+        },
+        {
+          "text": "Premultiplied alpha disables gamma encoding for that image, which is what removes the fringe.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Straight alpha is efficient to author (you set a color and a separate opacity), but a fully transparent pixel's RGB channels are invisible on their own, so tools often leave them at whatever value is convenient — black, white, or a stale leftover color. That's harmless until something interpolates *between* pixels: resizing, mip-mapping, or GPU blending all average neighboring pixels, including their RGB channels, regardless of alpha. Average a visible orange pixel with an invisible pixel that happens to store black, and you get a dark fringe that was never actually part of the artwork.\n\nPremultiplied alpha avoids this by baking the alpha into the RGB values up front (`RGB × alpha`), so a fully transparent pixel is stored as `(0, 0, 0)` no matter what color it conceptually was — there's no meaningless color left to leak in. Interpolating premultiplied values and then dividing back out at the end gives an edge that blends correctly, because every value that entered the average was already weighted by how much it should count.",
+      "references": "[Wikipedia: Alpha compositing](https://en.wikipedia.org/wiki/Alpha_compositing)"
+    },
+    {
+      "id": "wider-gamut-what-it-means",
+      "title": "Display-P3 is marketed as a \"wider gamut\" than sRGB. What does that actually add?",
+      "description": "Both color spaces describe colors as combinations of red, green, and blue primaries.",
+      "images": [
+        {
+          "src": "gamut-srgb-vs-p3.svg",
+          "alt": "An abstract chromaticity plot with two overlapping triangles sharing the same center white point: a smaller dashed triangle for sRGB and a larger solid triangle for Display P3 that extends further toward saturated red and green corners. A caption notes the outline is illustrative, not a color-accurate render of the actual P3 primaries.",
+          "placement": "explanation"
+        }
+      ],
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Access to a range of real-world colors — mostly saturated reds and greens — that sRGB's red, green, and blue primaries simply cannot combine to produce.",
+          "isCorrect": true
+        },
+        {
+          "text": "A higher maximum brightness and deeper black level than sRGB displays can reach.",
+          "isCorrect": false
+        },
+        {
+          "text": "More distinct steps (effectively higher bit depth) within the same visible range as sRGB.",
+          "isCorrect": false
+        },
+        {
+          "text": "The ability to represent colors invisible to the human eye, for use in scientific imaging.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A color space's gamut is defined by its primaries: every representable color is some mixture of that space's red, green, and blue. Display-P3 chooses a more saturated red and green primary than sRGB, so the triangle of colors it can mix reaches further into the vivid red-green territory that real-world things — foliage, sunsets, some dyes and inks — actually occupy but that sRGB's narrower triangle clips.\n\nWider gamut is a claim about *chromaticity range*, and it's easy to conflate with two other, genuinely separate axes: dynamic range (how bright the brightest white and how dark the darkest black are, which is what HDR standards actually address) and bit depth (how many discrete steps exist between those extremes, which is a separate encoding choice — you can have an 8-bit P3 image or a 10-bit sRGB one). A wider gamut alone changes none of that; it only changes which hues are reachable at all.",
+      "references": "[MDN: `<color>` value syntax](https://developer.mozilla.org/en-US/docs/Web/CSS/color_value)"
+    },
+    {
+      "id": "p3-red-vs-srgb-red",
+      "title": "On a Display-P3-capable screen, how does `color(display-p3 1 0 0)` actually compare to `#ff0000`?",
+      "description": "Both are \"fully saturated red\" within their own color space.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "It renders as a noticeably more vivid, more saturated red — P3's red primary sits closer to a pure spectral red than sRGB's does.",
+          "isCorrect": true
+        },
+        {
+          "text": "The two render identically, because both notations mean \"red channel at maximum.\"",
+          "isCorrect": false
+        },
+        {
+          "text": "`color(display-p3 1 0 0)` is actually a duller red, since P3's primaries are less saturated than sRGB's.",
+          "isCorrect": false
+        },
+        {
+          "text": "`#ff0000` renders brighter, because hex colors bypass color management entirely.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "\"1 0 0\" only means maximum-red-channel *within whichever space you named*. sRGB and Display-P3 both put pure red at the (1, 0, 0) corner of their own triangle, but P3's red corner is a physically different, more saturated chromaticity than sRGB's red corner. So on a screen that can actually reach both, `color(display-p3 1 0 0)` looks like a punchier, more intense red than `#ff0000` sitting right next to it — the same numeric-sounding \"fully saturated\" claim describes two different colors of light.\n\nOn an sRGB-only screen, the browser has to gamut-map the P3 red down into what the screen can reproduce, and the closest reachable point tends to land very near sRGB's own red corner — so the visible gap mostly disappears on hardware that can't show the difference in the first place. That's precisely why this is a wide-gamut-display feature: on ordinary screens, `color(display-p3 1 0 0)` is essentially wasted precision.",
+      "references": "[MDN: `<color>` value syntax](https://developer.mozilla.org/en-US/docs/Web/CSS/color_value)"
+    },
+    {
+      "id": "clipping-vs-gamut-mapping",
+      "title": "A color from a wider space needs to be shown on an sRGB-only screen. What's the difference between simple clipping and perceptual gamut mapping?",
+      "description": "Both approaches have to bring an out-of-range color inside sRGB's triangle somehow.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Clipping clamps each channel independently to the nearest in-range value, which can shift the hue; gamut mapping searches for the closest reproducible color while trying to preserve hue and lightness, only sacrificing saturation.",
+          "isCorrect": true
+        },
+        {
+          "text": "Clipping and gamut mapping are two names for the same per-channel clamping operation.",
+          "isCorrect": false
+        },
+        {
+          "text": "Clipping discards the color and substitutes the nearest named CSS color; gamut mapping substitutes middle gray.",
+          "isCorrect": false
+        },
+        {
+          "text": "Gamut mapping is only possible in print workflows and has no browser equivalent.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Naive clipping treats R, G, and B as independent numbers and just clamps each one to `[0, 1]` (or `0–255`) separately. Because a color's channels aren't independent perceptually, clamping them independently can quietly rotate the hue — an out-of-range vivid orange might clip to something that reads more yellow or more red than intended, because one channel hit its ceiling before the others did.\n\nGamut mapping treats the target gamut as a 3D perceptual shape and looks for the nearest point *inside* it to the original color, usually holding hue fixed and trading away chroma (saturation) first, only touching lightness if it has to. The visible result is the same color family, just less intense — which is normally what you want — instead of clipping's occasional hue shift. Browsers implementing CSS Color 4 use gamut mapping (not raw clipping) when resolving an out-of-gamut color for a given display.",
+      "references": "[MDN: `<color>` value syntax](https://developer.mozilla.org/en-US/docs/Web/CSS/color_value)"
+    },
+    {
+      "id": "untagged-p3-photo-oversaturated",
+      "title": "A photo's pixel values were computed in Display-P3, but the exported file has no embedded color profile. What does it look like in a browser?",
+      "description": "Browsers assume an untagged image is sRGB.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Oversaturated — the same numbers, reinterpreted as sRGB primaries instead of P3's more saturated ones, land on more extreme, punchier colors than the photo was meant to have.",
+          "isCorrect": true
+        },
+        {
+          "text": "Undersaturated — reinterpreting P3 numbers as sRGB dilutes them toward gray.",
+          "isCorrect": false
+        },
+        {
+          "text": "Unaffected — pixel values mean the same thing regardless of which space they were computed in.",
+          "isCorrect": false
+        },
+        {
+          "text": "The browser refuses to render an untagged image at all.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Without an embedded profile telling it otherwise, a browser has to assume an image's numbers are sRGB — that's the universal fallback. If those numbers were actually computed against Display-P3's primaries, the browser is now plotting them against the *wrong*, narrower triangle.\n\nBecause P3's primaries are more saturated than sRGB's, a given (R, G, B) triple reinterpreted as sRGB coordinates ends up describing a chromaticity that's further from neutral than the photo's author intended — every color reads more intense than it should, especially in the reds and greens where the two gamuts diverge most. This is a real, common bug: an image exported by a wide-gamut-aware tool without a tag (or one that gets stripped by a pipeline step) shows up looking artificially punchy everywhere it's viewed without color management.",
+      "references": "[MDN: `<color>` value syntax](https://developer.mozilla.org/en-US/docs/Web/CSS/color_value)"
+    },
+    {
+      "id": "color-gamut-media-query",
+      "title": "What does `@media (color-gamut: p3) { ... }` let you do?",
+      "description": "```css\n.accent {\n  color: #d81b60; /* sRGB fallback */\n}\n\n@media (color-gamut: p3) {\n  .accent {\n    color: color(display-p3 0.9 0.1 0.35);\n  }\n}\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Serve a more saturated, wide-gamut color only to screens that can actually reproduce it, while every other screen keeps the sRGB fallback declared outside the media query.",
+          "isCorrect": true
+        },
+        {
+          "text": "Detect whether the user's operating system is set to dark mode.",
+          "isCorrect": false
+        },
+        {
+          "text": "Force every connected display to switch into its Display-P3 mode for the current page.",
+          "isCorrect": false
+        },
+        {
+          "text": "Convert all colors on the page from sRGB to Display-P3 automatically.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`color-gamut` is a media feature the browser can answer truthfully about the actual screen it's rendering on: `srgb`, `p3`, or `rec2026` roughly describe how wide a gamut that display can reproduce. Querying it lets you progressively enhance color the same way you'd progressively enhance any other capability — declare the safe, universally-supported sRGB value first, then override it inside the media query with a more vivid `color(display-p3 ...)` value that only wide-gamut screens will ever see.\n\nScreens that don't match the query simply never apply the second rule and keep rendering the sRGB fallback, so nothing breaks on ordinary hardware. It has nothing to do with dark mode (that's `prefers-color-scheme`) and it doesn't change any hardware state — it only decides which of *your* declared rules apply.",
+      "references": "[MDN: `@media (color-gamut)`](https://developer.mozilla.org/en-US/docs/Web/CSS/@media/color-gamut)"
+    },
+    {
+      "id": "what-wide-gamut-does-not-give-you",
+      "title": "Which of these statements about Display-P3 vs. sRGB are true?",
+      "description": "Select every statement that correctly describes what a wider gamut does and does not change.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "It reaches saturated reds and greens that sRGB's primaries cannot combine to produce.",
+          "isCorrect": true
+        },
+        {
+          "text": "It gives you a higher maximum brightness or a deeper black level than sRGB.",
+          "isCorrect": false
+        },
+        {
+          "text": "It gives you more distinct steps (higher effective bit depth) than 8-bit sRGB.",
+          "isCorrect": false
+        },
+        {
+          "text": "It shares sRGB's D65 white point, so a neutral gray looks the same reference white in both spaces.",
+          "isCorrect": true
+        }
+      ],
+      "explanation": "Gamut, dynamic range, and bit depth are three independent axes that marketing copy often blurs together. Display-P3 changes exactly one of them: it widens the *chromaticity* triangle by choosing more saturated red and green primaries, reaching real colors sRGB's triangle can't reach.\n\nIt says nothing about brightness range — that's the province of HDR transfer functions like PQ or HLG, which can be paired with either gamut. And it says nothing about bit depth — an 8-bit-per-channel P3 image and a 10-bit-per-channel sRGB image are both perfectly normal; gamut and precision are orthogonal choices. What P3 does share with sRGB is the same D65 white point, so `color(display-p3 0 0 0)` up through a genuinely neutral gray tracks the same reference white as sRGB's neutrals — only the saturated corners of the triangle differ.",
+      "references": "[MDN: `<color>` value syntax](https://developer.mozilla.org/en-US/docs/Web/CSS/color_value)"
+    },
+    {
+      "id": "hsl-lightness-is-not-perceptual",
+      "title": "Both panels below are `hsl(_ 100% 50%)`. Are they equally light?",
+      "description": "The left panel is `hsl(60 100% 50%)`. The right panel is `hsl(240 100% 50%)`.",
+      "images": [
+        {
+          "src": "hsl-lightness-lie.svg",
+          "alt": "Two equally sized color panels captioned only with their HSL values: the left panel is hsl(60 100% 50%), a bright yellow, and the right panel is hsl(240 100% 50%), a deep blue.",
+          "placement": "question"
+        }
+      ],
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "No — despite the identical `L` value, the yellow panel emits far more light than the blue one; HSL's lightness isn't tied to how bright a color actually looks.",
+          "isCorrect": true
+        },
+        {
+          "text": "Yes — `L` in HSL is calibrated to match human perceived brightness, so identical `L` always means identical brightness.",
+          "isCorrect": false
+        },
+        {
+          "text": "Yes, but only because both hues here happen to be primaries; less saturated hues would differ.",
+          "isCorrect": false
+        },
+        {
+          "text": "There's no way to know without a color-calibrated monitor.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`hsl(60 100% 50%)` is pure yellow, `#ffff00`. `hsl(240 100% 50%)` is pure blue, `#0000ff`. Both claim the same `50%` lightness, but their relative luminance — how much actual light reaches your eye — is wildly different: yellow's is about `0.93`, blue's is about `0.07`, roughly a 13-to-1 gap. HSL's `L` is a geometric midpoint of a hue's RGB cylinder, not a measurement of perceived brightness, and different hues sit at very different distances from that geometric middle to their true perceptual middle.\n\nThis is the practical failure mode of HSL as a design tool: two colors with 'the same lightness' according to the slider can look nothing alike side by side, and a palette built by holding `L` constant while rotating hue will have some steps that look washed-out-bright and others that look almost black, purely as an artifact of the color model, not a deliberate design choice.",
+      "references": "[MDN: `hsl()`](https://developer.mozilla.org/en-US/docs/Web/CSS/color_value/hsl)"
+    },
+    {
+      "id": "oklch-channel-independence",
+      "title": "In `oklch(70% 0.15 250)`, which statements about changing exactly one channel at a time are true?",
+      "description": "Hold the other two channels fixed in each case.",
+      "images": [
+        {
+          "src": "oklch-channels.svg",
+          "alt": "Three strips of five swatches each, showing OKLCH with only one channel changing per strip. Top: lightness rising from 0.35 to 0.85 at fixed chroma and hue, going from a dark navy to a pale sky blue. Middle: chroma rising from 0 to 0.18 at fixed lightness and hue, going from neutral gray to a vivid blue. Bottom: hue sweeping from 0 to 288 degrees at fixed lightness and chroma, cycling through pink, tan, green, teal, and violet swatches of similar brightness.",
+          "placement": "explanation"
+        }
+      ],
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "Raising `L` alone makes the color lighter without shifting its hue.",
+          "isCorrect": true
+        },
+        {
+          "text": "Raising `C` alone makes the color more saturated without changing how light it looks.",
+          "isCorrect": true
+        },
+        {
+          "text": "Changing `H` alone sweeps through hues while every stop keeps roughly the same perceived lightness — the property HSL's `L` doesn't reliably have.",
+          "isCorrect": true
+        },
+        {
+          "text": "All three channels are always written as percentages, exactly like `hsl()`.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "OKLCH was built so each channel controls one perceptual dimension in isolation. `L` (lightness) is calibrated against how light a color actually looks, so moving it alone brightens or dims without a hue shift. `C` (chroma) is a colorfulness magnitude — moving it alone slides from gray toward a vivid version of the same hue at the same lightness. `H` (hue) is an angle around the color wheel — moving it alone changes which hue you're looking at while `L` keeps the perceived brightness consistent across the whole sweep, which is precisely the property `hsl(_, 100%, 50%)` lacks (see the yellow-vs-blue comparison elsewhere in this quiz).\n\nSyntax is where the false statement trips people up: `L` is written as a percentage (or a `0–1` number), and `C` can be a number or a percentage of a reference range — but `H` is a `<hue>` angle, in degrees by default, not a percentage. It looks like `hsl()`'s `H S% L%` pattern but isn't quite the same shape.",
+      "references": "[MDN: `oklch()`](https://developer.mozilla.org/en-US/docs/Web/CSS/color_value/oklch) · [Björn Ottosson: A perceptual color space for image processing](https://bottosson.github.io/posts/oklab/)"
+    },
+    {
+      "id": "hue-rotation-hsl-uneven-palette",
+      "title": "A palette is generated by holding HSL saturation and lightness fixed and rotating hue in even steps. Why does it come out visually uneven, and how does OKLCH avoid the problem?",
+      "description": "For example: `hsl(0 70% 50%)`, `hsl(60 70% 50%)`, `hsl(120 70% 50%)`, `hsl(180 70% 50%)`, ...",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "HSL's fixed `L` doesn't track perceived brightness across hues, so some steps look bright and washed out while others look dark and muddy; OKLCH's `L` is calibrated to perceived lightness, so a fixed `L` looks consistently bright across every hue.",
+          "isCorrect": true
+        },
+        {
+          "text": "HSL simply has fewer available hues than OKLCH, so rotating it skips some colors entirely.",
+          "isCorrect": false
+        },
+        {
+          "text": "The unevenness is a monitor calibration issue, not something built into either color model.",
+          "isCorrect": false
+        },
+        {
+          "text": "OKLCH avoids the problem by rendering every hue at exactly the same saturation, regardless of the requested chroma.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "This is the same gap as the yellow-vs-blue comparison, just applied across an entire rotation instead of two points: HSL's lightness is a geometric property of the RGB cube, and how *perceptually* bright that geometric midpoint looks varies a lot by hue — yellows and greens sit far above true perceptual middle, blues and purples sit below it. Fix `L` at `50%` and sweep hue, and the resulting swatches visibly brighten and dim in a wave, even though the number never changed.\n\nOKLCH's `L` channel is defined the other way around: it's built from a perceptual model first, so a given `L` value is designed to look equally light regardless of which hue you pair it with. Holding `L` and `C` fixed while sweeping `H` in OKLCH gives a palette that reads as one consistent 'weight' of color all the way around the wheel — which is exactly why OKLCH (and its relative, OKLab) have become the preferred way to generate CSS color scales.",
+      "references": "[MDN: `oklch()`](https://developer.mozilla.org/en-US/docs/Web/CSS/color_value/oklch)"
+    },
+    {
+      "id": "gradient-interpolation-space-gray-midpoint",
+      "title": "The same blue-to-yellow gradient was interpolated three different ways. Only one of these three rows passes through a neutral gray at its middle stop. Why does exactly one of them do that?",
+      "description": "All three rows share the same two endpoints — pure blue on the left, pure yellow on the right — sampled at the same five positions.",
+      "images": [
+        {
+          "src": "gradient-interpolation-spaces.svg",
+          "alt": "Three horizontal gradients from blue to yellow, five swatches each, labeled only Row 1, Row 2, and Row 3. Row 1's center swatch is a neutral gray. Row 2 stays colorful throughout, passing through a soft blue and a pale green at its middle stops. Row 3 stays the most saturated throughout, passing through a vivid sky-blue and a vivid teal-green at its middle stops.",
+          "placement": "question"
+        }
+      ],
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The gray one interpolated the raw sRGB numbers directly; blue and yellow are numeric opposites in every channel, so their component-wise average is neutral gray. The other two interpolated through a perceptual space (OKLab and OKLCH), which never crosses through the achromatic center.",
+          "isCorrect": true
+        },
+        {
+          "text": "The gray one is a rendering bug; all three should look identical if computed correctly.",
+          "isCorrect": false
+        },
+        {
+          "text": "Gray only appears when interpolating in OKLCH, because that space is built around a neutral axis.",
+          "isCorrect": false
+        },
+        {
+          "text": "The gray one used fewer interpolation stops, which is what caused it to lose saturation.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Blue is `#0000ff`, yellow is `#ffff00` — in plain sRGB numbers, every channel is at the opposite extreme from the other color. Average `0` and `255` in each channel and you land exactly on `#808080`, dead neutral gray, no matter how vivid the two endpoints were. That's the row that dips to gray: it's the default legacy behavior of `linear-gradient(blue, yellow)` with no `in <space>` keyword, which interpolates the sRGB component numbers directly.\n\nThe other two rows used `in oklab` and `in oklch`. OKLab interpolates lightness and two rectangular color-opponent axes; averaging blue and yellow's OKLab coordinates lands on a genuinely colorful blue-green, not gray, because the two colors aren't opposite each other in *that* coordinate system. OKLCH goes further: because it interpolates hue as an angle and chroma as a separate magnitude, the path swings through the *most* saturated intermediate hues of the three — vivid teal — rather than dulling toward the center at all. Neither perceptual space contains an accident where two colorful endpoints happen to average out to gray.",
+      "references": "[MDN: Interpolating colors on gradients](https://developer.mozilla.org/en-US/docs/Web/CSS/gradient/linear-gradient) · [MDN: `oklch()`](https://developer.mozilla.org/en-US/docs/Web/CSS/color_value/oklch)"
+    },
+    {
+      "id": "hue-interpolation-shorter-vs-longer",
+      "title": "A gradient interpolates hue from 20° to 280° using `hue: shorter` (the default). Which family of hues does it pass through, and why?",
+      "description": "```css\nlinear-gradient(in oklch shorter hue, oklch(75% 0.13 20), oklch(75% 0.13 280))\n```",
+      "images": [
+        {
+          "src": "hue-arc-direction.svg",
+          "alt": "A hue wheel with two marked points at 20 degrees (a coral pink) and 280 degrees (a periwinkle blue). A short inner arc connects them through 355 and 330 degrees, sampled as pink, magenta-pink, and orchid swatches. A long outer arc connects the same two points the other way through 85, 150, and 215 degrees, sampled as mustard, green, and cyan swatches.",
+          "placement": "explanation"
+        }
+      ],
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "It goes backward through magenta and violet (20° → 355° → 330° → 305° → 280°), a 100° arc — shorter than the 260° arc forward through yellow, green, and cyan.",
+          "isCorrect": true
+        },
+        {
+          "text": "It goes forward through yellow, green, and cyan, because hue always increases toward `360°`.",
+          "isCorrect": false
+        },
+        {
+          "text": "\"Shorter\" refers to the gradient's pixel length on screen, not the hue path at all.",
+          "isCorrect": false
+        },
+        {
+          "text": "It picks whichever direction keeps chroma constant, regardless of the angular distance.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A hue is an angle on a 360°-wheel, and any two hues have two possible paths between them that sum to 360° — one going up in angle, one going down. From `20°` to `280°`, going up (`20° → 90° → 180° → 280°`) covers `260°`, while going down and wrapping through `0°` (`20° → 350° → 300° → 280°`) covers only `100°`. `hue: shorter`, the default when no keyword is given, always takes whichever arc has the smaller angular distance — here, that's the backward path through magenta and violet, not the forward one through yellow-green-cyan.\n\nThis matters in practice because the two arcs don't just differ in direction, they pass through completely different hue families. `hue: longer` forces the other arc on purpose — useful when you want a gradient to sweep through the *full* rainbow between two nearby hues instead of taking the short, muted-looking shortcut past them.",
+      "references": "[MDN: `hue-interpolation-method`](https://developer.mozilla.org/en-US/docs/Web/CSS/hue-interpolation-method)"
+    },
+    {
+      "id": "color-mix-percentage-and-space",
+      "title": "For `color-mix(in oklch, blue 30%, yellow)`, what does the `30%` control, and why can changing `in oklch` to `in srgb` change the visible result even with the same percentage?",
+      "description": "```css\ncolor-mix(in oklch, blue 30%, yellow)\ncolor-mix(in srgb, blue 30%, yellow)\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`30%` is how much of `blue` contributes to the mix (the rest comes from `yellow`); since the two colors are interpolated inside whichever space follows `in`, switching spaces changes the actual path between them, so the same percentage lands on a different color.",
+          "isCorrect": true
+        },
+        {
+          "text": "`30%` sets the opacity of the resulting color; the color space keyword only affects rounding.",
+          "isCorrect": false
+        },
+        {
+          "text": "`in oklch` and `in srgb` always produce the identical result, because `color-mix()` normalizes to sRGB before returning a value.",
+          "isCorrect": false
+        },
+        {
+          "text": "`30%` is ignored unless both colors include an explicit percentage.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`color-mix()`'s percentage is a mixing weight, the same idea as a gradient's stop position: `30% blue` (with the implied `70% yellow`) means the result sits 30% of the way from yellow toward blue along whatever path the two colors take through the chosen space.\n\nThat path is exactly the part that changes with the space keyword. Mixing 'in srgb' interpolates the raw gamma-encoded RGB numbers directly — the same operation that makes a plain sRGB gradient between complementary colors dip toward gray. Mixing 'in oklch' interpolates lightness, chroma, and hue-as-an-angle instead, which — as with gradients — tends to stay more colorful and can pass through entirely different intermediate hues. Same requested proportion, different journey between the two colors, so a different landing point.",
+      "references": "[MDN: `color-mix()`](https://developer.mozilla.org/en-US/docs/Web/CSS/color-mix)"
+    },
+    {
+      "id": "relative-color-syntax-hover-state",
+      "title": "You want a button's hover color to be \"the brand color, but a bit lighter,\" derived directly from the brand color's own custom property instead of a second hardcoded value. Which CSS feature is built for exactly this?",
+      "description": "```css\n:root { --brand: oklch(55% 0.18 250); }\n\n.button:hover {\n  background: oklch(from var(--brand) calc(l + 0.1) c h);\n}\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Relative color syntax — the `from <color>` form binds a color's own channels to names you can read and modify in an expression, producing a new color derived from the original.",
+          "isCorrect": true
+        },
+        {
+          "text": "`color-mix()`, mixing the brand color with `white` at a fixed percentage.",
+          "isCorrect": false
+        },
+        {
+          "text": "CSS custom property fallback values, using `var(--brand, lighter)`.",
+          "isCorrect": false
+        },
+        {
+          "text": "`filter: brightness()` applied to the custom property itself.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Relative color syntax — `color-function(from <origin-color> ch1 ch2 ch3)` — takes an existing color, exposes its own channels as named values inside the function (`l`, `c`, `h` for an OKLCH origin; `r`, `g`, `b` for an RGB one; and so on), and lets you write an expression for each output channel in terms of those names. `oklch(from var(--brand) calc(l + 0.1) c h)` reads as \"same chroma, same hue, but lighter\" — a single declaration, computed from one source of truth, instead of a second color that has to be kept in sync by hand whenever the brand color changes.\n\n`color-mix()` can approximate 'lighter' by mixing toward white, but that also drags chroma and hue toward white's, changing more than just lightness. Custom-property fallback syntax has nothing to do with deriving a new color, and `filter: brightness()` scales the rendered pixels of an already-painted element, not a color value you can reuse elsewhere.",
+      "references": "[MDN: Relative colors](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_colors/Relative_colors)"
+    },
+    {
+      "id": "currentcolor-and-light-dark",
+      "title": "Which statements about `currentColor` and `light-dark()` are true?",
+      "description": "```css\n:root { color-scheme: light dark; }\n\n.badge {\n  border-color: currentColor;\n  background: light-dark(#f5f7fb, #1a1f27);\n}\n```",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "`currentColor` resolves to the element's own (or inherited) computed `color` value, so `border-color: currentColor` tracks text color without repeating it.",
+          "isCorrect": true
+        },
+        {
+          "text": "`light-dark(v1, v2)` picks between the two values based on the used value of the `color-scheme` property on the element, not directly on the OS-level `prefers-color-scheme` setting.",
+          "isCorrect": true
+        },
+        {
+          "text": "`light-dark()` works the same everywhere, even on an element where `color-scheme` was never set.",
+          "isCorrect": false
+        },
+        {
+          "text": "`currentColor` can only be used in `background-color` and `border-color`; it isn't valid inside SVG attributes like `fill`.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`currentColor` is a live reference to whatever `color` currently computes to on that element, inherited like any other color — set `border-color: currentColor` once and the border always matches the text without a second value to keep in sync.\n\n`light-dark()` looks like it reads the user's OS preference directly, but it actually reads the *computed `color-scheme`* of the element it's used on. That's an important indirection: `color-scheme` is usually set from `prefers-color-scheme` via a media query, or overridden by a manual light/dark toggle — but if nothing ever sets `color-scheme` to include `dark`, `light-dark()` has no basis for choosing the dark value and effectively always resolves to the light one, regardless of what the OS prefers. `currentColor` is also broadly usable, including SVG presentation attributes like `fill` and `stroke` — a very common way to make an icon inherit its color from surrounding text.",
+      "references": "[MDN: `currentcolor`](https://developer.mozilla.org/en-US/docs/Web/CSS/currentcolor) · [MDN: `light-dark()`](https://developer.mozilla.org/en-US/docs/Web/CSS/light-dark) · [MDN: `color-scheme`](https://developer.mozilla.org/en-US/docs/Web/CSS/color-scheme)"
+    },
+    {
+      "id": "hue-interpolation-longer-degrees",
+      "title": "Two hues, 20° and 280°, are 100° apart the short way. How many degrees does `hue: longer` travel instead, going the other way around the same wheel?",
+      "description": "A full hue wheel is 360°, and the two possible arcs between any pair of hues always add up to it.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [260]
+      },
+      "explanation": "The two arcs between any two hues on a 360° wheel always sum to `360°`, because together they make one full trip around. If the shorter arc between `20°` and `280°` is `100°`, the longer arc is whatever's left: `360° − 100° = 260°`.\n\nConcretely, that's the forward path `20° → 90° → 180° → 280°` — through orange, yellow, green, and cyan — instead of the short backward path through magenta and violet. `hue: longer` is how you deliberately force a gradient through that fuller sweep of hues when the short path would otherwise cut across only a narrow, less colorful slice of the wheel.",
+      "references": "[MDN: `hue-interpolation-method`](https://developer.mozilla.org/en-US/docs/Web/CSS/hue-interpolation-method)"
+    },
+    {
+      "id": "wcag-contrast-white-vs-red",
+      "title": "What is the WCAG contrast ratio between white (`#ffffff`) and pure red (`#ff0000`)? Round to one decimal place.",
+      "description": "Relative luminance: `L = 0.2126·R + 0.7152·G + 0.0722·B`, using linearized channel values (decode first: for encoded `c ≤ 0.04045`, `linear = c / 12.92`; otherwise `linear = ((c + 0.055) / 1.055) ^ 2.4`). Contrast ratio: `(L1 + 0.05) / (L2 + 0.05)`, where `L1` is the lighter color's luminance.",
+      "images": [
+        {
+          "src": "contrast-ratio-anatomy.svg",
+          "alt": "A diagram of the WCAG relative luminance formula: L equals 0.2126 times R plus 0.7152 times G plus 0.0722 times B, drawn as three stacked bars sized by weight — a short red bar, a tall green bar, and a very short blue bar — showing green contributing far more to perceived luminance than red or blue. Below it, the contrast ratio formula: the lighter luminance plus 0.05, divided by the darker luminance plus 0.05.",
+          "placement": "explanation"
+        }
+      ],
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [4.0],
+        "tolerance": 0.1
+      },
+      "explanation": "Pure red's channels are already at the encoded extremes (`R = 1`, `G = 0`, `B = 0`), and `0` and `1` decode to themselves, so red's relative luminance is just its red weight: `0.2126`. White's is `1`. Plugging into the ratio: `(1 + 0.05) / (0.2126 + 0.05) = 1.05 / 0.2626 ≈ 4.0`.\n\nThe number is a genuinely useful gut-check against intuition: red *feels* like a bold, dark, high-contrast color, but the luminance formula weights green almost seven times as heavily as blue and more than three times as heavily as red, because the eye's luminance channel is dominated by medium-wavelength (greenish) cone response. A saturated red therefore contributes very little to relative luminance despite looking vivid, which is exactly why `#ff0000` text on a white background — a combination many people would guess is high-contrast — sits right at the edge of failing WCAG AA's `4.5:1` minimum for normal text.",
+      "references": "[W3C: WCAG 2.1 — Contrast (Minimum)](https://www.w3.org/TR/WCAG21/#contrast-minimum)"
+    },
+    {
+      "id": "contrast-thresholds-4-5-and-3",
+      "title": "Which statements about the WCAG 2 contrast thresholds are true?",
+      "description": "Select every true statement.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "`4.5:1` is the AA minimum for normal body text.",
+          "isCorrect": true
+        },
+        {
+          "text": "`3:1` is enough for large text (roughly 24px regular weight or 19px bold) and for meaningful graphical objects and UI component boundaries.",
+          "isCorrect": true
+        },
+        {
+          "text": "The `3:1` threshold also applies to disabled form controls and purely decorative icons.",
+          "isCorrect": false
+        },
+        {
+          "text": "AAA raises the normal-text minimum to `7:1`.",
+          "isCorrect": true
+        }
+      ],
+      "explanation": "WCAG 2's contrast success criteria scale the requirement to how easy the content already is to read or perceive. Normal-size body text needs the most contrast, `4.5:1`, because small strokes are the hardest case. Large text (bigger, heavier strokes are inherently easier to make out) and meaningful non-text elements — icons, chart lines, input borders that need to be visibly there — only need `3:1`. AAA, the stricter optional level, raises normal text's bar all the way to `7:1`.\n\nDisabled controls and purely decorative graphics are explicitly *exempted* from the non-text contrast requirement — a grayed-out disabled button isn't a contrast failure, and a background flourish that carries no information doesn't need to meet any ratio at all. That's the false statement here: the exemption exists precisely because those elements either aren't meant to be interacted with right now, or aren't conveying anything a user needs to perceive.",
+      "references": "[W3C: WCAG 2.1 — Contrast (Minimum)](https://www.w3.org/TR/WCAG21/#contrast-minimum) · [W3C: WCAG 2.1 — Non-text Contrast](https://www.w3.org/TR/WCAG21/#non-text-contrast)"
+    },
+    {
+      "id": "why-contrast-ratio-is-symmetric",
+      "title": "Swapping which of two colors is the \"text\" and which is the \"background\" never changes the computed WCAG contrast ratio. Why is that already a hint the formula is a rough model?",
+      "description": "`(L1 + 0.05) / (L2 + 0.05)` always divides the lighter luminance by the darker one, regardless of which color plays which role.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The formula is purely a function of the two luminances, with no notion of which one is foreground or background — but human perception of legibility is *not* symmetric that way, so a single symmetric number can't capture everything perception depends on.",
+          "isCorrect": true
+        },
+        {
+          "text": "It isn't actually symmetric; the formula only looks the same because most real color pairs happen to average out identically.",
+          "isCorrect": false
+        },
+        {
+          "text": "Symmetry is a deliberate feature that makes the ratio a complete, sufficient predictor of legibility in both directions.",
+          "isCorrect": false
+        },
+        {
+          "text": "The formula is symmetric only for grayscale pairs; colored pairs give different ratios depending on which is text.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Look at the formula and there's no `text` or `background` variable in it at all — just 'lighter luminance' and 'darker luminance.' Swap the two colors' roles and you're computing the exact same fraction, so the ratio for dark-gray-text-on-white is, by construction, identical to white-text-on-that-same-gray.\n\nThat's a real modeling choice, not an incidental fact, and it's worth being suspicious of: real perceived legibility is not perfectly symmetric under that swap. Bright regions tend to visually spread into darker surrounding areas more than the reverse (an effect sometimes called irradiation or halation), so light text on a dark background and dark text on the same light-background-equivalent don't always *read* equally well even at an identical numeric ratio. A formula that can't even represent that distinction is necessarily leaving something out — which is exactly the gap that later, polarity-aware contrast models were built to close.",
+      "references": "[W3C: WCAG 2.1 — Contrast (Minimum)](https://www.w3.org/TR/WCAG21/#contrast-minimum)"
+    },
+    {
+      "id": "same-ratio-different-feel-polarity",
+      "title": "Both panels below compute to the identical WCAG contrast ratio, `4.54:1` — literally the same two colors, roles swapped. Many readers still report one side as easier to read at a glance. What does that tell you?",
+      "description": "Left: `#767676` text on `#ffffff`. Right: `#ffffff` text on `#767676`.",
+      "images": [
+        {
+          "src": "contrast-same-ratio-different-feel.svg",
+          "alt": "Two text samples both computing to a 4.54 to 1 contrast ratio. Left: dark gray text on a white background. Right: white text on a dark gray background of the same gray value. Both panels are captioned '4.54:1'.",
+          "placement": "question"
+        }
+      ],
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "An identical WCAG ratio does not guarantee identical perceived legibility; polarity (which side is lighter) can shift how contrast actually reads, even though the symmetric formula can't see that difference.",
+          "isCorrect": true
+        },
+        {
+          "text": "One of the two panels must have a computation error, since a true `4.54:1` pair always looks identical either way round.",
+          "isCorrect": false
+        },
+        {
+          "text": "The difference is purely due to font rendering, unrelated to contrast or color at all.",
+          "isCorrect": false
+        },
+        {
+          "text": "Dark-on-light is always the more legible polarity at every ratio, so WCAG should simply require a higher minimum for light-on-dark.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "There's no arithmetic trick here — it's the literal same pair of colors with text and background swapped, so of course the ratio computes identically; that was the point of the earlier question about why the formula is symmetric. The interesting part is what your eyes report anyway: this exact pairing (a mid-gray right at the AA-minimum boundary) is a commonly cited example where the light-on-dark version reads more comfortably than the dark-on-light version to many viewers, despite an identical `4.54:1`.\n\nThis isn't a contradiction in the math — the math never claimed to predict *comfort*, only a specific luminance ratio. It's evidence that the ratio alone is an incomplete model of real legibility, and it's exactly the observation that motivated newer, polarity-aware contrast algorithms instead of trying to patch the symmetric ratio with a blanket rule like 'require more contrast for light-on-dark' (which would be too blunt — the right minimum actually depends on font size, weight, and the specific colors involved, not just which side is lighter).",
+      "references": "[W3C: WCAG 3.0 (draft)](https://www.w3.org/TR/wcag-3.0/)"
+    },
+    {
+      "id": "apca-polarity-aware",
+      "title": "APCA (the perceptual contrast model developed for WCAG 3) is described as \"polarity-aware.\" What problem is that specifically meant to fix?",
+      "description": "WCAG 2's ratio treats a color pair identically no matter which one is the foreground.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "It computes a different result depending on whether the text is light-on-dark or dark-on-light, instead of always producing the same number for a swapped pair — directly addressing the perceptual asymmetry that the old symmetric ratio ignores.",
+          "isCorrect": true
+        },
+        {
+          "text": "It adjusts for the physical polarity of the display's backlight technology (LCD vs. OLED).",
+          "isCorrect": false
+        },
+        {
+          "text": "It only evaluates colors in the positive quadrant of the OKLab color space.",
+          "isCorrect": false
+        },
+        {
+          "text": "It reverses the WCAG 2 formula's numerator and denominator to produce a percentage instead of a ratio.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "\"Polarity-aware\" means the algorithm's output genuinely depends on which of the two colors is doing the illuminating and which is doing the absorbing — light text on a dark surface and dark text on a light surface are treated as distinct cases that can produce different perceptual contrast values, rather than being collapsed into one symmetric number the way `(L1+0.05)/(L2+0.05)` does.\n\nThat directly targets the gap the earlier `4.54:1`-both-ways example exposed: real legibility isn't perfectly symmetric under a foreground/background swap, so a model that's *allowed* to disagree between the two directions can match perceived legibility more closely than one that's mathematically forced to always agree. APCA also factors in text size and weight rather than treating all text as equally hard to read at a given ratio, but the polarity awareness specifically is the fix for the swap-symmetry problem.",
+      "references": "[W3C: WCAG 3.0 (draft)](https://www.w3.org/TR/wcag-3.0/)"
+    },
+    {
+      "id": "color-as-sole-carrier-of-meaning",
+      "title": "Which of these UI patterns fail \"don't use color as the only carrier of meaning\" (WCAG's Use of Color rule)?",
+      "description": "Select every pattern below that relies on color alone, with no other cue.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "A form field turns its border red on a validation error, with no icon, message text, or `aria-invalid` change.",
+          "isCorrect": true
+        },
+        {
+          "text": "A line chart with five data series distinguished only by hue, with no legend markers, labels, or line-style differences.",
+          "isCorrect": true
+        },
+        {
+          "text": "A required field is marked with both a red asterisk character and the word \"required\" in its label.",
+          "isCorrect": false
+        },
+        {
+          "text": "Correct vs. incorrect quiz options are shown in green vs. red, each also paired with a check or cross icon.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The rule isn't 'don't use color' — it's 'don't make color the *only* way the information reaches someone.' A red border with nothing else attached fails a colorblind reader (who may not perceive red as different from the field's normal state) just as surely as it fails a screenreader user or anyone viewing a black-and-white printout. Same problem with a legend-free multi-hue chart: distinguishing five lines by hue alone is exactly the case colorblindness (present in a meaningful share of readers, disproportionately affecting reds and greens) breaks down on first.\n\nThe two compliant patterns both pair color with a second, independent channel — a text label and a literal asterisk character in one case, an icon in the other — so the information still gets through even for someone who can't distinguish the colors at all. That's the whole fix: keep the color if you want it, just make sure it's decoration on top of a signal that exists without it. This repo's own diagram conventions follow the identical rule for the same reason: every SVG here labels its color-coded elements rather than relying on hue alone to carry meaning.",
+      "references": "[W3C: WCAG 2.1 — Use of Color](https://www.w3.org/TR/WCAG21/#use-of-color)"
+    },
+    {
+      "id": "opacity-vs-lighter-color-contrast",
+      "title": "For contrast purposes, why isn't `opacity: 0.6` on some text the same thing as just picking a lighter, fully opaque text color with an equivalent visual lightness?",
+      "description": "```css\n.muted-a { color: #595959; }              /* fixed, opaque color */\n.muted-b { color: #000; opacity: 0.6; }    /* same nominal darkness, but translucent */\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Opacity composites the text with whatever is actually behind it, so the rendered color — and therefore the true contrast ratio — depends on the backdrop and can change from one placement to another; a solid color has one fixed, computable value everywhere.",
+          "isCorrect": true
+        },
+        {
+          "text": "They're functionally identical; `opacity` simply applies the same math as choosing a lighter color, computed automatically by the browser.",
+          "isCorrect": false
+        },
+        {
+          "text": "`opacity` only affects `background-color`, never text glyphs, so `.muted-b`'s text stays fully opaque regardless of the declared value.",
+          "isCorrect": false
+        },
+        {
+          "text": "Opacity always fails contrast checks outright, regardless of the value used.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A solid `color: #595959` is one specific, known color no matter what it's placed on top of — you can compute its contrast against a given background once and be done. `opacity: 0.6` on black text doesn't produce a fixed color at all; it makes the text 60% black blended with *whatever is visually behind it*, pixel by pixel. Over a plain white card that might land close to `#666`, but the same rule over a photo, a gradient header, or an overlapping element produces a different effective color in each spot — sometimes one with drastically different, unpredictable contrast.\n\nThat also means a single opacity value can't be verified once and trusted everywhere the way a solid color can: a contrast checker would have to know the exact backdrop at every place the translucent text appears. For text specifically, a solid, deliberately chosen lighter color is the predictable choice; reach for opacity when you actually want the backdrop to show through, not as a shortcut for 'a bit lighter.'",
+      "references": "[MDN: `opacity`](https://developer.mozilla.org/en-US/docs/Web/CSS/opacity)"
+    },
+    {
+      "id": "diagnose-brand-color-mismatch",
+      "title": "A brand blue, `#2563eb`, looks right in the design tool and in Chrome. A teammate's screenshot of the exact same swatch, opened in their OS's default image viewer on the same machine, looks visibly duller and less saturated — despite being, pixel-for-pixel, the same hex code. What's the most likely cause?",
+      "description": "The numbers are identical in both places; only the rendering differs.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "A color-profile mismatch: the screenshot was saved (or is being read) with a different assumed profile than Chrome uses, so the color-managed viewer maps the same numbers onto different primaries than the browser did.",
+          "isCorrect": true
+        },
+        {
+          "text": "A gamut mismatch: the image viewer only supports sRGB, while the hex code was defined in Display-P3.",
+          "isCorrect": false
+        },
+        {
+          "text": "An 8-bit banding artifact, since `#2563eb` sits inside a shallow gradient range.",
+          "isCorrect": false
+        },
+        {
+          "text": "The screenshot must have been resized, introducing gamma-space blending error.",
+          "isCorrect": false
+        },
+        {
+          "text": "It's not possible for identical hex codes to ever render differently on the same machine.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The tell here is that the *number itself never changed* — a plain `#hex` value is always sRGB, so there's no wide-gamut value to clip or misinterpret, which rules out a gamut story: gamut mismatches happen when you cross between color spaces (a P3 value shown on sRGB hardware, or vice versa), not when the same sRGB number is reopened elsewhere. Nothing in the scenario mentions resizing or a shallow gradient, so blending error and banding don't fit either.\n\nWhat's left is exactly the signature of a profile-handling bug: one app (the browser) is treating the number as plain sRGB the way the spec requires, while the other (a color-managed OS viewer) is applying a color transform based on whatever profile it believes the file carries — the display's ICC profile, a stale embedded profile from the capture tool, or a missing one it's guessing about. Same numbers, different profile assumptions, different rendered color. This is a genuinely common real-world bug class, and the fix is almost always to check what profile the file is actually tagged with, not to touch the hex code.",
+      "references": "[MDN: `<color>` value syntax](https://developer.mozilla.org/en-US/docs/Web/CSS/color_value)"
+    },
+    {
+      "id": "p3-color-cannot-reproduce-in-srgb",
+      "title": "A designer picks a highly saturated cyan in a design tool with a wide-gamut (Display-P3) profile enabled. Why can that exact color never be represented by any `#hex` value?",
+      "description": "`#hex`, `rgb()`, and `hsl()` without a `color()` wrapper are always interpreted as sRGB.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The color's chromaticity lies outside sRGB's triangle entirely — no combination of sRGB's red, green, and blue primaries can physically produce that particular light, regardless of which 0–255 numbers you try.",
+          "isCorrect": true
+        },
+        {
+          "text": "`#hex` values are limited to 8-bit precision, so the color simply needs more decimal places than hex can express.",
+          "isCorrect": false
+        },
+        {
+          "text": "Cyan specifically isn't part of the sRGB standard, unlike red, green, and blue.",
+          "isCorrect": false
+        },
+        {
+          "text": "It's a software limitation of `#hex` notation only; `rgb()` with the same numbers could represent it.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Every sRGB `#hex` value, no matter which digits you choose, is confined to sit somewhere inside sRGB's gamut triangle — that triangle's corners are fixed by sRGB's red, green, and blue primaries, and mixing three fixed primaries can only ever reach the colors inside the shape they form. If the design tool's saturated cyan sits *outside* that triangle (which a P3-gamut pick often does, since P3's primaries reach further), there is no `#hex` value close enough — not a rounding problem, a genuine geometric one.\n\nReproducing that exact light requires primaries capable of emitting it in the first place — the more saturated red, green, and blue that a wide-gamut display's backlight and filters (or a P3-capable OLED) are built to produce. `rgb()` and `hsl()` without a `color()` wrapper are exactly as sRGB-bound as `#hex`; none of the three notations can escape sRGB's gamut on their own; only an explicit wide-gamut function like `color(display-p3 ...)` can name a color outside that triangle at all.",
+      "references": "[MDN: `<color>` value syntax](https://developer.mozilla.org/en-US/docs/Web/CSS/color_value)"
+    },
+    {
+      "id": "prefers-color-scheme-vs-color-scheme",
+      "title": "Which statements correctly distinguish `prefers-color-scheme` from `color-scheme`?",
+      "description": "```css\n@media (prefers-color-scheme: dark) {\n  :root { color-scheme: dark; }\n}\n```",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "`prefers-color-scheme` is a media feature reflecting what the user or OS prefers; querying it never changes rendering by itself.",
+          "isCorrect": true
+        },
+        {
+          "text": "`color-scheme` is a property (or meta tag) the author sets to declare which schemes the page actually supports, which lets the browser render native form controls, scrollbars, and the default page background in the matching scheme.",
+          "isCorrect": true
+        },
+        {
+          "text": "Setting `color-scheme: light dark` on the root will, by itself, restyle an author's own custom component colors for dark mode.",
+          "isCorrect": false
+        },
+        {
+          "text": "The two are unrelated — `color-scheme` can never be driven by `prefers-color-scheme`.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`prefers-color-scheme` only ever answers a question inside a media query — it's read-only signal about user intent, and matching it does nothing on its own beyond letting the rules inside that block apply. `color-scheme` is the opposite direction: it's the author telling the browser \"this page genuinely supports these schemes,\" which is what unlocks native UA behavior — form controls, scrollbars, and the page's default canvas background switching to match — plus it's the property `light-dark()` actually reads.\n\nThe two are commonly wired together exactly like the snippet above, but neither implication in the false options holds up: `color-scheme` doesn't retroactively reach into your own component CSS and change any colors you hardcoded — you still need `prefers-color-scheme` media queries or `light-dark()` calls for your own tokens, `color-scheme` only handles the browser's native chrome and enables that one function. And they're clearly not unrelated, since driving `color-scheme` from `prefers-color-scheme` (or from a manual theme toggle) is the standard pattern.",
+      "references": "[MDN: `color-scheme`](https://developer.mozilla.org/en-US/docs/Web/CSS/color-scheme) · [MDN: `prefers-color-scheme`](https://developer.mozilla.org/en-US/docs/Web/CSS/@media/prefers-color-scheme)"
+    },
+    {
+      "id": "eyedropper-jpeg-screenshot-mismatch",
+      "title": "You screenshot a flat color swatch, save it as JPEG, then eyedropper the color back out of the saved file. The result is `#7e8fae` instead of the original `#7f90b0`. What's the most likely cause of that tiny mismatch?",
+      "description": "The swatch was a single flat color with no gradient or text on it.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "JPEG's lossy compression (chroma subsampling and block-based quantization) nudges individual pixel values slightly, even on a supposedly flat area.",
+          "isCorrect": true
+        },
+        {
+          "text": "JPEG is limited to 16-bit color, so every value gets rounded to the nearest representable step.",
+          "isCorrect": false
+        },
+        {
+          "text": "The eyedropper tool always samples in linear light, so gamma-encoded hex values never round-trip exactly.",
+          "isCorrect": false
+        },
+        {
+          "text": "PNG and JPEG use different color gamuts, so any format conversion inherently loses precision.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "JPEG is a lossy format by design: it downsamples color detail more aggressively than luminance detail (chroma subsampling) and quantizes 8×8 pixel blocks in frequency space, discarding information the algorithm judges least visible. Even a perfectly flat swatch can come out of that pipeline a few units off in one or more channels, because the compression doesn't know the input was flat — it just runs the same lossy transform everywhere.\n\nThe distractors describe things that aren't actually true: JPEG is typically 8 bits per channel, not 16, so that's not the constraint at play; an eyedropper samples the pixel value the display actually shows — the encoded value — not some linear-light reconstruction, so gamma isn't the culprit here; and gamut is a property of how a color space is defined, not of an image *file format* — a PNG and a JPEG can both encode plain sRGB, with no gamut conversion involved in saving one as the other. The one real, well-documented cause is lossy compression itself, which is exactly why pixel-perfect design specs and color proofing are normally done from a lossless format (PNG), never a JPEG.",
+      "references": "[MDN: Image file type and format guide](https://developer.mozilla.org/en-US/docs/Web/Media/Guides/Formats/Image_types)"
+    }
+  ]
+}

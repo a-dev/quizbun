@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="340" viewBox="0 0 720 340">
+  <style>
+    svg {
+      --panel: #f5f7fb;
+      --title: #20242c;
+      --muted: #526173;
+      --edge: #64748b;
+      --outer: #ffffff;
+      --content: #dbeafe;
+      --content-edge: #2563eb;
+      --transfer: #fde68a;
+      --transfer-edge: #c2410c;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      svg {
+        --panel: #1a1f27;
+        --title: #e6eaf2;
+        --muted: #9aa8bd;
+        --edge: #8b9bb4;
+        --outer: #252b35;
+        --content: #1e3a5f;
+        --content-edge: #60a5fa;
+        --transfer: #4b3a12;
+        --transfer-edge: #fb923c;
+      }
+    }
+
+    .panel { fill: var(--panel); }
+    .title { fill: var(--title); }
+    .muted { fill: var(--muted); }
+    .edge { stroke: var(--edge); }
+    .outer { fill: var(--outer); stroke: var(--edge); }
+    .content { fill: var(--content); stroke: var(--content-edge); }
+    .transfer { fill: var(--transfer); stroke: var(--transfer-edge); }
+  </style>
+
+  <rect class="panel" width="720" height="340" rx="20" fill="#f5f7fb" />
+  <text class="title" x="36" y="38" fill="#20242c" font-family="system-ui, sans-serif" font-size="19" font-weight="700">
+    One response, two headers, two different layers
+  </text>
+
+  <g font-family="system-ui, sans-serif">
+    <!-- outer: wire framing (Transfer-Encoding) -->
+    <rect class="transfer" x="60" y="70" width="600" height="230" rx="16" fill="#fde68a" stroke="#c2410c" stroke-width="2" />
+    <text class="title" x="80" y="98" fill="#20242c" font-size="15" font-weight="700">Transfer-Encoding: chunked</text>
+    <text class="muted" x="80" y="118" fill="#526173" font-size="12">hop-by-hop wire framing — a proxy may unwrap and re-chunk it; stripped before the payload reaches the app</text>
+
+    <!-- inner: payload (Content-Encoding) -->
+    <rect class="content" x="100" y="140" width="520" height="130" rx="14" fill="#dbeafe" stroke="#2563eb" stroke-width="2" />
+    <text class="title" x="120" y="168" fill="#20242c" font-size="15" font-weight="700">Content-Encoding: gzip</text>
+    <text class="muted" x="120" y="188" fill="#526173" font-size="12">end-to-end payload encoding — travels untouched to the final</text>
+    <text class="muted" x="120" y="204" fill="#526173" font-size="12">consumer, which must decode it to read the body</text>
+
+    <rect class="outer" x="140" y="216" width="440" height="40" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <text class="title" x="360" y="241" fill="#20242c" font-size="14" font-family="ui-monospace, monospace" text-anchor="middle">gzip-compressed response body</text>
+
+    <text class="muted" x="360" y="322" fill="#526173" font-size="13" text-anchor="middle">Content-Encoding describes the payload itself; Transfer-Encoding describes how this one hop delivered it</text>
+  </g>
+</svg>

@@ -1,0 +1,93 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="400" viewBox="0 0 720 400">
+  <style>
+    svg {
+      --panel: #f5f7fb;
+      --title: #20242c;
+      --muted: #526173;
+      --grid: #d5dce6;
+      --axis: #64748b;
+      --size-line: #2563eb;
+      --time-line: #c2410c;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      svg {
+        --panel: #1a1f27;
+        --title: #e6eaf2;
+        --muted: #9aa8bd;
+        --grid: #333c49;
+        --axis: #8b9bb4;
+        --size-line: #60a5fa;
+        --time-line: #fb923c;
+      }
+    }
+
+    .panel { fill: var(--panel); }
+    .title { fill: var(--title); }
+    .muted { fill: var(--muted); }
+    .grid { stroke: var(--grid); }
+    .axis { stroke: var(--axis); }
+    .size-line { stroke: var(--size-line); fill: none; }
+    .time-line { stroke: var(--time-line); fill: none; }
+    .size-dot { fill: var(--size-line); }
+    .time-dot { fill: var(--time-line); }
+  </style>
+
+  <rect class="panel" width="720" height="400" rx="20" fill="#f5f7fb" />
+  <text class="title" x="36" y="38" fill="#20242c" font-family="system-ui, sans-serif" font-size="19" font-weight="700">
+    Compression level: size drops fast, then flattens; time keeps climbing
+  </text>
+
+  <g font-family="system-ui, sans-serif">
+    <!-- gridlines -->
+    <line class="grid" x1="90" y1="80" x2="90" y2="330" stroke="#d5dce6" stroke-width="1" />
+    <line class="grid" x1="90" y1="330" x2="660" y2="330" stroke="#d5dce6" stroke-width="1" />
+
+    <!-- level ticks 1..9 -->
+    <g class="muted" fill="#526173" font-size="13" text-anchor="middle">
+      <text x="130" y="352">1</text>
+      <text x="190" y="352">2</text>
+      <text x="250" y="352">3</text>
+      <text x="310" y="352">4</text>
+      <text x="370" y="352">5</text>
+      <text x="430" y="352">6</text>
+      <text x="490" y="352">7</text>
+      <text x="550" y="352">8</text>
+      <text x="610" y="352">9</text>
+    </g>
+    <text class="muted" x="360" y="378" fill="#526173" font-size="13" text-anchor="middle">gzip compression level</text>
+
+    <!-- size line: starts high (100,100) drops fast then flattens near (610,60) -->
+    <polyline class="size-line" points="130,110 190,150 250,180 310,198 370,208 430,214 490,217 550,219 610,220" fill="none" stroke="#2563eb" stroke-width="3" stroke-linecap="round" />
+    <g class="size-dot" fill="#2563eb">
+      <circle cx="130" cy="110" r="4" />
+      <circle cx="190" cy="150" r="4" />
+      <circle cx="250" cy="180" r="4" />
+      <circle cx="310" cy="198" r="4" />
+      <circle cx="370" cy="208" r="4" />
+      <circle cx="430" cy="214" r="4" />
+      <circle cx="490" cy="217" r="4" />
+      <circle cx="550" cy="219" r="4" />
+      <circle cx="610" cy="220" r="4" />
+    </g>
+
+    <!-- time line: starts low, rises slowly then shoots up at the end -->
+    <polyline class="time-line" points="130,300 190,296 250,290 310,282 370,270 430,252 490,220 550,160 610,90" fill="none" stroke="#c2410c" stroke-width="3" stroke-linecap="round" />
+    <g class="time-dot" fill="#c2410c">
+      <circle cx="130" cy="300" r="4" />
+      <circle cx="190" cy="296" r="4" />
+      <circle cx="250" cy="290" r="4" />
+      <circle cx="310" cy="282" r="4" />
+      <circle cx="370" cy="270" r="4" />
+      <circle cx="430" cy="252" r="4" />
+      <circle cx="490" cy="220" r="4" />
+      <circle cx="550" cy="160" r="4" />
+      <circle cx="610" cy="90" r="4" />
+    </g>
+
+    <rect x="150" y="228" width="14" height="14" fill="#2563eb" />
+    <text class="muted" x="170" y="240" fill="#526173" font-size="13">compressed size</text>
+    <rect x="150" y="248" width="14" height="14" fill="#c2410c" />
+    <text class="muted" x="170" y="260" fill="#526173" font-size="13">compression time</text>
+  </g>
+</svg>

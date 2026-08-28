@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="400" viewBox="0 0 720 400">
+  <style>
+    svg {
+      --panel: #f5f7fb;
+      --title: #20242c;
+      --muted: #526173;
+      --edge: #64748b;
+      --curve: #c2410c;
+      --point: #2563eb;
+    }
+    @media (prefers-color-scheme: dark) {
+      svg {
+        --panel: #1a1f27;
+        --title: #e6eaf2;
+        --muted: #9aa8bd;
+        --edge: #8b9bb4;
+        --curve: #fb923c;
+        --point: #60a5fa;
+      }
+    }
+    .panel { fill: var(--panel); }
+    .title { fill: var(--title); }
+    .muted { fill: var(--muted); }
+    .curve { stroke: var(--curve); }
+    .point { fill: var(--point); }
+    .point-text { fill: var(--point); }
+  </style>
+
+  <rect class="panel" width="720" height="400" rx="20" fill="#f5f7fb" />
+  <text class="title" x="36" y="42" fill="#20242c" font-family="system-ui, sans-serif" font-size="19" font-weight="700">
+    Queueing wait time vs. utilization
+  </text>
+
+  <g font-family="system-ui, sans-serif">
+    <line x1="70" y1="60" x2="70" y2="340" stroke="#64748b" stroke-width="2" />
+    <line x1="70" y1="340" x2="660" y2="340" stroke="#64748b" stroke-width="2" />
+    <text class="muted" x="30" y="200" fill="#526173" font-size="13" text-anchor="middle" transform="rotate(-90 30 200)">average wait time</text>
+    <text class="muted" x="365" y="372" fill="#526173" font-size="13" text-anchor="middle">utilization (&#961;)</text>
+
+    <!-- ~ rho / (1 - rho) shape, scaled to fit -->
+    <path class="curve" d="M70,338 C220,332 330,320 420,290 C480,265 520,225 555,175 C585,132 605,95 622,60"
+          fill="none" stroke="#c2410c" stroke-width="3" />
+
+    <!-- 50% -->
+    <circle class="point" cx="336" cy="322" r="5" fill="#2563eb" />
+    <text class="point-text" x="336" y="304" fill="#2563eb" font-size="13" font-weight="700" text-anchor="middle">50%</text>
+    <text class="muted" x="336" y="358" fill="#526173" font-size="12" text-anchor="middle">factor &#8776; 1</text>
+
+    <!-- 80% -->
+    <circle class="point" cx="502" cy="255" r="5" fill="#2563eb" />
+    <text class="point-text" x="502" y="237" fill="#2563eb" font-size="13" font-weight="700" text-anchor="middle">80%</text>
+    <text class="muted" x="502" y="358" fill="#526173" font-size="12" text-anchor="middle">factor &#8776; 4</text>
+
+    <!-- 90% -->
+    <circle class="point" cx="565" cy="192" r="5" fill="#2563eb" />
+    <text class="point-text" x="565" y="174" fill="#2563eb" font-size="13" font-weight="700" text-anchor="middle">90%</text>
+    <text class="muted" x="565" y="358" fill="#526173" font-size="12" text-anchor="middle">factor &#8776; 9</text>
+
+    <!-- 95% -->
+    <circle class="point" cx="601" cy="130" r="5" fill="#2563eb" />
+    <text class="point-text" x="601" y="112" fill="#2563eb" font-size="13" font-weight="700" text-anchor="middle">95%</text>
+    <text class="muted" x="601" y="358" fill="#526173" font-size="12" text-anchor="middle">factor &#8776; 19</text>
+
+    <line x1="336" y1="322" x2="336" y2="340" stroke="#8b9bb4" stroke-width="1" stroke-dasharray="3 3" />
+    <line x1="502" y1="255" x2="502" y2="340" stroke="#8b9bb4" stroke-width="1" stroke-dasharray="3 3" />
+    <line x1="565" y1="192" x2="565" y2="340" stroke="#8b9bb4" stroke-width="1" stroke-dasharray="3 3" />
+    <line x1="601" y1="130" x2="601" y2="340" stroke="#8b9bb4" stroke-width="1" stroke-dasharray="3 3" />
+  </g>
+</svg>

@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="400" viewBox="0 0 720 400">
+  <style>
+    svg {
+      --panel: #f5f7fb;
+      --title: #20242c;
+      --muted: #526173;
+      --edge: #64748b;
+      --slab: #d5dce6;
+      --slab-line: #94a3b8;
+      --groove: #64748b;
+      --crack: #dc2626;
+      --crack-text: #b91c1c;
+      --good-text: #15803d;
+    }
+    @media (prefers-color-scheme: dark) {
+      svg {
+        --panel: #1a1f27;
+        --title: #e6eaf2;
+        --muted: #9aa8bd;
+        --edge: #8b9bb4;
+        --slab: #3a4557;
+        --slab-line: #64748b;
+        --groove: #94a3b8;
+        --crack: #f87171;
+        --crack-text: #fca5a5;
+        --good-text: #86efac;
+      }
+    }
+    .panel { fill: var(--panel); }
+    .title { fill: var(--title); font-family: system-ui, sans-serif; font-weight: 700; }
+    .muted { fill: var(--muted); font-family: system-ui, sans-serif; }
+    .label { fill: var(--title); font-family: system-ui, sans-serif; font-weight: 600; }
+    .slab { fill: var(--slab); stroke: var(--slab-line); stroke-width: 1.5; }
+    .crack-text { fill: var(--crack-text); font-family: system-ui, sans-serif; font-weight: 700; }
+    .good-text { fill: var(--good-text); font-family: system-ui, sans-serif; font-weight: 700; }
+  </style>
+
+  <rect class="panel" width="720" height="400" rx="20" />
+  <text class="title" x="36" y="40" font-size="19">A control joint tells a crack where to go</text>
+
+  <g font-family="system-ui, sans-serif">
+    <!-- top-down plan view of a scored slab panel -->
+    <rect class="slab" x="80" y="80" width="220" height="220" />
+    <!-- shallow groove line, drawn as a channel -->
+    <rect x="185" y="80" width="10" height="220" fill="var(--panel)" stroke="var(--groove)" stroke-width="1.5" />
+    <!-- crack following the groove -->
+    <path d="M 190 90 L 187 130 L 192 170 L 188 210 L 191 250 L 190 290" stroke="var(--crack)" stroke-width="3" fill="none" stroke-linecap="round" />
+    <text class="good-text" x="190" y="330" font-size="14" text-anchor="middle">Scored joint</text>
+    <text class="muted" x="190" y="347" font-size="12" text-anchor="middle">Crack forms in a straight,</text>
+    <text class="muted" x="190" y="362" font-size="12" text-anchor="middle">hidden line under the groove</text>
+
+    <!-- unscored slab with random crack -->
+    <rect class="slab" x="420" y="80" width="220" height="220" />
+    <path d="M 460 95 L 490 140 L 480 190 L 540 220 L 560 270 L 600 290" stroke="var(--crack)" stroke-width="3" fill="none" stroke-linecap="round" />
+    <text class="crack-text" x="530" y="330" font-size="14" text-anchor="middle">No joint</text>
+    <text class="muted" x="530" y="347" font-size="12" text-anchor="middle">Crack wanders wherever the</text>
+    <text class="muted" x="530" y="362" font-size="12" text-anchor="middle">slab is weakest — unpredictable</text>
+
+    <text class="label" x="190" y="65" font-size="12" text-anchor="middle">the groove is only 1/4 to 1/3 of slab depth</text>
+  </g>
+</svg>

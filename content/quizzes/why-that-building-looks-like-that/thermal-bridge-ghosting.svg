@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="420" viewBox="0 0 720 420">
+  <style>
+    svg {
+      --panel: #f5f7fb;
+      --title: #20242c;
+      --muted: #526173;
+      --edge: #64748b;
+      --insulation: #fde68a;
+      --insulation-line: #d97706;
+      --stud: #94a3b8;
+      --stud-line: #475569;
+      --cold: #2563eb;
+      --warm: #c2410c;
+      --dust: #52525b;
+      --dust-text: #3f3f46;
+    }
+    @media (prefers-color-scheme: dark) {
+      svg {
+        --panel: #1a1f27;
+        --title: #e6eaf2;
+        --muted: #9aa8bd;
+        --edge: #8b9bb4;
+        --insulation: #7c5e17;
+        --insulation-line: #fbbf24;
+        --stud: #64748b;
+        --stud-line: #cbd5e1;
+        --cold: #60a5fa;
+        --warm: #fb923c;
+        --dust: #9aa8bd;
+        --dust-text: #cbd5e1;
+      }
+    }
+    .panel { fill: var(--panel); }
+    .title { fill: var(--title); font-family: system-ui, sans-serif; font-weight: 700; }
+    .muted { fill: var(--muted); font-family: system-ui, sans-serif; }
+    .label { fill: var(--title); font-family: system-ui, sans-serif; font-weight: 600; }
+    .insulation { fill: var(--insulation); stroke: var(--insulation-line); stroke-width: 1.5; }
+    .stud { fill: var(--stud); stroke: var(--stud-line); stroke-width: 1.5; }
+    .dust-text { fill: var(--dust-text); font-family: system-ui, sans-serif; font-weight: 700; }
+  </style>
+
+  <rect class="panel" width="720" height="420" rx="20" />
+  <text class="title" x="36" y="40" font-size="19">A stud is a cold shortcut through the insulation</text>
+
+  <g font-family="system-ui, sans-serif">
+    <!-- wall cross-section: insulation with a stud running through -->
+    <rect class="insulation" x="90" y="80" width="300" height="150" />
+    <rect class="stud" x="220" y="80" width="24" height="150" />
+    <text class="muted" x="150" y="105" font-size="12">insulation</text>
+    <text class="muted" x="232" y="70" font-size="12" text-anchor="middle">stud</text>
+
+    <!-- outside cold / inside warm labels -->
+    <text class="label" x="90" y="255" font-size="13">outside (cold)</text>
+    <text class="label" x="390" y="255" font-size="13" text-anchor="end">inside (warm)</text>
+    <path d="M 90 240 H 390" stroke="var(--edge)" stroke-width="1" stroke-dasharray="2 4" />
+
+    <!-- temperature note at the stud -->
+    <text class="muted" x="232" y="165" font-size="11" text-anchor="middle" fill="var(--cold)">colder surface</text>
+    <text class="muted" x="232" y="180" font-size="11" text-anchor="middle" fill="var(--cold)">directly behind the stud</text>
+
+    <!-- interior wall face with dust ghosting -->
+    <rect x="440" y="80" width="220" height="150" fill="var(--panel)" stroke="var(--edge)" stroke-width="1.5" />
+    <text class="muted" x="550" y="70" font-size="12" text-anchor="middle">interior ceiling/wall, years later</text>
+    <rect x="558" y="80" width="24" height="150" fill="var(--dust)" opacity="0.55" />
+    <line x1="446" y1="80" x2="446" y2="230" stroke="var(--dust)" stroke-width="1" opacity="0.3" />
+    <text class="dust-text" x="570" y="255" font-size="13" text-anchor="middle">"ghosting"</text>
+    <text class="muted" x="570" y="272" font-size="12" text-anchor="middle">airborne dust settles faster</text>
+    <text class="muted" x="570" y="287" font-size="12" text-anchor="middle">on the colder strip of surface</text>
+
+    <path d="M 400 155 H 435" stroke="var(--edge)" stroke-width="2" fill="none" marker-end="url(#arrowT2)" />
+    <defs>
+      <marker id="arrowT2" markerWidth="8" markerHeight="8" refX="5" refY="4" orient="auto">
+        <path d="M0,0 L8,4 L0,8 Z" fill="var(--edge)" />
+      </marker>
+    </defs>
+
+    <text class="muted" x="360" y="340" font-size="13" text-anchor="middle">The stain is not damage — it is a heat-loss map drawn in dust</text>
+  </g>
+</svg>

@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="360" viewBox="0 0 720 360">
+  <style>
+    svg {
+      --panel: #f5f7fb;
+      --title: #20242c;
+      --muted: #526173;
+      --edge: #64748b;
+      --hit: #16a34a;
+      --miss: #9333ea;
+    }
+    @media (prefers-color-scheme: dark) {
+      svg {
+        --panel: #1a1f27;
+        --title: #e6eaf2;
+        --muted: #9aa8bd;
+        --edge: #8b9bb4;
+        --hit: #4ade80;
+        --miss: #c084fc;
+      }
+    }
+    .panel { fill: var(--panel); }
+    .title { fill: var(--title); }
+    .muted { fill: var(--muted); }
+  </style>
+
+  <rect class="panel" width="720" height="360" rx="20" fill="#f5f7fb" />
+  <text class="title" x="36" y="42" fill="#20242c" font-family="system-ui, sans-serif" font-size="19" font-weight="700">
+    Two humps, one distribution
+  </text>
+
+  <g font-family="system-ui, sans-serif">
+    <line x1="50" y1="290" x2="670" y2="290" stroke="#64748b" stroke-width="2" />
+
+    <!-- cache hit hump: tall and narrow, near the fast end -->
+    <path d="M60,290 C90,290 100,90 150,90 C200,90 210,290 240,290"
+          fill="#16a34a" fill-opacity="0.25" stroke="#16a34a" stroke-width="3" />
+    <text x="150" y="78" fill="#16a34a" font-size="14" font-weight="700" text-anchor="middle">cache hit, ~5 ms</text>
+    <text x="150" y="96" fill="#526173" font-size="12" text-anchor="middle" class="muted">most requests</text>
+
+    <!-- cache miss hump: shorter and wider, near the slow end -->
+    <path d="M420,290 C450,290 470,220 520,220 C570,220 590,290 620,290"
+          fill="#9333ea" fill-opacity="0.25" stroke="#9333ea" stroke-width="3" />
+    <text x="520" y="205" fill="#9333ea" font-size="14" font-weight="700" text-anchor="middle">cache miss, ~200 ms</text>
+    <text x="520" y="223" fill="#526173" font-size="12" text-anchor="middle" class="muted">the rest</text>
+
+    <text class="muted" x="36" y="330" fill="#526173" font-size="13">
+      p90 could land just past the fast hump or deep inside the slow one &#8212; a small shift in cache hit rate moves it a lot.
+    </text>
+  </g>
+</svg>

@@ -1,0 +1,117 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="440" viewBox="0 0 720 440">
+  <style>
+    svg {
+      --panel: #f5f7fb;
+      --title: #20242c;
+      --muted: #526173;
+      --edge: #64748b;
+      --card: #ffffff;
+      --grid: #d5dce6;
+      --brick: #c2410c;
+      --brick-line: #9a3412;
+      --cavity: #e0f2fe;
+      --insulation: #fde68a;
+      --block: #cbd5e1;
+      --water: #0284c7;
+      --water-text: #0369a1;
+      --flash: #2563eb;
+    }
+    @media (prefers-color-scheme: dark) {
+      svg {
+        --panel: #1a1f27;
+        --title: #e6eaf2;
+        --muted: #9aa8bd;
+        --edge: #8b9bb4;
+        --card: #252b35;
+        --grid: #333c49;
+        --brick: #fb923c;
+        --brick-line: #c2410c;
+        --cavity: #0c2a3d;
+        --insulation: #7c5e17;
+        --block: #3a4557;
+        --water: #38bdf8;
+        --water-text: #7dd3fc;
+        --flash: #60a5fa;
+      }
+    }
+    .panel { fill: var(--panel); }
+    .title { fill: var(--title); font-family: system-ui, sans-serif; font-weight: 700; }
+    .muted { fill: var(--muted); font-family: system-ui, sans-serif; }
+    .label { fill: var(--title); font-family: system-ui, sans-serif; font-weight: 600; }
+    .brick { fill: var(--brick); stroke: var(--brick-line); stroke-width: 1.5; }
+    .cavity { fill: var(--cavity); stroke: var(--edge); stroke-width: 1.5; }
+    .insulation { fill: var(--insulation); stroke: var(--edge); stroke-width: 1.5; }
+    .block { fill: var(--block); stroke: var(--edge); stroke-width: 1.5; }
+    .flash { stroke: var(--flash); stroke-width: 4; fill: none; }
+    .water { stroke: var(--water); stroke-width: 3; fill: none; }
+    .water-text { fill: var(--water-text); font-family: system-ui, sans-serif; font-weight: 700; }
+  </style>
+
+  <rect class="panel" width="720" height="440" rx="20" />
+  <text class="title" x="36" y="42" font-size="19">Cavity wall: the drained and vented path</text>
+
+  <g font-family="system-ui, sans-serif">
+    <!-- brick veneer (outer leaf), bricks as rows -->
+    <g>
+      <rect class="brick" x="120" y="90" width="70" height="260" />
+      <line x1="120" y1="122" x2="190" y2="122" stroke="var(--brick-line)" stroke-width="1" />
+      <line x1="120" y1="154" x2="190" y2="154" stroke="var(--brick-line)" stroke-width="1" />
+      <line x1="120" y1="186" x2="190" y2="186" stroke="var(--brick-line)" stroke-width="1" />
+      <line x1="120" y1="218" x2="190" y2="218" stroke="var(--brick-line)" stroke-width="1" />
+      <line x1="120" y1="250" x2="190" y2="250" stroke="var(--brick-line)" stroke-width="1" />
+      <line x1="120" y1="282" x2="190" y2="282" stroke="var(--brick-line)" stroke-width="1" />
+      <line x1="120" y1="314" x2="190" y2="314" stroke="var(--brick-line)" stroke-width="1" />
+    </g>
+
+    <!-- open head joint gap near base = weep -->
+    <rect x="150" y="314" width="10" height="32" fill="var(--panel)" stroke="var(--edge)" stroke-width="1" />
+
+    <!-- cavity -->
+    <rect class="cavity" x="190" y="90" width="40" height="260" />
+
+    <!-- insulation in cavity -->
+    <rect class="insulation" x="196" y="96" width="28" height="220" />
+
+    <!-- inner block leaf -->
+    <rect class="block" x="230" y="90" width="60" height="260" />
+
+    <!-- flashing at base sloping toward the weep, turned up at back -->
+    <path class="flash" d="M 232 340 H 122" />
+    <path class="flash" d="M 232 340 V 322" />
+
+    <!-- water droplets running down the cavity face -->
+    <circle cx="205" cy="150" r="3.5" fill="var(--water)" />
+    <circle cx="205" cy="190" r="3.5" fill="var(--water)" />
+    <circle cx="205" cy="230" r="3.5" fill="var(--water)" />
+    <path class="water" d="M 205 150 V 336" stroke-dasharray="4 5" />
+
+    <!-- exit arrow through weep -->
+    <path class="water" d="M 205 336 Q 175 340 156 336" marker-end="url(#arrow)" />
+
+    <defs>
+      <marker id="arrow" markerWidth="8" markerHeight="8" refX="5" refY="4" orient="auto">
+        <path d="M0,0 L8,4 L0,8 Z" fill="var(--water)" />
+      </marker>
+    </defs>
+
+    <!-- labels -->
+    <text class="label" x="330" y="105" font-size="14">Outer leaf (brick veneer)</text>
+    <text class="muted" x="330" y="122" font-size="12">Not waterproof by design</text>
+
+    <text class="label" x="330" y="160" font-size="14">Cavity + insulation</text>
+    <text class="muted" x="330" y="177" font-size="12">Air gap drains and dries the</text>
+    <text class="muted" x="330" y="192" font-size="12">back of the veneer</text>
+
+    <text class="label" x="330" y="230" font-size="14">Flashing</text>
+    <text class="muted" x="330" y="247" font-size="12">Catches water in the cavity,</text>
+    <text class="muted" x="330" y="262" font-size="12">slopes it back out</text>
+
+    <text class="water-text" x="330" y="345" font-size="14">Weep hole</text>
+    <text class="muted" x="330" y="362" font-size="12">Open head joint lets the</text>
+    <text class="muted" x="330" y="377" font-size="12">collected water leave</text>
+
+    <text class="label" x="240" y="380" font-size="13" text-anchor="middle">Inner leaf</text>
+
+    <text class="muted" x="360" y="415" font-size="12">Water gets in through brick and mortar; the assembly's job is to catch it, not stop it.</text>
+  </g>
+</svg>
