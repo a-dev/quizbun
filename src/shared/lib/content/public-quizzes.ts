@@ -10,6 +10,7 @@ import {
   type Quiz,
   quizSchema,
 } from "../quiz";
+import { readImageDimensions } from "./image-dimensions";
 
 /**
  * Build-time-only module: reads the repo filesystem, so it may be imported
@@ -317,13 +318,14 @@ function validatePublicQuizAssets(directoryPath: string, quizzes: readonly Quiz[
 
     for (const [questionIndex, question] of quiz.questions.entries()) {
       for (const [imageIndex, image] of (question.images ?? []).entries()) {
-        const fieldPath = `questions[${questionIndex}].images[${imageIndex}].src`;
+        const imagePath = `questions[${questionIndex}].images[${imageIndex}]`;
+        const sourcePath = `${imagePath}.src`;
 
         if (image.src.startsWith("https://")) {
           throw assetValidationError({
             fileLabel: toWorkspacePathLabel(resolve(directoryPath, `${quiz.id}.json`)),
             heading: "Remote Image is not allowed in a public Quiz",
-            path: fieldPath,
+            path: sourcePath,
             problem: `The Image source "${image.src}" is remote, but Catalog Images must be vendored in the repository.`,
             fix: `Download the Image into "${toWorkspacePathLabel(resolve(directoryPath, quiz.id))}" and replace the src value with its bare asset filename.`,
           });
@@ -336,9 +338,36 @@ function validatePublicQuizAssets(directoryPath: string, quizzes: readonly Quiz[
           throw assetValidationError({
             fileLabel: toWorkspacePathLabel(resolve(directoryPath, `${quiz.id}.json`)),
             heading: "Referenced Quiz asset is missing",
-            path: fieldPath,
+            path: sourcePath,
             problem: `The Image references "${image.src}", but "${toWorkspacePathLabel(assetPath)}" is not a file.`,
             fix: `Add the file to "${toWorkspacePathLabel(resolve(directoryPath, quiz.id))}", or fix/remove this Image reference.`,
+          });
+        }
+
+        const dimensions = readAssetDimensions({
+          assetPath,
+          directoryPath,
+          imagePath,
+          quizId: quiz.id,
+        });
+
+        if (image.width === undefined || image.height === undefined) {
+          throw assetValidationError({
+            fileLabel: toWorkspacePathLabel(resolve(directoryPath, `${quiz.id}.json`)),
+            heading: "Quiz Image dimensions are missing",
+            path: imagePath,
+            problem: `The Image does not record the intrinsic ${dimensions.width}×${dimensions.height} size of "${image.src}".`,
+            fix: "Run `bun run quiz:sizes:generate` and commit the updated Quiz JSON.",
+          });
+        }
+
+        if (image.width !== dimensions.width || image.height !== dimensions.height) {
+          throw assetValidationError({
+            fileLabel: toWorkspacePathLabel(resolve(directoryPath, `${quiz.id}.json`)),
+            heading: "Quiz Image dimensions do not match the asset",
+            path: imagePath,
+            problem: `The Image records ${image.width}×${image.height}, but "${image.src}" is ${dimensions.width}×${dimensions.height}.`,
+            fix: `Run \`bun run quiz:sizes:generate\` to set \`width\` to ${dimensions.width} and \`height\` to ${dimensions.height}, then commit the updated Quiz JSON.`,
           });
         }
       }
@@ -403,6 +432,30 @@ function validatePublicQuizAssets(directoryPath: string, quizzes: readonly Quiz[
         });
       }
     }
+  }
+}
+
+function readAssetDimensions({
+  assetPath,
+  directoryPath,
+  imagePath,
+  quizId,
+}: {
+  assetPath: string;
+  directoryPath: string;
+  imagePath: string;
+  quizId: string;
+}) {
+  try {
+    return readImageDimensions(assetPath);
+  } catch (error) {
+    throw assetValidationError({
+      fileLabel: toWorkspacePathLabel(resolve(directoryPath, `${quizId}.json`)),
+      heading: "Quiz Image dimensions could not be read",
+      path: `${imagePath}.src`,
+      problem: `The dimensions of "${toWorkspacePathLabel(assetPath)}" could not be read. ${error instanceof Error ? error.message : String(error)}`,
+      fix: "Repair or replace the Image file, then run `bun run quiz:sizes:generate`.",
+    });
   }
 }
 

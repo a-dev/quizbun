@@ -13,6 +13,8 @@ interface QuestionMediaProps {
   images: Image[] | undefined;
   videos: Video[] | undefined;
   surface: MediaPlacement;
+  /** Marks this surface's first Image as the page's likely LCP candidate. */
+  priority?: boolean;
 }
 
 const SURFACE_CLASS = {
@@ -31,6 +33,7 @@ export function QuestionMedia({
   images,
   videos,
   surface,
+  priority = false,
 }: QuestionMediaProps) {
   const surfaceImages = images?.filter((image) => belongsOnSurface(image.placement, surface)) ?? [];
   const surfaceVideos = videos?.filter((video) => belongsOnSurface(video.placement, surface)) ?? [];
@@ -50,6 +53,9 @@ export function QuestionMedia({
           key={`${image.src}-${index}`}
           src={resolveImageSrc(quizId, image.src)}
           alt={image.alt}
+          width={image.width}
+          height={image.height}
+          priority={priority && index === 0}
           captionHtml={
             image.caption === undefined
               ? undefined

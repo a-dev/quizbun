@@ -69,6 +69,9 @@ The Standard lets an Image `src` be an `https://` URL, but the Catalog does not.
 - Every Image needs non-empty `alt`. A Question Image carries part of the teaching, so it is never decorative.
 - Use `caption` for attribution when the Image is not your own work.
 - Put anything that gives away the answer behind `"placement": "explanation"`.
+- Run `bun run quiz:sizes:generate` after adding or replacing an image file, and commit what it writes.
+
+That last step fills in each Image's `width` and `height` by reading the files themselves. The values let the site reserve the right space before an image loads, so the answer options do not jump down the page when it arrives. Never type or estimate them: `bun run quiz:sizes:check` runs in CI and fails when a recorded size and its file disagree, which is what catches a re-cropped image whose dimensions were not regenerated.
 
 Videos are the exception to the vendoring rule: `provider: "youtube"` references are inherently remote, and the site renders them behind a click-to-load facade that contacts YouTube only after a learner asks for it. Verify that every video id resolves to a real video before you write it — CI deliberately never calls YouTube, so a wrong id fails silently in front of learners rather than loudly in the pull request. Add `--check-media` to the validator above and it resolves every YouTube id and remote Image URL over the network for you.
 

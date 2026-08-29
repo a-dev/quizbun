@@ -51,6 +51,18 @@ function addCrossFieldAnnotations(schema: JsonSchemaObject) {
   for (const variant of variants) {
     const variantProperties = asObject(variant.properties, "question variant properties");
     const type = asObject(variantProperties.type, "question type schema");
+    const images = asObject(variantProperties.images, "images schema");
+
+    const image = asObject(images.items, "image schema");
+
+    // Draft 2020-12 expresses both-or-neither directly, so this one rule is
+    // enforceable by any third-party tool reading the artifact. What stays
+    // unenforceable is the other half: that the pair matches the real file.
+    image.dependentRequired = { height: ["width"], width: ["height"] };
+    appendDescription(
+      image,
+      `An Image sets \`width\` and \`height\` together or omits both. Both must be the intrinsic pixel size of the file \`src\` names, which JSON Schema cannot check against the file itself; the Zod validator and import page are the final authority.`,
+    );
 
     if (type.const === "single-choice") {
       appendDescription(

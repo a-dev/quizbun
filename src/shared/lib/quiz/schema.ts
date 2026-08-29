@@ -89,11 +89,32 @@ const imageSrcSchema = z.union(
   },
 );
 
+// Intrinsic pixel size of the file `src` points at, so a Renderer can reserve
+// the box before the image decodes. A fact about the referenced resource, like
+// `alt`; the displayed size stays Renderer behavior.
+const imageDimensionSchema = requiredNumber()
+  .int("Use a whole number of pixels, 1 or greater.")
+  .min(1, "Use a whole number of pixels, 1 or greater.");
+
 export const imageSchema = strictObject({
   src: imageSrcSchema,
   alt: nonEmptyStringSchema,
   caption: nonEmptyStringSchema.optional(),
   placement: placementSchema.optional(),
+  width: imageDimensionSchema.optional(),
+  height: imageDimensionSchema.optional(),
+}).superRefine((image, context) => {
+  // Both or neither. A lone dimension reserves nothing, so it is dead weight in
+  // the Quiz and a silent no-op in the Renderer; better to say so at import.
+  if ((image.width === undefined) === (image.height === undefined)) return;
+
+  const missingField = image.width === undefined ? "width" : "height";
+
+  context.addIssue({
+    code: "custom",
+    message: `Set \`width\` and \`height\` together, or omit both. \`${missingField}\` is missing.`,
+    path: [missingField],
+  });
 });
 
 export const videoSchema = strictObject({

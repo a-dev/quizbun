@@ -14,6 +14,14 @@ export const SITE_DESCRIPTION =
 export const SITE_THEME_COLOR = "#4d84a7";
 
 /**
+ * The dark-theme counterpart — `--color-main-bg-dark` resolved for dark
+ * (`--color-blue-800`, `oklch(43.6% 0.057 237.34deg)`) as an sRGB hex literal.
+ * Browser chrome reads `theme-color` before any stylesheet, so like
+ * SITE_BACKGROUND_COLOR it cannot be a custom property.
+ */
+export const SITE_THEME_COLOR_DARK = "#31566d";
+
+/**
  * Light-theme `--color-main-bg` (`--color-gray-10`,
  * `oklch(98.1% 0.005 234.97deg)`) as an sRGB hex literal. Manifest colors are
  * baked outside CSS, where custom properties can't reach, and hex is the safe

@@ -97,6 +97,22 @@ const isCurrentPage = (path: string) => Astro.url.pathname === withBase(path);
     min-width: 0;
   }
 
+  /* Docs articles are long — `docs/standard.md` alone is ~300 lines of prose,
+     tables, and highlighted code. Defer the rendering of blocks past the first
+     screenful; the leading ones are inside the initial fold, where
+     `content-visibility` would delay first paint. `contain-intrinsic-size` is
+     mandatory so a skipped block reserves space instead of collapsing to 0px,
+     and `auto` lets the browser reuse each block's real size once measured.
+     Headings keep their ids, so in-page anchors and find-in-page still reach
+     skipped content.
+
+     `:global()` is required: the article body arrives through `set:html`, so
+     its elements never carry Astro's scope attribute. */
+  .content > :global(:nth-child(n + 12)) {
+    content-visibility: auto;
+    contain-intrinsic-size: auto none auto 6rem;
+  }
+
   /* Two columns once there is room: a fixed menu rail beside the article. */
   @media (width >= 48rem) {
     .docs {

@@ -27,7 +27,9 @@
           "src": "left-join-filters.svg",
           "alt": "Two versions of the same LEFT JOIN over three customers where only Ada has a paid order. With WHERE o.status = 'paid', the join invents NULL rows for Lin and Sam and the WHERE test then discards them, leaving Ada only. With AND o.status = 'paid' inside the ON clause, the filter only decides what counts as a match, so unmatched left rows survive: (Ada, 101), (Lin, NULL), (Sam, NULL). Further cards note that a filter on the left table inside ON removes nothing, only preventing matches; that an inner join after a left join cannot match a NULL key, so authors without books vanish again; that counting only some children while keeping every parent means filtering in ON or pre-filtering the child in a subquery; and that LEFT JOIN with WHERE right.key IS NULL is a reliable anti-join only when that column is genuinely NOT NULL.",
           "caption": "The left panel: the invented NULL row fails the `WHERE` test.",
-          "placement": "explanation"
+          "placement": "explanation",
+          "width": 720,
+          "height": 580
         }
       ],
       "type": "single-choice",
@@ -49,7 +51,9 @@
           "src": "left-join-filters.svg",
           "alt": "Two versions of the same LEFT JOIN over three customers where only Ada has a paid order. With WHERE o.status = 'paid', the join invents NULL rows for Lin and Sam and the WHERE test then discards them, leaving Ada only. With AND o.status = 'paid' inside the ON clause, the filter only decides what counts as a match, so unmatched left rows survive: (Ada, 101), (Lin, NULL), (Sam, NULL). Further cards note that a filter on the left table inside ON removes nothing, only preventing matches; that an inner join after a left join cannot match a NULL key, so authors without books vanish again; that counting only some children while keeping every parent means filtering in ON or pre-filtering the child in a subquery; and that LEFT JOIN with WHERE right.key IS NULL is a reliable anti-join only when that column is genuinely NOT NULL.",
           "caption": "The right panel: in `ON`, the filter decides matching, not survival.",
-          "placement": "explanation"
+          "placement": "explanation",
+          "width": 720,
+          "height": 580
         }
       ],
       "type": "single-choice",
@@ -85,7 +89,9 @@
           "src": "join-fan-out.svg",
           "alt": "Order 10 in three tables: one orders row, two order_items priced 30 and 20 with a true total of 50, and three payments of 10 with a true total of 30. Joining both children to the same parent produces every pairing — 2 × 3 = 6 rows, listed as 30/10 three times then 20/10 three times — so SUM(i.price) reports 150, each price counted once per payment, and SUM(p.amount) reports 60, each payment counted once per item; a window function over those rows inflates the same way. A green card gives the repair: aggregate each child by order_id separately and join the results, or use one correlated scalar subquery per child, and not DISTINCT, which would collapse two items genuinely priced 20 into one. A final note says fan-out begins at the first join whose right side has more than one row per join key.",
           "caption": "Six rows, and each price counted once per payment.",
-          "placement": "explanation"
+          "placement": "explanation",
+          "width": 720,
+          "height": 558
         }
       ],
       "type": "input",
@@ -105,7 +111,9 @@
           "src": "join-fan-out.svg",
           "alt": "Order 10 in three tables: one orders row, two order_items priced 30 and 20 with a true total of 50, and three payments of 10 with a true total of 30. Joining both children to the same parent produces every pairing — 2 × 3 = 6 rows, listed as 30/10 three times then 20/10 three times — so SUM(i.price) reports 150, each price counted once per payment, and SUM(p.amount) reports 60, each payment counted once per item; a window function over those rows inflates the same way. A green card gives the repair: aggregate each child by order_id separately and join the results, or use one correlated scalar subquery per child, and not DISTINCT, which would collapse two items genuinely priced 20 into one. A final note says fan-out begins at the first join whose right side has more than one row per join key.",
           "caption": "Collapse each child to one row per order first.",
-          "placement": "explanation"
+          "placement": "explanation",
+          "width": 720,
+          "height": 558
         }
       ],
       "type": "multiple-choice",
@@ -126,7 +134,9 @@
           "src": "null-three-valued-logic.svg",
           "alt": "Cards on SQL's three-valued logic. NULL = NULL evaluates to UNKNOWN, so two NULL join keys never match, and rating <> 5 is UNKNOWN when rating is NULL, so that row is dropped too; IS NOT DISTINCT FROM is the standard null-safe comparison, true when both sides are NULL. With candidate holding 1, 2 and 3 and blocked holding 2 and NULL, id NOT IN (2, NULL) expands to id <> 2 AND id <> NULL, whose second half is UNKNOWN for every row, so no rows come back, while NOT EXISTS asks a yes-or-no question and returns 1 and 3. Over no qualifying rows SUM returns NULL and COUNT returns 0; over rows including a NULL, AVG of 10, 20 and NULL is 15 and COUNT(DISTINCT c) of A, A, B and NULL is 2. Grouping is the one place NULLs count as equal: GROUP BY collects every NULL into a single group.",
           "caption": "UNKNOWN, and a `WHERE` clause keeps only TRUE.",
-          "placement": "explanation"
+          "placement": "explanation",
+          "width": 720,
+          "height": 606
         }
       ],
       "type": "single-choice",
@@ -147,7 +157,9 @@
           "src": "null-three-valued-logic.svg",
           "alt": "Cards on SQL's three-valued logic. NULL = NULL evaluates to UNKNOWN, so two NULL join keys never match, and rating <> 5 is UNKNOWN when rating is NULL, so that row is dropped too; IS NOT DISTINCT FROM is the standard null-safe comparison, true when both sides are NULL. With candidate holding 1, 2 and 3 and blocked holding 2 and NULL, id NOT IN (2, NULL) expands to id <> 2 AND id <> NULL, whose second half is UNKNOWN for every row, so no rows come back, while NOT EXISTS asks a yes-or-no question and returns 1 and 3. Over no qualifying rows SUM returns NULL and COUNT returns 0; over rows including a NULL, AVG of 10, 20 and NULL is 15 and COUNT(DISTINCT c) of A, A, B and NULL is 2. Grouping is the one place NULLs count as equal: GROUP BY collects every NULL into a single group.",
           "caption": "The green card names the standard predicate.",
-          "placement": "explanation"
+          "placement": "explanation",
+          "width": 720,
+          "height": 606
         }
       ],
       "type": "single-choice",
@@ -169,7 +181,9 @@
           "src": "null-three-valued-logic.svg",
           "alt": "Cards on SQL's three-valued logic. NULL = NULL evaluates to UNKNOWN, so two NULL join keys never match, and rating <> 5 is UNKNOWN when rating is NULL, so that row is dropped too; IS NOT DISTINCT FROM is the standard null-safe comparison, true when both sides are NULL. With candidate holding 1, 2 and 3 and blocked holding 2 and NULL, id NOT IN (2, NULL) expands to id <> 2 AND id <> NULL, whose second half is UNKNOWN for every row, so no rows come back, while NOT EXISTS asks a yes-or-no question and returns 1 and 3. Over no qualifying rows SUM returns NULL and COUNT returns 0; over rows including a NULL, AVG of 10, 20 and NULL is 15 and COUNT(DISTINCT c) of A, A, B and NULL is 2. Grouping is the one place NULLs count as equal: GROUP BY collects every NULL into a single group.",
           "caption": "The expansion is what does it: one UNKNOWN poisons the `AND`.",
-          "placement": "explanation"
+          "placement": "explanation",
+          "width": 720,
+          "height": 606
         }
       ],
       "type": "single-choice",
@@ -191,7 +205,9 @@
           "src": "null-three-valued-logic.svg",
           "alt": "Cards on SQL's three-valued logic. NULL = NULL evaluates to UNKNOWN, so two NULL join keys never match, and rating <> 5 is UNKNOWN when rating is NULL, so that row is dropped too; IS NOT DISTINCT FROM is the standard null-safe comparison, true when both sides are NULL. With candidate holding 1, 2 and 3 and blocked holding 2 and NULL, id NOT IN (2, NULL) expands to id <> 2 AND id <> NULL, whose second half is UNKNOWN for every row, so no rows come back, while NOT EXISTS asks a yes-or-no question and returns 1 and 3. Over no qualifying rows SUM returns NULL and COUNT returns 0; over rows including a NULL, AVG of 10, 20 and NULL is 15 and COUNT(DISTINCT c) of A, A, B and NULL is 2. Grouping is the one place NULLs count as equal: GROUP BY collects every NULL into a single group.",
           "caption": "Existence is a yes-or-no question, with no third answer.",
-          "placement": "explanation"
+          "placement": "explanation",
+          "width": 720,
+          "height": 606
         }
       ],
       "type": "single-choice",
@@ -213,7 +229,9 @@
           "src": "null-three-valued-logic.svg",
           "alt": "Cards on SQL's three-valued logic. NULL = NULL evaluates to UNKNOWN, so two NULL join keys never match, and rating <> 5 is UNKNOWN when rating is NULL, so that row is dropped too; IS NOT DISTINCT FROM is the standard null-safe comparison, true when both sides are NULL. With candidate holding 1, 2 and 3 and blocked holding 2 and NULL, id NOT IN (2, NULL) expands to id <> 2 AND id <> NULL, whose second half is UNKNOWN for every row, so no rows come back, while NOT EXISTS asks a yes-or-no question and returns 1 and 3. Over no qualifying rows SUM returns NULL and COUNT returns 0; over rows including a NULL, AVG of 10, 20 and NULL is 15 and COUNT(DISTINCT c) of A, A, B and NULL is 2. Grouping is the one place NULLs count as equal: GROUP BY collects every NULL into a single group.",
           "caption": "`<>` against NULL is UNKNOWN, so those rows never qualify.",
-          "placement": "explanation"
+          "placement": "explanation",
+          "width": 720,
+          "height": 606
         }
       ],
       "type": "input",
@@ -247,7 +265,9 @@
           "src": "null-three-valued-logic.svg",
           "alt": "Cards on SQL's three-valued logic. NULL = NULL evaluates to UNKNOWN, so two NULL join keys never match, and rating <> 5 is UNKNOWN when rating is NULL, so that row is dropped too; IS NOT DISTINCT FROM is the standard null-safe comparison, true when both sides are NULL. With candidate holding 1, 2 and 3 and blocked holding 2 and NULL, id NOT IN (2, NULL) expands to id <> 2 AND id <> NULL, whose second half is UNKNOWN for every row, so no rows come back, while NOT EXISTS asks a yes-or-no question and returns 1 and 3. Over no qualifying rows SUM returns NULL and COUNT returns 0; over rows including a NULL, AVG of 10, 20 and NULL is 15 and COUNT(DISTINCT c) of A, A, B and NULL is 2. Grouping is the one place NULLs count as equal: GROUP BY collects every NULL into a single group.",
           "caption": "`SUM` of nothing is NULL, not zero.",
-          "placement": "explanation"
+          "placement": "explanation",
+          "width": 720,
+          "height": 606
         }
       ],
       "type": "single-choice",
@@ -268,7 +288,9 @@
           "src": "null-three-valued-logic.svg",
           "alt": "Cards on SQL's three-valued logic. NULL = NULL evaluates to UNKNOWN, so two NULL join keys never match, and rating <> 5 is UNKNOWN when rating is NULL, so that row is dropped too; IS NOT DISTINCT FROM is the standard null-safe comparison, true when both sides are NULL. With candidate holding 1, 2 and 3 and blocked holding 2 and NULL, id NOT IN (2, NULL) expands to id <> 2 AND id <> NULL, whose second half is UNKNOWN for every row, so no rows come back, while NOT EXISTS asks a yes-or-no question and returns 1 and 3. Over no qualifying rows SUM returns NULL and COUNT returns 0; over rows including a NULL, AVG of 10, 20 and NULL is 15 and COUNT(DISTINCT c) of A, A, B and NULL is 2. Grouping is the one place NULLs count as equal: GROUP BY collects every NULL into a single group.",
           "caption": "`COUNT` of nothing is zero — the one aggregate that never returns NULL.",
-          "placement": "explanation"
+          "placement": "explanation",
+          "width": 720,
+          "height": 606
         }
       ],
       "type": "single-choice",
@@ -289,7 +311,9 @@
           "src": "null-three-valued-logic.svg",
           "alt": "Cards on SQL's three-valued logic. NULL = NULL evaluates to UNKNOWN, so two NULL join keys never match, and rating <> 5 is UNKNOWN when rating is NULL, so that row is dropped too; IS NOT DISTINCT FROM is the standard null-safe comparison, true when both sides are NULL. With candidate holding 1, 2 and 3 and blocked holding 2 and NULL, id NOT IN (2, NULL) expands to id <> 2 AND id <> NULL, whose second half is UNKNOWN for every row, so no rows come back, while NOT EXISTS asks a yes-or-no question and returns 1 and 3. Over no qualifying rows SUM returns NULL and COUNT returns 0; over rows including a NULL, AVG of 10, 20 and NULL is 15 and COUNT(DISTINCT c) of A, A, B and NULL is 2. Grouping is the one place NULLs count as equal: GROUP BY collects every NULL into a single group.",
           "caption": "The NULL is skipped, in the numerator and the denominator alike.",
-          "placement": "explanation"
+          "placement": "explanation",
+          "width": 720,
+          "height": 606
         }
       ],
       "type": "input",
@@ -308,7 +332,9 @@
           "src": "null-three-valued-logic.svg",
           "alt": "Cards on SQL's three-valued logic. NULL = NULL evaluates to UNKNOWN, so two NULL join keys never match, and rating <> 5 is UNKNOWN when rating is NULL, so that row is dropped too; IS NOT DISTINCT FROM is the standard null-safe comparison, true when both sides are NULL. With candidate holding 1, 2 and 3 and blocked holding 2 and NULL, id NOT IN (2, NULL) expands to id <> 2 AND id <> NULL, whose second half is UNKNOWN for every row, so no rows come back, while NOT EXISTS asks a yes-or-no question and returns 1 and 3. Over no qualifying rows SUM returns NULL and COUNT returns 0; over rows including a NULL, AVG of 10, 20 and NULL is 15 and COUNT(DISTINCT c) of A, A, B and NULL is 2. Grouping is the one place NULLs count as equal: GROUP BY collects every NULL into a single group.",
           "caption": "NULL is not a distinct value here.",
-          "placement": "explanation"
+          "placement": "explanation",
+          "width": 720,
+          "height": 606
         }
       ],
       "type": "input",
@@ -328,7 +354,9 @@
           "src": "null-three-valued-logic.svg",
           "alt": "Cards on SQL's three-valued logic. NULL = NULL evaluates to UNKNOWN, so two NULL join keys never match, and rating <> 5 is UNKNOWN when rating is NULL, so that row is dropped too; IS NOT DISTINCT FROM is the standard null-safe comparison, true when both sides are NULL. With candidate holding 1, 2 and 3 and blocked holding 2 and NULL, id NOT IN (2, NULL) expands to id <> 2 AND id <> NULL, whose second half is UNKNOWN for every row, so no rows come back, while NOT EXISTS asks a yes-or-no question and returns 1 and 3. Over no qualifying rows SUM returns NULL and COUNT returns 0; over rows including a NULL, AVG of 10, 20 and NULL is 15 and COUNT(DISTINCT c) of A, A, B and NULL is 2. Grouping is the one place NULLs count as equal: GROUP BY collects every NULL into a single group.",
           "caption": "Grouping is the exception: every NULL lands in one group.",
-          "placement": "explanation"
+          "placement": "explanation",
+          "width": 720,
+          "height": 606
         }
       ],
       "type": "input",
@@ -429,7 +457,9 @@
           "src": "join-fan-out.svg",
           "alt": "Order 10 in three tables: one orders row, two order_items priced 30 and 20 with a true total of 50, and three payments of 10 with a true total of 30. Joining both children to the same parent produces every pairing — 2 × 3 = 6 rows, listed as 30/10 three times then 20/10 three times — so SUM(i.price) reports 150, each price counted once per payment, and SUM(p.amount) reports 60, each payment counted once per item; a window function over those rows inflates the same way. A green card gives the repair: aggregate each child by order_id separately and join the results, or use one correlated scalar subquery per child, and not DISTINCT, which would collapse two items genuinely priced 20 into one. A final note says fan-out begins at the first join whose right side has more than one row per join key.",
           "caption": "A many-to-one join is only many-to-one if the right side really is unique.",
-          "placement": "explanation"
+          "placement": "explanation",
+          "width": 720,
+          "height": 558
         }
       ],
       "type": "multiple-choice",
@@ -450,7 +480,9 @@
           "src": "join-fan-out.svg",
           "alt": "Order 10 in three tables: one orders row, two order_items priced 30 and 20 with a true total of 50, and three payments of 10 with a true total of 30. Joining both children to the same parent produces every pairing — 2 × 3 = 6 rows, listed as 30/10 three times then 20/10 three times — so SUM(i.price) reports 150, each price counted once per payment, and SUM(p.amount) reports 60, each payment counted once per item; a window function over those rows inflates the same way. A green card gives the repair: aggregate each child by order_id separately and join the results, or use one correlated scalar subquery per child, and not DISTINCT, which would collapse two items genuinely priced 20 into one. A final note says fan-out begins at the first join whose right side has more than one row per join key.",
           "caption": "`DISTINCT` cannot tell a duplicate from two items priced the same.",
-          "placement": "explanation"
+          "placement": "explanation",
+          "width": 720,
+          "height": 558
         }
       ],
       "type": "multiple-choice",
@@ -524,7 +556,9 @@
           "src": "left-join-filters.svg",
           "alt": "Two versions of the same LEFT JOIN over three customers where only Ada has a paid order. With WHERE o.status = 'paid', the join invents NULL rows for Lin and Sam and the WHERE test then discards them, leaving Ada only. With AND o.status = 'paid' inside the ON clause, the filter only decides what counts as a match, so unmatched left rows survive: (Ada, 101), (Lin, NULL), (Sam, NULL). Further cards note that a filter on the left table inside ON removes nothing, only preventing matches; that an inner join after a left join cannot match a NULL key, so authors without books vanish again; that counting only some children while keeping every parent means filtering in ON or pre-filtering the child in a subquery; and that LEFT JOIN with WHERE right.key IS NULL is a reliable anti-join only when that column is genuinely NOT NULL.",
           "caption": "The inner join afterwards has nothing to match a NULL key against.",
-          "placement": "explanation"
+          "placement": "explanation",
+          "width": 720,
+          "height": 580
         }
       ],
       "type": "single-choice",
@@ -546,7 +580,9 @@
           "src": "null-three-valued-logic.svg",
           "alt": "Cards on SQL's three-valued logic. NULL = NULL evaluates to UNKNOWN, so two NULL join keys never match, and rating <> 5 is UNKNOWN when rating is NULL, so that row is dropped too; IS NOT DISTINCT FROM is the standard null-safe comparison, true when both sides are NULL. With candidate holding 1, 2 and 3 and blocked holding 2 and NULL, id NOT IN (2, NULL) expands to id <> 2 AND id <> NULL, whose second half is UNKNOWN for every row, so no rows come back, while NOT EXISTS asks a yes-or-no question and returns 1 and 3. Over no qualifying rows SUM returns NULL and COUNT returns 0; over rows including a NULL, AVG of 10, 20 and NULL is 15 and COUNT(DISTINCT c) of A, A, B and NULL is 2. Grouping is the one place NULLs count as equal: GROUP BY collects every NULL into a single group.",
           "caption": "Two NULL keys compare as UNKNOWN, so they never join.",
-          "placement": "explanation"
+          "placement": "explanation",
+          "width": 720,
+          "height": 606
         }
       ],
       "type": "single-choice",
@@ -568,7 +604,9 @@
           "src": "join-fan-out.svg",
           "alt": "Order 10 in three tables: one orders row, two order_items priced 30 and 20 with a true total of 50, and three payments of 10 with a true total of 30. Joining both children to the same parent produces every pairing — 2 × 3 = 6 rows, listed as 30/10 three times then 20/10 three times — so SUM(i.price) reports 150, each price counted once per payment, and SUM(p.amount) reports 60, each payment counted once per item; a window function over those rows inflates the same way. A green card gives the repair: aggregate each child by order_id separately and join the results, or use one correlated scalar subquery per child, and not DISTINCT, which would collapse two items genuinely priced 20 into one. A final note says fan-out begins at the first join whose right side has more than one row per join key.",
           "caption": "The window sees the six duplicated rows, not the two real ones.",
-          "placement": "explanation"
+          "placement": "explanation",
+          "width": 720,
+          "height": 558
         }
       ],
       "type": "single-choice",
@@ -643,7 +681,9 @@
           "src": "left-join-filters.svg",
           "alt": "Two versions of the same LEFT JOIN over three customers where only Ada has a paid order. With WHERE o.status = 'paid', the join invents NULL rows for Lin and Sam and the WHERE test then discards them, leaving Ada only. With AND o.status = 'paid' inside the ON clause, the filter only decides what counts as a match, so unmatched left rows survive: (Ada, 101), (Lin, NULL), (Sam, NULL). Further cards note that a filter on the left table inside ON removes nothing, only preventing matches; that an inner join after a left join cannot match a NULL key, so authors without books vanish again; that counting only some children while keeping every parent means filtering in ON or pre-filtering the child in a subquery; and that LEFT JOIN with WHERE right.key IS NULL is a reliable anti-join only when that column is genuinely NOT NULL.",
           "caption": "Reliable only when that column cannot itself be NULL.",
-          "placement": "explanation"
+          "placement": "explanation",
+          "width": 720,
+          "height": 580
         }
       ],
       "type": "single-choice",
@@ -665,7 +705,9 @@
           "src": "left-join-filters.svg",
           "alt": "Two versions of the same LEFT JOIN over three customers where only Ada has a paid order. With WHERE o.status = 'paid', the join invents NULL rows for Lin and Sam and the WHERE test then discards them, leaving Ada only. With AND o.status = 'paid' inside the ON clause, the filter only decides what counts as a match, so unmatched left rows survive: (Ada, 101), (Lin, NULL), (Sam, NULL). Further cards note that a filter on the left table inside ON removes nothing, only preventing matches; that an inner join after a left join cannot match a NULL key, so authors without books vanish again; that counting only some children while keeping every parent means filtering in ON or pre-filtering the child in a subquery; and that LEFT JOIN with WHERE right.key IS NULL is a reliable anti-join only when that column is genuinely NOT NULL.",
           "caption": "It stops the match, not the row.",
-          "placement": "explanation"
+          "placement": "explanation",
+          "width": 720,
+          "height": 580
         }
       ],
       "type": "single-choice",
@@ -713,7 +755,9 @@
           "src": "join-fan-out.svg",
           "alt": "Order 10 in three tables: one orders row, two order_items priced 30 and 20 with a true total of 50, and three payments of 10 with a true total of 30. Joining both children to the same parent produces every pairing — 2 × 3 = 6 rows, listed as 30/10 three times then 20/10 three times — so SUM(i.price) reports 150, each price counted once per payment, and SUM(p.amount) reports 60, each payment counted once per item; a window function over those rows inflates the same way. A green card gives the repair: aggregate each child by order_id separately and join the results, or use one correlated scalar subquery per child, and not DISTINCT, which would collapse two items genuinely priced 20 into one. A final note says fan-out begins at the first join whose right side has more than one row per join key.",
           "caption": "Count rows after each join, and find the first one that multiplies.",
-          "placement": "explanation"
+          "placement": "explanation",
+          "width": 720,
+          "height": 558
         }
       ],
       "type": "multiple-choice",
@@ -735,7 +779,9 @@
           "src": "left-join-filters.svg",
           "alt": "Two versions of the same LEFT JOIN over three customers where only Ada has a paid order. With WHERE o.status = 'paid', the join invents NULL rows for Lin and Sam and the WHERE test then discards them, leaving Ada only. With AND o.status = 'paid' inside the ON clause, the filter only decides what counts as a match, so unmatched left rows survive: (Ada, 101), (Lin, NULL), (Sam, NULL). Further cards note that a filter on the left table inside ON removes nothing, only preventing matches; that an inner join after a left join cannot match a NULL key, so authors without books vanish again; that counting only some children while keeping every parent means filtering in ON or pre-filtering the child in a subquery; and that LEFT JOIN with WHERE right.key IS NULL is a reliable anti-join only when that column is genuinely NOT NULL.",
           "caption": "Filter in `ON`, or pre-filter the child — never afterwards.",
-          "placement": "explanation"
+          "placement": "explanation",
+          "width": 720,
+          "height": 580
         }
       ],
       "type": "single-choice",

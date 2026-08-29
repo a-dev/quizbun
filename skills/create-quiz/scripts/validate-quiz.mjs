@@ -10944,7 +10944,7 @@ and ensure you are accounting for this risk.
 });
 
 // scripts/create-quiz-validator-cli.ts
-import { readFileSync as readFileSync3 } from "node:fs";
+import { readFileSync as readFileSync4 } from "node:fs";
 
 // scripts/create-quiz-validator.ts
 import { existsSync as existsSync2, statSync as statSync2 } from "node:fs";
@@ -12674,9 +12674,284 @@ function containsBlockMarkdown(tokens) {
   }
   return blockTokens.some((token) => !INLINE_SAFE_BLOCK_TOKEN_TYPES.has(token.type));
 }
+// src/shared/lib/content/image-dimensions.ts
+import { readFileSync } from "node:fs";
+import { extname } from "node:path";
+var SUPPORTED_EXTENSIONS = [".avif", ".gif", ".jpeg", ".jpg", ".png", ".svg", ".webp"];
+var PIXELS_PER_UNIT = {
+  "": 1,
+  cm: 96 / 2.54,
+  in: 96,
+  mm: 96 / 25.4,
+  pc: 16,
+  pt: 96 / 72,
+  px: 1,
+  q: 96 / 25.4 / 4
+};
+function isSupportedImageExtension(fileName) {
+  return SUPPORTED_EXTENSIONS.includes(extname(fileName).toLowerCase());
+}
+function readImageDimensions(filePath) {
+  const extension = extname(filePath).toLowerCase();
+  if (!isSupportedImageExtension(filePath)) {
+    throw new Error(`Cannot measure "${extension || filePath}": supported formats are ${SUPPORTED_EXTENSIONS.join(", ")}.`);
+  }
+  const bytes = readFileSync(filePath);
+  if (extension === ".svg") {
+    return parseSvgDimensions(bytes.toString("utf8"));
+  }
+  if (extension === ".png")
+    return parsePngDimensions(bytes);
+  if (extension === ".gif")
+    return parseGifDimensions(bytes);
+  if (extension === ".webp")
+    return parseWebpDimensions(bytes);
+  if (extension === ".avif")
+    return parseAvifDimensions(bytes);
+  return parseJpegDimensions(bytes);
+}
+function parseSvgDimensions(source) {
+  const rootTag = findSvgRootTag(source);
+  if (rootTag === undefined) {
+    throw new Error("SVG has no root `<svg>` element.");
+  }
+  const width = parseSvgLength(readAttribute(rootTag, "width"));
+  const height = parseSvgLength(readAttribute(rootTag, "height"));
+  if (width !== undefined && height !== undefined) {
+    return toDimensions(width, height);
+  }
+  const viewBox = readAttribute(rootTag, "viewBox");
+  const viewBoxNumbers = viewBox?.trim().split(/[\s,]+/).map(Number);
+  if (viewBoxNumbers?.length === 4 && viewBoxNumbers.every((value) => Number.isFinite(value))) {
+    const [, , viewBoxWidth, viewBoxHeight] = viewBoxNumbers;
+    if (viewBoxWidth > 0 && viewBoxHeight > 0) {
+      return toDimensions(viewBoxWidth, viewBoxHeight);
+    }
+  }
+  throw new Error("SVG has no intrinsic size: add a `viewBox`, or `width` and `height` in absolute units.");
+}
+var PNG_SIGNATURE = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
+function parsePngDimensions(bytes) {
+  const hasSignature = bytes.length >= 24 && bytes.subarray(0, 8).equals(PNG_SIGNATURE);
+  if (!hasSignature || bytes.subarray(12, 16).toString("latin1") !== "IHDR") {
+    throw new Error("PNG is missing its signature or IHDR header chunk.");
+  }
+  return toDimensions(bytes.readUInt32BE(16), bytes.readUInt32BE(20));
+}
+function parseGifDimensions(bytes) {
+  const header = bytes.length >= 10 ? bytes.subarray(0, 6).toString("latin1") : "";
+  if (header !== "GIF87a" && header !== "GIF89a") {
+    throw new Error("GIF is missing its `GIF87a`/`GIF89a` header.");
+  }
+  return toDimensions(bytes.readUInt16LE(6), bytes.readUInt16LE(8));
+}
+function parseJpegDimensions(bytes) {
+  if (bytes.length < 4 || bytes.readUInt16BE(0) !== 65496) {
+    throw new Error("JPEG is missing its Start-of-Image marker.");
+  }
+  let offset = 2;
+  while (offset < bytes.length) {
+    if (bytes[offset] !== 255) {
+      throw new Error(`JPEG marker segment expected at byte ${offset}.`);
+    }
+    while (offset < bytes.length && bytes[offset] === 255)
+      offset += 1;
+    const marker = bytes[offset];
+    offset += 1;
+    if (marker === undefined)
+      break;
+    if (marker === 1 || marker >= 208 && marker <= 217)
+      continue;
+    if (offset + 2 > bytes.length)
+      break;
+    const segmentLength = bytes.readUInt16BE(offset);
+    if (isStartOfFrameMarker(marker)) {
+      if (segmentLength < 7 || offset + 7 > bytes.length) {
+        throw new Error("JPEG Start-of-Frame segment is truncated.");
+      }
+      return toDimensions(bytes.readUInt16BE(offset + 5), bytes.readUInt16BE(offset + 3));
+    }
+    if (marker === 218)
+      break;
+    offset += segmentLength;
+  }
+  throw new Error("JPEG has no Start-of-Frame segment.");
+}
+function parseWebpDimensions(bytes) {
+  const isRiffWebp = bytes.length >= 16 && bytes.subarray(0, 4).toString("latin1") === "RIFF" && bytes.subarray(8, 12).toString("latin1") === "WEBP";
+  if (!isRiffWebp) {
+    throw new Error("WebP is missing its RIFF/WEBP header.");
+  }
+  let offset = 12;
+  while (offset + 8 <= bytes.length) {
+    const chunkType = bytes.subarray(offset, offset + 4).toString("latin1");
+    const chunkSize = bytes.readUInt32LE(offset + 4);
+    const data = offset + 8;
+    if (chunkType === "VP8X" && data + 10 <= bytes.length) {
+      return toDimensions(readUInt24LE(bytes, data + 4) + 1, readUInt24LE(bytes, data + 7) + 1);
+    }
+    if (chunkType === "VP8 " && data + 10 <= bytes.length) {
+      const hasKeyFrameSignature = bytes[data + 3] === 157 && bytes[data + 4] === 1 && bytes[data + 5] === 42;
+      if (!hasKeyFrameSignature) {
+        throw new Error("WebP `VP8 ` chunk has no key-frame header.");
+      }
+      return toDimensions(bytes.readUInt16LE(data + 6) & 16383, bytes.readUInt16LE(data + 8) & 16383);
+    }
+    if (chunkType === "VP8L" && data + 5 <= bytes.length) {
+      if (bytes[data] !== 47) {
+        throw new Error("WebP `VP8L` chunk has no lossless signature byte.");
+      }
+      const header = bytes.readUInt32LE(data + 1);
+      return toDimensions((header & 16383) + 1, (header >>> 14 & 16383) + 1);
+    }
+    offset = data + chunkSize + chunkSize % 2;
+  }
+  throw new Error("WebP has no `VP8X`, `VP8 `, or `VP8L` chunk.");
+}
+function parseAvifDimensions(bytes) {
+  const meta = findBox(bytes, 0, bytes.length, "meta");
+  if (meta === undefined) {
+    throw new Error("AVIF has no `meta` box.");
+  }
+  const metaChildrenStart = meta.contentStart + 4;
+  const properties = findBox(bytes, metaChildrenStart, meta.contentEnd, "iprp");
+  const propertyContainer = properties && findBox(bytes, properties.contentStart, properties.contentEnd, "ipco");
+  if (!properties || !propertyContainer) {
+    throw new Error("AVIF has no `iprp`/`ipco` property boxes.");
+  }
+  const propertyBoxes = listBoxes(bytes, propertyContainer.contentStart, propertyContainer.contentEnd);
+  const primaryItemId = readPrimaryItemId(bytes, metaChildrenStart, meta.contentEnd);
+  const association = findBox(bytes, properties.contentStart, properties.contentEnd, "ipma");
+  const associatedIndexes = association && primaryItemId !== undefined ? readPropertyIndexes(bytes, association, primaryItemId) : undefined;
+  const spatialExtents = associatedIndexes?.map((index) => propertyBoxes[index - 1]).find((box) => box?.type === "ispe") ?? propertyBoxes.find((box) => box.type === "ispe");
+  if (spatialExtents === undefined || spatialExtents.contentStart + 12 > bytes.length) {
+    throw new Error("AVIF has no `ispe` box for its primary item.");
+  }
+  return toDimensions(bytes.readUInt32BE(spatialExtents.contentStart + 4), bytes.readUInt32BE(spatialExtents.contentStart + 8));
+}
+function listBoxes(bytes, start, end) {
+  const boxes = [];
+  let offset = start;
+  while (offset + 8 <= end) {
+    const box = readBox(bytes, offset, end);
+    if (box === undefined)
+      break;
+    boxes.push(box);
+    offset = box.end;
+  }
+  return boxes;
+}
+function findBox(bytes, start, end, type) {
+  return listBoxes(bytes, start, end).find((box) => box.type === type);
+}
+function readBox(bytes, offset, end) {
+  const declaredSize = bytes.readUInt32BE(offset);
+  const type = bytes.subarray(offset + 4, offset + 8).toString("latin1");
+  let contentStart = offset + 8;
+  let size = declaredSize;
+  if (declaredSize === 1) {
+    if (offset + 16 > end)
+      return;
+    const high = bytes.readUInt32BE(offset + 8);
+    if (high !== 0)
+      return;
+    size = bytes.readUInt32BE(offset + 12);
+    contentStart = offset + 16;
+  } else if (declaredSize === 0) {
+    size = end - offset;
+  }
+  const boxEnd = offset + size;
+  if (size < contentStart - offset || boxEnd > end)
+    return;
+  return { contentEnd: boxEnd, contentStart, end: boxEnd, type };
+}
+function readPrimaryItemId(bytes, start, end) {
+  const primaryItem = findBox(bytes, start, end, "pitm");
+  if (primaryItem === undefined)
+    return;
+  const version = bytes[primaryItem.contentStart];
+  const idStart = primaryItem.contentStart + 4;
+  if (version === 0) {
+    return idStart + 2 <= end ? bytes.readUInt16BE(idStart) : undefined;
+  }
+  return idStart + 4 <= end ? bytes.readUInt32BE(idStart) : undefined;
+}
+function readPropertyIndexes(bytes, association, itemId) {
+  const version = bytes[association.contentStart] ?? 0;
+  const flags = readUInt24BE(bytes, association.contentStart + 1);
+  const usesWideIndexes = (flags & 1) === 1;
+  let offset = association.contentStart + 4;
+  if (offset + 4 > association.contentEnd)
+    return;
+  const entryCount = bytes.readUInt32BE(offset);
+  offset += 4;
+  for (let entry = 0;entry < entryCount; entry += 1) {
+    if (offset + 3 > association.contentEnd)
+      return;
+    const entryItemId = version < 1 ? bytes.readUInt16BE(offset) : bytes.readUInt32BE(offset);
+    offset += version < 1 ? 2 : 4;
+    const associationCount = bytes[offset] ?? 0;
+    offset += 1;
+    const indexes = [];
+    for (let index = 0;index < associationCount; index += 1) {
+      if (offset >= association.contentEnd)
+        return;
+      if (usesWideIndexes) {
+        indexes.push(bytes.readUInt16BE(offset) & 32767);
+        offset += 2;
+      } else {
+        indexes.push((bytes[offset] ?? 0) & 127);
+        offset += 1;
+      }
+    }
+    if (entryItemId === itemId)
+      return indexes;
+  }
+  return;
+}
+function isStartOfFrameMarker(marker) {
+  return marker >= 192 && marker <= 207 && marker !== 196 && marker !== 200 && marker !== 204;
+}
+function readUInt24LE(bytes, offset) {
+  return (bytes[offset] ?? 0) | (bytes[offset + 1] ?? 0) << 8 | (bytes[offset + 2] ?? 0) << 16;
+}
+function readUInt24BE(bytes, offset) {
+  return (bytes[offset] ?? 0) << 16 | (bytes[offset + 1] ?? 0) << 8 | (bytes[offset + 2] ?? 0);
+}
+function findSvgRootTag(source) {
+  const withoutComments = source.replaceAll(/<!--[\S\s]*?-->/g, "");
+  return /<svg\b[^>]*>/i.exec(withoutComments)?.[0];
+}
+function readAttribute(tag, name) {
+  const pattern = new RegExp(`\\b${name}\\s*=\\s*("([^"]*)"|'([^']*)')`, "i");
+  const match = pattern.exec(tag);
+  return match?.[2] ?? match?.[3];
+}
+function parseSvgLength(value) {
+  if (value === undefined)
+    return;
+  const match = /^\s*([+-]?[\d.]+(?:e[+-]?\d+)?)\s*([a-z%]*)\s*$/i.exec(value);
+  if (match === null)
+    return;
+  const amount = Number(match[1]);
+  const pixelsPerUnit = PIXELS_PER_UNIT[(match[2] ?? "").toLowerCase()];
+  if (!Number.isFinite(amount) || amount <= 0 || pixelsPerUnit === undefined)
+    return;
+  return amount * pixelsPerUnit;
+}
+function toDimensions(width, height) {
+  const rounded = {
+    height: Math.max(1, Math.round(height)),
+    width: Math.max(1, Math.round(width))
+  };
+  if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) {
+    throw new Error(`Read a non-positive image size (${width}×${height}).`);
+  }
+  return rounded;
+}
 // src/shared/lib/content/public-quizzes.ts
 import { execFileSync } from "node:child_process";
-import { lstatSync, readdirSync, readFileSync } from "node:fs";
+import { lstatSync, readdirSync, readFileSync as readFileSync2 } from "node:fs";
 import { basename, relative, resolve } from "node:path";
 // src/shared/lib/quiz/format-errors.ts
 function formatQuizValidationErrors(error) {
@@ -12788,6 +13063,13 @@ function explainMediaIssue(issue) {
       path: formatPath(issue.path),
       problem: issue.message,
       fix: "Use `question` or `explanation`, or omit `placement` entirely — an absent `placement` already means `question`."
+    };
+  }
+  if (isPathEnding(issue.path, ["width"]) || isPathEnding(issue.path, ["height"])) {
+    return {
+      path: formatPath(issue.path),
+      problem: issue.message,
+      fix: "Set both to the image file's own pixel size, or omit both. Never estimate them: an absent pair is valid, a wrong one is not. In the Quizbun repository, `bun run quiz:sizes:generate` writes them for you."
     };
   }
   if (isPathEnding(issue.path, ["provider"])) {
@@ -27192,11 +27474,23 @@ var imageSrcSchema = exports_external.union([
     return typeof issue2.input === "string" && issue2.input.startsWith("http://") ? "Use `https`, not `http`." : "Use an `https://` URL or a bare asset filename (kebab-case name plus png/jpg/jpeg/webp/avif/gif/svg).";
   }
 });
+var imageDimensionSchema = requiredNumber().int("Use a whole number of pixels, 1 or greater.").min(1, "Use a whole number of pixels, 1 or greater.");
 var imageSchema = strictObject2({
   src: imageSrcSchema,
   alt: nonEmptyStringSchema,
   caption: nonEmptyStringSchema.optional(),
-  placement: placementSchema.optional()
+  placement: placementSchema.optional(),
+  width: imageDimensionSchema.optional(),
+  height: imageDimensionSchema.optional()
+}).superRefine((image, context) => {
+  if (image.width === undefined === (image.height === undefined))
+    return;
+  const missingField = image.width === undefined ? "width" : "height";
+  context.addIssue({
+    code: "custom",
+    message: `Set \`width\` and \`height\` together, or omit both. \`${missingField}\` is missing.`,
+    path: [missingField]
+  });
 });
 var videoSchema = strictObject2({
   provider: exports_external.literal("youtube", { error: "Set `provider` to `youtube`." }),
@@ -27393,7 +27687,7 @@ function listQuizFileNames(directoryPath) {
   return entryNames.filter((entryName) => entryName.endsWith(".json")).sort((left, right) => left.localeCompare(right, "en"));
 }
 function parseAndValidateQuizFile(directoryPath, fileName, fileLabel) {
-  const quizJson = parseQuizJson(readFileSync(resolve(directoryPath, fileName), "utf8"), fileLabel);
+  const quizJson = parseQuizJson(readFileSync2(resolve(directoryPath, fileName), "utf8"), fileLabel);
   const result = quizSchema.safeParse(quizJson);
   if (!result.success) {
     throw new Error([`Public quiz is invalid in ${fileLabel}:`, formatQuizValidationErrors(result.error)].join(`
@@ -27409,12 +27703,13 @@ function validatePublicQuizAssets(directoryPath, quizzes) {
     referencedFilesByQuizId.set(quiz.id, referencedFiles);
     for (const [questionIndex, question] of quiz.questions.entries()) {
       for (const [imageIndex, image] of (question.images ?? []).entries()) {
-        const fieldPath = `questions[${questionIndex}].images[${imageIndex}].src`;
+        const imagePath = `questions[${questionIndex}].images[${imageIndex}]`;
+        const sourcePath = `${imagePath}.src`;
         if (image.src.startsWith("https://")) {
           throw assetValidationError({
             fileLabel: toWorkspacePathLabel(resolve(directoryPath, `${quiz.id}.json`)),
             heading: "Remote Image is not allowed in a public Quiz",
-            path: fieldPath,
+            path: sourcePath,
             problem: `The Image source "${image.src}" is remote, but Catalog Images must be vendored in the repository.`,
             fix: `Download the Image into "${toWorkspacePathLabel(resolve(directoryPath, quiz.id))}" and replace the src value with its bare asset filename.`
           });
@@ -27425,9 +27720,33 @@ function validatePublicQuizAssets(directoryPath, quizzes) {
           throw assetValidationError({
             fileLabel: toWorkspacePathLabel(resolve(directoryPath, `${quiz.id}.json`)),
             heading: "Referenced Quiz asset is missing",
-            path: fieldPath,
+            path: sourcePath,
             problem: `The Image references "${image.src}", but "${toWorkspacePathLabel(assetPath)}" is not a file.`,
             fix: `Add the file to "${toWorkspacePathLabel(resolve(directoryPath, quiz.id))}", or fix/remove this Image reference.`
+          });
+        }
+        const dimensions = readAssetDimensions({
+          assetPath,
+          directoryPath,
+          imagePath,
+          quizId: quiz.id
+        });
+        if (image.width === undefined || image.height === undefined) {
+          throw assetValidationError({
+            fileLabel: toWorkspacePathLabel(resolve(directoryPath, `${quiz.id}.json`)),
+            heading: "Quiz Image dimensions are missing",
+            path: imagePath,
+            problem: `The Image does not record the intrinsic ${dimensions.width}×${dimensions.height} size of "${image.src}".`,
+            fix: "Run `bun run quiz:sizes:generate` and commit the updated Quiz JSON."
+          });
+        }
+        if (image.width !== dimensions.width || image.height !== dimensions.height) {
+          throw assetValidationError({
+            fileLabel: toWorkspacePathLabel(resolve(directoryPath, `${quiz.id}.json`)),
+            heading: "Quiz Image dimensions do not match the asset",
+            path: imagePath,
+            problem: `The Image records ${image.width}×${image.height}, but "${image.src}" is ${dimensions.width}×${dimensions.height}.`,
+            fix: `Run \`bun run quiz:sizes:generate\` to set \`width\` to ${dimensions.width} and \`height\` to ${dimensions.height}, then commit the updated Quiz JSON.`
           });
         }
       }
@@ -27480,6 +27799,24 @@ function validatePublicQuizAssets(directoryPath, quizzes) {
         });
       }
     }
+  }
+}
+function readAssetDimensions({
+  assetPath,
+  directoryPath,
+  imagePath,
+  quizId
+}) {
+  try {
+    return readImageDimensions(assetPath);
+  } catch (error51) {
+    throw assetValidationError({
+      fileLabel: toWorkspacePathLabel(resolve(directoryPath, `${quizId}.json`)),
+      heading: "Quiz Image dimensions could not be read",
+      path: `${imagePath}.src`,
+      problem: `The dimensions of "${toWorkspacePathLabel(assetPath)}" could not be read. ${error51 instanceof Error ? error51.message : String(error51)}`,
+      fix: "Repair or replace the Image file, then run `bun run quiz:sizes:generate`."
+    });
   }
 }
 function isRegularFile(filePath) {
@@ -27543,8 +27880,8 @@ function warnWhenLikelyShallowGitHistory({
 import { resolve as resolve3 } from "node:path";
 
 // scripts/quiz-validation.ts
-import { existsSync, readdirSync as readdirSync2, readFileSync as readFileSync2, statSync } from "node:fs";
-import { basename as basename2, extname, relative as relative2, resolve as resolve2 } from "node:path";
+import { existsSync, readdirSync as readdirSync2, readFileSync as readFileSync3, statSync } from "node:fs";
+import { basename as basename2, extname as extname2, relative as relative2, resolve as resolve2 } from "node:path";
 function toPathLabel(filePath) {
   return relative2(process.cwd(), filePath) || basename2(filePath);
 }
@@ -27556,7 +27893,7 @@ function collectJsonFiles(targetPath) {
   if (stats.isDirectory()) {
     return readdirSync2(targetPath).filter((entryName) => entryName.endsWith(".json")).sort((left, right) => left.localeCompare(right, "en")).map((entryName) => resolve2(targetPath, entryName));
   }
-  if (stats.isFile() && extname(targetPath) === ".json") {
+  if (stats.isFile() && extname2(targetPath) === ".json") {
     return [targetPath];
   }
   throw new Error(`Validation target must be a JSON file or directory. Received: ${toPathLabel(targetPath)}.`);
@@ -27573,7 +27910,7 @@ function parseAndValidateQuiz(rawText, sourceLabel) {
 function readQuizFiles(filePaths) {
   return filePaths.map((filePath) => {
     const fileLabel = toPathLabel(filePath);
-    return { fileLabel, quiz: parseAndValidateQuiz(readFileSync2(filePath, "utf8"), fileLabel) };
+    return { fileLabel, quiz: parseAndValidateQuiz(readFileSync3(filePath, "utf8"), fileLabel) };
   });
 }
 
@@ -27814,7 +28151,7 @@ try {
     process.exit(0);
   }
   restoreNpmCallerWorkingDirectory();
-  const result = options.stdin ? await validateStandardInput(readFileSync3(0, "utf8"), options) : await validateTarget(options.target ?? "", options);
+  const result = options.stdin ? await validateStandardInput(readFileSync4(0, "utf8"), options) : await validateTarget(options.target ?? "", options);
   for (const warning of result.warnings) {
     console.warn(`${warning}
 `);

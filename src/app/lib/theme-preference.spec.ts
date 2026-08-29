@@ -1,7 +1,10 @@
 import { describe, expect, test } from "vitest";
 
 import {
+  COLOR_SCHEME_META_SELECTOR,
+  createThemeBootstrapScript,
   getToggledThemePreference,
+  metaColorSchemeFor,
   normalizeThemePreference,
   RESOLVED_THEMES,
   resolveThemePreference,
@@ -63,5 +66,23 @@ describe("theme preference", () => {
   test("resolves explicit preferences without reading system settings", () => {
     expect(resolveThemePreference("light")).toBe("light");
     expect(resolveThemePreference("dark")).toBe("dark");
+  });
+
+  test("narrows the color-scheme metadata to a pinned scheme", () => {
+    // The browser reads <meta name="color-scheme"> before any stylesheet, so a
+    // pinned theme has to be reflected there and not only in the cascade.
+    expect(metaColorSchemeFor("light")).toBe("light");
+    expect(metaColorSchemeFor("dark")).toBe("dark");
+    // Following the system means advertising support for both schemes.
+    expect(metaColorSchemeFor("system")).toBe("light dark");
+  });
+
+  test("keeps the bootstrap script in step with the meta tag", () => {
+    // The script runs before hydration and is generated as a string, so it
+    // cannot import the helper above; this catches the two drifting apart.
+    const script = createThemeBootstrapScript();
+
+    expect(script).toContain(JSON.stringify(COLOR_SCHEME_META_SELECTOR));
+    expect(script).toContain("'light dark'");
   });
 });

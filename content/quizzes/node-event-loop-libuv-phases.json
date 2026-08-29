@@ -39,7 +39,9 @@
           "src": "phase-wheel.svg",
           "alt": "The six libuv phases in cycle order: timers, pending callbacks, idle/prepare (internal only), poll, check, close callbacks, then back to timers. Diamonds mark the microtask checkpoint between each phase.",
           "caption": "Six phases, always this order — `idle, prepare` is internal and never user-schedulable.",
-          "placement": "explanation"
+          "placement": "explanation",
+          "width": 720,
+          "height": 650
         }
       ],
       "type": "single-choice",
@@ -72,7 +74,9 @@
           "src": "phase-wheel.svg",
           "alt": "The six libuv phases in cycle order: timers, pending callbacks, idle/prepare (internal only), poll, check, close callbacks, then back to timers. Diamonds mark the microtask checkpoint between each phase.",
           "caption": "`timers` runs due `setTimeout` / `setInterval` callbacks; `setImmediate` and I/O callbacks belong to other phases.",
-          "placement": "explanation"
+          "placement": "explanation",
+          "width": 720,
+          "height": 650
         }
       ],
       "type": "multiple-choice",
@@ -105,7 +109,9 @@
           "src": "phase-wheel.svg",
           "alt": "The six libuv phases in cycle order: timers, pending callbacks, idle/prepare (internal only), poll, check, close callbacks, then back to timers. Diamonds mark the microtask checkpoint between each phase.",
           "caption": "`poll` runs ready I/O callbacks and can block waiting for more, unlike any other phase.",
-          "placement": "explanation"
+          "placement": "explanation",
+          "width": 720,
+          "height": 650
         }
       ],
       "type": "single-choice",
@@ -138,7 +144,9 @@
           "src": "phase-wheel.svg",
           "alt": "The six libuv phases in cycle order: timers, pending callbacks, idle/prepare (internal only), poll, check, close callbacks, then back to timers. Diamonds mark the microtask checkpoint between each phase.",
           "caption": "`setImmediate` fires in the `check` phase, immediately after `poll`.",
-          "placement": "explanation"
+          "placement": "explanation",
+          "width": 720,
+          "height": 650
         }
       ],
       "type": "input",
@@ -157,7 +165,9 @@
           "src": "phase-wheel.svg",
           "alt": "The six libuv phases in cycle order: timers, pending callbacks, idle/prepare (internal only), poll, check, close callbacks, then back to timers. Diamonds mark the microtask checkpoint between each phase.",
           "caption": "`'close'` handlers run in the dedicated `close callbacks` phase, at the tail of the turn.",
-          "placement": "explanation"
+          "placement": "explanation",
+          "width": 720,
+          "height": 650
         }
       ],
       "type": "single-choice",
@@ -190,7 +200,9 @@
           "src": "nexttick-vs-microtask.svg",
           "alt": "A microtask checkpoint pipeline: after any callback or script finishes, the process.nextTick queue drains completely first, then the Promise/queueMicrotask queue drains once in FIFO order, then the loop advances to the next phase. A side panel explains that a self-requeuing nextTick call starves the loop because the queue never empties.",
           "caption": "`process.nextTick` has no phase — it drains at the checkpoint, before the loop can move on.",
-          "placement": "explanation"
+          "placement": "explanation",
+          "width": 720,
+          "height": 600
         }
       ],
       "type": "single-choice",
@@ -249,7 +261,9 @@
           "src": "nexttick-vs-microtask.svg",
           "alt": "A microtask checkpoint pipeline: after any callback or script finishes, the process.nextTick queue drains completely first, then the Promise/queueMicrotask queue drains once in FIFO order, then the loop advances to the next phase. A side panel explains that a self-requeuing nextTick call starves the loop because the queue never empties.",
           "caption": "Both `process.nextTick` and the Promise/`queueMicrotask` queue drain at the checkpoint; `setImmediate` is a phase, not a microtask, so it waits its turn.",
-          "placement": "explanation"
+          "placement": "explanation",
+          "width": 720,
+          "height": 600
         }
       ],
       "type": "multiple-choice",
@@ -309,7 +323,9 @@
           "src": "nexttick-vs-microtask.svg",
           "alt": "A microtask checkpoint pipeline: after any callback or script finishes, the process.nextTick queue drains completely first, then the Promise/queueMicrotask queue drains once in FIFO order, then the loop advances to the next phase. A side panel explains that a self-requeuing nextTick call starves the loop because the queue never empties.",
           "caption": "A self-requeuing `process.nextTick` never lets queue 1 empty, so the loop never advances — no `poll`, no timers.",
-          "placement": "explanation"
+          "placement": "explanation",
+          "width": 720,
+          "height": 600
         }
       ],
       "type": "single-choice",
@@ -343,7 +359,9 @@
           "src": "timeout-vs-immediate.svg",
           "alt": "Two timelines. At the top level of a module, whether setTimeout(fn, 0) or setImmediate(fn) fires first depends on whether the loop reaches the timers phase before or after the 1ms clamp elapses, so the order is not guaranteed. Inside an I/O callback, setImmediate always fires first because poll leads directly into check, before the loop can reach timers again.",
           "caption": "At the top level the order is a genuine coin flip; inside I/O it never is.",
-          "placement": "explanation"
+          "placement": "explanation",
+          "width": 720,
+          "height": 560
         }
       ],
       "type": "single-choice",
@@ -377,7 +395,9 @@
           "src": "timeout-vs-immediate.svg",
           "alt": "Two timelines. At the top level of a module, whether setTimeout(fn, 0) or setImmediate(fn) fires first depends on whether the loop reaches the timers phase before or after the 1ms clamp elapses, so the order is not guaranteed. Inside an I/O callback, setImmediate always fires first because poll leads directly into check, before the loop can reach timers again.",
           "caption": "Inside any I/O callback, `poll` → `check` adjacency makes `setImmediate` beat `setTimeout(…, 0)` every time.",
-          "placement": "explanation"
+          "placement": "explanation",
+          "width": 720,
+          "height": 560
         }
       ],
       "type": "single-choice",
@@ -474,7 +494,9 @@
           "src": "phase-wheel.svg",
           "alt": "The six libuv phases in cycle order: timers, pending callbacks, idle/prepare (internal only), poll, check, close callbacks, then back to timers. Diamonds mark the microtask checkpoint between each phase.",
           "caption": "The microtask checkpoint fires after every phase, not once per loop.",
-          "placement": "explanation"
+          "placement": "explanation",
+          "width": 720,
+          "height": 650
         }
       ],
       "type": "single-choice",

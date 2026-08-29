@@ -1,5 +1,7 @@
 export { checkCatalogProfile, formatProfileIssues } from "./catalog-profile";
 export type { ProfileIssue } from "./catalog-profile";
+export { readImageDimensions } from "./image-dimensions";
+export type { ImageDimensions } from "./image-dimensions";
 export {
   FEATURED_QUIZZES_FILE,
   loadFeaturedQuizIds,

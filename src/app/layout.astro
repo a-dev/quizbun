@@ -5,7 +5,7 @@ import { SEO } from "astro-seo";
 import "#styles/index.css";
 
 import { withBase } from "@/shared/lib/routing";
-import { SITE_DESCRIPTION, SITE_THEME_COLOR } from "@/shared/lib/site";
+import { SITE_DESCRIPTION, SITE_THEME_COLOR, SITE_THEME_COLOR_DARK } from "@/shared/lib/site";
 
 import Header from "./ui/header.astro";
 import Footer from "./ui/footer.astro";
@@ -48,7 +48,19 @@ const {
     <link rel="sitemap" href={withBase("sitemap-index.xml")} />
     <link rel="icon" href={withBase("favicon.ico")} />
     <meta name="generator" content={Astro.generator} />
-    <meta name="theme-color" content={SITE_THEME_COLOR} />
+    {/* Declares both schemes before the first paint, so the browser picks the
+        matching canvas colour instead of flashing white. The bootstrap script
+        below narrows it to a single scheme when the user has pinned one. */}
+    <meta name="color-scheme" content="light dark" />
+    {/* Browser chrome only. `media` is the sole selector `theme-color` accepts,
+        so these follow the system preference and not the in-app `data-theme`
+        override -- a pinned theme keeps the system-matched chrome. */}
+    <meta name="theme-color" content={SITE_THEME_COLOR} media="(prefers-color-scheme: light)" />
+    <meta
+      name="theme-color"
+      content={SITE_THEME_COLOR_DARK}
+      media="(prefers-color-scheme: dark)"
+    />
     <Font cssVariable="--font-noto-sans" preload />
     <Font cssVariable="--font-noto-mono" preload />
     <meta name="description" content={description} />

@@ -13,3 +13,8 @@ These files are Catalog **content**, not source code: `bun run check` does not
 format them (`content/quizzes/**` is in `ignorePatterns` in `.oxfmtrc.json`), so
 author formatting is preserved. The Standard cares about JSON content, not
 whitespace — only `bun run validate:public-quizzes` gates what lands here.
+
+Image `width`/`height` are generated, never typed: `bun run quiz:sizes:generate`
+reads each vendored asset and splices the values into the matching `images[]`
+entries, touching nothing else in the file. `bun run quiz:sizes:check` is the CI
+half of the same pass.

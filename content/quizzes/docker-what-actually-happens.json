@@ -119,7 +119,9 @@
           "src": "build-cache-and-ordering.svg",
           "alt": "Two Dockerfiles side by side. Source first — FROM, COPY . /app, RUN npm ci — invalidates the COPY layer on any file edit and every layer above it, so the install reruns on every build. Dependencies first — FROM, COPY package*.json, RUN npm ci, then COPY . /app — confines a source edit to the last layer and keeps the install cached until a manifest changes. Four cards follow: a COPY's cache key is the file's content plus metadata such as mode and ownership, so changing only its modification time invalidates nothing; a RUN's cache key is the command string alone, so a lone apt-get update matches last week's and reuses a stale index; --mount=type=secret keeps the value out of both the image and the cache key, which also means rotating a secret does not invalidate that step; and --mount=type=cache needs BuildKit and never becomes part of the image.",
           "caption": "Content and metadata — not the modification time on its own.",
-          "placement": "explanation"
+          "placement": "explanation",
+          "width": 720,
+          "height": 510
         }
       ],
       "type": "single-choice",
@@ -153,7 +155,9 @@
           "src": "build-cache-and-ordering.svg",
           "alt": "Two Dockerfiles side by side. Source first — FROM, COPY . /app, RUN npm ci — invalidates the COPY layer on any file edit and every layer above it, so the install reruns on every build. Dependencies first — FROM, COPY package*.json, RUN npm ci, then COPY . /app — confines a source edit to the last layer and keeps the install cached until a manifest changes. Four cards follow: a COPY's cache key is the file's content plus metadata such as mode and ownership, so changing only its modification time invalidates nothing; a RUN's cache key is the command string alone, so a lone apt-get update matches last week's and reuses a stale index; --mount=type=secret keeps the value out of both the image and the cache key, which also means rotating a secret does not invalidate that step; and --mount=type=cache needs BuildKit and never becomes part of the image.",
           "caption": "The `COPY` card lists exactly what counts.",
-          "placement": "explanation"
+          "placement": "explanation",
+          "width": 720,
+          "height": 510
         }
       ],
       "type": "multiple-choice",
@@ -186,7 +190,9 @@
           "src": "build-cache-and-ordering.svg",
           "alt": "Two Dockerfiles side by side. Source first — FROM, COPY . /app, RUN npm ci — invalidates the COPY layer on any file edit and every layer above it, so the install reruns on every build. Dependencies first — FROM, COPY package*.json, RUN npm ci, then COPY . /app — confines a source edit to the last layer and keeps the install cached until a manifest changes. Four cards follow: a COPY's cache key is the file's content plus metadata such as mode and ownership, so changing only its modification time invalidates nothing; a RUN's cache key is the command string alone, so a lone apt-get update matches last week's and reuses a stale index; --mount=type=secret keeps the value out of both the image and the cache key, which also means rotating a secret does not invalidate that step; and --mount=type=cache needs BuildKit and never becomes part of the image.",
           "caption": "The command string is the whole key, so the same string hits.",
-          "placement": "explanation"
+          "placement": "explanation",
+          "width": 720,
+          "height": 510
         }
       ],
       "type": "single-choice",
@@ -220,7 +226,9 @@
           "src": "build-cache-and-ordering.svg",
           "alt": "Two Dockerfiles side by side. Source first — FROM, COPY . /app, RUN npm ci — invalidates the COPY layer on any file edit and every layer above it, so the install reruns on every build. Dependencies first — FROM, COPY package*.json, RUN npm ci, then COPY . /app — confines a source edit to the last layer and keeps the install cached until a manifest changes. Four cards follow: a COPY's cache key is the file's content plus metadata such as mode and ownership, so changing only its modification time invalidates nothing; a RUN's cache key is the command string alone, so a lone apt-get update matches last week's and reuses a stale index; --mount=type=secret keeps the value out of both the image and the cache key, which also means rotating a secret does not invalidate that step; and --mount=type=cache needs BuildKit and never becomes part of the image.",
           "caption": "The green Dockerfile: manifests before source.",
-          "placement": "explanation"
+          "placement": "explanation",
+          "width": 720,
+          "height": 510
         }
       ],
       "type": "single-choice",
@@ -254,7 +262,9 @@
           "src": "build-cache-and-ordering.svg",
           "alt": "Two Dockerfiles side by side. Source first — FROM, COPY . /app, RUN npm ci — invalidates the COPY layer on any file edit and every layer above it, so the install reruns on every build. Dependencies first — FROM, COPY package*.json, RUN npm ci, then COPY . /app — confines a source edit to the last layer and keeps the install cached until a manifest changes. Four cards follow: a COPY's cache key is the file's content plus metadata such as mode and ownership, so changing only its modification time invalidates nothing; a RUN's cache key is the command string alone, so a lone apt-get update matches last week's and reuses a stale index; --mount=type=secret keeps the value out of both the image and the cache key, which also means rotating a secret does not invalidate that step; and --mount=type=cache needs BuildKit and never becomes part of the image.",
           "caption": "BuildKit only, and never part of the image.",
-          "placement": "explanation"
+          "placement": "explanation",
+          "width": 720,
+          "height": 510
         }
       ],
       "type": "single-choice",
@@ -287,7 +297,9 @@
           "src": "build-cache-and-ordering.svg",
           "alt": "Two Dockerfiles side by side. Source first — FROM, COPY . /app, RUN npm ci — invalidates the COPY layer on any file edit and every layer above it, so the install reruns on every build. Dependencies first — FROM, COPY package*.json, RUN npm ci, then COPY . /app — confines a source edit to the last layer and keeps the install cached until a manifest changes. Four cards follow: a COPY's cache key is the file's content plus metadata such as mode and ownership, so changing only its modification time invalidates nothing; a RUN's cache key is the command string alone, so a lone apt-get update matches last week's and reuses a stale index; --mount=type=secret keeps the value out of both the image and the cache key, which also means rotating a secret does not invalidate that step; and --mount=type=cache needs BuildKit and never becomes part of the image.",
           "caption": "The secret mount is the one that leaves nothing behind.",
-          "placement": "explanation"
+          "placement": "explanation",
+          "width": 720,
+          "height": 510
         }
       ],
       "type": "single-choice",
@@ -320,7 +332,9 @@
           "src": "build-cache-and-ordering.svg",
           "alt": "Two Dockerfiles side by side. Source first — FROM, COPY . /app, RUN npm ci — invalidates the COPY layer on any file edit and every layer above it, so the install reruns on every build. Dependencies first — FROM, COPY package*.json, RUN npm ci, then COPY . /app — confines a source edit to the last layer and keeps the install cached until a manifest changes. Four cards follow: a COPY's cache key is the file's content plus metadata such as mode and ownership, so changing only its modification time invalidates nothing; a RUN's cache key is the command string alone, so a lone apt-get update matches last week's and reuses a stale index; --mount=type=secret keeps the value out of both the image and the cache key, which also means rotating a secret does not invalidate that step; and --mount=type=cache needs BuildKit and never becomes part of the image.",
           "caption": "Outside the image, and outside the cache key too.",
-          "placement": "explanation"
+          "placement": "explanation",
+          "width": 720,
+          "height": 510
         }
       ],
       "type": "single-choice",
@@ -405,7 +419,9 @@
           "src": "layers-and-copy-on-write.svg",
           "alt": "A stack of read-only image layers — FROM node:22-slim, COPY package.json, RUN npm ci, COPY . /app — with one thin read-write container layer on top, unique to that container. Notes explain that writing a file that came from the image copies it up into the top layer first while the layer beneath is untouched; that changing one byte of a huge file makes OverlayFS copy the whole file up before the write; that deleting something in a later RUN leaves the earlier layer carrying the bytes and only records a whiteout; and that removing the container removes the writable layer with it. Three cards then cover what survives instead: a named volume, which outlives its container and is seeded from the image directory when empty; a bind mount, where the host path hides whatever the image had there and is read-write by default; and a tmpfs mount, which lives in host memory and vanishes when the container stops.",
           "caption": "A whiteout hides the bytes; it does not remove them.",
-          "placement": "explanation"
+          "placement": "explanation",
+          "width": 720,
+          "height": 510
         }
       ],
       "type": "single-choice",
@@ -439,7 +455,9 @@
           "src": "layers-and-copy-on-write.svg",
           "alt": "A stack of read-only image layers — FROM node:22-slim, COPY package.json, RUN npm ci, COPY . /app — with one thin read-write container layer on top, unique to that container. Notes explain that writing a file that came from the image copies it up into the top layer first while the layer beneath is untouched; that changing one byte of a huge file makes OverlayFS copy the whole file up before the write; that deleting something in a later RUN leaves the earlier layer carrying the bytes and only records a whiteout; and that removing the container removes the writable layer with it. Three cards then cover what survives instead: a named volume, which outlives its container and is seeded from the image directory when empty; a bind mount, where the host path hides whatever the image had there and is read-write by default; and a tmpfs mount, which lives in host memory and vanishes when the container stops.",
           "caption": "Copied up into the top layer; the image layer is untouched.",
-          "placement": "explanation"
+          "placement": "explanation",
+          "width": 720,
+          "height": 510
         }
       ],
       "type": "single-choice",
@@ -472,7 +490,9 @@
           "src": "layers-and-copy-on-write.svg",
           "alt": "A stack of read-only image layers — FROM node:22-slim, COPY package.json, RUN npm ci, COPY . /app — with one thin read-write container layer on top, unique to that container. Notes explain that writing a file that came from the image copies it up into the top layer first while the layer beneath is untouched; that changing one byte of a huge file makes OverlayFS copy the whole file up before the write; that deleting something in a later RUN leaves the earlier layer carrying the bytes and only records a whiteout; and that removing the container removes the writable layer with it. Three cards then cover what survives instead: a named volume, which outlives its container and is seeded from the image directory when empty; a bind mount, where the host path hides whatever the image had there and is read-write by default; and a tmpfs mount, which lives in host memory and vanishes when the container stops.",
           "caption": "Copy-up is per file, not per byte.",
-          "placement": "explanation"
+          "placement": "explanation",
+          "width": 720,
+          "height": 510
         }
       ],
       "type": "single-choice",
@@ -769,7 +789,9 @@
           "src": "layers-and-copy-on-write.svg",
           "alt": "A stack of read-only image layers — FROM node:22-slim, COPY package.json, RUN npm ci, COPY . /app — with one thin read-write container layer on top, unique to that container. Notes explain that writing a file that came from the image copies it up into the top layer first while the layer beneath is untouched; that changing one byte of a huge file makes OverlayFS copy the whole file up before the write; that deleting something in a later RUN leaves the earlier layer carrying the bytes and only records a whiteout; and that removing the container removes the writable layer with it. Three cards then cover what survives instead: a named volume, which outlives its container and is seeded from the image directory when empty; a bind mount, where the host path hides whatever the image had there and is read-write by default; and a tmpfs mount, which lives in host memory and vanishes when the container stops.",
           "caption": "The left-hand card: the volume outlives its container.",
-          "placement": "explanation"
+          "placement": "explanation",
+          "width": 720,
+          "height": 510
         }
       ],
       "type": "single-choice",
@@ -803,7 +825,9 @@
           "src": "layers-and-copy-on-write.svg",
           "alt": "A stack of read-only image layers — FROM node:22-slim, COPY package.json, RUN npm ci, COPY . /app — with one thin read-write container layer on top, unique to that container. Notes explain that writing a file that came from the image copies it up into the top layer first while the layer beneath is untouched; that changing one byte of a huge file makes OverlayFS copy the whole file up before the write; that deleting something in a later RUN leaves the earlier layer carrying the bytes and only records a whiteout; and that removing the container removes the writable layer with it. Three cards then cover what survives instead: a named volume, which outlives its container and is seeded from the image directory when empty; a bind mount, where the host path hides whatever the image had there and is read-write by default; and a tmpfs mount, which lives in host memory and vanishes when the container stops.",
           "caption": "An empty volume is seeded from the directory it covers.",
-          "placement": "explanation"
+          "placement": "explanation",
+          "width": 720,
+          "height": 510
         }
       ],
       "type": "single-choice",
@@ -837,7 +861,9 @@
           "src": "layers-and-copy-on-write.svg",
           "alt": "A stack of read-only image layers — FROM node:22-slim, COPY package.json, RUN npm ci, COPY . /app — with one thin read-write container layer on top, unique to that container. Notes explain that writing a file that came from the image copies it up into the top layer first while the layer beneath is untouched; that changing one byte of a huge file makes OverlayFS copy the whole file up before the write; that deleting something in a later RUN leaves the earlier layer carrying the bytes and only records a whiteout; and that removing the container removes the writable layer with it. Three cards then cover what survives instead: a named volume, which outlives its container and is seeded from the image directory when empty; a bind mount, where the host path hides whatever the image had there and is read-write by default; and a tmpfs mount, which lives in host memory and vanishes when the container stops.",
           "caption": "The host path wins for as long as it is mounted.",
-          "placement": "explanation"
+          "placement": "explanation",
+          "width": 720,
+          "height": 510
         }
       ],
       "type": "multiple-choice",
@@ -870,7 +896,9 @@
           "src": "layers-and-copy-on-write.svg",
           "alt": "A stack of read-only image layers — FROM node:22-slim, COPY package.json, RUN npm ci, COPY . /app — with one thin read-write container layer on top, unique to that container. Notes explain that writing a file that came from the image copies it up into the top layer first while the layer beneath is untouched; that changing one byte of a huge file makes OverlayFS copy the whole file up before the write; that deleting something in a later RUN leaves the earlier layer carrying the bytes and only records a whiteout; and that removing the container removes the writable layer with it. Three cards then cover what survives instead: a named volume, which outlives its container and is seeded from the image directory when empty; a bind mount, where the host path hides whatever the image had there and is read-write by default; and a tmpfs mount, which lives in host memory and vanishes when the container stops.",
           "caption": "Memory only, and gone on stop.",
-          "placement": "explanation"
+          "placement": "explanation",
+          "width": 720,
+          "height": 510
         }
       ],
       "type": "single-choice",
@@ -903,7 +931,9 @@
           "src": "layers-and-copy-on-write.svg",
           "alt": "A stack of read-only image layers — FROM node:22-slim, COPY package.json, RUN npm ci, COPY . /app — with one thin read-write container layer on top, unique to that container. Notes explain that writing a file that came from the image copies it up into the top layer first while the layer beneath is untouched; that changing one byte of a huge file makes OverlayFS copy the whole file up before the write; that deleting something in a later RUN leaves the earlier layer carrying the bytes and only records a whiteout; and that removing the container removes the writable layer with it. Three cards then cover what survives instead: a named volume, which outlives its container and is seeded from the image directory when empty; a bind mount, where the host path hides whatever the image had there and is read-write by default; and a tmpfs mount, which lives in host memory and vanishes when the container stops.",
           "caption": "The top layer dies with the container.",
-          "placement": "explanation"
+          "placement": "explanation",
+          "width": 720,
+          "height": 510
         }
       ],
       "type": "single-choice",

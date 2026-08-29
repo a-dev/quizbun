@@ -9,15 +9,30 @@
   }
 
   .image {
+    /* `--_aspect` is the Image's own `width / height`, set inline when the Quiz
+       records dimensions. Capping the inline size by the block cap times that
+       ratio keeps the box the shape of the Image, so a portrait photo clamped
+       to the viewport shrinks in both axes instead of sitting in a wide box
+       with `object-fit` gutters beside it. Without dimensions the fallback
+       ratio is large enough that the inline cap stays at 100%. */
+    --_max-block-size: min(70svh, 40rem);
+
     composes: rounded-s from "#styles/shape.module.css";
 
     display: block;
+    justify-self: center;
 
-    inline-size: auto;
-    max-inline-size: 100%;
+    max-inline-size: min(100%, calc(var(--_max-block-size) * (var(--_aspect, 100))));
     block-size: auto;
+    max-block-size: var(--_max-block-size);
 
     object-fit: contain;
+
+    &[data-size-pending] {
+      aspect-ratio: 16 / 9;
+      inline-size: 40rem;
+      background-color: var(--color-state-muted-bg);
+    }
   }
 
   .placeholder {
@@ -42,7 +57,9 @@
   }
 
   .caption {
+    justify-self: center;
     max-inline-size: 60ch;
     color: var(--color-text-secondary);
+    text-align: center;
   }
 }

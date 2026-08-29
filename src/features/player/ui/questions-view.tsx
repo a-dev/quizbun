@@ -76,7 +76,7 @@ export function QuestionsView({
     >
       {error !== undefined && <Note type="error">{error}</Note>}
 
-      {currentPage.questions.map(({ question, index, progress }) => (
+      {currentPage.questions.map(({ question, index, progress }, pageIndex) => (
         <QuestionCard
           key={question.id}
           quizId={quiz.id}
@@ -84,6 +84,7 @@ export function QuestionsView({
           index={index}
           progress={progress}
           optionOrder={optionOrderByQuestionId[question.id]}
+          mediaPriority={pageIndex === 0}
           onSubmit={onSubmit}
         />
       ))}

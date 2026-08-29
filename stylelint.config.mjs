@@ -15,6 +15,17 @@ export default {
         ignoreProperties: ["composes"],
       },
     ],
+    // `color-mix()` defaults to oklab when the colour space is omitted, so a
+    // bare mix silently lands off-palette next to the `in oklch` mixes around
+    // it. The optional-colour-space syntax is also much newer than
+    // `color-mix()` itself, so requiring it costs nothing in support.
+    "declaration-property-value-disallowed-list": [
+      { "/.*/": [/color-mix\((?!\s*in[\s(])/] },
+      {
+        message:
+          "Expected color-mix() to state a colour-interpolation method, e.g. color-mix(in oklch, ...)",
+      },
+    ],
     "custom-property-pattern": [
       "^_?([a-z][a-z0-9]*)(-[a-z0-9]+)*$",
       {
