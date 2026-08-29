@@ -14,7 +14,7 @@
         {
           "src": "event-loop-columns.svg",
           "alt": "A worked example and the loop's shape. Four lines — log(1), a setTimeout logging 4 with delay 0, a resolved promise's .then logging 3, and log(2) — produce 1, 2, 3, 4, explained in three moves: the script is itself a task and runs to the end, then the stack empties and the microtask checkpoint drains, then the loop takes one task off the task queue. Below, one iteration drawn left to right: one task run to completion, the microtask checkpoint that drains to empty including newly queued ones, requestAnimationFrame callbacks just before paint, render (style, layout, paint), and leftover idle time for requestIdleCallback, with an arrow looping back to the next iteration. Three cards list what belongs where: microtasks are .then/.catch/.finally, await continuations, queueMicrotask and MutationObserver, with process.nextTick draining first in Node; tasks are setTimeout/setInterval, DOM events, I/O callbacks, postMessage and MessageChannel, plus setImmediate in Node; requestAnimationFrame and requestIdleCallback belong to neither queue. Two closing notes contrast a self-queueing microtask, which freezes the tab because the checkpoint never ends, with a self-rescheduling setTimeout, which yields to render every run and is clamped to about 4 ms after five levels of nesting.",
-          "caption": "A task, then the whole microtask queue, then a chance to paint — in that order, every time.",
+          "caption": "The event loop runs all synchronous code first, then drains the microtask queue, and only then picks the next macrotask.",
           "placement": "explanation",
           "width": 720,
           "height": 768
@@ -50,7 +50,7 @@
         {
           "src": "event-loop-columns.svg",
           "alt": "A worked example and the loop's shape. Four lines — log(1), a setTimeout logging 4 with delay 0, a resolved promise's .then logging 3, and log(2) — produce 1, 2, 3, 4, explained in three moves: the script is itself a task and runs to the end, then the stack empties and the microtask checkpoint drains, then the loop takes one task off the task queue. Below, one iteration drawn left to right: one task run to completion, the microtask checkpoint that drains to empty including newly queued ones, requestAnimationFrame callbacks just before paint, render (style, layout, paint), and leftover idle time for requestIdleCallback, with an arrow looping back to the next iteration. Three cards list what belongs where: microtasks are .then/.catch/.finally, await continuations, queueMicrotask and MutationObserver, with process.nextTick draining first in Node; tasks are setTimeout/setInterval, DOM events, I/O callbacks, postMessage and MessageChannel, plus setImmediate in Node; requestAnimationFrame and requestIdleCallback belong to neither queue. Two closing notes contrast a self-queueing microtask, which freezes the tab because the checkpoint never ends, with a self-rescheduling setTimeout, which yields to render every run and is clamped to about 4 ms after five levels of nesting.",
-          "caption": "A task, then the whole microtask queue, then a chance to paint — in that order, every time.",
+          "caption": "The event loop drains the **entire** microtask queue before processing the next macrotask, even microtasks that were enqueued *while* draining.",
           "placement": "explanation",
           "width": 720,
           "height": 768
@@ -112,7 +112,7 @@
         {
           "src": "promise-states.svg",
           "alt": "A promise state machine: pending on the left, with one arrow labelled resolve(v) to “fulfilled (value)” and one labelled reject(e) to “rejected (reason)”, and a note that once settled the state and value never change. Four cards follow. The executor runs right now — new Promise(fn) calls fn synchronously, before the constructor returns. The first settle wins — resolve(1); reject(err); resolve(2) settles with 1 and the later calls are silent no-ops, though the surrounding statements still run. Throwing is rejecting — an exception inside the executor rejects with the thrown value. Never settling is completely silent — no handler, no error, no warning; and new Promise() with no callable executor throws a TypeError synchronously. A closing note explains that resolving with a thenable costs two extra microtask ticks, because the engine must subscribe to it and then resolve the outer promise.",
-          "caption": "Two calls, one transition: everything after the first settle is a no-op.",
+          "caption": "The Promise constructor calls its executor **synchronously, during construction**. Both `executor 1` and `executor 2` log before any `.then` callback can run, because `.then` callbacks are always deferred to the microtask queue.",
           "placement": "explanation",
           "width": 720,
           "height": 586
@@ -148,7 +148,7 @@
         {
           "src": "event-loop-columns.svg",
           "alt": "A worked example and the loop's shape. Four lines — log(1), a setTimeout logging 4 with delay 0, a resolved promise's .then logging 3, and log(2) — produce 1, 2, 3, 4, explained in three moves: the script is itself a task and runs to the end, then the stack empties and the microtask checkpoint drains, then the loop takes one task off the task queue. Below, one iteration drawn left to right: one task run to completion, the microtask checkpoint that drains to empty including newly queued ones, requestAnimationFrame callbacks just before paint, render (style, layout, paint), and leftover idle time for requestIdleCallback, with an arrow looping back to the next iteration. Three cards list what belongs where: microtasks are .then/.catch/.finally, await continuations, queueMicrotask and MutationObserver, with process.nextTick draining first in Node; tasks are setTimeout/setInterval, DOM events, I/O callbacks, postMessage and MessageChannel, plus setImmediate in Node; requestAnimationFrame and requestIdleCallback belong to neither queue. Two closing notes contrast a self-queueing microtask, which freezes the tab because the checkpoint never ends, with a self-rescheduling setTimeout, which yields to render every run and is clamped to about 4 ms after five levels of nesting.",
-          "caption": "A task, then the whole microtask queue, then a chance to paint — in that order, every time.",
+          "caption": "The callback starts as a task, while the promise reaction it queues joins the microtask column.",
           "placement": "explanation",
           "width": 720,
           "height": 768
@@ -183,7 +183,7 @@
         {
           "src": "event-loop-columns.svg",
           "alt": "A worked example and the loop's shape. Four lines — log(1), a setTimeout logging 4 with delay 0, a resolved promise's .then logging 3, and log(2) — produce 1, 2, 3, 4, explained in three moves: the script is itself a task and runs to the end, then the stack empties and the microtask checkpoint drains, then the loop takes one task off the task queue. Below, one iteration drawn left to right: one task run to completion, the microtask checkpoint that drains to empty including newly queued ones, requestAnimationFrame callbacks just before paint, render (style, layout, paint), and leftover idle time for requestIdleCallback, with an arrow looping back to the next iteration. Three cards list what belongs where: microtasks are .then/.catch/.finally, await continuations, queueMicrotask and MutationObserver, with process.nextTick draining first in Node; tasks are setTimeout/setInterval, DOM events, I/O callbacks, postMessage and MessageChannel, plus setImmediate in Node; requestAnimationFrame and requestIdleCallback belong to neither queue. Two closing notes contrast a self-queueing microtask, which freezes the tab because the checkpoint never ends, with a self-rescheduling setTimeout, which yields to render every run and is clamped to about 4 ms after five levels of nesting.",
-          "caption": "A task, then the whole microtask queue, then a chance to paint — in that order, every time.",
+          "caption": "Between two consecutive macrotasks, the event loop always drains the microtask queue completely.",
           "placement": "explanation",
           "width": 720,
           "height": 768
@@ -219,7 +219,7 @@
         {
           "src": "promise-states.svg",
           "alt": "A promise state machine: pending on the left, with one arrow labelled resolve(v) to “fulfilled (value)” and one labelled reject(e) to “rejected (reason)”, and a note that once settled the state and value never change. Four cards follow. The executor runs right now — new Promise(fn) calls fn synchronously, before the constructor returns. The first settle wins — resolve(1); reject(err); resolve(2) settles with 1 and the later calls are silent no-ops, though the surrounding statements still run. Throwing is rejecting — an exception inside the executor rejects with the thrown value. Never settling is completely silent — no handler, no error, no warning; and new Promise() with no callable executor throws a TypeError synchronously. A closing note explains that resolving with a thenable costs two extra microtask ticks, because the engine must subscribe to it and then resolve the outer promise.",
-          "caption": "Two calls, one transition: everything after the first settle is a no-op.",
+          "caption": "`p` is the **new promise returned by `.then`**, not the original `Promise.resolve(1)`. Even though the source promise is already fulfilled, the `.then` callback can only run as a microtask, after the current synchronous code (including the `console.log`) finishes.",
           "placement": "explanation",
           "width": 720,
           "height": 586
@@ -254,7 +254,7 @@
         {
           "src": "event-loop-columns.svg",
           "alt": "A worked example and the loop's shape. Four lines — log(1), a setTimeout logging 4 with delay 0, a resolved promise's .then logging 3, and log(2) — produce 1, 2, 3, 4, explained in three moves: the script is itself a task and runs to the end, then the stack empties and the microtask checkpoint drains, then the loop takes one task off the task queue. Below, one iteration drawn left to right: one task run to completion, the microtask checkpoint that drains to empty including newly queued ones, requestAnimationFrame callbacks just before paint, render (style, layout, paint), and leftover idle time for requestIdleCallback, with an arrow looping back to the next iteration. Three cards list what belongs where: microtasks are .then/.catch/.finally, await continuations, queueMicrotask and MutationObserver, with process.nextTick draining first in Node; tasks are setTimeout/setInterval, DOM events, I/O callbacks, postMessage and MessageChannel, plus setImmediate in Node; requestAnimationFrame and requestIdleCallback belong to neither queue. Two closing notes contrast a self-queueing microtask, which freezes the tab because the checkpoint never ends, with a self-rescheduling setTimeout, which yields to render every run and is clamped to about 4 ms after five levels of nesting.",
-          "caption": "A task, then the whole microtask queue, then a chance to paint — in that order, every time.",
+          "caption": "Promise reaction callbacks, `queueMicrotask`, and `await` continuations all share the **same microtask queue**, an `await` literally suspends the function and schedules its continuation as a microtask.",
           "placement": "explanation",
           "width": 720,
           "height": 768
@@ -290,7 +290,7 @@
         {
           "src": "event-loop-columns.svg",
           "alt": "A worked example and the loop's shape. Four lines — log(1), a setTimeout logging 4 with delay 0, a resolved promise's .then logging 3, and log(2) — produce 1, 2, 3, 4, explained in three moves: the script is itself a task and runs to the end, then the stack empties and the microtask checkpoint drains, then the loop takes one task off the task queue. Below, one iteration drawn left to right: one task run to completion, the microtask checkpoint that drains to empty including newly queued ones, requestAnimationFrame callbacks just before paint, render (style, layout, paint), and leftover idle time for requestIdleCallback, with an arrow looping back to the next iteration. Three cards list what belongs where: microtasks are .then/.catch/.finally, await continuations, queueMicrotask and MutationObserver, with process.nextTick draining first in Node; tasks are setTimeout/setInterval, DOM events, I/O callbacks, postMessage and MessageChannel, plus setImmediate in Node; requestAnimationFrame and requestIdleCallback belong to neither queue. Two closing notes contrast a self-queueing microtask, which freezes the tab because the checkpoint never ends, with a self-rescheduling setTimeout, which yields to render every run and is clamped to about 4 ms after five levels of nesting.",
-          "caption": "A task, then the whole microtask queue, then a chance to paint — in that order, every time.",
+          "caption": "Synchronous code always runs to completion before *any* queued callback, that's the \"run-to-completion\" guarantee of the JavaScript execution model.",
           "placement": "explanation",
           "width": 720,
           "height": 768
@@ -311,7 +311,7 @@
         {
           "src": "event-loop-columns.svg",
           "alt": "A worked example and the loop's shape. Four lines — log(1), a setTimeout logging 4 with delay 0, a resolved promise's .then logging 3, and log(2) — produce 1, 2, 3, 4, explained in three moves: the script is itself a task and runs to the end, then the stack empties and the microtask checkpoint drains, then the loop takes one task off the task queue. Below, one iteration drawn left to right: one task run to completion, the microtask checkpoint that drains to empty including newly queued ones, requestAnimationFrame callbacks just before paint, render (style, layout, paint), and leftover idle time for requestIdleCallback, with an arrow looping back to the next iteration. Three cards list what belongs where: microtasks are .then/.catch/.finally, await continuations, queueMicrotask and MutationObserver, with process.nextTick draining first in Node; tasks are setTimeout/setInterval, DOM events, I/O callbacks, postMessage and MessageChannel, plus setImmediate in Node; requestAnimationFrame and requestIdleCallback belong to neither queue. Two closing notes contrast a self-queueing microtask, which freezes the tab because the checkpoint never ends, with a self-rescheduling setTimeout, which yields to render every run and is clamped to about 4 ms after five levels of nesting.",
-          "caption": "A task, then the whole microtask queue, then a chance to paint — in that order, every time.",
+          "caption": "After every task, the initial script counts as one, and each macrotask callback counts as one, the engine drains the microtask queue **completely**, including microtasks that were enqueued during the drain itself.",
           "placement": "explanation",
           "width": 720,
           "height": 768
@@ -347,7 +347,7 @@
         {
           "src": "promise-states.svg",
           "alt": "A promise state machine: pending on the left, with one arrow labelled resolve(v) to “fulfilled (value)” and one labelled reject(e) to “rejected (reason)”, and a note that once settled the state and value never change. Four cards follow. The executor runs right now — new Promise(fn) calls fn synchronously, before the constructor returns. The first settle wins — resolve(1); reject(err); resolve(2) settles with 1 and the later calls are silent no-ops, though the surrounding statements still run. Throwing is rejecting — an exception inside the executor rejects with the thrown value. Never settling is completely silent — no handler, no error, no warning; and new Promise() with no callable executor throws a TypeError synchronously. A closing note explains that resolving with a thenable costs two extra microtask ticks, because the engine must subscribe to it and then resolve the outer promise.",
-          "caption": "Two calls, one transition: everything after the first settle is a no-op.",
+          "caption": "Calling `reject()` (or `resolve()`) inside an executor does **not** throw, return, or otherwise stop the executor, it only changes the promise's state.",
           "placement": "explanation",
           "width": 720,
           "height": 586
@@ -383,7 +383,7 @@
         {
           "src": "promise-states.svg",
           "alt": "A promise state machine: pending on the left, with one arrow labelled resolve(v) to “fulfilled (value)” and one labelled reject(e) to “rejected (reason)”, and a note that once settled the state and value never change. Four cards follow. The executor runs right now — new Promise(fn) calls fn synchronously, before the constructor returns. The first settle wins — resolve(1); reject(err); resolve(2) settles with 1 and the later calls are silent no-ops, though the surrounding statements still run. Throwing is rejecting — an exception inside the executor rejects with the thrown value. Never settling is completely silent — no handler, no error, no warning; and new Promise() with no callable executor throws a TypeError synchronously. A closing note explains that resolving with a thenable costs two extra microtask ticks, because the engine must subscribe to it and then resolve the outer promise.",
-          "caption": "Two calls, one transition: everything after the first settle is a no-op.",
+          "caption": "A promise can settle exactly **once**. The first call to `resolve` or `reject` locks in the state; every later call is silently ignored, no error, no warning.",
           "placement": "explanation",
           "width": 720,
           "height": 586
@@ -419,7 +419,7 @@
         {
           "src": "promise-states.svg",
           "alt": "A promise state machine: pending on the left, with one arrow labelled resolve(v) to “fulfilled (value)” and one labelled reject(e) to “rejected (reason)”, and a note that once settled the state and value never change. Four cards follow. The executor runs right now — new Promise(fn) calls fn synchronously, before the constructor returns. The first settle wins — resolve(1); reject(err); resolve(2) settles with 1 and the later calls are silent no-ops, though the surrounding statements still run. Throwing is rejecting — an exception inside the executor rejects with the thrown value. Never settling is completely silent — no handler, no error, no warning; and new Promise() with no callable executor throws a TypeError synchronously. A closing note explains that resolving with a thenable costs two extra microtask ticks, because the engine must subscribe to it and then resolve the outer promise.",
-          "caption": "Two calls, one transition: everything after the first settle is a no-op.",
+          "caption": "The `new Promise` machinery wraps the executor call in an implicit try/catch: a synchronous `throw` inside the executor **rejects** the promise with the thrown value, exactly as if `reject(error)` had been called.",
           "placement": "explanation",
           "width": 720,
           "height": 586
@@ -455,7 +455,7 @@
         {
           "src": "promise-states.svg",
           "alt": "A promise state machine: pending on the left, with one arrow labelled resolve(v) to “fulfilled (value)” and one labelled reject(e) to “rejected (reason)”, and a note that once settled the state and value never change. Four cards follow. The executor runs right now — new Promise(fn) calls fn synchronously, before the constructor returns. The first settle wins — resolve(1); reject(err); resolve(2) settles with 1 and the later calls are silent no-ops, though the surrounding statements still run. Throwing is rejecting — an exception inside the executor rejects with the thrown value. Never settling is completely silent — no handler, no error, no warning; and new Promise() with no callable executor throws a TypeError synchronously. A closing note explains that resolving with a thenable costs two extra microtask ticks, because the engine must subscribe to it and then resolve the outer promise.",
-          "caption": "Two calls, one transition: everything after the first settle is a no-op.",
+          "caption": "A promise has no built-in timeout. If the executor never calls `resolve` or `reject`, the promise remains *pending* forever, and every handler attached to it simply never runs.",
           "placement": "explanation",
           "width": 720,
           "height": 586
@@ -490,7 +490,7 @@
         {
           "src": "promise-states.svg",
           "alt": "A promise state machine: pending on the left, with one arrow labelled resolve(v) to “fulfilled (value)” and one labelled reject(e) to “rejected (reason)”, and a note that once settled the state and value never change. Four cards follow. The executor runs right now — new Promise(fn) calls fn synchronously, before the constructor returns. The first settle wins — resolve(1); reject(err); resolve(2) settles with 1 and the later calls are silent no-ops, though the surrounding statements still run. Throwing is rejecting — an exception inside the executor rejects with the thrown value. Never settling is completely silent — no handler, no error, no warning; and new Promise() with no callable executor throws a TypeError synchronously. A closing note explains that resolving with a thenable costs two extra microtask ticks, because the engine must subscribe to it and then resolve the outer promise.",
-          "caption": "Two calls, one transition: everything after the first settle is a no-op.",
+          "caption": "The Promise constructor requires its argument to be callable. `new Promise()` (or `new Promise(42)`) throws `TypeError: Promise resolver undefined is not a function` **synchronously**, at construction time, there is no promise to attach a `.catch` to.",
           "placement": "explanation",
           "width": 720,
           "height": 586
@@ -526,7 +526,7 @@
         {
           "src": "promise-states.svg",
           "alt": "A promise state machine: pending on the left, with one arrow labelled resolve(v) to “fulfilled (value)” and one labelled reject(e) to “rejected (reason)”, and a note that once settled the state and value never change. Four cards follow. The executor runs right now — new Promise(fn) calls fn synchronously, before the constructor returns. The first settle wins — resolve(1); reject(err); resolve(2) settles with 1 and the later calls are silent no-ops, though the surrounding statements still run. Throwing is rejecting — an exception inside the executor rejects with the thrown value. Never settling is completely silent — no handler, no error, no warning; and new Promise() with no callable executor throws a TypeError synchronously. A closing note explains that resolving with a thenable costs two extra microtask ticks, because the engine must subscribe to it and then resolve the outer promise.",
-          "caption": "Two calls, one transition: everything after the first settle is a no-op.",
+          "caption": "Calling `resolve(somePromise)` does **not** fulfill the outer promise with the promise object.",
           "placement": "explanation",
           "width": 720,
           "height": 586
@@ -562,7 +562,7 @@
         {
           "src": "promise-states.svg",
           "alt": "A promise state machine: pending on the left, with one arrow labelled resolve(v) to “fulfilled (value)” and one labelled reject(e) to “rejected (reason)”, and a note that once settled the state and value never change. Four cards follow. The executor runs right now — new Promise(fn) calls fn synchronously, before the constructor returns. The first settle wins — resolve(1); reject(err); resolve(2) settles with 1 and the later calls are silent no-ops, though the surrounding statements still run. Throwing is rejecting — an exception inside the executor rejects with the thrown value. Never settling is completely silent — no handler, no error, no warning; and new Promise() with no callable executor throws a TypeError synchronously. A closing note explains that resolving with a thenable costs two extra microtask ticks, because the engine must subscribe to it and then resolve the outer promise.",
-          "caption": "Two calls, one transition: everything after the first settle is a no-op.",
+          "caption": "Resolving a promise only *schedules* its handlers, it never invokes them synchronously. When `resolveFn(99)` runs, the `.then` callback is enqueued as a microtask, but the current synchronous code keeps going, so `\"after\"` logs first.",
           "placement": "explanation",
           "width": 720,
           "height": 586
@@ -598,7 +598,7 @@
         {
           "src": "promise-states.svg",
           "alt": "A promise state machine: pending on the left, with one arrow labelled resolve(v) to “fulfilled (value)” and one labelled reject(e) to “rejected (reason)”, and a note that once settled the state and value never change. Four cards follow. The executor runs right now — new Promise(fn) calls fn synchronously, before the constructor returns. The first settle wins — resolve(1); reject(err); resolve(2) settles with 1 and the later calls are silent no-ops, though the surrounding statements still run. Throwing is rejecting — an exception inside the executor rejects with the thrown value. Never settling is completely silent — no handler, no error, no warning; and new Promise() with no callable executor throws a TypeError synchronously. A closing note explains that resolving with a thenable costs two extra microtask ticks, because the engine must subscribe to it and then resolve the outer promise.",
-          "caption": "Two calls, one transition: everything after the first settle is a no-op.",
+          "caption": "A *thenable* is any object with a `then` method. `Promise.resolve` assimilates thenables, but it calls their `then` method **asynchronously**, in a microtask, never during the current synchronous run.",
           "placement": "explanation",
           "width": 720,
           "height": 586
@@ -686,7 +686,7 @@
         {
           "src": "chain-vs-fork.svg",
           "alt": "Two panels over a three-tick ruler. Chained — p.then(a).then(b).then(c) — puts a on tick 1, b on tick 2 and c on tick 3, because each link subscribes to the promise the previous link returned. Forked — three separate p.then(x), p.then(y), p.then(z) — puts all three on tick 1, in registration order, because they are all already subscribed to p. Below, one chain carrying a rejection: p rejects, .then(f1) and .then(f2) are skipped, .catch(h) runs, .then(f3) runs, and a trailing .catch is skipped because the chain is fulfilled again. Notes add that .catch(h) is exactly .then(undefined, h), that in .then(f, r) the r handler does not catch what f throws, that .finally receives no arguments and passes value and reason through unless it throws, and that a non-function argument to .then is ignored and the value passes through.",
-          "caption": "A rejection travels down the chain until a handler takes it — and then the chain is fulfilled again.",
+          "caption": "Per the spec, non-function arguments to `.then` are **silently ignored** and replaced with an identity passthrough.",
           "placement": "explanation",
           "width": 720,
           "height": 634
@@ -722,7 +722,7 @@
         {
           "src": "await-suspension.svg",
           "alt": "An async function cut in two by a dashed rule at its await: log('a1') and the callee's own synchronous body sit above, running on the caller's stack, while log('a2') sits below as a microtask continuation — so the logs come out a1, sync, a2. Beside it, two async functions each with two awaits interleave: 1 and 2 synchronously, 3 and 4 on tick 1, 5 and 6 on tick 2, because each await queues exactly one continuation. A table gives what a resumption costs: return 'V' lands on tick 1, return await p on tick 2, return Promise.resolve(v) on tick 3. A final card notes that await 5 still suspends even though 5 is not a promise, that an async function with no await runs start to finish synchronously, and that await in a non-async function is a parse-time SyntaxError with top-level await allowed only in ES modules.",
-          "caption": "The head runs on the caller's stack; only what follows the await becomes a microtask.",
+          "caption": "Returning a **promise** from a `.then` callback delays the outer chain by **two extra microtask ticks** compared to returning a plain value.",
           "placement": "explanation",
           "width": 720,
           "height": 550
@@ -757,7 +757,7 @@
         {
           "src": "chain-vs-fork.svg",
           "alt": "Two panels over a three-tick ruler. Chained — p.then(a).then(b).then(c) — puts a on tick 1, b on tick 2 and c on tick 3, because each link subscribes to the promise the previous link returned. Forked — three separate p.then(x), p.then(y), p.then(z) — puts all three on tick 1, in registration order, because they are all already subscribed to p. Below, one chain carrying a rejection: p rejects, .then(f1) and .then(f2) are skipped, .catch(h) runs, .then(f3) runs, and a trailing .catch is skipped because the chain is fulfilled again. Notes add that .catch(h) is exactly .then(undefined, h), that in .then(f, r) the r handler does not catch what f throws, that .finally receives no arguments and passes value and reason through unless it throws, and that a non-function argument to .then is ignored and the value passes through.",
-          "caption": "A rejection travels down the chain until a handler takes it — and then the chain is fulfilled again.",
+          "caption": "Promises are **multicast**: any number of handlers can subscribe to the same promise, and each receives the same settled value, in registration order.",
           "placement": "explanation",
           "width": 720,
           "height": 634
@@ -793,7 +793,7 @@
         {
           "src": "chain-vs-fork.svg",
           "alt": "Two panels over a three-tick ruler. Chained — p.then(a).then(b).then(c) — puts a on tick 1, b on tick 2 and c on tick 3, because each link subscribes to the promise the previous link returned. Forked — three separate p.then(x), p.then(y), p.then(z) — puts all three on tick 1, in registration order, because they are all already subscribed to p. Below, one chain carrying a rejection: p rejects, .then(f1) and .then(f2) are skipped, .catch(h) runs, .then(f3) runs, and a trailing .catch is skipped because the chain is fulfilled again. Notes add that .catch(h) is exactly .then(undefined, h), that in .then(f, r) the r handler does not catch what f throws, that .finally receives no arguments and passes value and reason through unless it throws, and that a non-function argument to .then is ignored and the value passes through.",
-          "caption": "A rejection travels down the chain until a handler takes it — and then the chain is fulfilled again.",
+          "caption": "Both branches register on the already-fulfilled `p`, so the microtask queue starts as `[a, c]`.",
           "placement": "explanation",
           "width": 720,
           "height": 634
@@ -828,7 +828,7 @@
         {
           "src": "chain-vs-fork.svg",
           "alt": "Two panels over a three-tick ruler. Chained — p.then(a).then(b).then(c) — puts a on tick 1, b on tick 2 and c on tick 3, because each link subscribes to the promise the previous link returned. Forked — three separate p.then(x), p.then(y), p.then(z) — puts all three on tick 1, in registration order, because they are all already subscribed to p. Below, one chain carrying a rejection: p rejects, .then(f1) and .then(f2) are skipped, .catch(h) runs, .then(f3) runs, and a trailing .catch is skipped because the chain is fulfilled again. Notes add that .catch(h) is exactly .then(undefined, h), that in .then(f, r) the r handler does not catch what f throws, that .finally receives no arguments and passes value and reason through unless it throws, and that a non-function argument to .then is ignored and the value passes through.",
-          "caption": "A rejection travels down the chain until a handler takes it — and then the chain is fulfilled again.",
+          "caption": "Independent chains **interleave** rather than running to completion one at a time. Initially the queue holds the first callback of each chain: `[1, 3]`.",
           "placement": "explanation",
           "width": 720,
           "height": 634
@@ -864,7 +864,7 @@
         {
           "src": "chain-vs-fork.svg",
           "alt": "Two panels over a three-tick ruler. Chained — p.then(a).then(b).then(c) — puts a on tick 1, b on tick 2 and c on tick 3, because each link subscribes to the promise the previous link returned. Forked — three separate p.then(x), p.then(y), p.then(z) — puts all three on tick 1, in registration order, because they are all already subscribed to p. Below, one chain carrying a rejection: p rejects, .then(f1) and .then(f2) are skipped, .catch(h) runs, .then(f3) runs, and a trailing .catch is skipped because the chain is fulfilled again. Notes add that .catch(h) is exactly .then(undefined, h), that in .then(f, r) the r handler does not catch what f throws, that .finally receives no arguments and passes value and reason through unless it throws, and that a non-function argument to .then is ignored and the value passes through.",
-          "caption": "A rejection travels down the chain until a handler takes it — and then the chain is fulfilled again.",
+          "caption": "Rejection handlers are microtasks like any other, so both synchronous logs (`start`, `end`) come first.",
           "placement": "explanation",
           "width": 720,
           "height": 634
@@ -900,7 +900,7 @@
         {
           "src": "chain-vs-fork.svg",
           "alt": "Two panels over a three-tick ruler. Chained — p.then(a).then(b).then(c) — puts a on tick 1, b on tick 2 and c on tick 3, because each link subscribes to the promise the previous link returned. Forked — three separate p.then(x), p.then(y), p.then(z) — puts all three on tick 1, in registration order, because they are all already subscribed to p. Below, one chain carrying a rejection: p rejects, .then(f1) and .then(f2) are skipped, .catch(h) runs, .then(f3) runs, and a trailing .catch is skipped because the chain is fulfilled again. Notes add that .catch(h) is exactly .then(undefined, h), that in .then(f, r) the r handler does not catch what f throws, that .finally receives no arguments and passes value and reason through unless it throws, and that a non-function argument to .then is ignored and the value passes through.",
-          "caption": "A rejection travels down the chain until a handler takes it — and then the chain is fulfilled again.",
+          "caption": "`finally` is for side effects: its callback receives **no arguments** and its return value is **discarded**, the original value (or rejection) passes through untouched.",
           "placement": "explanation",
           "width": 720,
           "height": 634
@@ -936,7 +936,7 @@
         {
           "src": "chain-vs-fork.svg",
           "alt": "Two panels over a three-tick ruler. Chained — p.then(a).then(b).then(c) — puts a on tick 1, b on tick 2 and c on tick 3, because each link subscribes to the promise the previous link returned. Forked — three separate p.then(x), p.then(y), p.then(z) — puts all three on tick 1, in registration order, because they are all already subscribed to p. Below, one chain carrying a rejection: p rejects, .then(f1) and .then(f2) are skipped, .catch(h) runs, .then(f3) runs, and a trailing .catch is skipped because the chain is fulfilled again. Notes add that .catch(h) is exactly .then(undefined, h), that in .then(f, r) the r handler does not catch what f throws, that .finally receives no arguments and passes value and reason through unless it throws, and that a non-function argument to .then is ignored and the value passes through.",
-          "caption": "A rejection travels down the chain until a handler takes it — and then the chain is fulfilled again.",
+          "caption": "Every call to `.then` (and `.catch`, `.finally`) returns a **brand-new promise** representing the outcome of that particular handler, never the original.",
           "placement": "explanation",
           "width": 720,
           "height": 634
@@ -971,7 +971,7 @@
         {
           "src": "chain-vs-fork.svg",
           "alt": "Two panels over a three-tick ruler. Chained — p.then(a).then(b).then(c) — puts a on tick 1, b on tick 2 and c on tick 3, because each link subscribes to the promise the previous link returned. Forked — three separate p.then(x), p.then(y), p.then(z) — puts all three on tick 1, in registration order, because they are all already subscribed to p. Below, one chain carrying a rejection: p rejects, .then(f1) and .then(f2) are skipped, .catch(h) runs, .then(f3) runs, and a trailing .catch is skipped because the chain is fulfilled again. Notes add that .catch(h) is exactly .then(undefined, h), that in .then(f, r) the r handler does not catch what f throws, that .finally receives no arguments and passes value and reason through unless it throws, and that a non-function argument to .then is ignored and the value passes through.",
-          "caption": "A rejection travels down the chain until a handler takes it — and then the chain is fulfilled again.",
+          "caption": "`catch(handler)` is defined in the spec as a thin wrapper that calls `this.then(undefined, handler)`.",
           "placement": "explanation",
           "width": 720,
           "height": 634
@@ -1007,7 +1007,7 @@
         {
           "src": "chain-vs-fork.svg",
           "alt": "Two panels over a three-tick ruler. Chained — p.then(a).then(b).then(c) — puts a on tick 1, b on tick 2 and c on tick 3, because each link subscribes to the promise the previous link returned. Forked — three separate p.then(x), p.then(y), p.then(z) — puts all three on tick 1, in registration order, because they are all already subscribed to p. Below, one chain carrying a rejection: p rejects, .then(f1) and .then(f2) are skipped, .catch(h) runs, .then(f3) runs, and a trailing .catch is skipped because the chain is fulfilled again. Notes add that .catch(h) is exactly .then(undefined, h), that in .then(f, r) the r handler does not catch what f throws, that .finally receives no arguments and passes value and reason through unless it throws, and that a non-function argument to .then is ignored and the value passes through.",
-          "caption": "A rejection travels down the chain until a handler takes it — and then the chain is fulfilled again.",
+          "caption": "The two arguments of a single `.then(onFulfilled, onRejected)` handle the **incoming** promise's two outcomes, they never handle each other.",
           "placement": "explanation",
           "width": 720,
           "height": 634
@@ -1043,7 +1043,7 @@
         {
           "src": "chain-vs-fork.svg",
           "alt": "Two panels over a three-tick ruler. Chained — p.then(a).then(b).then(c) — puts a on tick 1, b on tick 2 and c on tick 3, because each link subscribes to the promise the previous link returned. Forked — three separate p.then(x), p.then(y), p.then(z) — puts all three on tick 1, in registration order, because they are all already subscribed to p. Below, one chain carrying a rejection: p rejects, .then(f1) and .then(f2) are skipped, .catch(h) runs, .then(f3) runs, and a trailing .catch is skipped because the chain is fulfilled again. Notes add that .catch(h) is exactly .then(undefined, h), that in .then(f, r) the r handler does not catch what f throws, that .finally receives no arguments and passes value and reason through unless it throws, and that a non-function argument to .then is ignored and the value passes through.",
-          "caption": "A rejection travels down the chain until a handler takes it — and then the chain is fulfilled again.",
+          "caption": "A `finally` callback is invoked with **no arguments**, by design it cannot know (or care) whether the promise fulfilled or rejected, only that it settled.",
           "placement": "explanation",
           "width": 720,
           "height": 634
@@ -1079,7 +1079,7 @@
         {
           "src": "chain-vs-fork.svg",
           "alt": "Two panels over a three-tick ruler. Chained — p.then(a).then(b).then(c) — puts a on tick 1, b on tick 2 and c on tick 3, because each link subscribes to the promise the previous link returned. Forked — three separate p.then(x), p.then(y), p.then(z) — puts all three on tick 1, in registration order, because they are all already subscribed to p. Below, one chain carrying a rejection: p rejects, .then(f1) and .then(f2) are skipped, .catch(h) runs, .then(f3) runs, and a trailing .catch is skipped because the chain is fulfilled again. Notes add that .catch(h) is exactly .then(undefined, h), that in .then(f, r) the r handler does not catch what f throws, that .finally receives no arguments and passes value and reason through unless it throws, and that a non-function argument to .then is ignored and the value passes through.",
-          "caption": "A rejection travels down the chain until a handler takes it — and then the chain is fulfilled again.",
+          "caption": "`finally` ignores its callback's **return value**, but a **thrown error** (or returned rejected promise) is different: it replaces the outcome and rejects the chain.",
           "placement": "explanation",
           "width": 720,
           "height": 634
@@ -1114,7 +1114,7 @@
         {
           "src": "chain-vs-fork.svg",
           "alt": "Two panels over a three-tick ruler. Chained — p.then(a).then(b).then(c) — puts a on tick 1, b on tick 2 and c on tick 3, because each link subscribes to the promise the previous link returned. Forked — three separate p.then(x), p.then(y), p.then(z) — puts all three on tick 1, in registration order, because they are all already subscribed to p. Below, one chain carrying a rejection: p rejects, .then(f1) and .then(f2) are skipped, .catch(h) runs, .then(f3) runs, and a trailing .catch is skipped because the chain is fulfilled again. Notes add that .catch(h) is exactly .then(undefined, h), that in .then(f, r) the r handler does not catch what f throws, that .finally receives no arguments and passes value and reason through unless it throws, and that a non-function argument to .then is ignored and the value passes through.",
-          "caption": "A rejection travels down the chain until a handler takes it — and then the chain is fulfilled again.",
+          "caption": "Throwing inside a `.then` callback rejects the promise it returns, exactly equivalent to returning `Promise.reject(error)`.",
           "placement": "explanation",
           "width": 720,
           "height": 634
@@ -1149,7 +1149,7 @@
         {
           "src": "chain-vs-fork.svg",
           "alt": "Two panels over a three-tick ruler. Chained — p.then(a).then(b).then(c) — puts a on tick 1, b on tick 2 and c on tick 3, because each link subscribes to the promise the previous link returned. Forked — three separate p.then(x), p.then(y), p.then(z) — puts all three on tick 1, in registration order, because they are all already subscribed to p. Below, one chain carrying a rejection: p rejects, .then(f1) and .then(f2) are skipped, .catch(h) runs, .then(f3) runs, and a trailing .catch is skipped because the chain is fulfilled again. Notes add that .catch(h) is exactly .then(undefined, h), that in .then(f, r) the r handler does not catch what f throws, that .finally receives no arguments and passes value and reason through unless it throws, and that a non-function argument to .then is ignored and the value passes through.",
-          "caption": "A rejection travels down the chain until a handler takes it — and then the chain is fulfilled again.",
+          "caption": "A `.then` with only a fulfillment handler passes rejections through untouched (its missing `onRejected` defaults to a re-throwing passthrough).",
           "placement": "explanation",
           "width": 720,
           "height": 634
@@ -1184,7 +1184,7 @@
         {
           "src": "chain-vs-fork.svg",
           "alt": "Two panels over a three-tick ruler. Chained — p.then(a).then(b).then(c) — puts a on tick 1, b on tick 2 and c on tick 3, because each link subscribes to the promise the previous link returned. Forked — three separate p.then(x), p.then(y), p.then(z) — puts all three on tick 1, in registration order, because they are all already subscribed to p. Below, one chain carrying a rejection: p rejects, .then(f1) and .then(f2) are skipped, .catch(h) runs, .then(f3) runs, and a trailing .catch is skipped because the chain is fulfilled again. Notes add that .catch(h) is exactly .then(undefined, h), that in .then(f, r) the r handler does not catch what f throws, that .finally receives no arguments and passes value and reason through unless it throws, and that a non-function argument to .then is ignored and the value passes through.",
-          "caption": "A rejection travels down the chain until a handler takes it — and then the chain is fulfilled again.",
+          "caption": "Throwing inside a `.catch` rejects the promise that the `.catch` returns, sending the chain back into the rejected state with the **new** error.",
           "placement": "explanation",
           "width": 720,
           "height": 634
@@ -1220,7 +1220,7 @@
         {
           "src": "chain-vs-fork.svg",
           "alt": "Two panels over a three-tick ruler. Chained — p.then(a).then(b).then(c) — puts a on tick 1, b on tick 2 and c on tick 3, because each link subscribes to the promise the previous link returned. Forked — three separate p.then(x), p.then(y), p.then(z) — puts all three on tick 1, in registration order, because they are all already subscribed to p. Below, one chain carrying a rejection: p rejects, .then(f1) and .then(f2) are skipped, .catch(h) runs, .then(f3) runs, and a trailing .catch is skipped because the chain is fulfilled again. Notes add that .catch(h) is exactly .then(undefined, h), that in .then(f, r) the r handler does not catch what f throws, that .finally receives no arguments and passes value and reason through unless it throws, and that a non-function argument to .then is ignored and the value passes through.",
-          "caption": "A rejection travels down the chain until a handler takes it — and then the chain is fulfilled again.",
+          "caption": "Rejection handlers only run when the incoming promise is **rejected**. After `catch1` recovers (returns `\"recovered\"` without throwing), the chain is fulfilled, so `catch2`, which only has a rejection handler, passes the fulfilled value straight through without running.",
           "placement": "explanation",
           "width": 720,
           "height": 634
@@ -1255,7 +1255,7 @@
         {
           "src": "await-suspension.svg",
           "alt": "An async function cut in two by a dashed rule at its await: log('a1') and the callee's own synchronous body sit above, running on the caller's stack, while log('a2') sits below as a microtask continuation — so the logs come out a1, sync, a2. Beside it, two async functions each with two awaits interleave: 1 and 2 synchronously, 3 and 4 on tick 1, 5 and 6 on tick 2, because each await queues exactly one continuation. A table gives what a resumption costs: return 'V' lands on tick 1, return await p on tick 2, return Promise.resolve(v) on tick 3. A final card notes that await 5 still suspends even though 5 is not a promise, that an async function with no await runs start to finish synchronously, and that await in a non-async function is a parse-time SyntaxError with top-level await allowed only in ES modules.",
-          "caption": "The head runs on the caller's stack; only what follows the await becomes a microtask.",
+          "caption": "Calling an async function runs its body **synchronously** up to the first `await`, and with no `await` at all, the entire body runs synchronously, so `foo` logs before `end`.",
           "placement": "explanation",
           "width": 720,
           "height": 550
@@ -1291,7 +1291,7 @@
         {
           "src": "await-suspension.svg",
           "alt": "An async function cut in two by a dashed rule at its await: log('a1') and the callee's own synchronous body sit above, running on the caller's stack, while log('a2') sits below as a microtask continuation — so the logs come out a1, sync, a2. Beside it, two async functions each with two awaits interleave: 1 and 2 synchronously, 3 and 4 on tick 1, 5 and 6 on tick 2, because each await queues exactly one continuation. A table gives what a resumption costs: return 'V' lands on tick 1, return await p on tick 2, return Promise.resolve(v) on tick 3. A final card notes that await 5 still suspends even though 5 is not a promise, that an async function with no await runs start to finish synchronously, and that await in a non-async function is a parse-time SyntaxError with top-level await allowed only in ES modules.",
-          "caption": "The head runs on the caller's stack; only what follows the await becomes a microtask.",
+          "caption": "`await` is a suspension point. `bar()` runs synchronously through `b`, then `await` suspends the function and **returns control to the caller**, even though the awaited promise is already resolved.",
           "placement": "explanation",
           "width": 720,
           "height": 550
@@ -1327,7 +1327,7 @@
         {
           "src": "await-suspension.svg",
           "alt": "An async function cut in two by a dashed rule at its await: log('a1') and the callee's own synchronous body sit above, running on the caller's stack, while log('a2') sits below as a microtask continuation — so the logs come out a1, sync, a2. Beside it, two async functions each with two awaits interleave: 1 and 2 synchronously, 3 and 4 on tick 1, 5 and 6 on tick 2, because each await queues exactly one continuation. A table gives what a resumption costs: return 'V' lands on tick 1, return await p on tick 2, return Promise.resolve(v) on tick 3. A final card notes that await 5 still suspends even though 5 is not a promise, that an async function with no await runs start to finish synchronously, and that await in a non-async function is a parse-time SyntaxError with top-level await allowed only in ES modules.",
-          "caption": "The head runs on the caller's stack; only what follows the await becomes a microtask.",
+          "caption": "`await` works on **any** value: non-thenables are wrapped as if by `Promise.resolve(value)`, so `await null` still suspends the function for one microtask tick.",
           "placement": "explanation",
           "width": 720,
           "height": 550
@@ -1362,7 +1362,7 @@
         {
           "src": "await-suspension.svg",
           "alt": "An async function cut in two by a dashed rule at its await: log('a1') and the callee's own synchronous body sit above, running on the caller's stack, while log('a2') sits below as a microtask continuation — so the logs come out a1, sync, a2. Beside it, two async functions each with two awaits interleave: 1 and 2 synchronously, 3 and 4 on tick 1, 5 and 6 on tick 2, because each await queues exactly one continuation. A table gives what a resumption costs: return 'V' lands on tick 1, return await p on tick 2, return Promise.resolve(v) on tick 3. A final card notes that await 5 still suspends even though 5 is not a promise, that an async function with no await runs start to finish synchronously, and that await in a non-async function is a parse-time SyntaxError with top-level await allowed only in ES modules.",
-          "caption": "The head runs on the caller's stack; only what follows the await becomes a microtask.",
+          "caption": "Each function runs synchronously to its first `await` (`x1`, `y1`), then the outer script finishes (`sync`).",
           "placement": "explanation",
           "width": 720,
           "height": 550
@@ -1397,7 +1397,7 @@
         {
           "src": "await-suspension.svg",
           "alt": "An async function cut in two by a dashed rule at its await: log('a1') and the callee's own synchronous body sit above, running on the caller's stack, while log('a2') sits below as a microtask continuation — so the logs come out a1, sync, a2. Beside it, two async functions each with two awaits interleave: 1 and 2 synchronously, 3 and 4 on tick 1, 5 and 6 on tick 2, because each await queues exactly one continuation. A table gives what a resumption costs: return 'V' lands on tick 1, return await p on tick 2, return Promise.resolve(v) on tick 3. A final card notes that await 5 still suspends even though 5 is not a promise, that an async function with no await runs start to finish synchronously, and that await in a non-async function is a parse-time SyntaxError with top-level await allowed only in ES modules.",
-          "caption": "The head runs on the caller's stack; only what follows the await becomes a microtask.",
+          "caption": "Calls drill down synchronously: `a1`, then `b()` runs to `b1`, then `c()` runs to `c1` and returns a fulfilled promise.",
           "placement": "explanation",
           "width": 720,
           "height": 550
@@ -1432,7 +1432,7 @@
         {
           "src": "await-suspension.svg",
           "alt": "An async function cut in two by a dashed rule at its await: log('a1') and the callee's own synchronous body sit above, running on the caller's stack, while log('a2') sits below as a microtask continuation — so the logs come out a1, sync, a2. Beside it, two async functions each with two awaits interleave: 1 and 2 synchronously, 3 and 4 on tick 1, 5 and 6 on tick 2, because each await queues exactly one continuation. A table gives what a resumption costs: return 'V' lands on tick 1, return await p on tick 2, return Promise.resolve(v) on tick 3. A final card notes that await 5 still suspends even though 5 is not a promise, that an async function with no await runs start to finish synchronously, and that await in a non-async function is a parse-time SyntaxError with top-level await allowed only in ES modules.",
-          "caption": "The head runs on the caller's stack; only what follows the await becomes a microtask.",
+          "caption": "In `await b()`, the expression `b()` is an ordinary function call, it evaluates **first, synchronously**.",
           "placement": "explanation",
           "width": 720,
           "height": 550
@@ -1467,7 +1467,7 @@
         {
           "src": "await-suspension.svg",
           "alt": "An async function cut in two by a dashed rule at its await: log('a1') and the callee's own synchronous body sit above, running on the caller's stack, while log('a2') sits below as a microtask continuation — so the logs come out a1, sync, a2. Beside it, two async functions each with two awaits interleave: 1 and 2 synchronously, 3 and 4 on tick 1, 5 and 6 on tick 2, because each await queues exactly one continuation. A table gives what a resumption costs: return 'V' lands on tick 1, return await p on tick 2, return Promise.resolve(v) on tick 3. A final card notes that await 5 still suspends even though 5 is not a promise, that an async function with no await runs start to finish synchronously, and that await in a non-async function is a parse-time SyntaxError with top-level await allowed only in ES modules.",
-          "caption": "The head runs on the caller's stack; only what follows the await becomes a microtask.",
+          "caption": "An async function **always** returns a promise, no matter what the body returns. `return 7` fulfills that promise with `7`; `return` with nothing fulfills it with `undefined`; a `throw` rejects it.",
           "placement": "explanation",
           "width": 720,
           "height": 550
@@ -1503,7 +1503,7 @@
         {
           "src": "await-suspension.svg",
           "alt": "An async function cut in two by a dashed rule at its await: log('a1') and the callee's own synchronous body sit above, running on the caller's stack, while log('a2') sits below as a microtask continuation — so the logs come out a1, sync, a2. Beside it, two async functions each with two awaits interleave: 1 and 2 synchronously, 3 and 4 on tick 1, 5 and 6 on tick 2, because each await queues exactly one continuation. A table gives what a resumption costs: return 'V' lands on tick 1, return await p on tick 2, return Promise.resolve(v) on tick 3. A final card notes that await 5 still suspends even though 5 is not a promise, that an async function with no await runs start to finish synchronously, and that await in a non-async function is a parse-time SyntaxError with top-level await allowed only in ES modules.",
-          "caption": "The head runs on the caller's stack; only what follows the await becomes a microtask.",
+          "caption": "Returning a promise from an async function adds adoption work before the outer promise settles.",
           "placement": "explanation",
           "width": 720,
           "height": 550
@@ -1538,7 +1538,7 @@
         {
           "src": "await-suspension.svg",
           "alt": "An async function cut in two by a dashed rule at its await: log('a1') and the callee's own synchronous body sit above, running on the caller's stack, while log('a2') sits below as a microtask continuation — so the logs come out a1, sync, a2. Beside it, two async functions each with two awaits interleave: 1 and 2 synchronously, 3 and 4 on tick 1, 5 and 6 on tick 2, because each await queues exactly one continuation. A table gives what a resumption costs: return 'V' lands on tick 1, return await p on tick 2, return Promise.resolve(v) on tick 3. A final card notes that await 5 still suspends even though 5 is not a promise, that an async function with no await runs start to finish synchronously, and that await in a non-async function is a parse-time SyntaxError with top-level await allowed only in ES modules.",
-          "caption": "The head runs on the caller's stack; only what follows the await becomes a microtask.",
+          "caption": "`await` is only valid inside async functions (and at the top level of ES modules). In a regular function it is a **syntax error**, reported when the source is parsed, before a single line executes.",
           "placement": "explanation",
           "width": 720,
           "height": 550
@@ -1573,7 +1573,7 @@
         {
           "src": "await-suspension.svg",
           "alt": "An async function cut in two by a dashed rule at its await: log('a1') and the callee's own synchronous body sit above, running on the caller's stack, while log('a2') sits below as a microtask continuation — so the logs come out a1, sync, a2. Beside it, two async functions each with two awaits interleave: 1 and 2 synchronously, 3 and 4 on tick 1, 5 and 6 on tick 2, because each await queues exactly one continuation. A table gives what a resumption costs: return 'V' lands on tick 1, return await p on tick 2, return Promise.resolve(v) on tick 3. A final card notes that await 5 still suspends even though 5 is not a promise, that an async function with no await runs start to finish synchronously, and that await in a non-async function is a parse-time SyntaxError with top-level await allowed only in ES modules.",
-          "caption": "The head runs on the caller's stack; only what follows the await becomes a microtask.",
+          "caption": "Top-level await is an ES2022 feature of **modules**: `<script type=\"module\">`, `.mjs` files, or packages with `\"type\": \"module\"`.",
           "placement": "explanation",
           "width": 720,
           "height": 550
@@ -1683,7 +1683,7 @@
         {
           "src": "await-suspension.svg",
           "alt": "An async function cut in two by a dashed rule at its await: log('a1') and the callee's own synchronous body sit above, running on the caller's stack, while log('a2') sits below as a microtask continuation — so the logs come out a1, sync, a2. Beside it, two async functions each with two awaits interleave: 1 and 2 synchronously, 3 and 4 on tick 1, 5 and 6 on tick 2, because each await queues exactly one continuation. A table gives what a resumption costs: return 'V' lands on tick 1, return await p on tick 2, return Promise.resolve(v) on tick 3. A final card notes that await 5 still suspends even though 5 is not a promise, that an async function with no await runs start to finish synchronously, and that await in a non-async function is a parse-time SyntaxError with top-level await allowed only in ES modules.",
-          "caption": "The head runs on the caller's stack; only what follows the await becomes a microtask.",
+          "caption": "Awaiting a non-thenable wraps it as if by `Promise.resolve(5)` and then unwraps it again, so the expression evaluates to `5` itself.",
           "placement": "explanation",
           "width": 720,
           "height": 550
@@ -1705,7 +1705,7 @@
         {
           "src": "combinators.svg",
           "alt": "A shared timeline where A fulfils with 'a' at 10 ms, B rejects with e at 20 ms and C fulfils with 'c' at 30 ms, and four rows showing what each combinator does with them. Promise.all rejects with e at 20 ms while A and C keep running, and would have produced an input-ordered array had all three fulfilled. Promise.allSettled waits until 30 ms and never rejects, producing three descriptors in input order, each { status: 'fulfilled', value } or { status: 'rejected', reason }. Promise.race settles at 10 ms with 'a', the first settlement whatever it is. Promise.any fulfils at 10 ms with 'a' and ignores rejections, rejecting with an AggregateError only if every input rejects. Two footers cover the empty-array cases — Promise.all([]) fulfils with [] while Promise.race([]) stays pending forever — and which combinators short-circuit.",
-          "caption": "Short-circuiting settles the returned promise early; the losing inputs still run to completion.",
+          "caption": "`Promise.all` preserves **input order** in its result array, regardless of which promise settles first.",
           "placement": "explanation",
           "width": 720,
           "height": 636
@@ -1741,7 +1741,7 @@
         {
           "src": "combinators.svg",
           "alt": "A shared timeline where A fulfils with 'a' at 10 ms, B rejects with e at 20 ms and C fulfils with 'c' at 30 ms, and four rows showing what each combinator does with them. Promise.all rejects with e at 20 ms while A and C keep running, and would have produced an input-ordered array had all three fulfilled. Promise.allSettled waits until 30 ms and never rejects, producing three descriptors in input order, each { status: 'fulfilled', value } or { status: 'rejected', reason }. Promise.race settles at 10 ms with 'a', the first settlement whatever it is. Promise.any fulfils at 10 ms with 'a' and ignores rejections, rejecting with an AggregateError only if every input rejects. Two footers cover the empty-array cases — Promise.all([]) fulfils with [] while Promise.race([]) stays pending forever — and which combinators short-circuit.",
-          "caption": "Short-circuiting settles the returned promise early; the losing inputs still run to completion.",
+          "caption": "`Promise.all` **short-circuits on the first rejection**: it rejects right away (microtask, so `caught bad` logs first) without waiting for the others.",
           "placement": "explanation",
           "width": 720,
           "height": 636
@@ -1777,7 +1777,7 @@
         {
           "src": "combinators.svg",
           "alt": "A shared timeline where A fulfils with 'a' at 10 ms, B rejects with e at 20 ms and C fulfils with 'c' at 30 ms, and four rows showing what each combinator does with them. Promise.all rejects with e at 20 ms while A and C keep running, and would have produced an input-ordered array had all three fulfilled. Promise.allSettled waits until 30 ms and never rejects, producing three descriptors in input order, each { status: 'fulfilled', value } or { status: 'rejected', reason }. Promise.race settles at 10 ms with 'a', the first settlement whatever it is. Promise.any fulfils at 10 ms with 'a' and ignores rejections, rejecting with an AggregateError only if every input rejects. Two footers cover the empty-array cases — Promise.all([]) fulfils with [] while Promise.race([]) stays pending forever — and which combinators short-circuit.",
-          "caption": "Short-circuiting settles the returned promise early; the losing inputs still run to completion.",
+          "caption": "With zero inputs, the condition \"all inputs have fulfilled\" is vacuously true, so `Promise.all([])` fulfills **immediately** (well, on the next microtask tick, hence after `sync`) with `[]`.",
           "placement": "explanation",
           "width": 720,
           "height": 636
@@ -1838,7 +1838,7 @@
         {
           "src": "combinators.svg",
           "alt": "A shared timeline where A fulfils with 'a' at 10 ms, B rejects with e at 20 ms and C fulfils with 'c' at 30 ms, and four rows showing what each combinator does with them. Promise.all rejects with e at 20 ms while A and C keep running, and would have produced an input-ordered array had all three fulfilled. Promise.allSettled waits until 30 ms and never rejects, producing three descriptors in input order, each { status: 'fulfilled', value } or { status: 'rejected', reason }. Promise.race settles at 10 ms with 'a', the first settlement whatever it is. Promise.any fulfils at 10 ms with 'a' and ignores rejections, rejecting with an AggregateError only if every input rejects. Two footers cover the empty-array cases — Promise.all([]) fulfils with [] while Promise.race([]) stays pending forever — and which combinators short-circuit.",
-          "caption": "Short-circuiting settles the returned promise early; the losing inputs still run to completion.",
+          "caption": "`Promise.race` settles with the **first settlement of any kind**, fulfillment *or* rejection.",
           "placement": "explanation",
           "width": 720,
           "height": 636
@@ -1874,7 +1874,7 @@
         {
           "src": "combinators.svg",
           "alt": "A shared timeline where A fulfils with 'a' at 10 ms, B rejects with e at 20 ms and C fulfils with 'c' at 30 ms, and four rows showing what each combinator does with them. Promise.all rejects with e at 20 ms while A and C keep running, and would have produced an input-ordered array had all three fulfilled. Promise.allSettled waits until 30 ms and never rejects, producing three descriptors in input order, each { status: 'fulfilled', value } or { status: 'rejected', reason }. Promise.race settles at 10 ms with 'a', the first settlement whatever it is. Promise.any fulfils at 10 ms with 'a' and ignores rejections, rejecting with an AggregateError only if every input rejects. Two footers cover the empty-array cases — Promise.all([]) fulfils with [] while Promise.race([]) stays pending forever — and which combinators short-circuit.",
-          "caption": "Short-circuiting settles the returned promise early; the losing inputs still run to completion.",
+          "caption": "A race settles when its first input settles, with **no inputs, nothing can ever win**, so `Promise.race([])` stays pending forever and `settled` never logs.",
           "placement": "explanation",
           "width": 720,
           "height": 636
@@ -1909,7 +1909,7 @@
         {
           "src": "combinators.svg",
           "alt": "A shared timeline where A fulfils with 'a' at 10 ms, B rejects with e at 20 ms and C fulfils with 'c' at 30 ms, and four rows showing what each combinator does with them. Promise.all rejects with e at 20 ms while A and C keep running, and would have produced an input-ordered array had all three fulfilled. Promise.allSettled waits until 30 ms and never rejects, producing three descriptors in input order, each { status: 'fulfilled', value } or { status: 'rejected', reason }. Promise.race settles at 10 ms with 'a', the first settlement whatever it is. Promise.any fulfils at 10 ms with 'a' and ignores rejections, rejecting with an AggregateError only if every input rejects. Two footers cover the empty-array cases — Promise.all([]) fulfils with [] while Promise.race([]) stays pending forever — and which combinators short-circuit.",
-          "caption": "Short-circuiting settles the returned promise early; the losing inputs still run to completion.",
+          "caption": "`Promise.any` waits for the **first fulfillment** and ignores rejections along the way. The 10ms rejection doesn't settle it; the 30ms `medium` fulfillment does, `slow` arrives too late.",
           "placement": "explanation",
           "width": 720,
           "height": 636
@@ -1945,7 +1945,7 @@
         {
           "src": "combinators.svg",
           "alt": "A shared timeline where A fulfils with 'a' at 10 ms, B rejects with e at 20 ms and C fulfils with 'c' at 30 ms, and four rows showing what each combinator does with them. Promise.all rejects with e at 20 ms while A and C keep running, and would have produced an input-ordered array had all three fulfilled. Promise.allSettled waits until 30 ms and never rejects, producing three descriptors in input order, each { status: 'fulfilled', value } or { status: 'rejected', reason }. Promise.race settles at 10 ms with 'a', the first settlement whatever it is. Promise.any fulfils at 10 ms with 'a' and ignores rejections, rejecting with an AggregateError only if every input rejects. Two footers cover the empty-array cases — Promise.all([]) fulfils with [] while Promise.race([]) stays pending forever — and which combinators short-circuit.",
-          "caption": "Short-circuiting settles the returned promise early; the losing inputs still run to completion.",
+          "caption": "When all inputs reject, `Promise.any` rejects with an `AggregateError` whose `errors` array holds **every** rejection reason, in **input order** (not settlement order).",
           "placement": "explanation",
           "width": 720,
           "height": 636
@@ -1981,7 +1981,7 @@
         {
           "src": "combinators.svg",
           "alt": "A shared timeline where A fulfils with 'a' at 10 ms, B rejects with e at 20 ms and C fulfils with 'c' at 30 ms, and four rows showing what each combinator does with them. Promise.all rejects with e at 20 ms while A and C keep running, and would have produced an input-ordered array had all three fulfilled. Promise.allSettled waits until 30 ms and never rejects, producing three descriptors in input order, each { status: 'fulfilled', value } or { status: 'rejected', reason }. Promise.race settles at 10 ms with 'a', the first settlement whatever it is. Promise.any fulfils at 10 ms with 'a' and ignores rejections, rejecting with an AggregateError only if every input rejects. Two footers cover the empty-array cases — Promise.all([]) fulfils with [] while Promise.race([]) stays pending forever — and which combinators short-circuit.",
-          "caption": "Short-circuiting settles the returned promise early; the losing inputs still run to completion.",
+          "caption": "`Promise.allSettled` waits for **every** input to settle and never short-circuits. Each result is a descriptor object: `{ status: \"fulfilled\", value }` or `{ status: \"rejected\", reason }`, in input order.",
           "placement": "explanation",
           "width": 720,
           "height": 636
@@ -2016,7 +2016,7 @@
         {
           "src": "combinators.svg",
           "alt": "A shared timeline where A fulfils with 'a' at 10 ms, B rejects with e at 20 ms and C fulfils with 'c' at 30 ms, and four rows showing what each combinator does with them. Promise.all rejects with e at 20 ms while A and C keep running, and would have produced an input-ordered array had all three fulfilled. Promise.allSettled waits until 30 ms and never rejects, producing three descriptors in input order, each { status: 'fulfilled', value } or { status: 'rejected', reason }. Promise.race settles at 10 ms with 'a', the first settlement whatever it is. Promise.any fulfils at 10 ms with 'a' and ignores rejections, rejecting with an AggregateError only if every input rejects. Two footers cover the empty-array cases — Promise.all([]) fulfils with [] while Promise.race([]) stays pending forever — and which combinators short-circuit.",
-          "caption": "Short-circuiting settles the returned promise early; the losing inputs still run to completion.",
+          "caption": "`Promise.allSettled` always fulfills (once every input settles) with an array of status descriptors, failures are *data*, not control flow.",
           "placement": "explanation",
           "width": 720,
           "height": 636
@@ -2051,7 +2051,7 @@
         {
           "src": "combinators.svg",
           "alt": "A shared timeline where A fulfils with 'a' at 10 ms, B rejects with e at 20 ms and C fulfils with 'c' at 30 ms, and four rows showing what each combinator does with them. Promise.all rejects with e at 20 ms while A and C keep running, and would have produced an input-ordered array had all three fulfilled. Promise.allSettled waits until 30 ms and never rejects, producing three descriptors in input order, each { status: 'fulfilled', value } or { status: 'rejected', reason }. Promise.race settles at 10 ms with 'a', the first settlement whatever it is. Promise.any fulfils at 10 ms with 'a' and ignores rejections, rejecting with an AggregateError only if every input rejects. Two footers cover the empty-array cases — Promise.all([]) fulfils with [] while Promise.race([]) stays pending forever — and which combinators short-circuit.",
-          "caption": "Short-circuiting settles the returned promise early; the losing inputs still run to completion.",
+          "caption": "This is the classic **timeout pattern**: race the real operation against a promise that rejects after a deadline.",
           "placement": "explanation",
           "width": 720,
           "height": 636
@@ -2086,7 +2086,7 @@
         {
           "src": "combinators.svg",
           "alt": "A shared timeline where A fulfils with 'a' at 10 ms, B rejects with e at 20 ms and C fulfils with 'c' at 30 ms, and four rows showing what each combinator does with them. Promise.all rejects with e at 20 ms while A and C keep running, and would have produced an input-ordered array had all three fulfilled. Promise.allSettled waits until 30 ms and never rejects, producing three descriptors in input order, each { status: 'fulfilled', value } or { status: 'rejected', reason }. Promise.race settles at 10 ms with 'a', the first settlement whatever it is. Promise.any fulfils at 10 ms with 'a' and ignores rejections, rejecting with an AggregateError only if every input rejects. Two footers cover the empty-array cases — Promise.all([]) fulfils with [] while Promise.race([]) stays pending forever — and which combinators short-circuit.",
-          "caption": "Short-circuiting settles the returned promise early; the losing inputs still run to completion.",
+          "caption": "The early-settling combinators differ only in which input outcome lets them stop waiting.",
           "placement": "explanation",
           "width": 720,
           "height": 636
@@ -2198,7 +2198,7 @@
         {
           "src": "sequential-vs-parallel.svg",
           "alt": "Two timelines for three 100-millisecond calls. Awaiting inside a for…of loop runs them back to back and finishes at 300 ms. Awaiting Promise.all over a map runs all three from the same tick and finishes at 100 ms. Two panels follow: forEach with an async callback ignores the promise each callback returns, so the loop finishes on the spot and “done” logs before any of the work; and map with an async callback hands back an array of promises rather than values, which is exactly what Promise.all wants but must still be awaited. A closing band shows that calling the functions first — const p1 = slow(); const p2 = slow(); await p1; await p2 — already overlaps them in about 100 ms, because the call is what starts the work and the await only decides when you collect it.",
-          "caption": "The call starts the work. Where you put the await only decides when you collect it.",
+          "caption": "`forEach` is promise-blind: it calls each callback and **ignores the returned promise**. Both async callbacks start, suspend at their `await`, and `forEach` returns immediately, so `done` logs first, and the items log later as microtasks.",
           "placement": "explanation",
           "width": 720,
           "height": 594
@@ -2234,7 +2234,7 @@
         {
           "src": "chain-vs-fork.svg",
           "alt": "Two panels over a three-tick ruler. Chained — p.then(a).then(b).then(c) — puts a on tick 1, b on tick 2 and c on tick 3, because each link subscribes to the promise the previous link returned. Forked — three separate p.then(x), p.then(y), p.then(z) — puts all three on tick 1, in registration order, because they are all already subscribed to p. Below, one chain carrying a rejection: p rejects, .then(f1) and .then(f2) are skipped, .catch(h) runs, .then(f3) runs, and a trailing .catch is skipped because the chain is fulfilled again. Notes add that .catch(h) is exactly .then(undefined, h), that in .then(f, r) the r handler does not catch what f throws, that .finally receives no arguments and passes value and reason through unless it throws, and that a non-function argument to .then is ignored and the value passes through.",
-          "caption": "A rejection travels down the chain until a handler takes it — and then the chain is fulfilled again.",
+          "caption": "Each handler changes the state carried to the next link, unless it throws and makes that link rejected.",
           "placement": "explanation",
           "width": 720,
           "height": 634
@@ -2269,7 +2269,7 @@
         {
           "src": "chain-vs-fork.svg",
           "alt": "Two panels over a three-tick ruler. Chained — p.then(a).then(b).then(c) — puts a on tick 1, b on tick 2 and c on tick 3, because each link subscribes to the promise the previous link returned. Forked — three separate p.then(x), p.then(y), p.then(z) — puts all three on tick 1, in registration order, because they are all already subscribed to p. Below, one chain carrying a rejection: p rejects, .then(f1) and .then(f2) are skipped, .catch(h) runs, .then(f3) runs, and a trailing .catch is skipped because the chain is fulfilled again. Notes add that .catch(h) is exactly .then(undefined, h), that in .then(f, r) the r handler does not catch what f throws, that .finally receives no arguments and passes value and reason through unless it throws, and that a non-function argument to .then is ignored and the value passes through.",
-          "caption": "A rejection travels down the chain until a handler takes it — and then the chain is fulfilled again.",
+          "caption": "The `.catch(() => null)` swallows the network error and fulfills with `null`, so `main` carries on as if the fetch succeeded.",
           "placement": "explanation",
           "width": 720,
           "height": 634
@@ -2407,7 +2407,7 @@
         {
           "src": "event-loop-columns.svg",
           "alt": "A worked example and the loop's shape. Four lines — log(1), a setTimeout logging 4 with delay 0, a resolved promise's .then logging 3, and log(2) — produce 1, 2, 3, 4, explained in three moves: the script is itself a task and runs to the end, then the stack empties and the microtask checkpoint drains, then the loop takes one task off the task queue. Below, one iteration drawn left to right: one task run to completion, the microtask checkpoint that drains to empty including newly queued ones, requestAnimationFrame callbacks just before paint, render (style, layout, paint), and leftover idle time for requestIdleCallback, with an arrow looping back to the next iteration. Three cards list what belongs where: microtasks are .then/.catch/.finally, await continuations, queueMicrotask and MutationObserver, with process.nextTick draining first in Node; tasks are setTimeout/setInterval, DOM events, I/O callbacks, postMessage and MessageChannel, plus setImmediate in Node; requestAnimationFrame and requestIdleCallback belong to neither queue. Two closing notes contrast a self-queueing microtask, which freezes the tab because the checkpoint never ends, with a self-rescheduling setTimeout, which yields to render every run and is clamped to about 4 ms after five levels of nesting.",
-          "caption": "A task, then the whole microtask queue, then a chance to paint — in that order, every time.",
+          "caption": "`queueMicrotask` and promise reactions share **one** microtask queue, there is no priority between the two APIs.",
           "placement": "explanation",
           "width": 720,
           "height": 768
@@ -2443,7 +2443,7 @@
         {
           "src": "event-loop-columns.svg",
           "alt": "A worked example and the loop's shape. Four lines — log(1), a setTimeout logging 4 with delay 0, a resolved promise's .then logging 3, and log(2) — produce 1, 2, 3, 4, explained in three moves: the script is itself a task and runs to the end, then the stack empties and the microtask checkpoint drains, then the loop takes one task off the task queue. Below, one iteration drawn left to right: one task run to completion, the microtask checkpoint that drains to empty including newly queued ones, requestAnimationFrame callbacks just before paint, render (style, layout, paint), and leftover idle time for requestIdleCallback, with an arrow looping back to the next iteration. Three cards list what belongs where: microtasks are .then/.catch/.finally, await continuations, queueMicrotask and MutationObserver, with process.nextTick draining first in Node; tasks are setTimeout/setInterval, DOM events, I/O callbacks, postMessage and MessageChannel, plus setImmediate in Node; requestAnimationFrame and requestIdleCallback belong to neither queue. Two closing notes contrast a self-queueing microtask, which freezes the tab because the checkpoint never ends, with a self-rescheduling setTimeout, which yields to render every run and is clamped to about 4 ms after five levels of nesting.",
-          "caption": "A task, then the whole microtask queue, then a chance to paint — in that order, every time.",
+          "caption": "Initial queue after the synchronous script: `[A-callback, D]`. Running the `A` callback logs `A` and appends `B` then `C` to the **end** of the very same queue, behind the already-waiting `D`.",
           "placement": "explanation",
           "width": 720,
           "height": 768
@@ -2478,7 +2478,7 @@
         {
           "src": "event-loop-columns.svg",
           "alt": "A worked example and the loop's shape. Four lines — log(1), a setTimeout logging 4 with delay 0, a resolved promise's .then logging 3, and log(2) — produce 1, 2, 3, 4, explained in three moves: the script is itself a task and runs to the end, then the stack empties and the microtask checkpoint drains, then the loop takes one task off the task queue. Below, one iteration drawn left to right: one task run to completion, the microtask checkpoint that drains to empty including newly queued ones, requestAnimationFrame callbacks just before paint, render (style, layout, paint), and leftover idle time for requestIdleCallback, with an arrow looping back to the next iteration. Three cards list what belongs where: microtasks are .then/.catch/.finally, await continuations, queueMicrotask and MutationObserver, with process.nextTick draining first in Node; tasks are setTimeout/setInterval, DOM events, I/O callbacks, postMessage and MessageChannel, plus setImmediate in Node; requestAnimationFrame and requestIdleCallback belong to neither queue. Two closing notes contrast a self-queueing microtask, which freezes the tab because the checkpoint never ends, with a self-rescheduling setTimeout, which yields to render every run and is clamped to about 4 ms after five levels of nesting.",
-          "caption": "A task, then the whole microtask queue, then a chance to paint — in that order, every time.",
+          "caption": "Each microtask schedules the next one, and the event loop keeps draining until the queue is **completely empty**, so all three `micro` logs happen before the already-expired timer gets a turn.",
           "placement": "explanation",
           "width": 720,
           "height": 768
@@ -2514,7 +2514,7 @@
         {
           "src": "await-suspension.svg",
           "alt": "An async function cut in two by a dashed rule at its await: log('a1') and the callee's own synchronous body sit above, running on the caller's stack, while log('a2') sits below as a microtask continuation — so the logs come out a1, sync, a2. Beside it, two async functions each with two awaits interleave: 1 and 2 synchronously, 3 and 4 on tick 1, 5 and 6 on tick 2, because each await queues exactly one continuation. A table gives what a resumption costs: return 'V' lands on tick 1, return await p on tick 2, return Promise.resolve(v) on tick 3. A final card notes that await 5 still suspends even though 5 is not a promise, that an async function with no await runs start to finish synchronously, and that await in a non-async function is a parse-time SyntaxError with top-level await allowed only in ES modules.",
-          "caption": "The head runs on the caller's stack; only what follows the await becomes a microtask.",
+          "caption": "Trace the queue. Sync phase: `1` (inside `main`), suspension at the first `await` enqueues `resume-main`; then the script queues `5` and logs `6`.",
           "placement": "explanation",
           "width": 720,
           "height": 550
@@ -2573,7 +2573,7 @@
         {
           "src": "event-loop-columns.svg",
           "alt": "A worked example and the loop's shape. Four lines — log(1), a setTimeout logging 4 with delay 0, a resolved promise's .then logging 3, and log(2) — produce 1, 2, 3, 4, explained in three moves: the script is itself a task and runs to the end, then the stack empties and the microtask checkpoint drains, then the loop takes one task off the task queue. Below, one iteration drawn left to right: one task run to completion, the microtask checkpoint that drains to empty including newly queued ones, requestAnimationFrame callbacks just before paint, render (style, layout, paint), and leftover idle time for requestIdleCallback, with an arrow looping back to the next iteration. Three cards list what belongs where: microtasks are .then/.catch/.finally, await continuations, queueMicrotask and MutationObserver, with process.nextTick draining first in Node; tasks are setTimeout/setInterval, DOM events, I/O callbacks, postMessage and MessageChannel, plus setImmediate in Node; requestAnimationFrame and requestIdleCallback belong to neither queue. Two closing notes contrast a self-queueing microtask, which freezes the tab because the checkpoint never ends, with a self-rescheduling setTimeout, which yields to render every run and is clamped to about 4 ms after five levels of nesting.",
-          "caption": "A task, then the whole microtask queue, then a chance to paint — in that order, every time.",
+          "caption": "The HTML spec orders browsers to enforce a **4ms minimum delay once `setTimeout`/`setInterval` nesting exceeds 5 levels**, a self-rescheduling 0ms timer chain actually ticks every ~4ms.",
           "placement": "explanation",
           "width": 720,
           "height": 768
@@ -2660,7 +2660,7 @@
         {
           "src": "event-loop-columns.svg",
           "alt": "A worked example and the loop's shape. Four lines — log(1), a setTimeout logging 4 with delay 0, a resolved promise's .then logging 3, and log(2) — produce 1, 2, 3, 4, explained in three moves: the script is itself a task and runs to the end, then the stack empties and the microtask checkpoint drains, then the loop takes one task off the task queue. Below, one iteration drawn left to right: one task run to completion, the microtask checkpoint that drains to empty including newly queued ones, requestAnimationFrame callbacks just before paint, render (style, layout, paint), and leftover idle time for requestIdleCallback, with an arrow looping back to the next iteration. Three cards list what belongs where: microtasks are .then/.catch/.finally, await continuations, queueMicrotask and MutationObserver, with process.nextTick draining first in Node; tasks are setTimeout/setInterval, DOM events, I/O callbacks, postMessage and MessageChannel, plus setImmediate in Node; requestAnimationFrame and requestIdleCallback belong to neither queue. Two closing notes contrast a self-queueing microtask, which freezes the tab because the checkpoint never ends, with a self-rescheduling setTimeout, which yields to render every run and is clamped to about 4 ms after five levels of nesting.",
-          "caption": "A task, then the whole microtask queue, then a chance to paint — in that order, every time.",
+          "caption": "A `setTimeout` delay is a **minimum**, not a guarantee, and nothing can interrupt running JavaScript.",
           "placement": "explanation",
           "width": 720,
           "height": 768
@@ -2875,7 +2875,7 @@
         {
           "src": "sequential-vs-parallel.svg",
           "alt": "Two timelines for three 100-millisecond calls. Awaiting inside a for…of loop runs them back to back and finishes at 300 ms. Awaiting Promise.all over a map runs all three from the same tick and finishes at 100 ms. Two panels follow: forEach with an async callback ignores the promise each callback returns, so the loop finishes on the spot and “done” logs before any of the work; and map with an async callback hands back an array of promises rather than values, which is exactly what Promise.all wants but must still be awaited. A closing band shows that calling the functions first — const p1 = slow(); const p2 = slow(); await p1; await p2 — already overlaps them in about 100 ms, because the call is what starts the work and the await only decides when you collect it.",
-          "caption": "The call starts the work. Where you put the await only decides when you collect it.",
+          "caption": "Starting every operation before awaiting the results overlaps their waiting time.",
           "placement": "explanation",
           "width": 720,
           "height": 594
@@ -2911,7 +2911,7 @@
         {
           "src": "sequential-vs-parallel.svg",
           "alt": "Two timelines for three 100-millisecond calls. Awaiting inside a for…of loop runs them back to back and finishes at 300 ms. Awaiting Promise.all over a map runs all three from the same tick and finishes at 100 ms. Two panels follow: forEach with an async callback ignores the promise each callback returns, so the loop finishes on the spot and “done” logs before any of the work; and map with an async callback hands back an array of promises rather than values, which is exactly what Promise.all wants but must still be awaited. A closing band shows that calling the functions first — const p1 = slow(); const p2 = slow(); await p1; await p2 — already overlaps them in about 100 ms, because the call is what starts the work and the await only decides when you collect it.",
-          "caption": "The call starts the work. Where you put the await only decides when you collect it.",
+          "caption": "The loop hits `await` *before* the first log, suspending `processAll`, so `sync` wins. Then each iteration resumes as one microtask: log the item, loop around, suspend again.",
           "placement": "explanation",
           "width": 720,
           "height": 594
@@ -2972,7 +2972,7 @@
         {
           "src": "event-loop-columns.svg",
           "alt": "A worked example and the loop's shape. Four lines — log(1), a setTimeout logging 4 with delay 0, a resolved promise's .then logging 3, and log(2) — produce 1, 2, 3, 4, explained in three moves: the script is itself a task and runs to the end, then the stack empties and the microtask checkpoint drains, then the loop takes one task off the task queue. Below, one iteration drawn left to right: one task run to completion, the microtask checkpoint that drains to empty including newly queued ones, requestAnimationFrame callbacks just before paint, render (style, layout, paint), and leftover idle time for requestIdleCallback, with an arrow looping back to the next iteration. Three cards list what belongs where: microtasks are .then/.catch/.finally, await continuations, queueMicrotask and MutationObserver, with process.nextTick draining first in Node; tasks are setTimeout/setInterval, DOM events, I/O callbacks, postMessage and MessageChannel, plus setImmediate in Node; requestAnimationFrame and requestIdleCallback belong to neither queue. Two closing notes contrast a self-queueing microtask, which freezes the tab because the checkpoint never ends, with a self-rescheduling setTimeout, which yields to render every run and is clamped to about 4 ms after five levels of nesting.",
-          "caption": "A task, then the whole microtask queue, then a chance to paint — in that order, every time.",
+          "caption": "`macro()` runs first and registers its 0ms timer (timer #1); `micro()` suspends on an already-resolved promise; the script registers timer #2.",
           "placement": "explanation",
           "width": 720,
           "height": 768
@@ -3044,7 +3044,7 @@
         {
           "src": "sequential-vs-parallel.svg",
           "alt": "Two timelines for three 100-millisecond calls. Awaiting inside a for…of loop runs them back to back and finishes at 300 ms. Awaiting Promise.all over a map runs all three from the same tick and finishes at 100 ms. Two panels follow: forEach with an async callback ignores the promise each callback returns, so the loop finishes on the spot and “done” logs before any of the work; and map with an async callback hands back an array of promises rather than values, which is exactly what Promise.all wants but must still be awaited. A closing band shows that calling the functions first — const p1 = slow(); const p2 = slow(); await p1; await p2 — already overlaps them in about 100 ms, because the call is what starts the work and the await only decides when you collect it.",
-          "caption": "The call starts the work. Where you put the await only decides when you collect it.",
+          "caption": "An async callback always returns a promise, and `map` stores return values as-is, so `results` is a plain array of three `Promise` objects, not numbers (`true true`).",
           "placement": "explanation",
           "width": 720,
           "height": 594
@@ -3080,7 +3080,7 @@
         {
           "src": "sequential-vs-parallel.svg",
           "alt": "Two timelines for three 100-millisecond calls. Awaiting inside a for…of loop runs them back to back and finishes at 300 ms. Awaiting Promise.all over a map runs all three from the same tick and finishes at 100 ms. Two panels follow: forEach with an async callback ignores the promise each callback returns, so the loop finishes on the spot and “done” logs before any of the work; and map with an async callback hands back an array of promises rather than values, which is exactly what Promise.all wants but must still be awaited. A closing band shows that calling the functions first — const p1 = slow(); const p2 = slow(); await p1; await p2 — already overlaps them in about 100 ms, because the call is what starts the work and the await only decides when you collect it.",
-          "caption": "The call starts the work. Where you put the await only decides when you collect it.",
+          "caption": "The work starts when the **promise is created**, not when it's awaited. Both `delay` calls run their timers concurrently from the first two lines; by the time `await pb` executes (after ~30ms of waiting on `pa`), `pb` is already settled and resumes in a tick.",
           "placement": "explanation",
           "width": 720,
           "height": 594
@@ -3115,7 +3115,7 @@
         {
           "src": "combinators.svg",
           "alt": "A shared timeline where A fulfils with 'a' at 10 ms, B rejects with e at 20 ms and C fulfils with 'c' at 30 ms, and four rows showing what each combinator does with them. Promise.all rejects with e at 20 ms while A and C keep running, and would have produced an input-ordered array had all three fulfilled. Promise.allSettled waits until 30 ms and never rejects, producing three descriptors in input order, each { status: 'fulfilled', value } or { status: 'rejected', reason }. Promise.race settles at 10 ms with 'a', the first settlement whatever it is. Promise.any fulfils at 10 ms with 'a' and ignores rejections, rejecting with an AggregateError only if every input rejects. Two footers cover the empty-array cases — Promise.all([]) fulfils with [] while Promise.race([]) stays pending forever — and which combinators short-circuit.",
-          "caption": "Short-circuiting settles the returned promise early; the losing inputs still run to completion.",
+          "caption": "`Promise.race` settles with the first result, but it has **no power over the inputs**: `slow`'s timer still fires at 30ms, runs its side effects (`slow finished`), and resolves a promise nobody reads anymore.",
           "placement": "explanation",
           "width": 720,
           "height": 636
@@ -3202,7 +3202,7 @@
         {
           "src": "event-loop-columns.svg",
           "alt": "A worked example and the loop's shape. Four lines — log(1), a setTimeout logging 4 with delay 0, a resolved promise's .then logging 3, and log(2) — produce 1, 2, 3, 4, explained in three moves: the script is itself a task and runs to the end, then the stack empties and the microtask checkpoint drains, then the loop takes one task off the task queue. Below, one iteration drawn left to right: one task run to completion, the microtask checkpoint that drains to empty including newly queued ones, requestAnimationFrame callbacks just before paint, render (style, layout, paint), and leftover idle time for requestIdleCallback, with an arrow looping back to the next iteration. Three cards list what belongs where: microtasks are .then/.catch/.finally, await continuations, queueMicrotask and MutationObserver, with process.nextTick draining first in Node; tasks are setTimeout/setInterval, DOM events, I/O callbacks, postMessage and MessageChannel, plus setImmediate in Node; requestAnimationFrame and requestIdleCallback belong to neither queue. Two closing notes contrast a self-queueing microtask, which freezes the tab because the checkpoint never ends, with a self-rescheduling setTimeout, which yields to render every run and is clamped to about 4 ms after five levels of nesting.",
-          "caption": "A task, then the whole microtask queue, then a chance to paint — in that order, every time.",
+          "caption": "Sync phase: `1`, the IIFE runs to its first `await` (`3`), then `10`. Queue: `[resume@4, then7, qm9]`; timer `2` waits in the macrotask queue.",
           "placement": "explanation",
           "width": 720,
           "height": 768

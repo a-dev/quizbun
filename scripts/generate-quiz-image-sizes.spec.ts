@@ -90,7 +90,10 @@ describe("quiz:sizes:generate", () => {
       encoding: "utf8",
     });
 
-    expect(result.status).toBe(0);
+    expect(
+      result.status,
+      result.error?.message || result.stderr || result.stdout || "Child process failed silently.",
+    ).toBe(0);
     expect(readFileSync(quizPath, "utf8")).toBe(
       UNSIZED_QUIZ_SOURCE.replace(
         '{ "src": "diagram.svg", "alt": "A" }',
@@ -109,7 +112,10 @@ describe("quiz:sizes:generate", () => {
       encoding: "utf8",
     });
 
-    expect(result.status).toBe(0);
+    expect(
+      result.status,
+      result.error?.message || result.stderr || result.stdout || "Child process failed silently.",
+    ).toBe(0);
     expect(readFileSync(quizPath, "utf8")).toBe(before);
   });
 });

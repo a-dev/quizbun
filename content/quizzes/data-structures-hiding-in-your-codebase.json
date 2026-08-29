@@ -14,7 +14,7 @@
         {
           "src": "dom-as-tree.svg",
           "alt": "Two readings of one small document. On the left, the tree body → header and section, section → ul, ul → two li, the first li → an a, with the nodes numbered 1 to 7 in the pre-order depth-first sequence querySelectorAll returns; header, the anchor and the second li are marked as leaves, and an orange path traces closest('section') walking up from 6 through 5 and 4 to 3. On the right, the same ancestor chain body, section, ul, li, a drawn as a column, with a downward capture arrow on one side and an upward bubble arrow on the other, the anchor marked as the target. Notes say listeners run in the bubble phase unless capture is set, the root sits at depth 0, a leaf has no element children, event.target is where the event started while event.currentTarget is the element the listener is on, and that focus, blur and mouseenter do not bubble.",
-          "caption": "Document order is a pre-order walk; delegation rides the bubble phase back up the same path.",
+          "caption": "A *leaf* is a node with no children, the tips of the tree. In a DOM, that's a `<br>`, an `<img>`, or a text node with nothing nested inside it.",
           "placement": "explanation",
           "width": 720,
           "height": 580
@@ -49,7 +49,7 @@
         {
           "src": "dom-as-tree.svg",
           "alt": "Two readings of one small document. On the left, the tree body → header and section, section → ul, ul → two li, the first li → an a, with the nodes numbered 1 to 7 in the pre-order depth-first sequence querySelectorAll returns; header, the anchor and the second li are marked as leaves, and an orange path traces closest('section') walking up from 6 through 5 and 4 to 3. On the right, the same ancestor chain body, section, ul, li, a drawn as a column, with a downward capture arrow on one side and an upward bubble arrow on the other, the anchor marked as the target. Notes say listeners run in the bubble phase unless capture is set, the root sits at depth 0, a leaf has no element children, event.target is where the event started while event.currentTarget is the element the listener is on, and that focus, blur and mouseenter do not bubble.",
-          "caption": "Document order is a pre-order walk; delegation rides the bubble phase back up the same path.",
+          "caption": "`closest` walks *up* the tree: it tests the element, then each ancestor on the path to the root, and stops at the first match.",
           "placement": "explanation",
           "width": 720,
           "height": 580
@@ -84,7 +84,7 @@
         {
           "src": "dom-as-tree.svg",
           "alt": "Two readings of one small document. On the left, the tree body → header and section, section → ul, ul → two li, the first li → an a, with the nodes numbered 1 to 7 in the pre-order depth-first sequence querySelectorAll returns; header, the anchor and the second li are marked as leaves, and an orange path traces closest('section') walking up from 6 through 5 and 4 to 3. On the right, the same ancestor chain body, section, ul, li, a drawn as a column, with a downward capture arrow on one side and an upward bubble arrow on the other, the anchor marked as the target. Notes say listeners run in the bubble phase unless capture is set, the root sits at depth 0, a leaf has no element children, event.target is where the event started while event.currentTarget is the element the listener is on, and that focus, blur and mouseenter do not bubble.",
-          "caption": "Document order is a pre-order walk; delegation rides the bubble phase back up the same path.",
+          "caption": "*Depth* is the number of edges from the root *down* to a node, so the root sits at depth 0, its children at depth 1, and so on.",
           "placement": "explanation",
           "width": 720,
           "height": 580
@@ -119,7 +119,7 @@
         {
           "src": "dom-as-tree.svg",
           "alt": "Two readings of one small document. On the left, the tree body → header and section, section → ul, ul → two li, the first li → an a, with the nodes numbered 1 to 7 in the pre-order depth-first sequence querySelectorAll returns; header, the anchor and the second li are marked as leaves, and an orange path traces closest('section') walking up from 6 through 5 and 4 to 3. On the right, the same ancestor chain body, section, ul, li, a drawn as a column, with a downward capture arrow on one side and an upward bubble arrow on the other, the anchor marked as the target. Notes say listeners run in the bubble phase unless capture is set, the root sits at depth 0, a leaf has no element children, event.target is where the event started while event.currentTarget is the element the listener is on, and that focus, blur and mouseenter do not bubble.",
-          "caption": "Document order is a pre-order walk; delegation rides the bubble phase back up the same path.",
+          "caption": "'Document order' means the order the elements' start tags appear in the source, which is exactly a *pre-order depth-first* walk: you emit a node, then dive into its whole subtree, then continue to its next sibling.",
           "placement": "explanation",
           "width": 720,
           "height": 580
@@ -204,7 +204,7 @@
         {
           "src": "dom-as-tree.svg",
           "alt": "Two readings of one small document. On the left, the tree body → header and section, section → ul, ul → two li, the first li → an a, with the nodes numbered 1 to 7 in the pre-order depth-first sequence querySelectorAll returns; header, the anchor and the second li are marked as leaves, and an orange path traces closest('section') walking up from 6 through 5 and 4 to 3. On the right, the same ancestor chain body, section, ul, li, a drawn as a column, with a downward capture arrow on one side and an upward bubble arrow on the other, the anchor marked as the target. Notes say listeners run in the bubble phase unless capture is set, the root sits at depth 0, a leaf has no element children, event.target is where the event started while event.currentTarget is the element the listener is on, and that focus, blur and mouseenter do not bubble.",
-          "caption": "Document order is a pre-order walk; delegation rides the bubble phase back up the same path.",
+          "caption": "Delegation is just 'handle it at a common ancestor', and it relies on *bubbling*: a click on `<li>` fires there, then bubbles up to `<ul>`, `<body>`, and beyond, so a lone listener on `<ul>` receives it with `event.target` pointing at the original `<li>`.",
           "placement": "explanation",
           "width": 720,
           "height": 580
@@ -239,7 +239,7 @@
         {
           "src": "dom-as-tree.svg",
           "alt": "Two readings of one small document. On the left, the tree body → header and section, section → ul, ul → two li, the first li → an a, with the nodes numbered 1 to 7 in the pre-order depth-first sequence querySelectorAll returns; header, the anchor and the second li are marked as leaves, and an orange path traces closest('section') walking up from 6 through 5 and 4 to 3. On the right, the same ancestor chain body, section, ul, li, a drawn as a column, with a downward capture arrow on one side and an upward bubble arrow on the other, the anchor marked as the target. Notes say listeners run in the bubble phase unless capture is set, the root sits at depth 0, a leaf has no element children, event.target is where the event started while event.currentTarget is the element the listener is on, and that focus, blur and mouseenter do not bubble.",
-          "caption": "Document order is a pre-order walk; delegation rides the bubble phase back up the same path.",
+          "caption": "An event makes a round trip: *capture* (root → target), then *target*, then *bubble* (target → root), and `addEventListener` listens in the bubble phase unless `{ capture: true }` is set.",
           "placement": "explanation",
           "width": 720,
           "height": 580
@@ -278,7 +278,7 @@
         {
           "src": "dom-as-tree.svg",
           "alt": "Two readings of one small document. On the left, the tree body → header and section, section → ul, ul → two li, the first li → an a, with the nodes numbered 1 to 7 in the pre-order depth-first sequence querySelectorAll returns; header, the anchor and the second li are marked as leaves, and an orange path traces closest('section') walking up from 6 through 5 and 4 to 3. On the right, the same ancestor chain body, section, ul, li, a drawn as a column, with a downward capture arrow on one side and an upward bubble arrow on the other, the anchor marked as the target. Notes say listeners run in the bubble phase unless capture is set, the root sits at depth 0, a leaf has no element children, event.target is where the event started while event.currentTarget is the element the listener is on, and that focus, blur and mouseenter do not bubble.",
-          "caption": "Document order is a pre-order walk; delegation rides the bubble phase back up the same path.",
+          "caption": "The three correct items each *move along edges* of the tree: `querySelectorAll` walks down in pre-order DFS, recursive comment rendering descends each subtree, and `closest` climbs the ancestor chain.",
           "placement": "explanation",
           "width": 720,
           "height": 580
@@ -317,7 +317,7 @@
         {
           "src": "dom-as-tree.svg",
           "alt": "Two readings of one small document. On the left, the tree body → header and section, section → ul, ul → two li, the first li → an a, with the nodes numbered 1 to 7 in the pre-order depth-first sequence querySelectorAll returns; header, the anchor and the second li are marked as leaves, and an orange path traces closest('section') walking up from 6 through 5 and 4 to 3. On the right, the same ancestor chain body, section, ul, li, a drawn as a column, with a downward capture arrow on one side and an upward bubble arrow on the other, the anchor marked as the target. Notes say listeners run in the bubble phase unless capture is set, the root sits at depth 0, a leaf has no element children, event.target is where the event started while event.currentTarget is the element the listener is on, and that focus, blur and mouseenter do not bubble.",
-          "caption": "Document order is a pre-order walk; delegation rides the bubble phase back up the same path.",
+          "caption": "Edges are the parent/child links (`parentNode`, `children`, `nextElementSibling`), siblings share a parent, and height is the longest root-to-leaf path, all standard tree vocabulary that the DOM API exposes verbatim.",
           "placement": "explanation",
           "width": 720,
           "height": 580
@@ -356,7 +356,7 @@
         {
           "src": "module-graph-topo.svg",
           "alt": "On the left, a module graph: app.js imports api.js and, directly, utils.js; api.js imports utils.js; utils.js imports constants.js. Green badges number them in emit order — constants 1, utils 2, api 3, app 4 — so nothing is referenced before it exists. A greyed, dashed orphan.js sits apart, marked unreachable from the entry. On the right, a cycle: a.js and b.js each import the other, with a note that neither can go first so no ordering satisfies both edges, and that Kahn's algorithm stalls with nodes left over while DFS meets a back edge. A footer names the technique — topological sort — describes both implementations, and notes that tree-shaking is the reachability question instead.",
-          "caption": "Reverse the arrows and the same graph is a task runner's “must run before” constraints.",
+          "caption": "`import` is inherently *directional*, `a.js` importing `b.js` does not imply `b.js` imports `a.js`, so the dependency relationships form a *directed graph* of modules.",
           "placement": "explanation",
           "width": 720,
           "height": 562
@@ -391,7 +391,7 @@
         {
           "src": "module-graph-topo.svg",
           "alt": "On the left, a module graph: app.js imports api.js and, directly, utils.js; api.js imports utils.js; utils.js imports constants.js. Green badges number them in emit order — constants 1, utils 2, api 3, app 4 — so nothing is referenced before it exists. A greyed, dashed orphan.js sits apart, marked unreachable from the entry. On the right, a cycle: a.js and b.js each import the other, with a note that neither can go first so no ordering satisfies both edges, and that Kahn's algorithm stalls with nodes left over while DFS meets a back edge. A footer names the technique — topological sort — describes both implementations, and notes that tree-shaking is the reachability question instead.",
-          "caption": "Reverse the arrows and the same graph is a task runner's “must run before” constraints.",
+          "caption": "A *topological sort* lays the directed graph out in a line so that every dependency comes before whatever depends on it, exactly what 'define `b` before the `a` that uses it' requires.",
           "placement": "explanation",
           "width": 720,
           "height": 562
@@ -426,7 +426,7 @@
         {
           "src": "module-graph-topo.svg",
           "alt": "On the left, a module graph: app.js imports api.js and, directly, utils.js; api.js imports utils.js; utils.js imports constants.js. Green badges number them in emit order — constants 1, utils 2, api 3, app 4 — so nothing is referenced before it exists. A greyed, dashed orphan.js sits apart, marked unreachable from the entry. On the right, a cycle: a.js and b.js each import the other, with a note that neither can go first so no ordering satisfies both edges, and that Kahn's algorithm stalls with nodes left over while DFS meets a back edge. A footer names the technique — topological sort — describes both implementations, and notes that tree-shaking is the reachability question instead.",
-          "caption": "Reverse the arrows and the same graph is a task runner's “must run before” constraints.",
+          "caption": "A topological order exists only for a *DAG*, a directed graph with no cycles. In a cycle A→B→A, putting A first violates the B→A edge and putting B first violates A→B, so no ordering satisfies every edge: there's no valid 'first' module.",
           "placement": "explanation",
           "width": 720,
           "height": 562
@@ -461,7 +461,7 @@
         {
           "src": "module-graph-topo.svg",
           "alt": "On the left, a module graph: app.js imports api.js and, directly, utils.js; api.js imports utils.js; utils.js imports constants.js. Green badges number them in emit order — constants 1, utils 2, api 3, app 4 — so nothing is referenced before it exists. A greyed, dashed orphan.js sits apart, marked unreachable from the entry. On the right, a cycle: a.js and b.js each import the other, with a note that neither can go first so no ordering satisfies both edges, and that Kahn's algorithm stalls with nodes left over while DFS meets a back edge. A footer names the technique — topological sort — describes both implementations, and notes that tree-shaking is the reachability question instead.",
-          "caption": "Reverse the arrows and the same graph is a task runner's “must run before” constraints.",
+          "caption": "'Tree-shaking' is a graph *reachability* analysis: start from the entry module, follow the edges of what's actually imported and used, and mark everything you can reach.",
           "placement": "explanation",
           "width": 720,
           "height": 562
@@ -496,7 +496,7 @@
         {
           "src": "module-graph-topo.svg",
           "alt": "On the left, a module graph: app.js imports api.js and, directly, utils.js; api.js imports utils.js; utils.js imports constants.js. Green badges number them in emit order — constants 1, utils 2, api 3, app 4 — so nothing is referenced before it exists. A greyed, dashed orphan.js sits apart, marked unreachable from the entry. On the right, a cycle: a.js and b.js each import the other, with a note that neither can go first so no ordering satisfies both edges, and that Kahn's algorithm stalls with nodes left over while DFS meets a back edge. A footer names the technique — topological sort — describes both implementations, and notes that tree-shaking is the reachability question instead.",
-          "caption": "Reverse the arrows and the same graph is a task runner's “must run before” constraints.",
+          "caption": "'X must run before Y' is a directed edge X→Y, so the set of constraints is a dependency graph and a valid run order is any *topological* ordering of it.",
           "placement": "explanation",
           "width": 720,
           "height": 562
@@ -531,7 +531,7 @@
         {
           "src": "module-graph-topo.svg",
           "alt": "On the left, a module graph: app.js imports api.js and, directly, utils.js; api.js imports utils.js; utils.js imports constants.js. Green badges number them in emit order — constants 1, utils 2, api 3, app 4 — so nothing is referenced before it exists. A greyed, dashed orphan.js sits apart, marked unreachable from the entry. On the right, a cycle: a.js and b.js each import the other, with a note that neither can go first so no ordering satisfies both edges, and that Kahn's algorithm stalls with nodes left over while DFS meets a back edge. A footer names the technique — topological sort — describes both implementations, and notes that tree-shaking is the reachability question instead.",
-          "caption": "Reverse the arrows and the same graph is a task runner's “must run before” constraints.",
+          "caption": "A cycle is any path of import edges that returns to where it started: the mutual A↔B, the longer A→B→C→A loop, and the degenerate self-import all qualify, and all three make the graph non-topologically-sortable.",
           "placement": "explanation",
           "width": 720,
           "height": 562
@@ -570,7 +570,7 @@
         {
           "src": "module-graph-topo.svg",
           "alt": "On the left, a module graph: app.js imports api.js and, directly, utils.js; api.js imports utils.js; utils.js imports constants.js. Green badges number them in emit order — constants 1, utils 2, api 3, app 4 — so nothing is referenced before it exists. A greyed, dashed orphan.js sits apart, marked unreachable from the entry. On the right, a cycle: a.js and b.js each import the other, with a note that neither can go first so no ordering satisfies both edges, and that Kahn's algorithm stalls with nodes left over while DFS meets a back edge. A footer names the technique — topological sort — describes both implementations, and notes that tree-shaking is the reachability question instead.",
-          "caption": "Reverse the arrows and the same graph is a task runner's “must run before” constraints.",
+          "caption": "Because a DAG has no cycles, you can't loop forever following edges backward, so a non-empty finite DAG must have a *source* (in-degree 0), which is exactly the node Kahn's algorithm picks first, guaranteeing at least one topological order.",
           "placement": "explanation",
           "width": 720,
           "height": 562
@@ -609,7 +609,7 @@
         {
           "src": "module-graph-topo.svg",
           "alt": "On the left, a module graph: app.js imports api.js and, directly, utils.js; api.js imports utils.js; utils.js imports constants.js. Green badges number them in emit order — constants 1, utils 2, api 3, app 4 — so nothing is referenced before it exists. A greyed, dashed orphan.js sits apart, marked unreachable from the entry. On the right, a cycle: a.js and b.js each import the other, with a note that neither can go first so no ordering satisfies both edges, and that Kahn's algorithm stalls with nodes left over while DFS meets a back edge. A footer names the technique — topological sort — describes both implementations, and notes that tree-shaking is the reachability question instead.",
-          "caption": "Reverse the arrows and the same graph is a task runner's “must run before” constraints.",
+          "caption": "Tree-shaking marks reachable code, a cycle breaks the DAG property, and `npm`/`pnpm` resolution is a walk over the transitive dependency graph (the reason a lockfile and dedupe exist at all).",
           "placement": "explanation",
           "width": 720,
           "height": 562
@@ -648,7 +648,7 @@
         {
           "src": "module-graph-topo.svg",
           "alt": "On the left, a module graph: app.js imports api.js and, directly, utils.js; api.js imports utils.js; utils.js imports constants.js. Green badges number them in emit order — constants 1, utils 2, api 3, app 4 — so nothing is referenced before it exists. A greyed, dashed orphan.js sits apart, marked unreachable from the entry. On the right, a cycle: a.js and b.js each import the other, with a note that neither can go first so no ordering satisfies both edges, and that Kahn's algorithm stalls with nodes left over while DFS meets a back edge. A footer names the technique — topological sort — describes both implementations, and notes that tree-shaking is the reachability question instead.",
-          "caption": "Reverse the arrows and the same graph is a task runner's “must run before” constraints.",
+          "caption": "The two canonical algorithms are *Kahn's* (peel off sources one at a time) and *DFS reverse post-order* (a node is safe to place once all its descendants are placed, so emit it on finish and reverse), and both naturally detect cycles.",
           "placement": "explanation",
           "width": 720,
           "height": 562
@@ -688,7 +688,7 @@
         {
           "src": "module-graph-topo.svg",
           "alt": "On the left, a module graph: app.js imports api.js and, directly, utils.js; api.js imports utils.js; utils.js imports constants.js. Green badges number them in emit order — constants 1, utils 2, api 3, app 4 — so nothing is referenced before it exists. A greyed, dashed orphan.js sits apart, marked unreachable from the entry. On the right, a cycle: a.js and b.js each import the other, with a note that neither can go first so no ordering satisfies both edges, and that Kahn's algorithm stalls with nodes left over while DFS meets a back edge. A footer names the technique — topological sort — describes both implementations, and notes that tree-shaking is the reachability question instead.",
-          "caption": "Reverse the arrows and the same graph is a task runner's “must run before” constraints.",
+          "caption": "It's the *topological sort*. Given a DAG of 'X must come before Y' edges, it produces a linear order respecting every edge, the engine behind module emit order, task runners, spreadsheet recalculation, and course-prerequisite planning.",
           "placement": "explanation",
           "width": 720,
           "height": 562
@@ -717,7 +717,7 @@
         {
           "src": "trie-prefix-tree.svg",
           "alt": "A trie holding cut, copy, code and commit. From the root a single c node branches into u → t (cut) and o, and o branches into p → y (copy), d → e (code) and m → m → i → t (commit); word-ending nodes are ringed. An orange path highlights the two edges walked for the query “co”, with everything below it a completion. A second panel shows the same commit chain compressed into a single radix edge labelled mmit, the form HTTP routers use, plus a note that a trie answers prefix queries only — fuzzy, typo-tolerant and substring matching are not free. A footer says a lookup costs O(L) in the length typed and nothing in the number of stored words, while filtering with startsWith touches all 50,000 strings per keystroke, and that the price is space.",
-          "caption": "Two edges walked, and the whole completion set is the subtree hanging off them.",
+          "caption": "A trie turns characters into a tree: `\"car\"` and `\"cart\"` share the path c → a → r, and `\"cart\"` just adds one more edge.",
           "placement": "explanation",
           "width": 720,
           "height": 572
@@ -752,7 +752,7 @@
         {
           "src": "trie-prefix-tree.svg",
           "alt": "A trie holding cut, copy, code and commit. From the root a single c node branches into u → t (cut) and o, and o branches into p → y (copy), d → e (code) and m → m → i → t (commit); word-ending nodes are ringed. An orange path highlights the two edges walked for the query “co”, with everything below it a completion. A second panel shows the same commit chain compressed into a single radix edge labelled mmit, the form HTTP routers use, plus a note that a trie answers prefix queries only — fuzzy, typo-tolerant and substring matching are not free. A footer says a lookup costs O(L) in the length typed and nothing in the number of stored words, while filtering with startsWith touches all 50,000 strings per keystroke, and that the price is space.",
-          "caption": "Two edges walked, and the whole completion set is the subtree hanging off them.",
+          "caption": "To find the prefix `\"car\"` you follow three edges, c, a, r, and you're at the node whose subtree holds every completion.",
           "placement": "explanation",
           "width": 720,
           "height": 572
@@ -787,7 +787,7 @@
         {
           "src": "trie-prefix-tree.svg",
           "alt": "A trie holding cut, copy, code and commit. From the root a single c node branches into u → t (cut) and o, and o branches into p → y (copy), d → e (code) and m → m → i → t (commit); word-ending nodes are ringed. An orange path highlights the two edges walked for the query “co”, with everything below it a completion. A second panel shows the same commit chain compressed into a single radix edge labelled mmit, the form HTTP routers use, plus a note that a trie answers prefix queries only — fuzzy, typo-tolerant and substring matching are not free. A footer says a lookup costs O(L) in the length typed and nothing in the number of stored words, while filtering with startsWith touches all 50,000 strings per keystroke, and that the price is space.",
-          "caption": "Two edges walked, and the whole completion set is the subtree hanging off them.",
+          "caption": "`filter` visits all 50,000 commands on *every* keystroke, and each `startsWith` compares up to L characters, O(n · L) work per keypress, repeated as the user types.",
           "placement": "explanation",
           "width": 720,
           "height": 572
@@ -823,7 +823,7 @@
         {
           "src": "trie-prefix-tree.svg",
           "alt": "A trie holding cut, copy, code and commit. From the root a single c node branches into u → t (cut) and o, and o branches into p → y (copy), d → e (code) and m → m → i → t (commit); word-ending nodes are ringed. An orange path highlights the two edges walked for the query “co”, with everything below it a completion. A second panel shows the same commit chain compressed into a single radix edge labelled mmit, the form HTTP routers use, plus a note that a trie answers prefix queries only — fuzzy, typo-tolerant and substring matching are not free. A footer says a lookup costs O(L) in the length typed and nothing in the number of stored words, while filtering with startsWith touches all 50,000 strings per keystroke, and that the price is space.",
-          "caption": "Two edges walked, and the whole completion set is the subtree hanging off them.",
+          "caption": "A plain trie wastes nodes on long, unbranching stretches, `/users/profile` would be a chain of single-child nodes.",
           "placement": "explanation",
           "width": 720,
           "height": 572
@@ -858,7 +858,7 @@
         {
           "src": "trie-prefix-tree.svg",
           "alt": "A trie holding cut, copy, code and commit. From the root a single c node branches into u → t (cut) and o, and o branches into p → y (copy), d → e (code) and m → m → i → t (commit); word-ending nodes are ringed. An orange path highlights the two edges walked for the query “co”, with everything below it a completion. A second panel shows the same commit chain compressed into a single radix edge labelled mmit, the form HTTP routers use, plus a note that a trie answers prefix queries only — fuzzy, typo-tolerant and substring matching are not free. A footer says a lookup costs O(L) in the length typed and nothing in the number of stored words, while filtering with startsWith touches all 50,000 strings per keystroke, and that the price is space.",
-          "caption": "Two edges walked, and the whole completion set is the subtree hanging off them.",
+          "caption": "A trie is a *prefix* engine: it answers 'starts with' in O(L), nothing more.",
           "placement": "explanation",
           "width": 720,
           "height": 572
@@ -893,7 +893,7 @@
         {
           "src": "trie-prefix-tree.svg",
           "alt": "A trie holding cut, copy, code and commit. From the root a single c node branches into u → t (cut) and o, and o branches into p → y (copy), d → e (code) and m → m → i → t (commit); word-ending nodes are ringed. An orange path highlights the two edges walked for the query “co”, with everything below it a completion. A second panel shows the same commit chain compressed into a single radix edge labelled mmit, the form HTTP routers use, plus a note that a trie answers prefix queries only — fuzzy, typo-tolerant and substring matching are not free. A footer says a lookup costs O(L) in the length typed and nothing in the number of stored words, while filtering with startsWith touches all 50,000 strings per keystroke, and that the price is space.",
-          "caption": "Two edges walked, and the whole completion set is the subtree hanging off them.",
+          "caption": "The trie's speed comes from structure, and structure costs *space*: every distinct prefix becomes nodes and pointers, so a trie's memory footprint and build time are its real trade-off versus a compact array.",
           "placement": "explanation",
           "width": 720,
           "height": 572
@@ -928,7 +928,7 @@
         {
           "src": "trie-prefix-tree.svg",
           "alt": "A trie holding cut, copy, code and commit. From the root a single c node branches into u → t (cut) and o, and o branches into p → y (copy), d → e (code) and m → m → i → t (commit); word-ending nodes are ringed. An orange path highlights the two edges walked for the query “co”, with everything below it a completion. A second panel shows the same commit chain compressed into a single radix edge labelled mmit, the form HTTP routers use, plus a note that a trie answers prefix queries only — fuzzy, typo-tolerant and substring matching are not free. A footer says a lookup costs O(L) in the length typed and nothing in the number of stored words, while filtering with startsWith touches all 50,000 strings per keystroke, and that the price is space.",
-          "caption": "Two edges walked, and the whole completion set is the subtree hanging off them.",
+          "caption": "The true trio captures the essence: O(L) prefix lookup, shared paths for shared prefixes, and an 'is-end-of-word' flag so `\"car\"` can be a stored word even though `\"cart\"` continues past it.",
           "placement": "explanation",
           "width": 720,
           "height": 572
@@ -967,7 +967,7 @@
         {
           "src": "trie-prefix-tree.svg",
           "alt": "A trie holding cut, copy, code and commit. From the root a single c node branches into u → t (cut) and o, and o branches into p → y (copy), d → e (code) and m → m → i → t (commit); word-ending nodes are ringed. An orange path highlights the two edges walked for the query “co”, with everything below it a completion. A second panel shows the same commit chain compressed into a single radix edge labelled mmit, the form HTTP routers use, plus a note that a trie answers prefix queries only — fuzzy, typo-tolerant and substring matching are not free. A footer says a lookup costs O(L) in the length typed and nothing in the number of stored words, while filtering with startsWith touches all 50,000 strings per keystroke, and that the price is space.",
-          "caption": "Two edges walked, and the whole completion set is the subtree hanging off them.",
+          "caption": "Anywhere the question is 'which entries start with what the user has typed so far?', a trie fits: typeaheads, command palettes, emoji `:smi…` pickers, and, in radix-tree form, URL path routing.",
           "placement": "explanation",
           "width": 720,
           "height": 572
@@ -1006,7 +1006,7 @@
         {
           "src": "trie-prefix-tree.svg",
           "alt": "A trie holding cut, copy, code and commit. From the root a single c node branches into u → t (cut) and o, and o branches into p → y (copy), d → e (code) and m → m → i → t (commit); word-ending nodes are ringed. An orange path highlights the two edges walked for the query “co”, with everything below it a completion. A second panel shows the same commit chain compressed into a single radix edge labelled mmit, the form HTTP routers use, plus a note that a trie answers prefix queries only — fuzzy, typo-tolerant and substring matching are not free. A footer says a lookup costs O(L) in the length typed and nothing in the number of stored words, while filtering with startsWith touches all 50,000 strings per keystroke, and that the price is space.",
-          "caption": "Two edges walked, and the whole completion set is the subtree hanging off them.",
+          "caption": "Three structures, three honest stories: a hash `Set` is unbeatable for exact membership but blind to prefixes (hashing scatters `\"car\"` and `\"cart\"` to unrelated buckets); a *sorted* array lets binary search bracket the prefix's range; and a trie walks to the prefix node in O(L).",
           "placement": "explanation",
           "width": 720,
           "height": 572
@@ -1046,7 +1046,7 @@
         {
           "src": "trie-prefix-tree.svg",
           "alt": "A trie holding cut, copy, code and commit. From the root a single c node branches into u → t (cut) and o, and o branches into p → y (copy), d → e (code) and m → m → i → t (commit); word-ending nodes are ringed. An orange path highlights the two edges walked for the query “co”, with everything below it a completion. A second panel shows the same commit chain compressed into a single radix edge labelled mmit, the form HTTP routers use, plus a note that a trie answers prefix queries only — fuzzy, typo-tolerant and substring matching are not free. A footer says a lookup costs O(L) in the length typed and nothing in the number of stored words, while filtering with startsWith touches all 50,000 strings per keystroke, and that the price is space.",
-          "caption": "Two edges walked, and the whole completion set is the subtree hanging off them.",
+          "caption": "It's a *trie*, also called a *prefix tree* (the name comes from re*trie*val). Each edge is a character and each node is the prefix spelled to reach it, giving O(L) prefix lookup that's independent of how many words you store, perfect for typeaheads and command palettes.",
           "placement": "explanation",
           "width": 720,
           "height": 572
@@ -1074,7 +1074,7 @@
         {
           "src": "two-stacks-undo-redo.svg",
           "alt": "Three moments in one editing session, each showing an undo stack beside a redo stack. First: three edits done, undo holds e3, e2, e1 with e3 on top and redo is empty. Second: Undo pressed twice, so undo holds only e1 while redo holds e3 at the bottom and e2 on top. Third: a brand-new edit e4 arrives, undo holds e4 over e1 and the redo stack is marked cleared. Panels below list LIFO examples — the JavaScript call stack, the browser's session history, undo history, stacked modals — against FIFO examples — the task and callback queues, a render queue, the microtask queue, a print spooler — and a closing strip says a history capped at 100 evicts the oldest entry, the bottom of the stack, which is an O(n) shift on a plain array.",
-          "caption": "A new action makes the saved redos unreachable, so the redo stack is discarded.",
+          "caption": "A stack is *LIFO*: the most recently pushed item is the first popped, because both operations work on the same end, the top.",
           "placement": "explanation",
           "width": 720,
           "height": 576
@@ -1109,7 +1109,7 @@
         {
           "src": "two-stacks-undo-redo.svg",
           "alt": "Three moments in one editing session, each showing an undo stack beside a redo stack. First: three edits done, undo holds e3, e2, e1 with e3 on top and redo is empty. Second: Undo pressed twice, so undo holds only e1 while redo holds e3 at the bottom and e2 on top. Third: a brand-new edit e4 arrives, undo holds e4 over e1 and the redo stack is marked cleared. Panels below list LIFO examples — the JavaScript call stack, the browser's session history, undo history, stacked modals — against FIFO examples — the task and callback queues, a render queue, the microtask queue, a print spooler — and a closing strip says a history capped at 100 evicts the oldest entry, the bottom of the stack, which is an O(n) shift on a plain array.",
-          "caption": "A new action makes the saved redos unreachable, so the redo stack is discarded.",
+          "caption": "A plain queue is *FIFO*: callbacks are dequeued in the order they were enqueued, which is why the event loop processes tasks fairly rather than starving older ones.",
           "placement": "explanation",
           "width": 720,
           "height": 576
@@ -1144,7 +1144,7 @@
         {
           "src": "two-stacks-undo-redo.svg",
           "alt": "Three moments in one editing session, each showing an undo stack beside a redo stack. First: three edits done, undo holds e3, e2, e1 with e3 on top and redo is empty. Second: Undo pressed twice, so undo holds only e1 while redo holds e3 at the bottom and e2 on top. Third: a brand-new edit e4 arrives, undo holds e4 over e1 and the redo stack is marked cleared. Panels below list LIFO examples — the JavaScript call stack, the browser's session history, undo history, stacked modals — against FIFO examples — the task and callback queues, a render queue, the microtask queue, a print spooler — and a closing strip says a history capped at 100 evicts the oldest entry, the bottom of the stack, which is an O(n) shift on a plain array.",
-          "caption": "A new action makes the saved redos unreachable, so the redo stack is discarded.",
+          "caption": "The two-stack design is elegant: *undo* holds the past, *redo* holds the undone future. Pressing Undo pops the most recent action off the undo stack, reverses it, and pushes it onto the redo stack; Redo does the reverse.",
           "placement": "explanation",
           "width": 720,
           "height": 576
@@ -1179,7 +1179,7 @@
         {
           "src": "two-stacks-undo-redo.svg",
           "alt": "Three moments in one editing session, each showing an undo stack beside a redo stack. First: three edits done, undo holds e3, e2, e1 with e3 on top and redo is empty. Second: Undo pressed twice, so undo holds only e1 while redo holds e3 at the bottom and e2 on top. Third: a brand-new edit e4 arrives, undo holds e4 over e1 and the redo stack is marked cleared. Panels below list LIFO examples — the JavaScript call stack, the browser's session history, undo history, stacked modals — against FIFO examples — the task and callback queues, a render queue, the microtask queue, a print spooler — and a closing strip says a history capped at 100 evicts the oldest entry, the bottom of the stack, which is an O(n) shift on a plain array.",
-          "caption": "A new action makes the saved redos unreachable, so the redo stack is discarded.",
+          "caption": "When the user undoes a few steps and then types something new, they've created a new branch of history; the actions sitting in the redo stack belonged to the *old* branch and no longer make sense to re-apply.",
           "placement": "explanation",
           "width": 720,
           "height": 576
@@ -1214,7 +1214,7 @@
         {
           "src": "two-stacks-undo-redo.svg",
           "alt": "Three moments in one editing session, each showing an undo stack beside a redo stack. First: three edits done, undo holds e3, e2, e1 with e3 on top and redo is empty. Second: Undo pressed twice, so undo holds only e1 while redo holds e3 at the bottom and e2 on top. Third: a brand-new edit e4 arrives, undo holds e4 over e1 and the redo stack is marked cleared. Panels below list LIFO examples — the JavaScript call stack, the browser's session history, undo history, stacked modals — against FIFO examples — the task and callback queues, a render queue, the microtask queue, a print spooler — and a closing strip says a history capped at 100 evicts the oldest entry, the bottom of the stack, which is an O(n) shift on a plain array.",
-          "caption": "A new action makes the saved redos unreachable, so the redo stack is discarded.",
+          "caption": "Navigating forward *pushes* entries; Back *pops* the most recent one, last-in, first-out, so Back-only behaviour is a textbook stack.",
           "placement": "explanation",
           "width": 720,
           "height": 576
@@ -1249,7 +1249,7 @@
         {
           "src": "two-stacks-undo-redo.svg",
           "alt": "Three moments in one editing session, each showing an undo stack beside a redo stack. First: three edits done, undo holds e3, e2, e1 with e3 on top and redo is empty. Second: Undo pressed twice, so undo holds only e1 while redo holds e3 at the bottom and e2 on top. Third: a brand-new edit e4 arrives, undo holds e4 over e1 and the redo stack is marked cleared. Panels below list LIFO examples — the JavaScript call stack, the browser's session history, undo history, stacked modals — against FIFO examples — the task and callback queues, a render queue, the microtask queue, a print spooler — and a closing strip says a history capped at 100 evicts the oldest entry, the bottom of the stack, which is an O(n) shift on a plain array.",
-          "caption": "A new action makes the saved redos unreachable, so the redo stack is discarded.",
+          "caption": "A bounded undo history evicts the *oldest* recorded step (the bottom of the stack) to make room for the newest, you'd rather forget the distant past than refuse new edits or crash.",
           "placement": "explanation",
           "width": 720,
           "height": 576
@@ -1284,7 +1284,7 @@
         {
           "src": "two-stacks-undo-redo.svg",
           "alt": "Three moments in one editing session, each showing an undo stack beside a redo stack. First: three edits done, undo holds e3, e2, e1 with e3 on top and redo is empty. Second: Undo pressed twice, so undo holds only e1 while redo holds e3 at the bottom and e2 on top. Third: a brand-new edit e4 arrives, undo holds e4 over e1 and the redo stack is marked cleared. Panels below list LIFO examples — the JavaScript call stack, the browser's session history, undo history, stacked modals — against FIFO examples — the task and callback queues, a render queue, the microtask queue, a print spooler — and a closing strip says a history capped at 100 evicts the oldest entry, the bottom of the stack, which is an O(n) shift on a plain array.",
-          "caption": "A new action makes the saved redos unreachable, so the redo stack is discarded.",
+          "caption": "Stacks are single-ended (push/pop at the top) and queues are double-ended in use (enqueue at the tail, dequeue at the head), and both give O(1) work at those defined ends, that constant-time access is the whole reason to choose them.",
           "placement": "explanation",
           "width": 720,
           "height": 576
@@ -1323,7 +1323,7 @@
         {
           "src": "two-stacks-undo-redo.svg",
           "alt": "Three moments in one editing session, each showing an undo stack beside a redo stack. First: three edits done, undo holds e3, e2, e1 with e3 on top and redo is empty. Second: Undo pressed twice, so undo holds only e1 while redo holds e3 at the bottom and e2 on top. Third: a brand-new edit e4 arrives, undo holds e4 over e1 and the redo stack is marked cleared. Panels below list LIFO examples — the JavaScript call stack, the browser's session history, undo history, stacked modals — against FIFO examples — the task and callback queues, a render queue, the microtask queue, a print spooler — and a closing strip says a history capped at 100 evicts the oldest entry, the bottom of the stack, which is an O(n) shift on a plain array.",
-          "caption": "A new action makes the saved redos unreachable, so the redo stack is discarded.",
+          "caption": "Undo, nested-modal dismissal, and the call stack are all LIFO: the newest thing is handled first (undo the last edit, close the top dialog, return from the deepest call).",
           "placement": "explanation",
           "width": 720,
           "height": 576
@@ -1362,7 +1362,7 @@
         {
           "src": "two-stacks-undo-redo.svg",
           "alt": "Three moments in one editing session, each showing an undo stack beside a redo stack. First: three edits done, undo holds e3, e2, e1 with e3 on top and redo is empty. Second: Undo pressed twice, so undo holds only e1 while redo holds e3 at the bottom and e2 on top. Third: a brand-new edit e4 arrives, undo holds e4 over e1 and the redo stack is marked cleared. Panels below list LIFO examples — the JavaScript call stack, the browser's session history, undo history, stacked modals — against FIFO examples — the task and callback queues, a render queue, the microtask queue, a print spooler — and a closing strip says a history capped at 100 evicts the oldest entry, the bottom of the stack, which is an O(n) shift on a plain array.",
-          "caption": "A new action makes the saved redos unreachable, so the redo stack is discarded.",
+          "caption": "The truths describe the canonical design: a new edit invalidates and clears redo, Undo transfers from one stack to the other, and a capped history forgets its oldest entry first.",
           "placement": "explanation",
           "width": 720,
           "height": 576
@@ -1401,7 +1401,7 @@
         {
           "src": "two-stacks-undo-redo.svg",
           "alt": "Three moments in one editing session, each showing an undo stack beside a redo stack. First: three edits done, undo holds e3, e2, e1 with e3 on top and redo is empty. Second: Undo pressed twice, so undo holds only e1 while redo holds e3 at the bottom and e2 on top. Third: a brand-new edit e4 arrives, undo holds e4 over e1 and the redo stack is marked cleared. Panels below list LIFO examples — the JavaScript call stack, the browser's session history, undo history, stacked modals — against FIFO examples — the task and callback queues, a render queue, the microtask queue, a print spooler — and a closing strip says a history capped at 100 evicts the oldest entry, the bottom of the stack, which is an O(n) shift on a plain array.",
-          "caption": "A new action makes the saved redos unreachable, so the redo stack is discarded.",
+          "caption": "They're all *stacks*, LIFO structures where the most recent item is the first removed. Undo pops the latest edit, Back pops the latest page, and the call stack returns from the deepest call first; all three offer O(1) push/pop at the single 'top' end.",
           "placement": "explanation",
           "width": 720,
           "height": 576
@@ -1422,7 +1422,7 @@
         {
           "src": "min-heap-array.svg",
           "alt": "A binary min-heap holding 2, 5, 3, 9, 7, 8, 4. The tree has 2 at the root over 5 and 3, with 9 and 7 under 5 and 8 and 4 under 3; each node is tagged with its array index 0 to 6. The same seven values appear as one flat array, and a highlighted table gives the index arithmetic: children of i at 2i+1 and 2i+2, parent at (i−1) shifted right by one, the minimum always at index 0. Notes point out that the array read left to right is not sorted, only partially ordered, and that a sorted array would cost O(n) per insert. A panel traces inserting 1: pushed to index 7, then swapped past 9, 5 and 2 in three sift-up steps — the height of the tree. A final panel gives the height as floor of log base 2 of n: 9 at a thousand nodes, 19 at a million.",
-          "caption": "Three swaps to insert, because the height of a complete tree is all a sift-up can cost.",
+          "caption": "The *heap property* of a min-heap is local: each parent is ≤ its children, applied at every node.",
           "placement": "explanation",
           "width": 720,
           "height": 576
@@ -1457,7 +1457,7 @@
         {
           "src": "min-heap-array.svg",
           "alt": "A binary min-heap holding 2, 5, 3, 9, 7, 8, 4. The tree has 2 at the root over 5 and 3, with 9 and 7 under 5 and 8 and 4 under 3; each node is tagged with its array index 0 to 6. The same seven values appear as one flat array, and a highlighted table gives the index arithmetic: children of i at 2i+1 and 2i+2, parent at (i−1) shifted right by one, the minimum always at index 0. Notes point out that the array read left to right is not sorted, only partially ordered, and that a sorted array would cost O(n) per insert. A panel traces inserting 1: pushed to index 7, then swapped past 9, 5 and 2 in three sift-up steps — the height of the tree. A final panel gives the height as floor of log base 2 of n: 9 at a thousand nodes, 19 at a million.",
-          "caption": "Three swaps to insert, because the height of a complete tree is all a sift-up can cost.",
+          "caption": "Because every parent is ≤ its children, the smallest key can only live at the root, index 0 in the array layout, so `peek` is a single constant-time read, no scan or search required.",
           "placement": "explanation",
           "width": 720,
           "height": 576
@@ -1492,7 +1492,7 @@
         {
           "src": "min-heap-array.svg",
           "alt": "A binary min-heap holding 2, 5, 3, 9, 7, 8, 4. The tree has 2 at the root over 5 and 3, with 9 and 7 under 5 and 8 and 4 under 3; each node is tagged with its array index 0 to 6. The same seven values appear as one flat array, and a highlighted table gives the index arithmetic: children of i at 2i+1 and 2i+2, parent at (i−1) shifted right by one, the minimum always at index 0. Notes point out that the array read left to right is not sorted, only partially ordered, and that a sorted array would cost O(n) per insert. A panel traces inserting 1: pushed to index 7, then swapped past 9, 5 and 2 in three sift-up steps — the height of the tree. A final panel gives the height as floor of log base 2 of n: 9 at a thousand nodes, 19 at a million.",
-          "caption": "Three swaps to insert, because the height of a complete tree is all a sift-up can cost.",
+          "caption": "Insertion adds the new element at the next open slot (the array's end) and then *sifts up*: while it's smaller than its parent, swap them.",
           "placement": "explanation",
           "width": 720,
           "height": 576
@@ -1527,7 +1527,7 @@
         {
           "src": "min-heap-array.svg",
           "alt": "A binary min-heap holding 2, 5, 3, 9, 7, 8, 4. The tree has 2 at the root over 5 and 3, with 9 and 7 under 5 and 8 and 4 under 3; each node is tagged with its array index 0 to 6. The same seven values appear as one flat array, and a highlighted table gives the index arithmetic: children of i at 2i+1 and 2i+2, parent at (i−1) shifted right by one, the minimum always at index 0. Notes point out that the array read left to right is not sorted, only partially ordered, and that a sorted array would cost O(n) per insert. A panel traces inserting 1: pushed to index 7, then swapped past 9, 5 and 2 in three sift-up steps — the height of the tree. A final panel gives the height as floor of log base 2 of n: 9 at a thousand nodes, 19 at a million.",
-          "caption": "Three swaps to insert, because the height of a complete tree is all a sift-up can cost.",
+          "caption": "React's cooperative scheduler stores work in a *min-heap* (see `SchedulerMinHeap`) ordered by a `sortIndex` derived from each task's expiration time, so 'render this high-priority update before that low-priority one' becomes 'pop the smallest expiration off the heap'.",
           "placement": "explanation",
           "width": 720,
           "height": 576
@@ -1562,7 +1562,7 @@
         {
           "src": "min-heap-array.svg",
           "alt": "A binary min-heap holding 2, 5, 3, 9, 7, 8, 4. The tree has 2 at the root over 5 and 3, with 9 and 7 under 5 and 8 and 4 under 3; each node is tagged with its array index 0 to 6. The same seven values appear as one flat array, and a highlighted table gives the index arithmetic: children of i at 2i+1 and 2i+2, parent at (i−1) shifted right by one, the minimum always at index 0. Notes point out that the array read left to right is not sorted, only partially ordered, and that a sorted array would cost O(n) per insert. A panel traces inserting 1: pushed to index 7, then swapped past 9, 5 and 2 in three sift-up steps — the height of the tree. A final panel gives the height as floor of log base 2 of n: 9 at a thousand nodes, 19 at a million.",
-          "caption": "Three swaps to insert, because the height of a complete tree is all a sift-up can cost.",
+          "caption": "A fully sorted array also gives O(1) access to the minimum, but *maintaining* the sort costs O(n) per insert (you must shift elements to keep order).",
           "placement": "explanation",
           "width": 720,
           "height": 576
@@ -1598,7 +1598,7 @@
         {
           "src": "min-heap-array.svg",
           "alt": "A binary min-heap holding 2, 5, 3, 9, 7, 8, 4. The tree has 2 at the root over 5 and 3, with 9 and 7 under 5 and 8 and 4 under 3; each node is tagged with its array index 0 to 6. The same seven values appear as one flat array, and a highlighted table gives the index arithmetic: children of i at 2i+1 and 2i+2, parent at (i−1) shifted right by one, the minimum always at index 0. Notes point out that the array read left to right is not sorted, only partially ordered, and that a sorted array would cost O(n) per insert. A panel traces inserting 1: pushed to index 7, then swapped past 9, 5 and 2 in three sift-up steps — the height of the tree. A final panel gives the height as floor of log base 2 of n: 9 at a thousand nodes, 19 at a million.",
-          "caption": "Three swaps to insert, because the height of a complete tree is all a sift-up can cost.",
+          "caption": "Because a heap is a *complete* tree (every level full except possibly the last, filled left to right), level-order numbering maps cleanly onto array indices: node `i`'s children sit at `2i + 1` and `2i + 2`, and its parent at `Math.floor((i - 1) / 2)`.",
           "placement": "explanation",
           "width": 720,
           "height": 576
@@ -1633,7 +1633,7 @@
         {
           "src": "min-heap-array.svg",
           "alt": "A binary min-heap holding 2, 5, 3, 9, 7, 8, 4. The tree has 2 at the root over 5 and 3, with 9 and 7 under 5 and 8 and 4 under 3; each node is tagged with its array index 0 to 6. The same seven values appear as one flat array, and a highlighted table gives the index arithmetic: children of i at 2i+1 and 2i+2, parent at (i−1) shifted right by one, the minimum always at index 0. Notes point out that the array read left to right is not sorted, only partially ordered, and that a sorted array would cost O(n) per insert. A panel traces inserting 1: pushed to index 7, then swapped past 9, 5 and 2 in three sift-up steps — the height of the tree. A final panel gives the height as floor of log base 2 of n: 9 at a thousand nodes, 19 at a million.",
-          "caption": "Three swaps to insert, because the height of a complete tree is all a sift-up can cost.",
+          "caption": "A heap's cost profile, O(log n) push/pop, O(1) peek, is what makes it the standard implementation of a *priority queue*, which by definition serves by urgency rather than arrival order (that's a plain FIFO queue's job).",
           "placement": "explanation",
           "width": 720,
           "height": 576
@@ -1672,7 +1672,7 @@
         {
           "src": "min-heap-array.svg",
           "alt": "A binary min-heap holding 2, 5, 3, 9, 7, 8, 4. The tree has 2 at the root over 5 and 3, with 9 and 7 under 5 and 8 and 4 under 3; each node is tagged with its array index 0 to 6. The same seven values appear as one flat array, and a highlighted table gives the index arithmetic: children of i at 2i+1 and 2i+2, parent at (i−1) shifted right by one, the minimum always at index 0. Notes point out that the array read left to right is not sorted, only partially ordered, and that a sorted array would cost O(n) per insert. A panel traces inserting 1: pushed to index 7, then swapped past 9, 5 and 2 in three sift-up steps — the height of the tree. A final panel gives the height as floor of log base 2 of n: 9 at a thousand nodes, 19 at a million.",
-          "caption": "Three swaps to insert, because the height of a complete tree is all a sift-up can cost.",
+          "caption": "All three correct cases share the signature 'repeatedly take the most extreme item and keep inserting more': React's scheduler (soonest expiration), timer wheels and animation loops (nearest deadline), and Dijkstra/A* (closest frontier node) all lean on a heap-backed priority queue.",
           "placement": "explanation",
           "width": 720,
           "height": 576
@@ -1711,7 +1711,7 @@
         {
           "src": "min-heap-array.svg",
           "alt": "A binary min-heap holding 2, 5, 3, 9, 7, 8, 4. The tree has 2 at the root over 5 and 3, with 9 and 7 under 5 and 8 and 4 under 3; each node is tagged with its array index 0 to 6. The same seven values appear as one flat array, and a highlighted table gives the index arithmetic: children of i at 2i+1 and 2i+2, parent at (i−1) shifted right by one, the minimum always at index 0. Notes point out that the array read left to right is not sorted, only partially ordered, and that a sorted array would cost O(n) per insert. A panel traces inserting 1: pushed to index 7, then swapped past 9, 5 and 2 in three sift-up steps — the height of the tree. A final panel gives the height as floor of log base 2 of n: 9 at a thousand nodes, 19 at a million.",
-          "caption": "Three swaps to insert, because the height of a complete tree is all a sift-up can cost.",
+          "caption": "The min lives at index 0, children are at `2i + 1` / `2i + 2`, and the insert/remove dance (sift up after appending; move last-to-root then sift down) are the heap's defining mechanics.",
           "placement": "explanation",
           "width": 720,
           "height": 576
@@ -1751,7 +1751,7 @@
         {
           "src": "min-heap-array.svg",
           "alt": "A binary min-heap holding 2, 5, 3, 9, 7, 8, 4. The tree has 2 at the root over 5 and 3, with 9 and 7 under 5 and 8 and 4 under 3; each node is tagged with its array index 0 to 6. The same seven values appear as one flat array, and a highlighted table gives the index arithmetic: children of i at 2i+1 and 2i+2, parent at (i−1) shifted right by one, the minimum always at index 0. Notes point out that the array read left to right is not sorted, only partially ordered, and that a sorted array would cost O(n) per insert. A panel traces inserting 1: pushed to index 7, then swapped past 9, 5 and 2 in three sift-up steps — the height of the tree. A final panel gives the height as floor of log base 2 of n: 9 at a thousand nodes, 19 at a million.",
-          "caption": "Three swaps to insert, because the height of a complete tree is all a sift-up can cost.",
+          "caption": "A complete binary tree of n nodes has height ⌊log₂ n⌋. Here ⌊log₂ 1000⌋ = 9, because 2⁹ = 512 ≤ 1000 < 1024 = 2¹⁰ (so the tree has 10 levels but 9 edges from root to deepest leaf).",
           "placement": "explanation",
           "width": 720,
           "height": 576
@@ -1772,7 +1772,7 @@
         {
           "src": "lru-list.svg",
           "alt": "An LRU cache of capacity 3. A row of hash-map cells for \"A\", \"B\" and \"C\" points down at three doubly linked nodes A, B and C joined by two-headed prev/next arrows, with the LRU end on the left and the MRU end on the right. A note says O(1) splicing needs both links. Below, three steps: after put A, put B and put C the order is A, B, C; get('A') moves A to the MRU end leaving B, C, A; put('D',4) exceeds capacity, so the LRU end B is evicted and the order becomes C, A, D.",
-          "caption": "The hash map finds the node; the list decides which one goes.",
+          "caption": "LRU, *Least Recently Used*, bets that what you haven't touched in a while you're least likely to need next, so when full it evicts the entry with the oldest *last-access* time.",
           "placement": "explanation",
           "width": 720,
           "height": 562
@@ -1807,7 +1807,7 @@
         {
           "src": "lru-list.svg",
           "alt": "An LRU cache of capacity 3. A row of hash-map cells for \"A\", \"B\" and \"C\" points down at three doubly linked nodes A, B and C joined by two-headed prev/next arrows, with the LRU end on the left and the MRU end on the right. A note says O(1) splicing needs both links. Below, three steps: after put A, put B and put C the order is A, B, C; get('A') moves A to the MRU end leaving B, C, A; put('D',4) exceeds capacity, so the LRU end B is evicted and the order becomes C, A, D.",
-          "caption": "The hash map finds the node; the list decides which one goes.",
+          "caption": "The classic LRU pairs two structures: a *hash map* finds any entry's node in O(1), and a *doubly linked list* keeps nodes in recency order so the least-recently-used entry sits at the tail.",
           "placement": "explanation",
           "width": 720,
           "height": 562
@@ -1947,7 +1947,7 @@
         {
           "src": "lru-list.svg",
           "alt": "An LRU cache of capacity 3. A row of hash-map cells for \"A\", \"B\" and \"C\" points down at three doubly linked nodes A, B and C joined by two-headed prev/next arrows, with the LRU end on the left and the MRU end on the right. A note says O(1) splicing needs both links. Below, three steps: after put A, put B and put C the order is A, B, C; get('A') moves A to the MRU end leaving B, C, A; put('D',4) exceeds capacity, so the LRU end B is evicted and the order becomes C, A, D.",
-          "caption": "The hash map finds the node; the list decides which one goes.",
+          "caption": "The truths are the LRU essentials: O(1) operations via map + linked list, a hit that refreshes recency, and the warning that unbounded caching leaks memory.",
           "placement": "explanation",
           "width": 720,
           "height": 562
@@ -2044,7 +2044,7 @@
         {
           "src": "lru-list.svg",
           "alt": "An LRU cache of capacity 3. A row of hash-map cells for \"A\", \"B\" and \"C\" points down at three doubly linked nodes A, B and C joined by two-headed prev/next arrows, with the LRU end on the left and the MRU end on the right. A note says O(1) splicing needs both links. Below, three steps: after put A, put B and put C the order is A, B, C; get('A') moves A to the MRU end leaving B, C, A; put('D',4) exceeds capacity, so the LRU end B is evicted and the order becomes C, A, D.",
-          "caption": "The hash map finds the node; the list decides which one goes.",
+          "caption": "It's *LRU*, Least Recently Used, which evicts whichever entry has gone untouched the longest, on the bet that recently-used data is likeliest to be needed again.",
           "placement": "explanation",
           "width": 720,
           "height": 562

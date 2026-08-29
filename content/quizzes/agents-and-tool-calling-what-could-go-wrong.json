@@ -198,7 +198,7 @@
         {
           "src": "agent-loop.svg",
           "alt": "Three panels on a tool-calling loop. The first runs one turn — send the request with tools and full history, read the assistant response, then branch on stop_reason — into two groups: CONTINUE, holding tool_use (run the tools, reply with tool_result) and pause_turn (resend the assistant content as-is), which loops back; and EXIT, holding end_turn, max_tokens, stop_sequence, refusal and model_context_window_exceeded. The second gives each continuation its shape: one user message carrying every tool_result matched by tool_use_id, and a pause_turn resent unchanged because the trailing server_tool_use block is what resumes it. The third names three failures — a truncated tool_use, an empty tool result, and no iteration cap.",
-          "caption": "stop_reason is the only structured termination signal; prose is not one.",
+          "caption": "`stop_reason: \"tool_use\"` means the model has emitted one or more `tool_use` blocks and is waiting on you.",
           "placement": "explanation",
           "width": 720,
           "height": 728
@@ -220,7 +220,7 @@
         {
           "src": "agent-loop.svg",
           "alt": "Three panels on a tool-calling loop. The first runs one turn — send the request with tools and full history, read the assistant response, then branch on stop_reason — into two groups: CONTINUE, holding tool_use (run the tools, reply with tool_result) and pause_turn (resend the assistant content as-is), which loops back; and EXIT, holding end_turn, max_tokens, stop_sequence, refusal and model_context_window_exceeded. The second gives each continuation its shape: one user message carrying every tool_result matched by tool_use_id, and a pause_turn resent unchanged because the trailing server_tool_use block is what resumes it. The third names three failures — a truncated tool_use, an empty tool result, and no iteration cap.",
-          "caption": "stop_reason is the only structured termination signal; prose is not one.",
+          "caption": "`pause_turn` comes back when the server-side sampling loop reaches its iteration limit while running server tools.",
           "placement": "explanation",
           "width": 720,
           "height": 728
@@ -255,7 +255,7 @@
         {
           "src": "agent-loop.svg",
           "alt": "Three panels on a tool-calling loop. The first runs one turn — send the request with tools and full history, read the assistant response, then branch on stop_reason — into two groups: CONTINUE, holding tool_use (run the tools, reply with tool_result) and pause_turn (resend the assistant content as-is), which loops back; and EXIT, holding end_turn, max_tokens, stop_sequence, refusal and model_context_window_exceeded. The second gives each continuation its shape: one user message carrying every tool_result matched by tool_use_id, and a pause_turn resent unchanged because the trailing server_tool_use block is what resumes it. The third names three failures — a truncated tool_use, an empty tool result, and no iteration cap.",
-          "caption": "stop_reason is the only structured termination signal; prose is not one.",
+          "caption": "Anthropic's guidance is direct: check whether the last content block is an incomplete `tool_use`, and if it is, re-send with a higher `max_tokens` to get the full call.",
           "placement": "explanation",
           "width": 720,
           "height": 728
@@ -290,7 +290,7 @@
         {
           "src": "agent-loop.svg",
           "alt": "Three panels on a tool-calling loop. The first runs one turn — send the request with tools and full history, read the assistant response, then branch on stop_reason — into two groups: CONTINUE, holding tool_use (run the tools, reply with tool_result) and pause_turn (resend the assistant content as-is), which loops back; and EXIT, holding end_turn, max_tokens, stop_sequence, refusal and model_context_window_exceeded. The second gives each continuation its shape: one user message carrying every tool_result matched by tool_use_id, and a pause_turn resent unchanged because the trailing server_tool_use block is what resumes it. The third names three failures — a truncated tool_use, an empty tool result, and no iteration cap.",
-          "caption": "stop_reason is the only structured termination signal; prose is not one.",
+          "caption": "`stop_reason` is the only structured termination signal the API gives you, and the only one that separates \"I need something from you\" from \"I am done\".",
           "placement": "explanation",
           "width": 720,
           "height": 728
@@ -326,7 +326,7 @@
         {
           "src": "agent-loop.svg",
           "alt": "Three panels on a tool-calling loop. The first runs one turn — send the request with tools and full history, read the assistant response, then branch on stop_reason — into two groups: CONTINUE, holding tool_use (run the tools, reply with tool_result) and pause_turn (resend the assistant content as-is), which loops back; and EXIT, holding end_turn, max_tokens, stop_sequence, refusal and model_context_window_exceeded. The second gives each continuation its shape: one user message carrying every tool_result matched by tool_use_id, and a pause_turn resent unchanged because the trailing server_tool_use block is what resumes it. The third names three failures — a truncated tool_use, an empty tool result, and no iteration cap.",
-          "caption": "stop_reason is the only structured termination signal; prose is not one.",
+          "caption": "The tool result is the model's entire view of the outside world. An empty string says nothing about why it is empty, so the model does the reasonable thing with an ambiguous signal and varies the input to try again.",
           "placement": "explanation",
           "width": 720,
           "height": 728
@@ -362,7 +362,7 @@
         {
           "src": "agent-loop.svg",
           "alt": "Three panels on a tool-calling loop. The first runs one turn — send the request with tools and full history, read the assistant response, then branch on stop_reason — into two groups: CONTINUE, holding tool_use (run the tools, reply with tool_result) and pause_turn (resend the assistant content as-is), which loops back; and EXIT, holding end_turn, max_tokens, stop_sequence, refusal and model_context_window_exceeded. The second gives each continuation its shape: one user message carrying every tool_result matched by tool_use_id, and a pause_turn resent unchanged because the trailing server_tool_use block is what resumes it. The third names three failures — a truncated tool_use, an empty tool result, and no iteration cap.",
-          "caption": "stop_reason is the only structured termination signal; prose is not one.",
+          "caption": "All three correct reasons bound damage rather than produce a result: unbounded spend, non-terminating retries, and context that only ever grows.",
           "placement": "explanation",
           "width": 720,
           "height": 728
@@ -402,7 +402,7 @@
         {
           "src": "parallel-tool-calls.svg",
           "alt": "Three panels on parallel tool calls. The first contrasts a wrong shape — an assistant turn with two tool_use blocks answered by one user message per result — with the correct shape, both tool_result blocks in a single user message, noting that history is few-shot evidence about the integration. The second dispatches tu_1, tu_2 and tu_3 to a pool that returns them in completion order, with crossing arrows showing that only tool_use_id says which result belongs to which call. The third grades four batches: two independent read-only weather lookups are safe, while write-then-read, create-then-push, and two ledger appends are not, beside notes that disable_parallel_tool_use lives inside tool_choice and that a typed tool can be classified before it runs while an opaque bash string cannot.",
-          "caption": "Several tool_use blocks in one turn are a set of requested operations, not an execution order.",
+          "caption": "Anthropic's documentation names this as the most common cause of vanishing parallel calls, and labels the two shapes plainly.",
           "placement": "explanation",
           "width": 720,
           "height": 788
@@ -437,7 +437,7 @@
         {
           "src": "parallel-tool-calls.svg",
           "alt": "Three panels on parallel tool calls. The first contrasts a wrong shape — an assistant turn with two tool_use blocks answered by one user message per result — with the correct shape, both tool_result blocks in a single user message, noting that history is few-shot evidence about the integration. The second dispatches tu_1, tu_2 and tu_3 to a pool that returns them in completion order, with crossing arrows showing that only tool_use_id says which result belongs to which call. The third grades four batches: two independent read-only weather lookups are safe, while write-then-read, create-then-push, and two ledger appends are not, beside notes that disable_parallel_tool_use lives inside tool_choice and that a typed tool can be classified before it runs while an opaque bash string cannot.",
-          "caption": "Several tool_use blocks in one turn are a set of requested operations, not an execution order.",
+          "caption": "It lives inside `tool_choice`. Writing `{\"type\": \"auto\", \"disable_parallel_tool_use\": true}` leaves the model free to answer without tools while limiting it to at most one call per response, and `{\"type\": \"any\", \"disable_parallel_tool_use\": true}` forces exactly one.",
           "placement": "explanation",
           "width": 720,
           "height": 788
@@ -473,7 +473,7 @@
         {
           "src": "parallel-tool-calls.svg",
           "alt": "Three panels on parallel tool calls. The first contrasts a wrong shape — an assistant turn with two tool_use blocks answered by one user message per result — with the correct shape, both tool_result blocks in a single user message, noting that history is few-shot evidence about the integration. The second dispatches tu_1, tu_2 and tu_3 to a pool that returns them in completion order, with crossing arrows showing that only tool_use_id says which result belongs to which call. The third grades four batches: two independent read-only weather lookups are safe, while write-then-read, create-then-push, and two ledger appends are not, beside notes that disable_parallel_tool_use lives inside tool_choice and that a typed tool can be classified before it runs while an opaque bash string cannot.",
-          "caption": "Several tool_use blocks in one turn are a set of requested operations, not an execution order.",
+          "caption": "The API is explicit that it \"doesn't prescribe an execution order\". Several `tool_use` blocks in one assistant turn are a set of requested operations, not a promise that they commute.",
           "placement": "explanation",
           "width": 720,
           "height": 788
@@ -512,7 +512,7 @@
         {
           "src": "parallel-tool-calls.svg",
           "alt": "Three panels on parallel tool calls. The first contrasts a wrong shape — an assistant turn with two tool_use blocks answered by one user message per result — with the correct shape, both tool_result blocks in a single user message, noting that history is few-shot evidence about the integration. The second dispatches tu_1, tu_2 and tu_3 to a pool that returns them in completion order, with crossing arrows showing that only tool_use_id says which result belongs to which call. The third grades four batches: two independent read-only weather lookups are safe, while write-then-read, create-then-push, and two ledger appends are not, beside notes that disable_parallel_tool_use lives inside tool_choice and that a typed tool can be classified before it runs while an opaque bash string cannot.",
-          "caption": "Several tool_use blocks in one turn are a set of requested operations, not an execution order.",
+          "caption": "Every `tool_use` block needs a matching `tool_result`, and the documentation covers this exact case.",
           "placement": "explanation",
           "width": 720,
           "height": 788
@@ -547,7 +547,7 @@
         {
           "src": "parallel-tool-calls.svg",
           "alt": "Three panels on parallel tool calls. The first contrasts a wrong shape — an assistant turn with two tool_use blocks answered by one user message per result — with the correct shape, both tool_result blocks in a single user message, noting that history is few-shot evidence about the integration. The second dispatches tu_1, tu_2 and tu_3 to a pool that returns them in completion order, with crossing arrows showing that only tool_use_id says which result belongs to which call. The third grades four batches: two independent read-only weather lookups are safe, while write-then-read, create-then-push, and two ledger appends are not, beside notes that disable_parallel_tool_use lives inside tool_choice and that a typed tool can be classified before it runs while an opaque bash string cannot.",
-          "caption": "Several tool_use blocks in one turn are a set of requested operations, not an execution order.",
+          "caption": "This is the general case for narrow tools over open-ended ones, seen through scheduling. `grep(pattern, path)` tells the harness what kind of operation it is before it runs, so the call can be batched with other reads, gated differently from writes, rendered in the UI, and audited by name.",
           "placement": "explanation",
           "width": 720,
           "height": 788
@@ -583,7 +583,7 @@
         {
           "src": "parallel-tool-calls.svg",
           "alt": "Three panels on parallel tool calls. The first contrasts a wrong shape — an assistant turn with two tool_use blocks answered by one user message per result — with the correct shape, both tool_result blocks in a single user message, noting that history is few-shot evidence about the integration. The second dispatches tu_1, tu_2 and tu_3 to a pool that returns them in completion order, with crossing arrows showing that only tool_use_id says which result belongs to which call. The third grades four batches: two independent read-only weather lookups are safe, while write-then-read, create-then-push, and two ledger appends are not, beside notes that disable_parallel_tool_use lives inside tool_choice and that a typed tool can be classified before it runs while an opaque bash string cannot.",
-          "caption": "Several tool_use blocks in one turn are a set of requested operations, not an execution order.",
+          "caption": "Each `tool_use` block carries an id, and the matching `tool_result` has to repeat it in `tool_use_id`.",
           "placement": "explanation",
           "width": 720,
           "height": 788
@@ -618,7 +618,7 @@
         {
           "src": "retry-and-idempotency.svg",
           "alt": "Three panels on retry safety. The first is a two-column exchange: the agent calls a payment tool, the API creates the charge and moves money, the response never arrives, the agent times out at 30 seconds and reports “Tool timed out. Try again.”, the call is repeated, and a second charge is created. The second is a five-step ladder in which the caller mints one key per logical operation before the first attempt, reuses it unchanged on the retry, and the server recognises the replay and returns the first outcome, beside a box on who must mint it and a strip on key reuse with a different payload, a key in flight, and a key after completion. The third states RFC 9110's definition of idempotent beside the MCP annotation defaults: readOnlyHint false, destructiveHint true, idempotentHint false, openWorldHint true.",
-          "caption": "A timeout cannot distinguish a dropped request from a processed one whose reply was lost.",
+          "caption": "RFC 9110 §9.2.2 defines it in terms of intended effect on the server: a method is idempotent if the intended effect on the server of multiple identical requests with that method is the same as the effect for a single such request.",
           "placement": "explanation",
           "width": 720,
           "height": 806
@@ -654,7 +654,7 @@
         {
           "src": "retry-and-idempotency.svg",
           "alt": "Three panels on retry safety. The first is a two-column exchange: the agent calls a payment tool, the API creates the charge and moves money, the response never arrives, the agent times out at 30 seconds and reports “Tool timed out. Try again.”, the call is repeated, and a second charge is created. The second is a five-step ladder in which the caller mints one key per logical operation before the first attempt, reuses it unchanged on the retry, and the server recognises the replay and returns the first outcome, beside a box on who must mint it and a strip on key reuse with a different payload, a key in flight, and a key after completion. The third states RFC 9110's definition of idempotent beside the MCP annotation defaults: readOnlyHint false, destructiveHint true, idempotentHint false, openWorldHint true.",
-          "caption": "A timeout cannot distinguish a dropped request from a processed one whose reply was lost.",
+          "caption": "`idempotentHint` defaults to `false`, so repeating a call is assumed to have additional effect unless the server says otherwise.",
           "placement": "explanation",
           "width": 720,
           "height": 806
@@ -675,7 +675,7 @@
         {
           "src": "retry-and-idempotency.svg",
           "alt": "Three panels on retry safety. The first is a two-column exchange: the agent calls a payment tool, the API creates the charge and moves money, the response never arrives, the agent times out at 30 seconds and reports “Tool timed out. Try again.”, the call is repeated, and a second charge is created. The second is a five-step ladder in which the caller mints one key per logical operation before the first attempt, reuses it unchanged on the retry, and the server recognises the replay and returns the first outcome, beside a box on who must mint it and a strip on key reuse with a different payload, a key in flight, and a key after completion. The third states RFC 9110's definition of idempotent beside the MCP annotation defaults: readOnlyHint false, destructiveHint true, idempotentHint false, openWorldHint true.",
-          "caption": "A timeout cannot distinguish a dropped request from a processed one whose reply was lost.",
+          "caption": "The specification carries a standing warning: \"For trust & safety and security, clients **MUST** consider tool annotations to be untrusted unless they come from trusted servers.\" The schema is blunter.",
           "placement": "explanation",
           "width": 720,
           "height": 806
@@ -711,7 +711,7 @@
         {
           "src": "retry-and-idempotency.svg",
           "alt": "Three panels on retry safety. The first is a two-column exchange: the agent calls a payment tool, the API creates the charge and moves money, the response never arrives, the agent times out at 30 seconds and reports “Tool timed out. Try again.”, the call is repeated, and a second charge is created. The second is a five-step ladder in which the caller mints one key per logical operation before the first attempt, reuses it unchanged on the retry, and the server recognises the replay and returns the first outcome, beside a box on who must mint it and a strip on key reuse with a different payload, a key in flight, and a key after completion. The third states RFC 9110's definition of idempotent beside the MCP annotation defaults: readOnlyHint false, destructiveHint true, idempotentHint false, openWorldHint true.",
-          "caption": "A timeout cannot distinguish a dropped request from a processed one whose reply was lost.",
+          "caption": "A client-side timeout describes the client's patience, not the server's state. The request may have been dropped in transit, or it may have been processed in full with only the response lost.",
           "placement": "explanation",
           "width": 720,
           "height": 806
@@ -746,7 +746,7 @@
         {
           "src": "retry-and-idempotency.svg",
           "alt": "Three panels on retry safety. The first is a two-column exchange: the agent calls a payment tool, the API creates the charge and moves money, the response never arrives, the agent times out at 30 seconds and reports “Tool timed out. Try again.”, the call is repeated, and a second charge is created. The second is a five-step ladder in which the caller mints one key per logical operation before the first attempt, reuses it unchanged on the retry, and the server recognises the replay and returns the first outcome, beside a box on who must mint it and a strip on key reuse with a different payload, a key in flight, and a key after completion. The third states RFC 9110's definition of idempotent beside the MCP annotation defaults: readOnlyHint false, destructiveHint true, idempotentHint false, openWorldHint true.",
-          "caption": "A timeout cannot distinguish a dropped request from a processed one whose reply was lost.",
+          "caption": "The property you need is that two attempts at the same intent carry the same key. Only the caller knows that two HTTP requests are one intent, so the key is minted where the retry loop lives, in your harness, before the first attempt, and held constant across every retry.",
           "placement": "explanation",
           "width": 720,
           "height": 806
@@ -781,7 +781,7 @@
         {
           "src": "retry-and-idempotency.svg",
           "alt": "Three panels on retry safety. The first is a two-column exchange: the agent calls a payment tool, the API creates the charge and moves money, the response never arrives, the agent times out at 30 seconds and reports “Tool timed out. Try again.”, the call is repeated, and a second charge is created. The second is a five-step ladder in which the caller mints one key per logical operation before the first attempt, reuses it unchanged on the retry, and the server recognises the replay and returns the first outcome, beside a box on who must mint it and a strip on key reuse with a different payload, a key in flight, and a key after completion. The third states RFC 9110's definition of idempotent beside the MCP annotation defaults: readOnlyHint false, destructiveHint true, idempotentHint false, openWorldHint true.",
-          "caption": "A timeout cannot distinguish a dropped request from a processed one whose reply was lost.",
+          "caption": "The draft states that the idempotency key \"MUST be unique and MUST NOT be reused with another request with a different request payload\", and that on such an attempt \"the resource SHOULD reply with a HTTP `422` status code\".",
           "placement": "explanation",
           "width": 720,
           "height": 806
@@ -868,7 +868,7 @@
         {
           "src": "lethal-trifecta.svg",
           "alt": "Three panels on prompt injection. The first lines up the three trifecta capabilities in the order an attack uses them — exposure to untrusted content, access to private data, and communication to the outside — with arrows reading “instructions arrive” and “act on this”, and notes that removing any leg breaks the chain. The second lists four channels that carry attacker-controlled text into context: tool results, tool descriptions and schemas loaded from tools/list before any call, error strings quoting a remote body, and titles, parameter docs and annotations. The third separates what changes the security property — removing a leg architecturally, and constraining the agent once untrusted input has entered — from what only raises the attacker's cost: guardrails and classifiers, a firmer system prompt, and summarising the untrusted text first.",
-          "caption": "The risk lives in the combination, so the mitigation that holds is a change of shape.",
+          "caption": "This is indirect prompt injection through a channel people forget to review. OWASP defines indirect prompt injection as arising when \"an LLM accepts input from external sources, such as websites or files\", and an error message that interpolates a remote body is one of those inputs.",
           "placement": "explanation",
           "width": 720,
           "height": 764
@@ -903,7 +903,7 @@
         {
           "src": "authorization-boundaries.svg",
           "alt": "Three panels on authorization. The first contrasts a tenancy boundary enforced by the model — a system prompt naming the current user while the credential is a shared service account — with one enforced by the system holding the data: a per-user credential the database itself checks, or row-level security and a tenant-bound connection. The second states three specification rules side by side: no token passthrough, verified by an audience check; a state handle is a name and not a capability, keyed as user_id and handle from the verified token; and a progressive least-privilege scope model that elevates on a targeted challenge. The third names the three root causes of Excessive Agency — functionality, permissions and autonomy — each with its own fix, beside the mail-forwarding case where read-only scopes prevent the outcome while logging and rate limits only limit the damage.",
-          "caption": "Logging and rate limits bound the damage; removing the capability prevents it.",
+          "caption": "\"Token passthrough\" is named as an anti-pattern in MCP's security best practices, with an unambiguous requirement.",
           "placement": "explanation",
           "width": 720,
           "height": 764
@@ -938,7 +938,7 @@
         {
           "src": "authorization-boundaries.svg",
           "alt": "Three panels on authorization. The first contrasts a tenancy boundary enforced by the model — a system prompt naming the current user while the credential is a shared service account — with one enforced by the system holding the data: a per-user credential the database itself checks, or row-level security and a tenant-bound connection. The second states three specification rules side by side: no token passthrough, verified by an audience check; a state handle is a name and not a capability, keyed as user_id and handle from the verified token; and a progressive least-privilege scope model that elevates on a targeted challenge. The third names the three root causes of Excessive Agency — functionality, permissions and autonomy — each with its own fix, beside the mail-forwarding case where read-only scopes prevent the outcome while logging and rate limits only limit the damage.",
-          "caption": "Logging and rate limits bound the damage; removing the capability prevents it.",
+          "caption": "MCP is stateless and has no protocol-level session, so a server that needs continuity mints an explicit handle and receives it back as an ordinary tool argument.",
           "placement": "explanation",
           "width": 720,
           "height": 764
@@ -1024,7 +1024,7 @@
         {
           "src": "lethal-trifecta.svg",
           "alt": "Three panels on prompt injection. The first lines up the three trifecta capabilities in the order an attack uses them — exposure to untrusted content, access to private data, and communication to the outside — with arrows reading “instructions arrive” and “act on this”, and notes that removing any leg breaks the chain. The second lists four channels that carry attacker-controlled text into context: tool results, tool descriptions and schemas loaded from tools/list before any call, error strings quoting a remote body, and titles, parameter docs and annotations. The third separates what changes the security property — removing a leg architecturally, and constraining the agent once untrusted input has entered — from what only raises the attacker's cost: guardrails and classifiers, a firmer system prompt, and summarising the untrusted text first.",
-          "caption": "The risk lives in the combination, so the mitigation that holds is a change of shape.",
+          "caption": "Simon Willison's framing, published in June 2025, names three capabilities. The first is access to private data, which he calls \"one of the most common purposes of tools in the first place\".",
           "placement": "explanation",
           "width": 720,
           "height": 764
@@ -1063,7 +1063,7 @@
         {
           "src": "lethal-trifecta.svg",
           "alt": "Three panels on prompt injection. The first lines up the three trifecta capabilities in the order an attack uses them — exposure to untrusted content, access to private data, and communication to the outside — with arrows reading “instructions arrive” and “act on this”, and notes that removing any leg breaks the chain. The second lists four channels that carry attacker-controlled text into context: tool results, tool descriptions and schemas loaded from tools/list before any call, error strings quoting a remote body, and titles, parameter docs and annotations. The third separates what changes the security property — removing a leg architecturally, and constraining the agent once untrusted input has entered — from what only raises the attacker's cost: guardrails and classifiers, a firmer system prompt, and summarising the untrusted text first.",
-          "caption": "The risk lives in the combination, so the mitigation that holds is a change of shape.",
+          "caption": "Willison's advice for anyone mixing tools is to \"avoid that lethal trifecta combination entirely\".",
           "placement": "explanation",
           "width": 720,
           "height": 764
@@ -1098,7 +1098,7 @@
         {
           "src": "lethal-trifecta.svg",
           "alt": "Three panels on prompt injection. The first lines up the three trifecta capabilities in the order an attack uses them — exposure to untrusted content, access to private data, and communication to the outside — with arrows reading “instructions arrive” and “act on this”, and notes that removing any leg breaks the chain. The second lists four channels that carry attacker-controlled text into context: tool results, tool descriptions and schemas loaded from tools/list before any call, error strings quoting a remote body, and titles, parameter docs and annotations. The third separates what changes the security property — removing a leg architecturally, and constraining the agent once untrusted input has entered — from what only raises the attacker's cost: guardrails and classifiers, a firmer system prompt, and summarising the untrusted text first.",
-          "caption": "The risk lives in the combination, so the mitigation that holds is a change of shape.",
+          "caption": "This is the tool poisoning attack, disclosed publicly by Invariant Labs in April 2025. Malicious instructions are embedded in a tool's description at registration time, alongside a plausible summary of what the tool does.",
           "placement": "explanation",
           "width": 720,
           "height": 764
@@ -1133,7 +1133,7 @@
         {
           "src": "lethal-trifecta.svg",
           "alt": "Three panels on prompt injection. The first lines up the three trifecta capabilities in the order an attack uses them — exposure to untrusted content, access to private data, and communication to the outside — with arrows reading “instructions arrive” and “act on this”, and notes that removing any leg breaks the chain. The second lists four channels that carry attacker-controlled text into context: tool results, tool descriptions and schemas loaded from tools/list before any call, error strings quoting a remote body, and titles, parameter docs and annotations. The third separates what changes the security property — removing a leg architecturally, and constraining the agent once untrusted input has entered — from what only raises the attacker's cost: guardrails and classifiers, a firmer system prompt, and summarising the untrusted text first.",
-          "caption": "The risk lives in the combination, so the mitigation that holds is a change of shape.",
+          "caption": "The tool set is explicitly mutable. Servers declare a `listChanged` capability and emit `notifications/tools/list_changed` when the available tools change, and the spec says the set \"**MAY** change over time\".",
           "placement": "explanation",
           "width": 720,
           "height": 764
@@ -1168,7 +1168,7 @@
         {
           "src": "lethal-trifecta.svg",
           "alt": "Three panels on prompt injection. The first lines up the three trifecta capabilities in the order an attack uses them — exposure to untrusted content, access to private data, and communication to the outside — with arrows reading “instructions arrive” and “act on this”, and notes that removing any leg breaks the chain. The second lists four channels that carry attacker-controlled text into context: tool results, tool descriptions and schemas loaded from tools/list before any call, error strings quoting a remote body, and titles, parameter docs and annotations. The third separates what changes the security property — removing a leg architecturally, and constraining the agent once untrusted input has entered — from what only raises the attacker's cost: guardrails and classifiers, a firmer system prompt, and summarising the untrusted text first.",
-          "caption": "The risk lives in the combination, so the mitigation that holds is a change of shape.",
+          "caption": "Beurer-Kellner and co-authors propose \"a set of principled design patterns for building AI agents with provable resistance to prompt injection\", and the principle Willison draws from the work is the constraint stated here.",
           "placement": "explanation",
           "width": 720,
           "height": 764
@@ -1204,7 +1204,7 @@
         {
           "src": "authorization-boundaries.svg",
           "alt": "Three panels on authorization. The first contrasts a tenancy boundary enforced by the model — a system prompt naming the current user while the credential is a shared service account — with one enforced by the system holding the data: a per-user credential the database itself checks, or row-level security and a tenant-bound connection. The second states three specification rules side by side: no token passthrough, verified by an audience check; a state handle is a name and not a capability, keyed as user_id and handle from the verified token; and a progressive least-privilege scope model that elevates on a targeted challenge. The third names the three root causes of Excessive Agency — functionality, permissions and autonomy — each with its own fix, beside the mail-forwarding case where read-only scopes prevent the outcome while logging and rate limits only limit the damage.",
-          "caption": "Logging and rate limits bound the damage; removing the capability prevents it.",
+          "caption": "LLM06:2025 defines Excessive Agency as damaging actions taken in response to \"unexpected, ambiguous or manipulated outputs from an LLM\", and attributes it to three root causes: excessive functionality, excessive permissions, and excessive autonomy.",
           "placement": "explanation",
           "width": 720,
           "height": 764
@@ -1244,7 +1244,7 @@
         {
           "src": "authorization-boundaries.svg",
           "alt": "Three panels on authorization. The first contrasts a tenancy boundary enforced by the model — a system prompt naming the current user while the credential is a shared service account — with one enforced by the system holding the data: a per-user credential the database itself checks, or row-level security and a tenant-bound connection. The second states three specification rules side by side: no token passthrough, verified by an audience check; a state handle is a name and not a capability, keyed as user_id and handle from the verified token; and a progressive least-privilege scope model that elevates on a targeted challenge. The third names the three root causes of Excessive Agency — functionality, permissions and autonomy — each with its own fix, beside the mail-forwarding case where read-only scopes prevent the outcome while logging and rate limits only limit the damage.",
-          "caption": "Logging and rate limits bound the damage; removing the capability prevents it.",
+          "caption": "OWASP's own analysis of this scenario says it was preventable by eliminating unneeded mail functions, restricting the OAuth grant to read-only, and requiring manual approval before messages are sent.",
           "placement": "explanation",
           "width": 720,
           "height": 764
@@ -1280,7 +1280,7 @@
         {
           "src": "authorization-boundaries.svg",
           "alt": "Three panels on authorization. The first contrasts a tenancy boundary enforced by the model — a system prompt naming the current user while the credential is a shared service account — with one enforced by the system holding the data: a per-user credential the database itself checks, or row-level security and a tenant-bound connection. The second states three specification rules side by side: no token passthrough, verified by an audience check; a state handle is a name and not a capability, keyed as user_id and handle from the verified token; and a progressive least-privilege scope model that elevates on a targeted challenge. The third names the three root causes of Excessive Agency — functionality, permissions and autonomy — each with its own fix, beside the mail-forwarding case where read-only scopes prevent the outcome while logging and rate limits only limit the damage.",
-          "caption": "Logging and rate limits bound the damage; removing the capability prevents it.",
+          "caption": "The tenancy boundary here is a sentence in a prompt. Everything that could dislodge it is routine: an ambiguous request, an injected instruction inside a support ticket the agent reads, a transposed id, or a summarization step that drops the constraint from a compacted history.",
           "placement": "explanation",
           "width": 720,
           "height": 764
@@ -1315,7 +1315,7 @@
         {
           "src": "authorization-boundaries.svg",
           "alt": "Three panels on authorization. The first contrasts a tenancy boundary enforced by the model — a system prompt naming the current user while the credential is a shared service account — with one enforced by the system holding the data: a per-user credential the database itself checks, or row-level security and a tenant-bound connection. The second states three specification rules side by side: no token passthrough, verified by an audience check; a state handle is a name and not a capability, keyed as user_id and handle from the verified token; and a progressive least-privilege scope model that elevates on a targeted challenge. The third names the three root causes of Excessive Agency — functionality, permissions and autonomy — each with its own fix, beside the mail-forwarding case where read-only scopes prevent the outcome while logging and rate limits only limit the damage.",
-          "caption": "Logging and rate limits bound the damage; removing the capability prevents it.",
+          "caption": "The guidance is to \"implement a progressive, least-privilege scope model\". Start with a minimal scope set holding only low-risk discovery and read operations.",
           "placement": "explanation",
           "width": 720,
           "height": 764
@@ -1350,7 +1350,7 @@
         {
           "src": "authorization-boundaries.svg",
           "alt": "Three panels on authorization. The first contrasts a tenancy boundary enforced by the model — a system prompt naming the current user while the credential is a shared service account — with one enforced by the system holding the data: a per-user credential the database itself checks, or row-level security and a tenant-bound connection. The second states three specification rules side by side: no token passthrough, verified by an audience check; a state handle is a name and not a capability, keyed as user_id and handle from the verified token; and a progressive least-privilege scope model that elevates on a targeted challenge. The third names the three root causes of Excessive Agency — functionality, permissions and autonomy — each with its own fix, beside the mail-forwarding case where read-only scopes prevent the outcome while logging and rate limits only limit the damage.",
-          "caption": "Logging and rate limits bound the damage; removing the capability prevents it.",
+          "caption": "A secret in context is a secret in the transcript. It is stored in conversation history, returned by whatever endpoint lists events, folded into compaction summaries, and replayed into every later turn, so one write persists for the life of the session and beyond into logs and traces.",
           "placement": "explanation",
           "width": 720,
           "height": 764

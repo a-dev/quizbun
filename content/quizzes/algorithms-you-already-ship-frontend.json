@@ -14,7 +14,7 @@
         {
           "src": "stable-sort.svg",
           "alt": "Three columns of the same four rows. The first, sorted by Name, reads Ana Mar 3, Bo Mar 1, Cy Mar 3, Dee Mar 1. The second, re-sorted by Date with a stable sort, reads Bo Mar 1, Dee Mar 1, Ana Mar 3, Cy Mar 3 — name order kept inside each date. The third, re-sorted with an unstable sort, reads Dee Mar 1, Bo Mar 1, Cy Mar 3, Ana Mar 3, with the ties scrambled. A footer says ES2019 requires the property, not an algorithm, and that V8 uses TimSort; a highlighted note says a comparator must return a number — negative, zero, positive — and that a comparator written as a less-than test returns a boolean, which coerces to 0 or 1 and can never say “a first”.",
-          "caption": "Sort the secondary key first, then the primary — stability is what carries the first pass through.",
+          "caption": "A *stable* sort preserves the input order of elements that compare equal. If two rows tie on the sort key, the one that came first stays first.",
           "placement": "explanation",
           "width": 720,
           "height": 470
@@ -50,7 +50,7 @@
         {
           "src": "stable-sort.svg",
           "alt": "Three columns of the same four rows. The first, sorted by Name, reads Ana Mar 3, Bo Mar 1, Cy Mar 3, Dee Mar 1. The second, re-sorted by Date with a stable sort, reads Bo Mar 1, Dee Mar 1, Ana Mar 3, Cy Mar 3 — name order kept inside each date. The third, re-sorted with an unstable sort, reads Dee Mar 1, Bo Mar 1, Cy Mar 3, Ana Mar 3, with the ties scrambled. A footer says ES2019 requires the property, not an algorithm, and that V8 uses TimSort; a highlighted note says a comparator must return a number — negative, zero, positive — and that a comparator written as a less-than test returns a boolean, which coerces to 0 or 1 and can never say “a first”.",
-          "caption": "Sort the secondary key first, then the primary — stability is what carries the first pass through.",
+          "caption": "Multi-key sorting is built by sorting on the *least* significant key first, then stably sorting on more significant keys.",
           "placement": "explanation",
           "width": 720,
           "height": 470
@@ -86,7 +86,7 @@
         {
           "src": "stable-sort.svg",
           "alt": "Three columns of the same four rows. The first, sorted by Name, reads Ana Mar 3, Bo Mar 1, Cy Mar 3, Dee Mar 1. The second, re-sorted by Date with a stable sort, reads Bo Mar 1, Dee Mar 1, Ana Mar 3, Cy Mar 3 — name order kept inside each date. The third, re-sorted with an unstable sort, reads Dee Mar 1, Bo Mar 1, Cy Mar 3, Ana Mar 3, with the ties scrambled. A footer says ES2019 requires the property, not an algorithm, and that V8 uses TimSort; a highlighted note says a comparator must return a number — negative, zero, positive — and that a comparator written as a less-than test returns a boolean, which coerces to 0 or 1 and can never say “a first”.",
-          "caption": "Sort the secondary key first, then the primary — stability is what carries the first pass through.",
+          "caption": "`sort` expects the comparator to return a *negative* number (a before b), `0` (equal), or a *positive* number (a after b).",
           "placement": "explanation",
           "width": 720,
           "height": 470
@@ -171,7 +171,7 @@
         {
           "src": "stable-sort.svg",
           "alt": "Three columns of the same four rows. The first, sorted by Name, reads Ana Mar 3, Bo Mar 1, Cy Mar 3, Dee Mar 1. The second, re-sorted by Date with a stable sort, reads Bo Mar 1, Dee Mar 1, Ana Mar 3, Cy Mar 3 — name order kept inside each date. The third, re-sorted with an unstable sort, reads Dee Mar 1, Bo Mar 1, Cy Mar 3, Ana Mar 3, with the ties scrambled. A footer says ES2019 requires the property, not an algorithm, and that V8 uses TimSort; a highlighted note says a comparator must return a number — negative, zero, positive — and that a comparator written as a less-than test returns a boolean, which coerces to 0 or 1 and can never say “a first”.",
-          "caption": "Sort the secondary key first, then the primary — stability is what carries the first pass through.",
+          "caption": "The spec mandates a *property*, equal elements retain their order, not an *implementation*.",
           "placement": "explanation",
           "width": 720,
           "height": 470
@@ -206,7 +206,7 @@
         {
           "src": "stable-sort.svg",
           "alt": "Three columns of the same four rows. The first, sorted by Name, reads Ana Mar 3, Bo Mar 1, Cy Mar 3, Dee Mar 1. The second, re-sorted by Date with a stable sort, reads Bo Mar 1, Dee Mar 1, Ana Mar 3, Cy Mar 3 — name order kept inside each date. The third, re-sorted with an unstable sort, reads Dee Mar 1, Bo Mar 1, Cy Mar 3, Ana Mar 3, with the ties scrambled. A footer says ES2019 requires the property, not an algorithm, and that V8 uses TimSort; a highlighted note says a comparator must return a number — negative, zero, positive — and that a comparator written as a less-than test returns a boolean, which coerces to 0 or 1 and can never say “a first”.",
-          "caption": "Sort the secondary key first, then the primary — stability is what carries the first pass through.",
+          "caption": "Layered sorting works because the final, stable pass on the primary key preserves the order established by earlier passes, so you sort by the *least* significant key first.",
           "placement": "explanation",
           "width": 720,
           "height": 470
@@ -245,7 +245,7 @@
         {
           "src": "stable-sort.svg",
           "alt": "Three columns of the same four rows. The first, sorted by Name, reads Ana Mar 3, Bo Mar 1, Cy Mar 3, Dee Mar 1. The second, re-sorted by Date with a stable sort, reads Bo Mar 1, Dee Mar 1, Ana Mar 3, Cy Mar 3 — name order kept inside each date. The third, re-sorted with an unstable sort, reads Dee Mar 1, Bo Mar 1, Cy Mar 3, Ana Mar 3, with the ties scrambled. A footer says ES2019 requires the property, not an algorithm, and that V8 uses TimSort; a highlighted note says a comparator must return a number — negative, zero, positive — and that a comparator written as a less-than test returns a boolean, which coerces to 0 or 1 and can never say “a first”.",
-          "caption": "Sort the secondary key first, then the primary — stability is what carries the first pass through.",
+          "caption": "Ascending order needs a comparator that returns a *negative* number when `a` should come first.",
           "placement": "explanation",
           "width": 720,
           "height": 470
@@ -325,7 +325,7 @@
         {
           "src": "debounce-vs-throttle.svg",
           "alt": "Three timelines over the same 1,200 milliseconds, each marked with ten event ticks: a fast burst of seven, a pause, then three more. The first lane is every event, ten of them. The second, debounce with a 200 millisecond wait, has two filled marks, each landing after a burst has gone quiet. The third, throttle at 150 milliseconds, has four filled marks spread through the bursts. Two panels below list the fits: debounce for search-as-you-type, autosave, field validation after typing stops, and settled window resizes; throttle for scroll position, mousemove and drag updates, infinite-scroll checks and analytics pings.",
-          "caption": "Debounce goes silent during the burst; throttle keeps a steady output through it.",
+          "caption": "Both limit how often a handler runs, but on different clocks. **Debounce** resets a timer on every call and only fires after the calls *pause* for the chosen delay, think of an elevator door that closes only once people stop stepping in.",
           "placement": "explanation",
           "width": 720,
           "height": 474
@@ -360,7 +360,7 @@
         {
           "src": "sliding-window.svg",
           "alt": "Four snapshots of the string a b c a b c b b with a window drawn over it. At right = 2 the window covers abc, length 3. At right = 3 the incoming a repeats, so left jumps past index 0 and the window becomes bca, length 3. At right = 5 the window is abc again, length 3. At right = 6 the incoming b repeats, so left jumps past index 4 and the window shrinks to length 2. The longest window is 3. Two panels note that left and right each only move forward, so every index enters and leaves once — 2n moves — while testing every substring would be O(n squared) windows times O(n) to check each, and list which problems a window suits.",
-          "caption": "Both pointers only move forward, which is the whole reason the scan is linear.",
+          "caption": "The power of two pointers is *monotonic movement*: a `left` and `right` index sweep across the data, and crucially neither ever moves backward.",
           "placement": "explanation",
           "width": 720,
           "height": 536
@@ -468,7 +468,7 @@
         {
           "src": "debounce-vs-throttle.svg",
           "alt": "Three timelines over the same 1,200 milliseconds, each marked with ten event ticks: a fast burst of seven, a pause, then three more. The first lane is every event, ten of them. The second, debounce with a 200 millisecond wait, has two filled marks, each landing after a burst has gone quiet. The third, throttle at 150 milliseconds, has four filled marks spread through the bursts. Two panels below list the fits: debounce for search-as-you-type, autosave, field validation after typing stops, and settled window resizes; throttle for scroll position, mousemove and drag updates, infinite-scroll checks and analytics pings.",
-          "caption": "Debounce goes silent during the burst; throttle keeps a steady output through it.",
+          "caption": "Search-as-you-type is the canonical debounce case: you only care about the *final* query once the user pauses, so you reset the timer on each keystroke and fire one request when typing stops, saving a request per character.",
           "placement": "explanation",
           "width": 720,
           "height": 474
@@ -503,7 +503,7 @@
         {
           "src": "debounce-vs-throttle.svg",
           "alt": "Three timelines over the same 1,200 milliseconds, each marked with ten event ticks: a fast burst of seven, a pause, then three more. The first lane is every event, ten of them. The second, debounce with a 200 millisecond wait, has two filled marks, each landing after a burst has gone quiet. The third, throttle at 150 milliseconds, has four filled marks spread through the bursts. Two panels below list the fits: debounce for search-as-you-type, autosave, field validation after typing stops, and settled window resizes; throttle for scroll position, mousemove and drag updates, infinite-scroll checks and analytics pings.",
-          "caption": "Debounce goes silent during the burst; throttle keeps a steady output through it.",
+          "caption": "Pegging a scroll handler to `requestAnimationFrame` naturally throttles it to the paint cadence (~60 runs/second).",
           "placement": "explanation",
           "width": 720,
           "height": 474
@@ -542,7 +542,7 @@
         {
           "src": "debounce-vs-throttle.svg",
           "alt": "Three timelines over the same 1,200 milliseconds, each marked with ten event ticks: a fast burst of seven, a pause, then three more. The first lane is every event, ten of them. The second, debounce with a 200 millisecond wait, has two filled marks, each landing after a burst has gone quiet. The third, throttle at 150 milliseconds, has four filled marks spread through the bursts. Two panels below list the fits: debounce for search-as-you-type, autosave, field validation after typing stops, and settled window resizes; throttle for scroll position, mousemove and drag updates, infinite-scroll checks and analytics pings.",
-          "caption": "Debounce goes silent during the burst; throttle keeps a steady output through it.",
+          "caption": "Throttle wins whenever you want *regular updates during* continuous activity: a progress bar, a cursor-following tooltip, and rate-capped infinite-scroll loads all need to keep responding while the gesture is ongoing, just not on every single event.",
           "placement": "explanation",
           "width": 720,
           "height": 474
@@ -581,7 +581,7 @@
         {
           "src": "sliding-window.svg",
           "alt": "Four snapshots of the string a b c a b c b b with a window drawn over it. At right = 2 the window covers abc, length 3. At right = 3 the incoming a repeats, so left jumps past index 0 and the window becomes bca, length 3. At right = 5 the window is abc again, length 3. At right = 6 the incoming b repeats, so left jumps past index 4 and the window shrinks to length 2. The longest window is 3. Two panels note that left and right each only move forward, so every index enters and leaves once — 2n moves — while testing every substring would be O(n squared) windows times O(n) to check each, and list which problems a window suits.",
-          "caption": "Both pointers only move forward, which is the whole reason the scan is linear.",
+          "caption": "Sliding windows shine on *contiguous-range* questions where moving the window updates the answer incrementally.",
           "placement": "explanation",
           "width": 720,
           "height": 536
@@ -620,7 +620,7 @@
         {
           "src": "sliding-window.svg",
           "alt": "Four snapshots of the string a b c a b c b b with a window drawn over it. At right = 2 the window covers abc, length 3. At right = 3 the incoming a repeats, so left jumps past index 0 and the window becomes bca, length 3. At right = 5 the window is abc again, length 3. At right = 6 the incoming b repeats, so left jumps past index 4 and the window shrinks to length 2. The longest window is 3. Two panels note that left and right each only move forward, so every index enters and leaves once — 2n moves — while testing every substring would be O(n squared) windows times O(n) to check each, and list which problems a window suits.",
-          "caption": "Both pointers only move forward, which is the whole reason the scan is linear.",
+          "caption": "Grow a window to the right, and whenever the incoming character is already inside the window, slide `left` past its previous position.",
           "placement": "explanation",
           "width": 720,
           "height": 536
@@ -665,7 +665,7 @@
         {
           "src": "memo-call-tree.svg",
           "alt": "The full call tree for a naive recursive fib(5): fifteen nodes over five levels, branching into fib(4) and fib(3) and down to fib(1) and fib(0) leaves. Six nodes are the first time their value is computed; the other nine are shaded as repeats of work already done elsewhere in the tree. A side note says fib(40) is over 300 million calls. Two panels below compare top-down memoisation, which adds a cache so each distinct n is computed once but keeps the recursion stack, with bottom-up tabulation, which fills the same table left to right with no recursion — shown as the climbing-stairs table where n = 1 through 5 gives 1, 2, 3, 5, 8.",
-          "caption": "Nine of the fifteen calls recompute an answer the tree already has.",
+          "caption": "Dynamic programming pays off when a problem has *overlapping subproblems*, the same smaller problems recur, so caching their answers avoids exponential recomputation, *and* *optimal substructure*, meaning an optimal overall solution is built from optimal solutions to those subproblems.",
           "placement": "explanation",
           "width": 720,
           "height": 532
@@ -700,7 +700,7 @@
         {
           "src": "memo-call-tree.svg",
           "alt": "The full call tree for a naive recursive fib(5): fifteen nodes over five levels, branching into fib(4) and fib(3) and down to fib(1) and fib(0) leaves. Six nodes are the first time their value is computed; the other nine are shaded as repeats of work already done elsewhere in the tree. A side note says fib(40) is over 300 million calls. Two panels below compare top-down memoisation, which adds a cache so each distinct n is computed once but keeps the recursion stack, with bottom-up tabulation, which fills the same table left to right with no recursion — shown as the climbing-stairs table where n = 1 through 5 gives 1, 2, 3, 5, 8.",
-          "caption": "Nine of the fifteen calls recompute an answer the tree already has.",
+          "caption": "They are two routes to the same recurrence. *Top-down* (memoization) writes the natural recursion from the target value and stores each subproblem's answer the first time it is computed, so repeats are O(1) lookups.",
           "placement": "explanation",
           "width": 720,
           "height": 532
@@ -786,7 +786,7 @@
         {
           "src": "memo-call-tree.svg",
           "alt": "The full call tree for a naive recursive fib(5): fifteen nodes over five levels, branching into fib(4) and fib(3) and down to fib(1) and fib(0) leaves. Six nodes are the first time their value is computed; the other nine are shaded as repeats of work already done elsewhere in the tree. A side note says fib(40) is over 300 million calls. Two panels below compare top-down memoisation, which adds a cache so each distinct n is computed once but keeps the recursion stack, with bottom-up tabulation, which fills the same table left to right with no recursion — shown as the climbing-stairs table where n = 1 through 5 gives 1, 2, 3, 5, 8.",
-          "caption": "Nine of the fifteen calls recompute an answer the tree already has.",
+          "caption": "Naive `fib` recomputes the same values astronomically often: `fib(5)` calls `fib(3)` twice, `fib(2)` three times, and so on, giving roughly O(2^*n*).",
           "placement": "explanation",
           "width": 720,
           "height": 532
@@ -878,7 +878,7 @@
         {
           "src": "memo-call-tree.svg",
           "alt": "The full call tree for a naive recursive fib(5): fifteen nodes over five levels, branching into fib(4) and fib(3) and down to fib(1) and fib(0) leaves. Six nodes are the first time their value is computed; the other nine are shaded as repeats of work already done elsewhere in the tree. A side note says fib(40) is over 300 million calls. Two panels below compare top-down memoisation, which adds a cache so each distinct n is computed once but keeps the recursion stack, with bottom-up tabulation, which fills the same table left to right with no recursion — shown as the climbing-stairs table where n = 1 through 5 gives 1, 2, 3, 5, 8.",
-          "caption": "Nine of the fifteen calls recompute an answer the tree already has.",
+          "caption": "Top-down only visits the subproblems the recursion actually demands (handy on sparse state spaces), but deep recursion can overflow the call stack.",
           "placement": "explanation",
           "width": 720,
           "height": 532
@@ -918,7 +918,7 @@
         {
           "src": "memo-call-tree.svg",
           "alt": "The full call tree for a naive recursive fib(5): fifteen nodes over five levels, branching into fib(4) and fib(3) and down to fib(1) and fib(0) leaves. Six nodes are the first time their value is computed; the other nine are shaded as repeats of work already done elsewhere in the tree. A side note says fib(40) is over 300 million calls. Two panels below compare top-down memoisation, which adds a cache so each distinct n is computed once but keeps the recursion stack, with bottom-up tabulation, which fills the same table left to right with no recursion — shown as the climbing-stairs table where n = 1 through 5 gives 1, 2, 3, 5, 8.",
-          "caption": "Nine of the fifteen calls recompute an answer the tree already has.",
+          "caption": "Let `ways(n)` be the number of ways to reach step `n`. The last move is either a 1-step (from `n-1`) or a 2-step (from `n-2`), so `ways(n) = ways(n-1) + ways(n-2)`, the Fibonacci recurrence.",
           "placement": "explanation",
           "width": 720,
           "height": 532
@@ -939,7 +939,7 @@
         {
           "src": "edit-distance-grid.svg",
           "alt": "The Levenshtein dynamic-programming grid for kitten against sitting: seven rows labelled with the empty string then k, i, t, t, e, n, and eight columns labelled with the empty string then s, i, t, t, i, n, g. The first row and column count up from zero, and the bottom-right cell holds 3. Its three source neighbours are highlighted: 3 above-left, 4 above, 2 to the left. A legend gives the rule for filling one cell — up plus one deletes, left plus one inserts, diagonal plus one substitutes, diagonal plus zero when the letters match — and says to take the smallest. A footer traces kitten to sitten to sittin to sitting and notes that the grid is (n+1) by (m+1) cells, so filling it is O(n·m) in time.",
-          "caption": "The corner takes 2 from its left neighbour and adds one, which is the inserted g.",
+          "caption": "Levenshtein distance is the *minimum* number of single-character edits, insert, delete, or substitute, to transform one string into the other.",
           "placement": "explanation",
           "width": 720,
           "height": 518
@@ -974,7 +974,7 @@
         {
           "src": "edit-distance-grid.svg",
           "alt": "The Levenshtein dynamic-programming grid for kitten against sitting: seven rows labelled with the empty string then k, i, t, t, e, n, and eight columns labelled with the empty string then s, i, t, t, i, n, g. The first row and column count up from zero, and the bottom-right cell holds 3. Its three source neighbours are highlighted: 3 above-left, 4 above, 2 to the left. A legend gives the rule for filling one cell — up plus one deletes, left plus one inserts, diagonal plus one substitutes, diagonal plus zero when the letters match — and says to take the smallest. A footer traces kitten to sitten to sittin to sitting and notes that the grid is (n+1) by (m+1) cells, so filling it is O(n·m) in time.",
-          "caption": "The corner takes 2 from its left neighbour and adds one, which is the inserted g.",
+          "caption": "The dynamic-programming solution fills a grid where cell `(i, j)` is the edit distance between the first `i` and first `j` characters, each cell derived from its top, left, and diagonal neighbors.",
           "placement": "explanation",
           "width": 720,
           "height": 518
@@ -1170,7 +1170,7 @@
         {
           "src": "edit-distance-grid.svg",
           "alt": "The Levenshtein dynamic-programming grid for kitten against sitting: seven rows labelled with the empty string then k, i, t, t, e, n, and eight columns labelled with the empty string then s, i, t, t, i, n, g. The first row and column count up from zero, and the bottom-right cell holds 3. Its three source neighbours are highlighted: 3 above-left, 4 above, 2 to the left. A legend gives the rule for filling one cell — up plus one deletes, left plus one inserts, diagonal plus one substitutes, diagonal plus zero when the letters match — and says to take the smallest. A footer traces kitten to sitten to sittin to sitting and notes that the grid is (n+1) by (m+1) cells, so filling it is O(n·m) in time.",
-          "caption": "The corner takes 2 from its left neighbour and adds one, which is the inserted g.",
+          "caption": "This is the textbook example. Three edits transform one into the other: `kitten` → `sitten` (substitute k→s) → `sittin` (substitute e→i) → `sitting` (insert g).",
           "placement": "explanation",
           "width": 720,
           "height": 518
@@ -1202,7 +1202,7 @@
         {
           "src": "greedy-vs-optimal.svg",
           "alt": "Two versions of the same ten-word paragraph in the same column, words drawn as bars against a dashed right margin. The greedy first-fit version ends its five lines at 156, 156, 161, 237 and 95 pixels: the fourth line crams in three words and the fifth is left holding one. The Knuth–Plass version ends at 156, 156, 161, 156 and 176, with no stranded last line. Notes explain that greedy fills until the next word overflows and never revisits a break, while Knuth–Plass scores each candidate line's badness and runs dynamic programming over all break points. A footer says text-wrap pretty in Chrome reworks only the final lines, text-wrap balance evens out short blocks such as headings, and that flexbox and Grid auto-placement are greedy too.",
-          "caption": "Greedy's fourth line is locally the tightest fit, and it strands the fifth.",
+          "caption": "Flexbox is a *greedy* allocator: it measures the free space on the main axis and divides it among items in one pass, in proportion to their `flex-grow` values (an item with `flex-grow: 2` gets twice the share of one with `flex-grow: 1`).",
           "placement": "explanation",
           "width": 720,
           "height": 548
@@ -1237,7 +1237,7 @@
         {
           "src": "greedy-vs-optimal.svg",
           "alt": "Two versions of the same ten-word paragraph in the same column, words drawn as bars against a dashed right margin. The greedy first-fit version ends its five lines at 156, 156, 161, 237 and 95 pixels: the fourth line crams in three words and the fifth is left holding one. The Knuth–Plass version ends at 156, 156, 161, 156 and 176, with no stranded last line. Notes explain that greedy fills until the next word overflows and never revisits a break, while Knuth–Plass scores each candidate line's badness and runs dynamic programming over all break points. A footer says text-wrap pretty in Chrome reworks only the final lines, text-wrap balance evens out short blocks such as headings, and that flexbox and Grid auto-placement are greedy too.",
-          "caption": "Greedy's fourth line is locally the tightest fit, and it strands the fifth.",
+          "caption": "The default breaker is *greedy first-fit*: fill the line until the next word would overflow, break, repeat.",
           "placement": "explanation",
           "width": 720,
           "height": 548
@@ -1272,7 +1272,7 @@
         {
           "src": "greedy-vs-optimal.svg",
           "alt": "Two versions of the same ten-word paragraph in the same column, words drawn as bars against a dashed right margin. The greedy first-fit version ends its five lines at 156, 156, 161, 237 and 95 pixels: the fourth line crams in three words and the fifth is left holding one. The Knuth–Plass version ends at 156, 156, 161, 156 and 176, with no stranded last line. Notes explain that greedy fills until the next word overflows and never revisits a break, while Knuth–Plass scores each candidate line's badness and runs dynamic programming over all break points. A footer says text-wrap pretty in Chrome reworks only the final lines, text-wrap balance evens out short blocks such as headings, and that flexbox and Grid auto-placement are greedy too.",
-          "caption": "Greedy's fourth line is locally the tightest fit, and it strands the fifth.",
+          "caption": "Knuth-Plass treats line breaking as a global optimization: it assigns a \"badness\" to each possible line (how stretched or cramped the spaces are) plus penalties for things like hyphenation.",
           "placement": "explanation",
           "width": 720,
           "height": 548
@@ -1307,7 +1307,7 @@
         {
           "src": "greedy-vs-optimal.svg",
           "alt": "Two versions of the same ten-word paragraph in the same column, words drawn as bars against a dashed right margin. The greedy first-fit version ends its five lines at 156, 156, 161, 237 and 95 pixels: the fourth line crams in three words and the fifth is left holding one. The Knuth–Plass version ends at 156, 156, 161, 156 and 176, with no stranded last line. Notes explain that greedy fills until the next word overflows and never revisits a break, while Knuth–Plass scores each candidate line's badness and runs dynamic programming over all break points. A footer says text-wrap pretty in Chrome reworks only the final lines, text-wrap balance evens out short blocks such as headings, and that flexbox and Grid auto-placement are greedy too.",
-          "caption": "Greedy's fourth line is locally the tightest fit, and it strands the fifth.",
+          "caption": "The CSS spec leaves the exact algorithm up to the browser, and Chrome's current implementation is deliberately limited.",
           "placement": "explanation",
           "width": 720,
           "height": 548
@@ -1342,7 +1342,7 @@
         {
           "src": "backtracking-and-matching.svg",
           "alt": "Two panels. On the left, the selector .menu li a matched against one element: a nested chain of a div with class menu, a ul, an li and an a, annotated right to left — step 1 asks whether the element is an a, step 2 looks for an li ancestor, step 3 for a .menu ancestor — with a note that almost every element fails step 1 on one comparison, so the ancestor walk never starts. On the right, the regex caret open-paren a-plus close-paren plus dollar run against four a's and an exclamation mark, showing all eight ways four a's can be split between the inner and outer plus, with a note that n a's give 2 to the power n minus 1 splits and the trailing exclamation mark makes the match fail, so the engine tries every one — 524,288 attempts for twenty a's. Two footers separate what is backtracking (regex alternatives, selector ancestor walks, Sudoku and N-queens) from what is not (a hash-map lookup, flexbox dividing free space in one pass).",
-          "caption": "Same mechanism, opposite outcome: one gives up in a single comparison, the other never gives up.",
+          "caption": "Browsers match the *rightmost* compound selector (the \"key selector\") against the element first, then walk **right to left** up the DOM verifying the ancestor conditions.",
           "placement": "explanation",
           "width": 720,
           "height": 510
@@ -1377,7 +1377,7 @@
         {
           "src": "backtracking-and-matching.svg",
           "alt": "Two panels. On the left, the selector .menu li a matched against one element: a nested chain of a div with class menu, a ul, an li and an a, annotated right to left — step 1 asks whether the element is an a, step 2 looks for an li ancestor, step 3 for a .menu ancestor — with a note that almost every element fails step 1 on one comparison, so the ancestor walk never starts. On the right, the regex caret open-paren a-plus close-paren plus dollar run against four a's and an exclamation mark, showing all eight ways four a's can be split between the inner and outer plus, with a note that n a's give 2 to the power n minus 1 splits and the trailing exclamation mark makes the match fail, so the engine tries every one — 524,288 attempts for twenty a's. Two footers separate what is backtracking (regex alternatives, selector ancestor walks, Sudoku and N-queens) from what is not (a hash-map lookup, flexbox dividing free space in one pass).",
-          "caption": "Same mechanism, opposite outcome: one gives up in a single comparison, the other never gives up.",
+          "caption": "Backtracking regex engines (the default in JavaScript and most languages) explore alternative ways to match.",
           "placement": "explanation",
           "width": 720,
           "height": 510
@@ -1412,7 +1412,7 @@
         {
           "src": "backtracking-and-matching.svg",
           "alt": "Two panels. On the left, the selector .menu li a matched against one element: a nested chain of a div with class menu, a ul, an li and an a, annotated right to left — step 1 asks whether the element is an a, step 2 looks for an li ancestor, step 3 for a .menu ancestor — with a note that almost every element fails step 1 on one comparison, so the ancestor walk never starts. On the right, the regex caret open-paren a-plus close-paren plus dollar run against four a's and an exclamation mark, showing all eight ways four a's can be split between the inner and outer plus, with a note that n a's give 2 to the power n minus 1 splits and the trailing exclamation mark makes the match fail, so the engine tries every one — 524,288 attempts for twenty a's. Two footers separate what is backtracking (regex alternatives, selector ancestor walks, Sudoku and N-queens) from what is not (a hash-map lookup, flexbox dividing free space in one pass).",
-          "caption": "Same mechanism, opposite outcome: one gives up in a single comparison, the other never gives up.",
+          "caption": "Backtracking is systematic trial-and-error: extend a partial solution one choice at a time, and the moment a constraint is violated, *undo* that choice (backtrack) and try the next option, pruning whole branches that cannot lead to a valid result.",
           "placement": "explanation",
           "width": 720,
           "height": 510
@@ -1447,7 +1447,7 @@
         {
           "src": "greedy-vs-optimal.svg",
           "alt": "Two versions of the same ten-word paragraph in the same column, words drawn as bars against a dashed right margin. The greedy first-fit version ends its five lines at 156, 156, 161, 237 and 95 pixels: the fourth line crams in three words and the fifth is left holding one. The Knuth–Plass version ends at 156, 156, 161, 156 and 176, with no stranded last line. Notes explain that greedy fills until the next word overflows and never revisits a break, while Knuth–Plass scores each candidate line's badness and runs dynamic programming over all break points. A footer says text-wrap pretty in Chrome reworks only the final lines, text-wrap balance evens out short blocks such as headings, and that flexbox and Grid auto-placement are greedy too.",
-          "caption": "Greedy's fourth line is locally the tightest fit, and it strands the fifth.",
+          "caption": "Greedy, single-pass decisions are everywhere in layout: flex grow/shrink distribution, the default greedy line breaker, and the grid auto-placement algorithm that walks the grid and drops each auto item into the next free cell.",
           "placement": "explanation",
           "width": 720,
           "height": 548
@@ -1486,7 +1486,7 @@
         {
           "src": "backtracking-and-matching.svg",
           "alt": "Two panels. On the left, the selector .menu li a matched against one element: a nested chain of a div with class menu, a ul, an li and an a, annotated right to left — step 1 asks whether the element is an a, step 2 looks for an li ancestor, step 3 for a .menu ancestor — with a note that almost every element fails step 1 on one comparison, so the ancestor walk never starts. On the right, the regex caret open-paren a-plus close-paren plus dollar run against four a's and an exclamation mark, showing all eight ways four a's can be split between the inner and outer plus, with a note that n a's give 2 to the power n minus 1 splits and the trailing exclamation mark makes the match fail, so the engine tries every one — 524,288 attempts for twenty a's. Two footers separate what is backtracking (regex alternatives, selector ancestor walks, Sudoku and N-queens) from what is not (a hash-map lookup, flexbox dividing free space in one pass).",
-          "caption": "Same mechanism, opposite outcome: one gives up in a single comparison, the other never gives up.",
+          "caption": "Backtracking means exploring choices and *retreating* when one fails: regex alternation/quantifiers retry other matches, selector matching abandons an element once an ancestor condition fails, and constraint puzzles like Sudoku and N-queens place-then-undo.",
           "placement": "explanation",
           "width": 720,
           "height": 510
@@ -1525,7 +1525,7 @@
         {
           "src": "greedy-vs-optimal.svg",
           "alt": "Two versions of the same ten-word paragraph in the same column, words drawn as bars against a dashed right margin. The greedy first-fit version ends its five lines at 156, 156, 161, 237 and 95 pixels: the fourth line crams in three words and the fifth is left holding one. The Knuth–Plass version ends at 156, 156, 161, 156 and 176, with no stranded last line. Notes explain that greedy fills until the next word overflows and never revisits a break, while Knuth–Plass scores each candidate line's badness and runs dynamic programming over all break points. A footer says text-wrap pretty in Chrome reworks only the final lines, text-wrap balance evens out short blocks such as headings, and that flexbox and Grid auto-placement are greedy too.",
-          "caption": "Greedy's fourth line is locally the tightest fit, and it strands the fifth.",
+          "caption": "The accurate picture: the default breaker is greedy (fast, line-at-a-time). The two false claims are easy to disprove: browsers historically used greedy wrapping, not Knuth-Plass, and optimal line breaking is very much computable, since TeX has done it since the early 1980s.",
           "placement": "explanation",
           "width": 720,
           "height": 548

@@ -14,7 +14,7 @@
         {
           "src": "request-response-timeline.svg",
           "alt": "A timeline comparing four transports against the same moment a server-side event occurs: short polling waits out its fixed interval before its next request happens to catch it; long polling holds a request open and answers within about one round trip; Server-Sent Events pushes the event immediately over its already-open connection; and WebSocket sends it immediately over its open full-duplex connection.",
-          "caption": "Top two lanes: short polling's fixed-interval requests vs. long polling's held-open request, both against the same event.",
+          "caption": "Short polling waits for the next timer tick; long polling already has a request waiting at the server.",
           "placement": "explanation",
           "width": 720,
           "height": 760
@@ -140,7 +140,7 @@
         {
           "src": "request-response-timeline.svg",
           "alt": "A timeline comparing four transports against the same moment a server-side event occurs: short polling waits out its fixed interval before its next request happens to catch it; long polling holds a request open and answers within about one round trip; Server-Sent Events pushes the event immediately over its already-open connection; and WebSocket sends it immediately over its open full-duplex connection.",
-          "caption": "The SSE lane — the event is pushed the instant it exists, over the one connection already open.",
+          "caption": "SSE uses one open HTTP connection, and the server sends each event as soon as it is ready.",
           "placement": "explanation",
           "width": 720,
           "height": 760

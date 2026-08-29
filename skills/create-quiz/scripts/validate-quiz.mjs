@@ -12567,8 +12567,32 @@ function checkCatalogProfile(quiz) {
       fix: "Add one or more kebab-case Tags so the quiz is discoverable in the Catalog filter."
     });
   }
+  issues.push(...checkRepeatedImageCaptions(quiz));
   for (const entry of listMarkdownFields(quiz)) {
     issues.push(...checkMarkdownField(entry));
+  }
+  return issues;
+}
+function checkRepeatedImageCaptions(quiz) {
+  const issues = [];
+  const firstPathByCaption = new Map;
+  for (const [questionIndex, question] of quiz.questions.entries()) {
+    for (const [imageIndex, image] of (question.images ?? []).entries()) {
+      if (image.caption === undefined)
+        continue;
+      const path = `questions[${questionIndex}].images[${imageIndex}].caption`;
+      const firstPath = firstPathByCaption.get(image.caption);
+      if (firstPath === undefined) {
+        firstPathByCaption.set(image.caption, path);
+        continue;
+      }
+      issues.push({
+        severity: "error",
+        path,
+        problem: `The Image caption repeats the caption at \`${firstPath}\`.`,
+        fix: "Use a different Image, or rewrite this caption to explain what the learner should notice here."
+      });
+    }
   }
   return issues;
 }

@@ -13,7 +13,7 @@
         {
           "src": "tokenization.svg",
           "alt": "Four panels on tokenization. The first counts the string “Ada Lovelace!” three ways — 13 characters, 2 words, and the four tokenizer pieces \"Ada\", \" Lov\", \"elace\" and \"!\" — marking the token count as the one that is billed. The second shows three edits that move a boundary: a leading space turning \"cat\" into \" cat\", capitalization turning \"cat\" into \"Cat\", and a rare word turning \"token\" into \"tokeniser\". The third splits “strawberry” into st, raw and berry, noting the model never receives a list of letters. The fourth is a ladder from one grapheme to three code points, eleven UTF-8 bytes, and several tokens.",
-          "caption": "Characters, words, graphemes, code points, bytes and tokens are six different units.",
+          "caption": "A tokenizer turns text into token IDs before the model processes it. A token may represent a common word, part of a word, punctuation, or a byte-based piece.",
           "placement": "explanation",
           "width": 720,
           "height": 606
@@ -48,7 +48,7 @@
         {
           "src": "tokenization.svg",
           "alt": "Four panels on tokenization. The first counts the string “Ada Lovelace!” three ways — 13 characters, 2 words, and the four tokenizer pieces \"Ada\", \" Lov\", \"elace\" and \"!\" — marking the token count as the one that is billed. The second shows three edits that move a boundary: a leading space turning \"cat\" into \" cat\", capitalization turning \"cat\" into \"Cat\", and a rare word turning \"token\" into \"tokeniser\". The third splits “strawberry” into st, raw and berry, noting the model never receives a list of letters. The fourth is a ladder from one grapheme to three code points, eleven UTF-8 bytes, and several tokens.",
-          "caption": "Characters, words, graphemes, code points, bytes and tokens are six different units.",
+          "caption": "The model may receive a whole word or a few fragments instead of a neat list of letters. It then has to reconstruct the spelling while predicting tokens, which makes exact counting harder.",
           "placement": "explanation",
           "width": 720,
           "height": 606
@@ -83,7 +83,7 @@
         {
           "src": "tokenization.svg",
           "alt": "Four panels on tokenization. The first counts the string “Ada Lovelace!” three ways — 13 characters, 2 words, and the four tokenizer pieces \"Ada\", \" Lov\", \"elace\" and \"!\" — marking the token count as the one that is billed. The second shows three edits that move a boundary: a leading space turning \"cat\" into \" cat\", capitalization turning \"cat\" into \"Cat\", and a rare word turning \"token\" into \"tokeniser\". The third splits “strawberry” into st, raw and berry, noting the model never receives a list of letters. The fourth is a ladder from one grapheme to three code points, eleven UTF-8 bytes, and several tokens.",
-          "caption": "Characters, words, graphemes, code points, bytes and tokens are six different units.",
+          "caption": "A tokenizer uses pieces from its own vocabulary, not a universal one-character-per-token rule.",
           "placement": "explanation",
           "width": 720,
           "height": 606
@@ -118,7 +118,7 @@
         {
           "src": "tokenization.svg",
           "alt": "Four panels on tokenization. The first counts the string “Ada Lovelace!” three ways — 13 characters, 2 words, and the four tokenizer pieces \"Ada\", \" Lov\", \"elace\" and \"!\" — marking the token count as the one that is billed. The second shows three edits that move a boundary: a leading space turning \"cat\" into \" cat\", capitalization turning \"cat\" into \"Cat\", and a rare word turning \"token\" into \"tokeniser\". The third splits “strawberry” into st, raw and berry, noting the model never receives a list of letters. The fourth is a ladder from one grapheme to three code points, eleven UTF-8 bytes, and several tokens.",
-          "caption": "Characters, words, graphemes, code points, bytes and tokens are six different units.",
+          "caption": "Subword tokenization balances vocabulary size with the ability to represent unfamiliar text.",
           "placement": "explanation",
           "width": 720,
           "height": 606
@@ -154,7 +154,7 @@
         {
           "src": "tokenization.svg",
           "alt": "Four panels on tokenization. The first counts the string “Ada Lovelace!” three ways — 13 characters, 2 words, and the four tokenizer pieces \"Ada\", \" Lov\", \"elace\" and \"!\" — marking the token count as the one that is billed. The second shows three edits that move a boundary: a leading space turning \"cat\" into \" cat\", capitalization turning \"cat\" into \"Cat\", and a rare word turning \"token\" into \"tokeniser\". The third splits “strawberry” into st, raw and berry, noting the model never receives a list of letters. The fourth is a ladder from one grapheme to three code points, eleven UTF-8 bytes, and several tokens.",
-          "caption": "Characters, words, graphemes, code points, bytes and tokens are six different units.",
+          "caption": "The tokenizer returned four pieces, so the answer is 4. The original text has 13 visible characters, including the space, and two words.",
           "placement": "explanation",
           "width": 720,
           "height": 606
@@ -175,7 +175,7 @@
         {
           "src": "tokenization.svg",
           "alt": "Four panels on tokenization. The first counts the string “Ada Lovelace!” three ways — 13 characters, 2 words, and the four tokenizer pieces \"Ada\", \" Lov\", \"elace\" and \"!\" — marking the token count as the one that is billed. The second shows three edits that move a boundary: a leading space turning \"cat\" into \" cat\", capitalization turning \"cat\" into \"Cat\", and a rare word turning \"token\" into \"tokeniser\". The third splits “strawberry” into st, raw and berry, noting the model never receives a list of letters. The fourth is a ladder from one grapheme to three code points, eleven UTF-8 bytes, and several tokens.",
-          "caption": "Characters, words, graphemes, code points, bytes and tokens are six different units.",
+          "caption": "Rules such as \"one token is about four English characters\" are only rough estimates. Exact counts depend on the model's encoding and can include messages, tools, images, files, and formatting.",
           "placement": "explanation",
           "width": 720,
           "height": 606
@@ -210,7 +210,7 @@
         {
           "src": "tokenization.svg",
           "alt": "Four panels on tokenization. The first counts the string “Ada Lovelace!” three ways — 13 characters, 2 words, and the four tokenizer pieces \"Ada\", \" Lov\", \"elace\" and \"!\" — marking the token count as the one that is billed. The second shows three edits that move a boundary: a leading space turning \"cat\" into \" cat\", capitalization turning \"cat\" into \"Cat\", and a rare word turning \"token\" into \"tokeniser\". The third splits “strawberry” into st, raw and berry, noting the model never receives a list of letters. The fourth is a ladder from one grapheme to three code points, eleven UTF-8 bytes, and several tokens.",
-          "caption": "Characters, words, graphemes, code points, bytes and tokens are six different units.",
+          "caption": "One displayed emoji can contain several Unicode code points joined into a single grapheme.",
           "placement": "explanation",
           "width": 720,
           "height": 606
@@ -245,7 +245,7 @@
         {
           "src": "context-budget.svg",
           "alt": "Three panels on a request's budget. The first draws one bar of what occupies a request — system and developer instructions, conversation history, tool definitions and results, a thin slice for the user's visible message, and images and files. The second shows a 128,000-token combined window filled to 119,500 with 8,500 left, next to a separate 16,000-token output cap, and the arithmetic 128,000 − 119,500 = 8,500 and min(16,000, 8,500) = 8,500. The third pairs a truncated conversation, where the earliest turns holding the rules and the uploaded spec are dropped while recent chatter is kept, with the three outcomes of a 2,000-token output cap: stopping early, cutting off mid-sentence, and never being a request for exactly 2,000.",
-          "caption": "The output cap and the combined window are separate limits; the smaller one binds.",
+          "caption": "Providers list these limits separately because a model may accept far more context than it can generate in one response.",
           "placement": "explanation",
           "width": 720,
           "height": 640
@@ -281,7 +281,7 @@
         {
           "src": "context-budget.svg",
           "alt": "Three panels on a request's budget. The first draws one bar of what occupies a request — system and developer instructions, conversation history, tool definitions and results, a thin slice for the user's visible message, and images and files. The second shows a 128,000-token combined window filled to 119,500 with 8,500 left, next to a separate 16,000-token output cap, and the arithmetic 128,000 − 119,500 = 8,500 and min(16,000, 8,500) = 8,500. The third pairs a truncated conversation, where the earliest turns holding the rules and the uploaded spec are dropped while recent chatter is kept, with the three outcomes of a 2,000-token output cap: stopping early, cutting off mid-sentence, and never being a request for exactly 2,000.",
-          "caption": "The output cap and the combined window are separate limits; the smaller one binds.",
+          "caption": "The remaining context capacity is `128,000 - 119,500 = 8,500` tokens. The effective output ceiling is `min(16,000, 8,500) = 8,500`.",
           "placement": "explanation",
           "width": 720,
           "height": 640
@@ -302,7 +302,7 @@
         {
           "src": "context-budget.svg",
           "alt": "Three panels on a request's budget. The first draws one bar of what occupies a request — system and developer instructions, conversation history, tool definitions and results, a thin slice for the user's visible message, and images and files. The second shows a 128,000-token combined window filled to 119,500 with 8,500 left, next to a separate 16,000-token output cap, and the arithmetic 128,000 − 119,500 = 8,500 and min(16,000, 8,500) = 8,500. The third pairs a truncated conversation, where the earliest turns holding the rules and the uploaded spec are dropped while recent chatter is kept, with the three outcomes of a 2,000-token output cap: stopping early, cutting off mid-sentence, and never being a request for exactly 2,000.",
-          "caption": "The output cap and the combined window are separate limits; the smaller one binds.",
+          "caption": "A maximum-output setting is a ceiling, not a target. The model can stop earlier, or it can reach the limit and leave the answer incomplete.",
           "placement": "explanation",
           "width": 720,
           "height": 640
@@ -337,7 +337,7 @@
         {
           "src": "context-budget.svg",
           "alt": "Three panels on a request's budget. The first draws one bar of what occupies a request — system and developer instructions, conversation history, tool definitions and results, a thin slice for the user's visible message, and images and files. The second shows a 128,000-token combined window filled to 119,500 with 8,500 left, next to a separate 16,000-token output cap, and the arithmetic 128,000 − 119,500 = 8,500 and min(16,000, 8,500) = 8,500. The third pairs a truncated conversation, where the earliest turns holding the rules and the uploaded spec are dropped while recent chatter is kept, with the three outcomes of a 2,000-token output cap: stopping early, cutting off mid-sentence, and never being a request for exactly 2,000.",
-          "caption": "The output cap and the combined window are separate limits; the smaller one binds.",
+          "caption": "A context window tells you how much input fits, not how reliably every detail will be used.",
           "placement": "explanation",
           "width": 720,
           "height": 640
@@ -372,7 +372,7 @@
         {
           "src": "context-budget.svg",
           "alt": "Three panels on a request's budget. The first draws one bar of what occupies a request — system and developer instructions, conversation history, tool definitions and results, a thin slice for the user's visible message, and images and files. The second shows a 128,000-token combined window filled to 119,500 with 8,500 left, next to a separate 16,000-token output cap, and the arithmetic 128,000 − 119,500 = 8,500 and min(16,000, 8,500) = 8,500. The third pairs a truncated conversation, where the earliest turns holding the rules and the uploaded spec are dropped while recent chatter is kept, with the three outcomes of a 2,000-token output cap: stopping early, cutting off mid-sentence, and never being a request for exactly 2,000.",
-          "caption": "The output cap and the combined window are separate limits; the smaller one binds.",
+          "caption": "The latest user message is only one part of a request. Instructions, conversation history, tool definitions, tool results, and multimodal inputs can all use tokens or equivalent units.",
           "placement": "explanation",
           "width": 720,
           "height": 640
@@ -407,7 +407,7 @@
         {
           "src": "context-budget.svg",
           "alt": "Three panels on a request's budget. The first draws one bar of what occupies a request — system and developer instructions, conversation history, tool definitions and results, a thin slice for the user's visible message, and images and files. The second shows a 128,000-token combined window filled to 119,500 with 8,500 left, next to a separate 16,000-token output cap, and the arithmetic 128,000 − 119,500 = 8,500 and min(16,000, 8,500) = 8,500. The third pairs a truncated conversation, where the earliest turns holding the rules and the uploaded spec are dropped while recent chatter is kept, with the three outcomes of a 2,000-token output cap: stopping early, cutting off mid-sentence, and never being a request for exactly 2,000.",
-          "caption": "The output cap and the combined window are separate limits; the smaller one binds.",
+          "caption": "Removing old items changes the information available to the model. If those items contain important instructions or evidence, the model's behavior may change even though the request succeeds.",
           "placement": "explanation",
           "width": 720,
           "height": 640
@@ -442,7 +442,7 @@
         {
           "src": "sampling-controls.svg",
           "alt": "Three panels on decoding. The first draws the generation loop as four steps — the context so far, a distribution over the whole vocabulary, sampling one token, appending it and running the step again. The second puts two bar charts side by side over the same five candidates: at T = 1.0 the probabilities read 0.45, 0.25, 0.15, 0.10 and 0.05, and at T = 0.2 they read 0.88, 0.09, 0.02, 0.01 and 0.00. The third works through top_p = 0.70 over sorted probabilities 0.45, 0.30, 0.15 and 0.10: the first two are kept, reaching a cumulative 0.75, and a dashed cut drops the rest.",
-          "caption": "Nucleus sampling keeps whole candidates, so the retained mass can exceed top_p.",
+          "caption": "An autoregressive model predicts one token from the tokens that came before it. The selected token is appended to the sequence and affects the next prediction.",
           "placement": "explanation",
           "width": 720,
           "height": 654
@@ -477,7 +477,7 @@
         {
           "src": "sampling-controls.svg",
           "alt": "Three panels on decoding. The first draws the generation loop as four steps — the context so far, a distribution over the whole vocabulary, sampling one token, appending it and running the step again. The second puts two bar charts side by side over the same five candidates: at T = 1.0 the probabilities read 0.45, 0.25, 0.15, 0.10 and 0.05, and at T = 0.2 they read 0.88, 0.09, 0.02, 0.01 and 0.00. The third works through top_p = 0.70 over sorted probabilities 0.45, 0.30, 0.15 and 0.10: the first two are kept, reaching a cumulative 0.75, and a dashed cut drops the rest.",
-          "caption": "Nucleus sampling keeps whole candidates, so the retained mass can exceed top_p.",
+          "caption": "Temperature rescales the values used to compute sampling probabilities. A value below 1 widens the gaps, so already likely tokens receive more probability.",
           "placement": "explanation",
           "width": 720,
           "height": 654
@@ -512,7 +512,7 @@
         {
           "src": "sampling-controls.svg",
           "alt": "Three panels on decoding. The first draws the generation loop as four steps — the context so far, a distribution over the whole vocabulary, sampling one token, appending it and running the step again. The second puts two bar charts side by side over the same five candidates: at T = 1.0 the probabilities read 0.45, 0.25, 0.15, 0.10 and 0.05, and at T = 0.2 they read 0.88, 0.09, 0.02, 0.01 and 0.00. The third works through top_p = 0.70 over sorted probabilities 0.45, 0.30, 0.15 and 0.10: the first two are kept, reaching a cumulative 0.75, and a dashed cut drops the rest.",
-          "caption": "Nucleus sampling keeps whole candidates, so the retained mass can exceed top_p.",
+          "caption": "Nucleus sampling uses cumulative probability, not a fixed percentage of the vocabulary. A confident prediction may need only a few candidates to reach 0.9.",
           "placement": "explanation",
           "width": 720,
           "height": 654
@@ -548,7 +548,7 @@
         {
           "src": "sampling-controls.svg",
           "alt": "Three panels on decoding. The first draws the generation loop as four steps — the context so far, a distribution over the whole vocabulary, sampling one token, appending it and running the step again. The second puts two bar charts side by side over the same five candidates: at T = 1.0 the probabilities read 0.45, 0.25, 0.15, 0.10 and 0.05, and at T = 0.2 they read 0.88, 0.09, 0.02, 0.01 and 0.00. The third works through top_p = 0.70 over sorted probabilities 0.45, 0.30, 0.15 and 0.10: the first two are kept, reaching a cumulative 0.75, and a dashed cut drops the rest.",
-          "caption": "Nucleus sampling keeps whole candidates, so the retained mass can exceed top_p.",
+          "caption": "The first candidate contributes `0.45`, which is below `0.70`. Adding the second gives `0.45 + 0.30 = 0.75`, so the threshold has been reached with 2 candidates.",
           "placement": "explanation",
           "width": 720,
           "height": 654
@@ -594,7 +594,7 @@
         {
           "src": "sampling-controls.svg",
           "alt": "Three panels on decoding. The first draws the generation loop as four steps — the context so far, a distribution over the whole vocabulary, sampling one token, appending it and running the step again. The second puts two bar charts side by side over the same five candidates: at T = 1.0 the probabilities read 0.45, 0.25, 0.15, 0.10 and 0.05, and at T = 0.2 they read 0.88, 0.09, 0.02, 0.01 and 0.00. The third works through top_p = 0.70 over sorted probabilities 0.45, 0.30, 0.15 and 0.10: the first two are kept, reaching a cumulative 0.75, and a dashed cut drops the rest.",
-          "caption": "Nucleus sampling keeps whole candidates, so the retained mass can exceed top_p.",
+          "caption": "Temperature changes how a model selects among possible continuations. A low setting can make answers more repeatable, but the most likely continuation can still contain a mistake.",
           "placement": "explanation",
           "width": 720,
           "height": 654
@@ -654,7 +654,7 @@
         {
           "src": "sampling-controls.svg",
           "alt": "Three panels on decoding. The first draws the generation loop as four steps — the context so far, a distribution over the whole vocabulary, sampling one token, appending it and running the step again. The second puts two bar charts side by side over the same five candidates: at T = 1.0 the probabilities read 0.45, 0.25, 0.15, 0.10 and 0.05, and at T = 0.2 they read 0.88, 0.09, 0.02, 0.01 and 0.00. The third works through top_p = 0.70 over sorted probabilities 0.45, 0.30, 0.15 and 0.10: the first two are kept, reaching a cumulative 0.75, and a dashed cut drops the rest.",
-          "caption": "Nucleus sampling keeps whole candidates, so the retained mass can exceed top_p.",
+          "caption": "Temperature reshapes the probability distribution, while top-p limits sampling to a cumulative-probability set.",
           "placement": "explanation",
           "width": 720,
           "height": 654
@@ -689,7 +689,7 @@
         {
           "src": "prefix-cache.svg",
           "alt": "Three panels on prompt caching. The first compares two prompt layouts: a cache-hostile one that opens with a request id, so the prefix diverges at the first token, and a cache-friendly one that opens with stable instructions and examples and leaves 410 tokens of shared prefix before the request id and user data. The second lists what a hit is — a byte-identical opening, reported in the usage data, cheaper and faster on eligible input — against what it is not: a semantic match, free output, or learning; with a note that automatic caching starts at 1,024 prompt tokens. The third bills ten requests: one uncached at $0.020, nine cached at $0.018, and ten outputs at $0.080, totalling $0.118.",
-          "caption": "A prefix match stops at the first changed token, so where the edit lands decides how much is reused.",
+          "caption": "Prompt caching matches the beginning of a request. Put shared instructions and examples first, then add variable user data.",
           "placement": "explanation",
           "width": 720,
           "height": 672
@@ -725,7 +725,7 @@
         {
           "src": "prefix-cache.svg",
           "alt": "Three panels on prompt caching. The first compares two prompt layouts: a cache-hostile one that opens with a request id, so the prefix diverges at the first token, and a cache-friendly one that opens with stable instructions and examples and leaves 410 tokens of shared prefix before the request id and user data. The second lists what a hit is — a byte-identical opening, reported in the usage data, cheaper and faster on eligible input — against what it is not: a semantic match, free output, or learning; with a note that automatic caching starts at 1,024 prompt tokens. The third bills ten requests: one uncached at $0.020, nine cached at $0.018, and ten outputs at $0.080, totalling $0.118.",
-          "caption": "A prefix match stops at the first changed token, so where the edit lands decides how much is reused.",
+          "caption": "OpenAI documents a minimum of 1,024 prompt tokens for automatic caching. Repeating a shorter prompt does not make it eligible.",
           "placement": "explanation",
           "width": 720,
           "height": 672
@@ -746,7 +746,7 @@
         {
           "src": "prefix-cache.svg",
           "alt": "Three panels on prompt caching. The first compares two prompt layouts: a cache-hostile one that opens with a request id, so the prefix diverges at the first token, and a cache-friendly one that opens with stable instructions and examples and leaves 410 tokens of shared prefix before the request id and user data. The second lists what a hit is — a byte-identical opening, reported in the usage data, cheaper and faster on eligible input — against what it is not: a semantic match, free output, or learning; with a note that automatic caching starts at 1,024 prompt tokens. The third bills ten requests: one uncached at $0.020, nine cached at $0.018, and ten outputs at $0.080, totalling $0.118.",
-          "caption": "A prefix match stops at the first changed token, so where the edit lands decides how much is reused.",
+          "caption": "OpenAI caching reuses work for a matching prompt prefix and reports cached input in the usage data.",
           "placement": "explanation",
           "width": 720,
           "height": 672
@@ -782,7 +782,7 @@
         {
           "src": "prefix-cache.svg",
           "alt": "Three panels on prompt caching. The first compares two prompt layouts: a cache-hostile one that opens with a request id, so the prefix diverges at the first token, and a cache-friendly one that opens with stable instructions and examples and leaves 410 tokens of shared prefix before the request id and user data. The second lists what a hit is — a byte-identical opening, reported in the usage data, cheaper and faster on eligible input — against what it is not: a semantic match, free output, or learning; with a note that automatic caching starts at 1,024 prompt tokens. The third bills ten requests: one uncached at $0.020, nine cached at $0.018, and ten outputs at $0.080, totalling $0.118.",
-          "caption": "A prefix match stops at the first changed token, so where the edit lands decides how much is reused.",
+          "caption": "Uncached input costs `10,000 / 1,000,000 * $2 = $0.020`. The nine cached requests cost `90,000 / 1,000,000 * $0.20 = $0.018`.",
           "placement": "explanation",
           "width": 720,
           "height": 672
@@ -804,7 +804,7 @@
         {
           "src": "prefix-cache.svg",
           "alt": "Three panels on prompt caching. The first compares two prompt layouts: a cache-hostile one that opens with a request id, so the prefix diverges at the first token, and a cache-friendly one that opens with stable instructions and examples and leaves 410 tokens of shared prefix before the request id and user data. The second lists what a hit is — a byte-identical opening, reported in the usage data, cheaper and faster on eligible input — against what it is not: a semantic match, free output, or learning; with a note that automatic caching starts at 1,024 prompt tokens. The third bills ten requests: one uncached at $0.020, nine cached at $0.018, and ten outputs at $0.080, totalling $0.118.",
-          "caption": "A prefix match stops at the first changed token, so where the edit lands decides how much is reused.",
+          "caption": "An exact prefix stops matching at the first changed token. An early edit leaves less shared content before that point, so less work can be reused.",
           "placement": "explanation",
           "width": 720,
           "height": 672
@@ -839,7 +839,7 @@
         {
           "src": "prefix-cache.svg",
           "alt": "Three panels on prompt caching. The first compares two prompt layouts: a cache-hostile one that opens with a request id, so the prefix diverges at the first token, and a cache-friendly one that opens with stable instructions and examples and leaves 410 tokens of shared prefix before the request id and user data. The second lists what a hit is — a byte-identical opening, reported in the usage data, cheaper and faster on eligible input — against what it is not: a semantic match, free output, or learning; with a note that automatic caching starts at 1,024 prompt tokens. The third bills ten requests: one uncached at $0.020, nine cached at $0.018, and ten outputs at $0.080, totalling $0.118.",
-          "caption": "A prefix match stops at the first changed token, so where the edit lands decides how much is reused.",
+          "caption": "Prompt caching reuses work for a matching input prefix. It does not fine-tune the model, change its weights, or create permanent personal memory.",
           "placement": "explanation",
           "width": 720,
           "height": 672
@@ -874,7 +874,7 @@
         {
           "src": "streaming-timeline.svg",
           "alt": "Three panels on streaming. The first traces one response on a seven-second ruler: a 1.0-second time to first token, then 100 inter-token intervals spanning 5.0 seconds, with the arithmetic 100 intervals / 5.0 s = 20 tokens per second. The second lists the events of a stream — a message start, three text deltas that split mid-word and mid-timestamp, a message stop, and an error or refusal event — beside three client rules: assemble the deltas, branch on the event type, and never render a chunk as the finished answer. The third contrasts what streaming moves (perceived wait) with what it leaves alone (billable tokens) and what it complicates (moderation, parsing, rollback).",
-          "caption": "Time to first token and throughput are separate numbers, and neither is a discount.",
+          "caption": "Time to first token measures the wait before the first generated content arrives. Total latency measures the wait for the complete response.",
           "placement": "explanation",
           "width": 720,
           "height": 640
@@ -910,7 +910,7 @@
         {
           "src": "streaming-timeline.svg",
           "alt": "Three panels on streaming. The first traces one response on a seven-second ruler: a 1.0-second time to first token, then 100 inter-token intervals spanning 5.0 seconds, with the arithmetic 100 intervals / 5.0 s = 20 tokens per second. The second lists the events of a stream — a message start, three text deltas that split mid-word and mid-timestamp, a message stop, and an error or refusal event — beside three client rules: assemble the deltas, branch on the event type, and never render a chunk as the finished answer. The third contrasts what streaming moves (perceived wait) with what it leaves alone (billable tokens) and what it complicates (moderation, parsing, rollback).",
-          "caption": "Time to first token and throughput are separate numbers, and neither is a discount.",
+          "caption": "The 100 intervals after the first token take `6.0 - 1.0 = 5.0` seconds. Throughput is `100 / 5.0 = 20` tokens per second.",
           "placement": "explanation",
           "width": 720,
           "height": 640
@@ -932,7 +932,7 @@
         {
           "src": "streaming-timeline.svg",
           "alt": "Three panels on streaming. The first traces one response on a seven-second ruler: a 1.0-second time to first token, then 100 inter-token intervals spanning 5.0 seconds, with the arithmetic 100 intervals / 5.0 s = 20 tokens per second. The second lists the events of a stream — a message start, three text deltas that split mid-word and mid-timestamp, a message stop, and an error or refusal event — beside three client rules: assemble the deltas, branch on the event type, and never render a chunk as the finished answer. The third contrasts what streaming moves (perceived wait) with what it leaves alone (billable tokens) and what it complicates (moderation, parsing, rollback).",
-          "caption": "Time to first token and throughput are separate numbers, and neither is a discount.",
+          "caption": "Streaming sends incremental events while generation continues. Users can see or process early output sooner, but the model may still generate and bill the same tokens.",
           "placement": "explanation",
           "width": 720,
           "height": 640
@@ -967,7 +967,7 @@
         {
           "src": "streaming-timeline.svg",
           "alt": "Three panels on streaming. The first traces one response on a seven-second ruler: a 1.0-second time to first token, then 100 inter-token intervals spanning 5.0 seconds, with the arithmetic 100 intervals / 5.0 s = 20 tokens per second. The second lists the events of a stream — a message start, three text deltas that split mid-word and mid-timestamp, a message stop, and an error or refusal event — beside three client rules: assemble the deltas, branch on the event type, and never render a chunk as the finished answer. The third contrasts what streaming moves (perceived wait) with what it leaves alone (billable tokens) and what it complicates (moderation, parsing, rollback).",
-          "caption": "Time to first token and throughput are separate numbers, and neither is a discount.",
+          "caption": "A streamed response is a sequence of events. Text deltas add fragments, while other events can signal completion, refusal, or an error.",
           "placement": "explanation",
           "width": 720,
           "height": 640
@@ -1002,7 +1002,7 @@
         {
           "src": "streaming-timeline.svg",
           "alt": "Three panels on streaming. The first traces one response on a seven-second ruler: a 1.0-second time to first token, then 100 inter-token intervals spanning 5.0 seconds, with the arithmetic 100 intervals / 5.0 s = 20 tokens per second. The second lists the events of a stream — a message start, three text deltas that split mid-word and mid-timestamp, a message stop, and an error or refusal event — beside three client rules: assemble the deltas, branch on the event type, and never render a chunk as the finished answer. The third contrasts what streaming moves (perceived wait) with what it leaves alone (billable tokens) and what it complicates (moderation, parsing, rollback).",
-          "caption": "Time to first token and throughput are separate numbers, and neither is a discount.",
+          "caption": "Generating output is sequential and often takes most of the request time. OpenAI's guide notes that cutting output length by about half may cut latency by about half, although results vary.",
           "placement": "explanation",
           "width": 720,
           "height": 640
@@ -1037,7 +1037,7 @@
         {
           "src": "streaming-timeline.svg",
           "alt": "Three panels on streaming. The first traces one response on a seven-second ruler: a 1.0-second time to first token, then 100 inter-token intervals spanning 5.0 seconds, with the arithmetic 100 intervals / 5.0 s = 20 tokens per second. The second lists the events of a stream — a message start, three text deltas that split mid-word and mid-timestamp, a message stop, and an error or refusal event — beside three client rules: assemble the deltas, branch on the event type, and never render a chunk as the finished answer. The third contrasts what streaming moves (perceived wait) with what it leaves alone (billable tokens) and what it complicates (moderation, parsing, rollback).",
-          "caption": "Time to first token and throughput are separate numbers, and neither is a discount.",
+          "caption": "Sending the same output in chunks does not change its token count. Streaming changes when content arrives, not how many input or output tokens the model uses.",
           "placement": "explanation",
           "width": 720,
           "height": 640

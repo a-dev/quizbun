@@ -92,6 +92,54 @@ describe("checkCatalogProfile", () => {
     expect(issues.map((issue) => issue.problem).join("\n")).toMatch(/empty after Markdown/);
     expect(issues.every((issue) => issue.path === "description")).toBe(true);
   });
+
+  test("fails when two Images repeat the same caption", () => {
+    const questions: Quiz["questions"] = [
+      {
+        id: "q1",
+        type: "single-choice",
+        title: "First question?",
+        explanation: "Because.",
+        options: [
+          { text: "Yes", isCorrect: true },
+          { text: "No", isCorrect: false },
+        ],
+        images: [
+          {
+            src: "first.svg",
+            alt: "First diagram",
+            caption: "The same generic caption.",
+          },
+        ],
+      },
+      {
+        id: "q2",
+        type: "single-choice",
+        title: "Second question?",
+        explanation: "Because.",
+        options: [
+          { text: "Yes", isCorrect: true },
+          { text: "No", isCorrect: false },
+        ],
+        images: [
+          {
+            src: "second.svg",
+            alt: "Second diagram",
+            caption: "The same generic caption.",
+          },
+        ],
+      },
+    ];
+
+    const issues = checkCatalogProfile(makeQuiz({ questions }));
+
+    expect(issues).toHaveLength(1);
+    expect(issues[0]).toMatchObject({
+      severity: "error",
+      path: "questions[1].images[0].caption",
+    });
+    expect(issues[0]?.problem).toContain("questions[0].images[0].caption");
+  });
 });
 
 describe("profile violation fixture (CI rejection message)", () => {

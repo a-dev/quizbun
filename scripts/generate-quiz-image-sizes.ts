@@ -1,7 +1,9 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { basename, resolve } from "node:path";
 
-import { readImageDimensions } from "../src/shared/lib/content";
+// Keep this CLI renderer-free: the content barrel also loads Markdown
+// sanitization dependencies that Bun cannot resolve from every entry graph.
+import { readImageDimensions } from "../src/shared/lib/content/image-dimensions";
 import {
   applyJsonEdits,
   createMemberInsertion,

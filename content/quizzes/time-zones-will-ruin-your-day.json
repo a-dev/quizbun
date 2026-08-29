@@ -65,7 +65,7 @@
         {
           "src": "instant-vs-wall-time.svg",
           "alt": "Three stacked layers. An instant is milliseconds since the epoch — one absolute point, with no zone and no calendar. An offset such as −04:00 is a number that was true at one instant and names no rules, since dozens of places share it every July. An IANA zone such as America/New_York is a rulebook saying which offset applies when, past and future, rewritten whenever a government changes the law. Beside them, what to store: a log line or past event as a UTC instant; a meeting at 09:00 next year as wall time plus an IANA zone, because the rules may change first; a date of birth as a plain calendar date; a weekly recurring event as wall time plus a zone, which is what iCalendar does. A closing list covers a JS Date holding one number and no zone, EST being a fixed −05:00 while the zone switches, Etc/GMT+5 actually meaning UTC−05:00, an offset never naming a zone, and a 2023 meeting stored as a UTC instant firing an hour late once Mexico dropped DST.",
-          "caption": "The instant stayed correct; the intention — nine in the morning, where they live — did not.",
+          "caption": "A `Date` is one number: `[[DateValue]]`, milliseconds since `1970-01-01T00:00:00Z`. No zone field, no memory of how it was built.",
           "placement": "explanation",
           "width": 720,
           "height": 594
@@ -88,7 +88,7 @@
         {
           "src": "instant-vs-wall-time.svg",
           "alt": "Three stacked layers. An instant is milliseconds since the epoch — one absolute point, with no zone and no calendar. An offset such as −04:00 is a number that was true at one instant and names no rules, since dozens of places share it every July. An IANA zone such as America/New_York is a rulebook saying which offset applies when, past and future, rewritten whenever a government changes the law. Beside them, what to store: a log line or past event as a UTC instant; a meeting at 09:00 next year as wall time plus an IANA zone, because the rules may change first; a date of birth as a plain calendar date; a weekly recurring event as wall time plus a zone, which is what iCalendar does. A closing list covers a JS Date holding one number and no zone, EST being a fixed −05:00 while the zone switches, Etc/GMT+5 actually meaning UTC−05:00, an offset never naming a zone, and a 2023 meeting stored as a UTC instant firing an hour late once Mexico dropped DST.",
-          "caption": "The instant stayed correct; the intention — nine in the morning, where they live — did not.",
+          "caption": "On that instant, UTC-4 covers `America/New_York` (on DST), `America/Halifax` (on standard time), `America/Santo_Domingo` (which has no DST at all), `America/Manaus`, and `America/Puerto_Rico`, among others.",
           "placement": "explanation",
           "width": 720,
           "height": 594
@@ -114,7 +114,7 @@
         {
           "src": "instant-vs-wall-time.svg",
           "alt": "Three stacked layers. An instant is milliseconds since the epoch — one absolute point, with no zone and no calendar. An offset such as −04:00 is a number that was true at one instant and names no rules, since dozens of places share it every July. An IANA zone such as America/New_York is a rulebook saying which offset applies when, past and future, rewritten whenever a government changes the law. Beside them, what to store: a log line or past event as a UTC instant; a meeting at 09:00 next year as wall time plus an IANA zone, because the rules may change first; a date of birth as a plain calendar date; a weekly recurring event as wall time plus a zone, which is what iCalendar does. A closing list covers a JS Date holding one number and no zone, EST being a fixed −05:00 while the zone switches, Etc/GMT+5 actually meaning UTC−05:00, an offset never naming a zone, and a 2023 meeting stored as a UTC instant firing an hour late once Mexico dropped DST.",
-          "caption": "The instant stayed correct; the intention — nine in the morning, where they live — did not.",
+          "caption": "The signs are inverted. `Etc/GMT+5` sits five hours behind UTC, because these zones follow the POSIX `TZ` convention where positive numbers count westward.",
           "placement": "explanation",
           "width": 720,
           "height": 594
@@ -137,7 +137,7 @@
         {
           "src": "instant-vs-wall-time.svg",
           "alt": "Three stacked layers. An instant is milliseconds since the epoch — one absolute point, with no zone and no calendar. An offset such as −04:00 is a number that was true at one instant and names no rules, since dozens of places share it every July. An IANA zone such as America/New_York is a rulebook saying which offset applies when, past and future, rewritten whenever a government changes the law. Beside them, what to store: a log line or past event as a UTC instant; a meeting at 09:00 next year as wall time plus an IANA zone, because the rules may change first; a date of birth as a plain calendar date; a weekly recurring event as wall time plus a zone, which is what iCalendar does. A closing list covers a JS Date holding one number and no zone, EST being a fixed −05:00 while the zone switches, Etc/GMT+5 actually meaning UTC−05:00, an offset never naming a zone, and a 2023 meeting stored as a UTC instant firing an hour late once Mexico dropped DST.",
-          "caption": "The instant stayed correct; the intention — nine in the morning, where they live — did not.",
+          "caption": "A fixed `EST` offset cannot follow the seasonal changes shown for `America/New_York`.",
           "placement": "explanation",
           "width": 720,
           "height": 594
@@ -161,7 +161,7 @@
         {
           "src": "dst-gap-and-overlap.svg",
           "alt": "New York in 2026, drawn twice on a local wall clock. On 8 March the 02:00 cell is greyed out and marked “never happens”, so 2026-03-08T02:30 matches zero instants; Temporal's disambiguation options are listed — compatible pushes forward to 03:30 EDT, earlier and later pick the instants either side, reject throws — and the day has hoursInDay 23. On 1 November the 01:00 cell appears twice, so 01:15 EDT is 05:15Z while 01:45 EST is 06:45Z, making two log lines thirty clock-minutes apart ninety minutes apart in fact; an RFC 9557 stamp carrying both an offset and a zone name resolves which 01:30 was meant, and the day has hoursInDay 25. A closing table shows midnight plus 86,400,000 ms landing on 01:00 the next day, 09:00 on 7 March to 09:00 on 8 March being 23 hours, a 22:00-to-06:00 night shift on 31 October lasting 9 hours, and why startOfDay() exists.",
-          "caption": "One hour missing, one hour twice — and every duration crossing them stops matching the clock.",
+          "caption": "At 02:00:00 EST the clocks jump to 03:00:00 EDT. The whole wall-clock hour from 02:00 up to 03:00 is missing from that date, so nothing at all maps to 02:30.",
           "placement": "explanation",
           "width": 720,
           "height": 586
@@ -185,7 +185,7 @@
         {
           "src": "dst-gap-and-overlap.svg",
           "alt": "New York in 2026, drawn twice on a local wall clock. On 8 March the 02:00 cell is greyed out and marked “never happens”, so 2026-03-08T02:30 matches zero instants; Temporal's disambiguation options are listed — compatible pushes forward to 03:30 EDT, earlier and later pick the instants either side, reject throws — and the day has hoursInDay 23. On 1 November the 01:00 cell appears twice, so 01:15 EDT is 05:15Z while 01:45 EST is 06:45Z, making two log lines thirty clock-minutes apart ninety minutes apart in fact; an RFC 9557 stamp carrying both an offset and a zone name resolves which 01:30 was meant, and the day has hoursInDay 25. A closing table shows midnight plus 86,400,000 ms landing on 01:00 the next day, 09:00 on 7 March to 09:00 on 8 March being 23 hours, a 22:00-to-06:00 night shift on 31 October lasting 9 hours, and why startOfDay() exists.",
-          "caption": "One hour missing, one hour twice — and every duration crossing them stops matching the clock.",
+          "caption": "The default is `disambiguation: \"compatible\"`, picked to match what `java.time` and other mature libraries already did.",
           "placement": "explanation",
           "width": 720,
           "height": 586
@@ -209,7 +209,7 @@
         {
           "src": "dst-gap-and-overlap.svg",
           "alt": "New York in 2026, drawn twice on a local wall clock. On 8 March the 02:00 cell is greyed out and marked “never happens”, so 2026-03-08T02:30 matches zero instants; Temporal's disambiguation options are listed — compatible pushes forward to 03:30 EDT, earlier and later pick the instants either side, reject throws — and the day has hoursInDay 23. On 1 November the 01:00 cell appears twice, so 01:15 EDT is 05:15Z while 01:45 EST is 06:45Z, making two log lines thirty clock-minutes apart ninety minutes apart in fact; an RFC 9557 stamp carrying both an offset and a zone name resolves which 01:30 was meant, and the day has hoursInDay 25. A closing table shows midnight plus 86,400,000 ms landing on 01:00 the next day, 09:00 on 7 March to 09:00 on 8 March being 23 hours, a 22:00-to-06:00 night shift on 31 October lasting 9 hours, and why startOfDay() exists.",
-          "caption": "One hour missing, one hour twice — and every duration crossing them stops matching the clock.",
+          "caption": "`reject`. Of the four values, `\"compatible\"` (the default), `\"earlier\"`, `\"later\"`, and `\"reject\"`, only the last raises a `RangeError` instead of choosing an instant for you.",
           "placement": "explanation",
           "width": 720,
           "height": 586
@@ -231,7 +231,7 @@
         {
           "src": "dst-gap-and-overlap.svg",
           "alt": "New York in 2026, drawn twice on a local wall clock. On 8 March the 02:00 cell is greyed out and marked “never happens”, so 2026-03-08T02:30 matches zero instants; Temporal's disambiguation options are listed — compatible pushes forward to 03:30 EDT, earlier and later pick the instants either side, reject throws — and the day has hoursInDay 23. On 1 November the 01:00 cell appears twice, so 01:15 EDT is 05:15Z while 01:45 EST is 06:45Z, making two log lines thirty clock-minutes apart ninety minutes apart in fact; an RFC 9557 stamp carrying both an offset and a zone name resolves which 01:30 was meant, and the day has hoursInDay 25. A closing table shows midnight plus 86,400,000 ms landing on 01:00 the next day, 09:00 on 7 March to 09:00 on 8 March being 23 hours, a 22:00-to-06:00 night shift on 31 October lasting 9 hours, and why startOfDay() exists.",
-          "caption": "One hour missing, one hour twice — and every duration crossing them stops matching the clock.",
+          "caption": "At 02:00 EDT the clocks fall back to 01:00 EST, so everything from 01:00 to 01:59 happens twice, once at UTC-4 and again at UTC-5.",
           "placement": "explanation",
           "width": 720,
           "height": 586
@@ -257,7 +257,7 @@
         {
           "src": "dst-gap-and-overlap.svg",
           "alt": "New York in 2026, drawn twice on a local wall clock. On 8 March the 02:00 cell is greyed out and marked “never happens”, so 2026-03-08T02:30 matches zero instants; Temporal's disambiguation options are listed — compatible pushes forward to 03:30 EDT, earlier and later pick the instants either side, reject throws — and the day has hoursInDay 23. On 1 November the 01:00 cell appears twice, so 01:15 EDT is 05:15Z while 01:45 EST is 06:45Z, making two log lines thirty clock-minutes apart ninety minutes apart in fact; an RFC 9557 stamp carrying both an offset and a zone name resolves which 01:30 was meant, and the day has hoursInDay 25. A closing table shows midnight plus 86,400,000 ms landing on 01:00 the next day, 09:00 on 7 March to 09:00 on 8 March being 23 hours, a 22:00-to-06:00 night shift on 31 October lasting 9 hours, and why startOfDay() exists.",
-          "caption": "One hour missing, one hour twice — and every duration crossing them stops matching the clock.",
+          "caption": "This format is RFC 9557, the standard behind `Temporal.ZonedDateTime`'s string form, and each half does a job the other cannot.",
           "placement": "explanation",
           "width": 720,
           "height": 586
@@ -287,7 +287,7 @@
         {
           "src": "dst-gap-and-overlap.svg",
           "alt": "New York in 2026, drawn twice on a local wall clock. On 8 March the 02:00 cell is greyed out and marked “never happens”, so 2026-03-08T02:30 matches zero instants; Temporal's disambiguation options are listed — compatible pushes forward to 03:30 EDT, earlier and later pick the instants either side, reject throws — and the day has hoursInDay 23. On 1 November the 01:00 cell appears twice, so 01:15 EDT is 05:15Z while 01:45 EST is 06:45Z, making two log lines thirty clock-minutes apart ninety minutes apart in fact; an RFC 9557 stamp carrying both an offset and a zone name resolves which 01:30 was meant, and the day has hoursInDay 25. A closing table shows midnight plus 86,400,000 ms landing on 01:00 the next day, 09:00 on 7 March to 09:00 on 8 March being 23 hours, a 22:00-to-06:00 night shift on 31 October lasting 9 hours, and why startOfDay() exists.",
-          "caption": "One hour missing, one hour twice — and every duration crossing them stops matching the clock.",
+          "caption": "Because the spring-forward day has 23 hours, adding 24 elapsed hours lands one hour after the next midnight.",
           "placement": "explanation",
           "width": 720,
           "height": 586
@@ -311,7 +311,7 @@
         {
           "src": "dst-gap-and-overlap.svg",
           "alt": "New York in 2026, drawn twice on a local wall clock. On 8 March the 02:00 cell is greyed out and marked “never happens”, so 2026-03-08T02:30 matches zero instants; Temporal's disambiguation options are listed — compatible pushes forward to 03:30 EDT, earlier and later pick the instants either side, reject throws — and the day has hoursInDay 23. On 1 November the 01:00 cell appears twice, so 01:15 EDT is 05:15Z while 01:45 EST is 06:45Z, making two log lines thirty clock-minutes apart ninety minutes apart in fact; an RFC 9557 stamp carrying both an offset and a zone name resolves which 01:30 was meant, and the day has hoursInDay 25. A closing table shows midnight plus 86,400,000 ms landing on 01:00 the next day, 09:00 on 7 March to 09:00 on 8 March being 23 hours, a 22:00-to-06:00 night shift on 31 October lasting 9 hours, and why startOfDay() exists.",
-          "caption": "One hour missing, one hour twice — and every duration crossing them stops matching the clock.",
+          "caption": "`23`. On March 7 the meeting is at 14:00Z; on March 8, now on EDT, it is at 13:00Z.",
           "placement": "explanation",
           "width": 720,
           "height": 586
@@ -332,7 +332,7 @@
         {
           "src": "instant-vs-wall-time.svg",
           "alt": "Three stacked layers. An instant is milliseconds since the epoch — one absolute point, with no zone and no calendar. An offset such as −04:00 is a number that was true at one instant and names no rules, since dozens of places share it every July. An IANA zone such as America/New_York is a rulebook saying which offset applies when, past and future, rewritten whenever a government changes the law. Beside them, what to store: a log line or past event as a UTC instant; a meeting at 09:00 next year as wall time plus an IANA zone, because the rules may change first; a date of birth as a plain calendar date; a weekly recurring event as wall time plus a zone, which is what iCalendar does. A closing list covers a JS Date holding one number and no zone, EST being a fixed −05:00 while the zone switches, Etc/GMT+5 actually meaning UTC−05:00, an offset never naming a zone, and a 2023 meeting stored as a UTC instant firing an hour late once Mexico dropped DST.",
-          "caption": "The instant stayed correct; the intention — nine in the morning, where they live — did not.",
+          "caption": "One question sorts these: would the value change if a government changed the rules?",
           "placement": "explanation",
           "width": 720,
           "height": 594
@@ -356,7 +356,7 @@
         {
           "src": "instant-vs-wall-time.svg",
           "alt": "Three stacked layers. An instant is milliseconds since the epoch — one absolute point, with no zone and no calendar. An offset such as −04:00 is a number that was true at one instant and names no rules, since dozens of places share it every July. An IANA zone such as America/New_York is a rulebook saying which offset applies when, past and future, rewritten whenever a government changes the law. Beside them, what to store: a log line or past event as a UTC instant; a meeting at 09:00 next year as wall time plus an IANA zone, because the rules may change first; a date of birth as a plain calendar date; a weekly recurring event as wall time plus a zone, which is what iCalendar does. A closing list covers a JS Date holding one number and no zone, EST being a fixed −05:00 while the zone switches, Etc/GMT+5 actually meaning UTC−05:00, an offset never naming a zone, and a 2023 meeting stored as a UTC instant firing an hour late once Mexico dropped DST.",
-          "caption": "The instant stayed correct; the intention — nine in the morning, where they live — did not.",
+          "caption": "In October 2022 Mexico ended DST across most of the country, keeping it only in a strip along the US border.",
           "placement": "explanation",
           "width": 720,
           "height": 594
@@ -382,7 +382,7 @@
         {
           "src": "instant-vs-wall-time.svg",
           "alt": "Three stacked layers. An instant is milliseconds since the epoch — one absolute point, with no zone and no calendar. An offset such as −04:00 is a number that was true at one instant and names no rules, since dozens of places share it every July. An IANA zone such as America/New_York is a rulebook saying which offset applies when, past and future, rewritten whenever a government changes the law. Beside them, what to store: a log line or past event as a UTC instant; a meeting at 09:00 next year as wall time plus an IANA zone, because the rules may change first; a date of birth as a plain calendar date; a weekly recurring event as wall time plus a zone, which is what iCalendar does. A closing list covers a JS Date holding one number and no zone, EST being a fixed −05:00 while the zone switches, Etc/GMT+5 actually meaning UTC−05:00, an offset never naming a zone, and a 2023 meeting stored as a UTC instant firing an hour late once Mexico dropped DST.",
-          "caption": "The instant stayed correct; the intention — nine in the morning, where they live — did not.",
+          "caption": "Nobody was born at `1990-05-14T00:00:00Z`. They were born on May 14, and it stays May 14 everywhere on Earth.",
           "placement": "explanation",
           "width": 720,
           "height": 594
@@ -411,7 +411,7 @@
         {
           "src": "instant-vs-wall-time.svg",
           "alt": "Three stacked layers. An instant is milliseconds since the epoch — one absolute point, with no zone and no calendar. An offset such as −04:00 is a number that was true at one instant and names no rules, since dozens of places share it every July. An IANA zone such as America/New_York is a rulebook saying which offset applies when, past and future, rewritten whenever a government changes the law. Beside them, what to store: a log line or past event as a UTC instant; a meeting at 09:00 next year as wall time plus an IANA zone, because the rules may change first; a date of birth as a plain calendar date; a weekly recurring event as wall time plus a zone, which is what iCalendar does. A closing list covers a JS Date holding one number and no zone, EST being a fixed −05:00 while the zone switches, Etc/GMT+5 actually meaning UTC−05:00, an offset never naming a zone, and a 2023 meeting stored as a UTC instant firing an hour late once Mexico dropped DST.",
-          "caption": "The instant stayed correct; the intention — nine in the morning, where they live — did not.",
+          "caption": "`Temporal.PlainMonthDay` is a month and a day with no year, which is exactly what \"whose birthday is today\" needs.",
           "placement": "explanation",
           "width": 720,
           "height": 594
@@ -434,7 +434,7 @@
         {
           "src": "dst-gap-and-overlap.svg",
           "alt": "New York in 2026, drawn twice on a local wall clock. On 8 March the 02:00 cell is greyed out and marked “never happens”, so 2026-03-08T02:30 matches zero instants; Temporal's disambiguation options are listed — compatible pushes forward to 03:30 EDT, earlier and later pick the instants either side, reject throws — and the day has hoursInDay 23. On 1 November the 01:00 cell appears twice, so 01:15 EDT is 05:15Z while 01:45 EST is 06:45Z, making two log lines thirty clock-minutes apart ninety minutes apart in fact; an RFC 9557 stamp carrying both an offset and a zone name resolves which 01:30 was meant, and the day has hoursInDay 25. A closing table shows midnight plus 86,400,000 ms landing on 01:00 the next day, 09:00 on 7 March to 09:00 on 8 March being 23 hours, a 22:00-to-06:00 night shift on 31 October lasting 9 hours, and why startOfDay() exists.",
-          "caption": "One hour missing, one hour twice — and every duration crossing them stops matching the clock.",
+          "caption": "When a zone changes offset at midnight, the day's first valid wall time can be later than `00:00`.",
           "placement": "explanation",
           "width": 720,
           "height": 586
@@ -460,7 +460,7 @@
         {
           "src": "dst-gap-and-overlap.svg",
           "alt": "New York in 2026, drawn twice on a local wall clock. On 8 March the 02:00 cell is greyed out and marked “never happens”, so 2026-03-08T02:30 matches zero instants; Temporal's disambiguation options are listed — compatible pushes forward to 03:30 EDT, earlier and later pick the instants either side, reject throws — and the day has hoursInDay 23. On 1 November the 01:00 cell appears twice, so 01:15 EDT is 05:15Z while 01:45 EST is 06:45Z, making two log lines thirty clock-minutes apart ninety minutes apart in fact; an RFC 9557 stamp carrying both an offset and a zone name resolves which 01:30 was meant, and the day has hoursInDay 25. A closing table shows midnight plus 86,400,000 ms landing on 01:00 the next day, 09:00 on 7 March to 09:00 on 8 March being 23 hours, a 22:00-to-06:00 night shift on 31 October lasting 9 hours, and why startOfDay() exists.",
-          "caption": "One hour missing, one hour twice — and every duration crossing them stops matching the clock.",
+          "caption": "`23`. Temporal puts `hoursInDay` on `ZonedDateTime` because \"a day is 24 hours\" is false about twice a year in most inhabited zones.",
           "placement": "explanation",
           "width": 720,
           "height": 586
@@ -859,7 +859,7 @@
         {
           "src": "instant-vs-wall-time.svg",
           "alt": "Three stacked layers. An instant is milliseconds since the epoch — one absolute point, with no zone and no calendar. An offset such as −04:00 is a number that was true at one instant and names no rules, since dozens of places share it every July. An IANA zone such as America/New_York is a rulebook saying which offset applies when, past and future, rewritten whenever a government changes the law. Beside them, what to store: a log line or past event as a UTC instant; a meeting at 09:00 next year as wall time plus an IANA zone, because the rules may change first; a date of birth as a plain calendar date; a weekly recurring event as wall time plus a zone, which is what iCalendar does. A closing list covers a JS Date holding one number and no zone, EST being a fixed −05:00 while the zone switches, Etc/GMT+5 actually meaning UTC−05:00, an offset never naming a zone, and a 2023 meeting stored as a UTC instant firing an hour late once Mexico dropped DST.",
-          "caption": "The instant stayed correct; the intention — nine in the morning, where they live — did not.",
+          "caption": "A recurring wall time needs the named zone so each future occurrence can use that day's offset.",
           "placement": "explanation",
           "width": 720,
           "height": 594
@@ -886,7 +886,7 @@
         {
           "src": "dst-gap-and-overlap.svg",
           "alt": "New York in 2026, drawn twice on a local wall clock. On 8 March the 02:00 cell is greyed out and marked “never happens”, so 2026-03-08T02:30 matches zero instants; Temporal's disambiguation options are listed — compatible pushes forward to 03:30 EDT, earlier and later pick the instants either side, reject throws — and the day has hoursInDay 23. On 1 November the 01:00 cell appears twice, so 01:15 EDT is 05:15Z while 01:45 EST is 06:45Z, making two log lines thirty clock-minutes apart ninety minutes apart in fact; an RFC 9557 stamp carrying both an offset and a zone name resolves which 01:30 was meant, and the day has hoursInDay 25. A closing table shows midnight plus 86,400,000 ms landing on 01:00 the next day, 09:00 on 7 March to 09:00 on 8 March being 23 hours, a 22:00-to-06:00 night shift on 31 October lasting 9 hours, and why startOfDay() exists.",
-          "caption": "One hour missing, one hour twice — and every duration crossing them stops matching the clock.",
+          "caption": "`9`. Clocking on at 22:00 EDT is 02:00Z, and clocking off at 06:00 EST is 11:00Z.",
           "placement": "explanation",
           "width": 720,
           "height": 586

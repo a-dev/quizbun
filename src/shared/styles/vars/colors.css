@@ -105,8 +105,15 @@
   --color-syntax-punctuation: var(--color-text-secondary);
   --color-syntax-string: light-dark(var(--color-seagrass-700), var(--color-seagrass-300));
   --color-syntax-variable: light-dark(var(--color-orange-800), var(--color-orange-200));
-  --color-syntax-code-bg: light-dark(var(--color-seagrass-100), var(--color-seagrass-800));
-  --color-syntax-code-border: light-dark(var(--color-seagrass-100), var(--color-seagrass-700));
+  --color-syntax-code-bg: light-dark(
+    color-mix(in oklch, var(--color-seagrass-100) 70%, transparent),
+    color-mix(in oklch, var(--color-seagrass-800) 70%, transparent)
+  );
+  --color-syntax-code-block-bg: light-dark(
+    color-mix(in oklch, var(--color-seagrass-100) 40%, transparent),
+    color-mix(in oklch, var(--color-seagrass-800) 40%, transparent)
+  );
+  --color-syntax-code-border: light-dark(var(--color-seagrass-100), var(--color-seagrass-800));
   --color-syntax-code-text: light-dark(var(--color-seagrass-950), var(--color-seagrass-50));
 
   /** User surface */
@@ -117,7 +124,10 @@
   /* Component */
   --color-loader-line: light-dark(var(--color-seagrass-300), var(--color-seagrass-600));
   --color-site-footer-bg: light-dark(var(--color-blue-800), var(--color-blue-950));
-  --color-taxonomy-bg: light-dark(var(--color-olive-100), var(--color-olive-900));
+  --color-taxonomy-bg: light-dark(
+    var(--color-olive-100),
+    color-mix(in oklch, var(--color-olive-800) 70%, transparent)
+  );
   --color-text-on-taxonomy: light-dark(var(--color-olive-900), var(--color-olive-50));
   --color-backdrop: light-dark(
     color-mix(in oklch, var(--color-gray-900) 45%, transparent),
