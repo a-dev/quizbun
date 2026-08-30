@@ -214,10 +214,15 @@ export function LibraryList() {
           Add new quiz
         </LinkAsButton>
         <div className={styles.introText}>
-          In this library you can save quizzes you create or import, and track your progress on
-          them. Quizzes you add here are stored in your browser's IndexedDB and are only available
-          on this device and browser — they won't be shared across browsers or devices, and won't be
-          lost if you clear cookies but will be lost if you clear site data or use private browsing.
+          <p>
+            Here you can import quizzes you create. Your browser stores everything locally in
+            IndexedDB. That means quizzes stay on this device and browser. Clearing cookies won't
+            erase your progress, but clearing site data or using private browsing will.
+          </p>
+          <p>
+            Read more about how <a href={withBase("docs/prompt/")}>generate quiz with your AI</a>{" "}
+            and <a href={withBase("docs/standard/")}>description of the standard</a>.
+          </p>
         </div>
       </div>
 

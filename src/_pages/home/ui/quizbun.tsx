@@ -8,8 +8,8 @@ export function Quizbun() {
     <section className={styles.root}>
       <div className={styles.inner}>
         <p className={styles.body}>
-          Quizbun gives you quizzes where every answer comes with an explanation, so you learn
-          something even when you guess wrong. Browse{" "}
+          With Quizbun, every choice comes with an explanation, so you learn something new with each
+          try. Browse{" "}
           <a href={withBase("quizzes/")} className={cx(styles.link, styles.catalog)}>
             the Catalog
           </a>
