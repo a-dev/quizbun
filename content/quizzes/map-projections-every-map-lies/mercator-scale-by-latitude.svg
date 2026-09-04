@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="430" viewBox="0 0 760 430" role="img" aria-labelledby="title desc">
+  <title id="title">Mercator scale growth with latitude</title>
+  <desc id="desc">A Mercator grid shows a small circle at the equator, a circle with twice the radius at 60 degrees, and part of a much larger circle at 85 degrees. Labels give linear and area scale factors.</desc>
+  <style>
+    svg { --bg:#f5f7fb; --panel:#fff; --ink:#20242c; --muted:#526173; --grid:#c7d0dd; --blue:#2563eb; --orange:#c2410c; }
+    @media (prefers-color-scheme:dark) { svg { --bg:#171b22; --panel:#222833; --ink:#edf1f7; --muted:#aab6c8; --grid:#465161; --blue:#7aa2f7; --orange:#f0a35e; } }
+    text { font-family:system-ui,sans-serif; fill:var(--ink); } .muted { fill:var(--muted); }
+  </style>
+  <defs><clipPath id="map"><rect x="28" y="65" width="704" height="274" rx="14"/></clipPath></defs>
+  <rect width="760" height="430" rx="20" fill="var(--bg)"/>
+  <text x="28" y="38" font-size="19" font-weight="700">Mercator keeps circles round, then makes them huge</text>
+  <rect x="28" y="65" width="704" height="274" rx="14" fill="var(--panel)" stroke="var(--grid)"/>
+  <g clip-path="url(#map)">
+    <path d="M145 65v274M262 65v274M380 65v274M497 65v274M614 65v274" stroke="var(--grid)"/>
+    <path d="M28 96h704M28 162h704M28 252h704M28 308h704" stroke="var(--grid)"/>
+    <circle cx="175" cy="252" r="13" fill="none" stroke="var(--blue)" stroke-width="4"/>
+    <circle cx="380" cy="162" r="26" fill="none" stroke="var(--blue)" stroke-width="4"/>
+    <circle cx="690" cy="96" r="150" fill="none" stroke="var(--orange)" stroke-width="4"/>
+  </g>
+  <text class="muted" x="46" y="100" font-size="12">85°</text><text class="muted" x="46" y="166" font-size="12">60°</text><text class="muted" x="46" y="256" font-size="12">0°</text>
+  <text x="175" y="363" text-anchor="middle" font-size="14" font-weight="700">0°</text><text class="muted" x="175" y="384" text-anchor="middle" font-size="13">length ×1 · area ×1</text>
+  <text x="380" y="363" text-anchor="middle" font-size="14" font-weight="700">60°</text><text class="muted" x="380" y="384" text-anchor="middle" font-size="13">length ×2 · area ×4</text>
+  <text x="625" y="363" text-anchor="middle" font-size="14" font-weight="700">85°</text><text class="muted" x="625" y="384" text-anchor="middle" font-size="13">length ×11.5 · area ×132</text>
+  <text class="muted" x="625" y="405" text-anchor="middle" font-size="12">giant circle is clipped by the map</text>
+</svg>

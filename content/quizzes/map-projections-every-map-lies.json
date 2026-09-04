@@ -1,0 +1,436 @@
+{
+  "schemaVersion": 1,
+  "id": "map-projections-every-map-lies",
+  "title": "Map projections: every flat map distorts",
+  "description": "See why flattening a globe always distorts it, how Tissot's indicatrix reveals local distortion, and why the shortest flight path can look curved on a map. You will not need to recognize any place names.",
+  "language": "en",
+  "tags": [
+    "science",
+    "mathematics",
+    "cartography",
+    "everyday-life"
+  ],
+  "author": "Quizbun",
+  "questions": [
+    {
+      "id": "why-flatness-costs",
+      "title": "Why is it impossible to flatten a sphere onto a plane without distorting something?",
+      "images": [
+        {
+          "src": "sphere-cylinder-plane.svg",
+          "alt": "Three diagrams compare a sphere, a cylinder, and a plane. The sphere has positive Gaussian curvature and cannot be flattened without stretching or tearing. The cylinder and plane both have zero Gaussian curvature, so the cylinder can unroll onto the plane without stretching.",
+          "width": 760,
+          "height": 400
+        }
+      ],
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "A sphere and a plane have different Gaussian curvature, and curvature survives any bending that preserves distances",
+          "isCorrect": true
+        },
+        {
+          "text": "A sphere has infinite surface area, so it cannot fit inside a finite rectangle",
+          "isCorrect": false
+        },
+        {
+          "text": "The Earth is an oblate spheroid rather than a perfect sphere, so the mismatch is a rounding error we cannot eliminate",
+          "isCorrect": false
+        },
+        {
+          "text": "Paper cannot be printed at the resolution the curvature demands",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Gauss's *Theorema Egregium* tells us that Gaussian curvature belongs to the surface itself. You can calculate it using distances measured within the surface, so any transformation that preserves every distance must also preserve curvature. A sphere of radius `R` has curvature `1/R²`, while a plane has curvature `0`. The mismatch makes a distance-preserving flat map impossible, whether Earth is treated as a sphere or as its slightly flattened real shape. A cylinder can unroll without stretching because its Gaussian curvature is also zero. An orange peel cannot. Every map projection must distort distance, area, shape, direction, or some combination of them.",
+      "references": "[Wikipedia: Theorema Egregium](https://en.wikipedia.org/wiki/Theorema_Egregium)"
+    },
+    {
+      "id": "tissot-what-it-measures",
+      "title": "What does Tissot's indicatrix on a map represent?",
+      "images": [
+        {
+          "src": "tissot-local-distortion.svg",
+          "alt": "A tiny circle on a globe passes through a projection arrow and becomes an ellipse on a flat map. Labels show that the ellipse's area represents local area scale, its axis ratio represents angular distortion, and its orientation shows the direction of greatest stretch.",
+          "width": 760,
+          "height": 400
+        }
+      ],
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "An infinitesimally small circle on the globe, drawn as the shape the projection turns it into",
+          "isCorrect": true
+        },
+        {
+          "text": "A circle of fixed real-world radius, usually 500 km, drawn to scale on the map",
+          "isCorrect": false
+        },
+        {
+          "text": "The margin of error of the survey data the map was compiled from",
+          "isCorrect": false
+        },
+        {
+          "text": "A ring showing how far a compass needle deviates from true north at that spot",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Imagine drawing a tiny circle on the globe and shrinking it toward a single point. Near that point, a smooth projection transforms the circle into an ellipse. The ellipse summarizes local distortion. Its area shows the local area scale, the ratio of its axes shows angular distortion, and its orientation shows the direction of greatest stretch. An indicatrix describes distortion **at one point**, not the deformation of a whole continent. Distortion maps enlarge these theoretical, infinitesimal ellipses so that we can see them.",
+      "references": "[Wikipedia: Tissot's indicatrix](https://en.wikipedia.org/wiki/Tissot%27s_indicatrix)"
+    },
+    {
+      "id": "tissot-on-conformal",
+      "title": "On a conformal projection, what do the Tissot indicatrices look like?",
+      "description": "Conformal means the projection preserves angles at every point where it is defined.",
+      "images": [
+        {
+          "src": "tissot-projection-properties.svg",
+          "alt": "Three rows of Tissot indicatrices. The conformal row contains circles of different sizes. The equal-area row contains ellipses with different shapes but equal areas. The compromise row contains ellipses whose sizes and shapes both vary.",
+          "width": 760,
+          "height": 430
+        }
+      ],
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Circles everywhere, but with radii that grow or shrink from place to place",
+          "isCorrect": true
+        },
+        {
+          "text": "Circles everywhere, all of exactly the same radius",
+          "isCorrect": false
+        },
+        {
+          "text": "Ellipses everywhere, all enclosing the same area",
+          "isCorrect": false
+        },
+        {
+          "text": "Ellipses whose long axis always points toward the nearest pole",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A conformal projection has the same local scale in every direction. If it stretched east to west more than north to south, it would change oblique angles. Equal stretching in every direction keeps each indicatrix circular. The scale can still change from one point to another, so those circles may have very different sizes. That size difference is the area distortion. If every indicatrix had the same size as well as the same shape, the map would have no local distortion, which is impossible for a flat map of a sphere.",
+      "references": "[Wikipedia: Conformal map projection](https://en.wikipedia.org/wiki/Conformal_map_projection)"
+    },
+    {
+      "id": "tissot-on-equal-area",
+      "title": "Which statements about the Tissot indicatrices of an equal-area projection are true?",
+      "images": [
+        {
+          "src": "tissot-projection-properties.svg",
+          "alt": "Three rows of Tissot indicatrices. The conformal row contains circles of different sizes. The equal-area row contains ellipses with different shapes but equal areas. The compromise row contains ellipses whose sizes and shapes both vary.",
+          "caption": "Compare the middle row with the conformal row above it. Equal area fixes the amount of area inside each ellipse, not its shape.",
+          "placement": "explanation",
+          "width": 760,
+          "height": 430
+        }
+      ],
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "Every indicatrix encloses the same area, no matter what shape it has",
+          "isCorrect": true
+        },
+        {
+          "text": "Most indicatrices are ellipses rather than circles, so local angles are distorted",
+          "isCorrect": true
+        },
+        {
+          "text": "The more elongated an indicatrix is, the worse the angular distortion at that point",
+          "isCorrect": true
+        },
+        {
+          "text": "All indicatrices are identical in both size and shape. That is what \"equal-area\" means",
+          "isCorrect": false
+        },
+        {
+          "text": "Indicatrices shrink toward the edges of the map, which is how polar areas are kept honest",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "An equal-area projection keeps the product of the ellipse's semi-axes constant. That product determines the area scale. The two axes can still change separately. Stretch one axis by three and compress the other to one third, and the ellipse keeps the same area while its shape changes sharply. This is why equal-area maps usually distort local angles and shapes. They preserve area by trading one direction of stretch against another.",
+      "references": "[Wikipedia: Equal-area projection](https://en.wikipedia.org/wiki/Equal-area_projection)"
+    },
+    {
+      "id": "tissot-axis-algebra",
+      "title": "Writing `a` and `b` for the semi-axes of an indicatrix in units of the map's nominal scale, which relationships hold?",
+      "description": "Assume `a` is the longer semi-axis and `b` is the shorter one.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "The local area scale factor is `a · b`",
+          "isCorrect": true
+        },
+        {
+          "text": "The projection is conformal at a point exactly when `a = b` there",
+          "isCorrect": true
+        },
+        {
+          "text": "The projection is equal-area exactly when `a · b = 1` everywhere",
+          "isCorrect": true
+        },
+        {
+          "text": "The maximum angular distortion `ω` satisfies `sin(ω / 2) = (a − b) / (a + b)`",
+          "isCorrect": true
+        },
+        {
+          "text": "The semi-axes always lie along the meridian and the parallel through that point",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The semi-axes `a` and `b` are the largest and smallest local scale factors. Their product gives the local area scale. If `a = b`, the projection stretches every direction equally at that point and is conformal there. If `a · b = 1` everywhere, the projection preserves area. The angular distortion formula uses the difference between the axes, so `ω` grows as the ellipse becomes more elongated.\n\nThe axes do not always follow the meridian and parallel. They do so when those mapped grid lines still cross at right angles, as they do in normal cylindrical and conic projections and polar azimuthal projections. In oblique layouts or a projection with a sheared graticule, the direction of greatest stretch can run diagonally across the grid.",
+      "references": "[USGS Professional Paper 1395: Map Projections, A Working Manual](https://pubs.usgs.gov/pp/1395/report.pdf)"
+    },
+    {
+      "id": "mercator-area-at-sixty",
+      "title": "On a normal-aspect Mercator map, by what factor is the area of a tiny shape at 60° latitude exaggerated?",
+      "description": "Take the equator as the reference scale. Answer with a bare number.",
+      "images": [
+        {
+          "src": "mercator-scale-by-latitude.svg",
+          "alt": "A Mercator graticule compares equal tiny circles at the equator, 60 degrees latitude, and 85 degrees latitude. Their map images remain circles because Mercator is conformal, but their linear scale factors are 1, 2, and about 11.5, while their area scale factors are 1, 4, and about 132.",
+          "width": 760,
+          "height": 430
+        }
+      ],
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [
+          4
+        ]
+      },
+      "explanation": "At latitude `φ`, Mercator's east-to-west scale factor is `sec φ`. To preserve angles, it uses the same factor north to south. Area therefore grows by the product of those factors, `sec² φ`. At 60°, `(1 / cos 60°)² = 2² = 4`. Local lengths double and local areas become four times as large as they are at the equator.\n\nThe factor has no upper bound. At 85°, `sec² 85° ≈ 132`. The poles would appear infinitely far away, so Mercator cannot show them. Web Mercator stops near 85° latitude. This extreme area growth is the cost of keeping local angles intact.",
+      "references": "[Wikipedia: Mercator projection](https://en.wikipedia.org/wiki/Mercator_projection)"
+    },
+    {
+      "id": "conformal-and-equal-area-together",
+      "title": "Can a single projection of the whole sphere be both conformal and equal-area?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "No. Together they force the same constant scale in every direction and at every point, which the sphere's curvature forbids",
+          "isCorrect": true
+        },
+        {
+          "text": "Yes. The Winkel tripel achieves both, which is why atlases adopted it",
+          "isCorrect": false
+        },
+        {
+          "text": "Yes, but only within a narrow zone, which is how UTM manages it",
+          "isCorrect": false
+        },
+        {
+          "text": "Yes. Any equal-area projection is automatically conformal because preserving area also preserves shape",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The indicatrix makes the conflict clear. A conformal projection has `a = b`, while a normalized equal-area projection has `a · b = 1`. Together, those equations give `a = b = 1` at every point. The map would preserve every local distance, which the curvature mismatch between a sphere and a plane forbids.\n\nWinkel tripel is a compromise projection. It balances several kinds of distortion but preserves none of them exactly. UTM uses transverse Mercator, so it is conformal rather than equal-area. Its narrow zones keep area error small, but they do not reduce it to zero.",
+      "references": "[Wikipedia: Map projection, metric properties](https://en.wikipedia.org/wiki/Map_projection)"
+    },
+    {
+      "id": "great-circle-term",
+      "title": "What is the name for the shortest path between two points on a sphere, formed where a plane through the center cuts the surface?",
+      "type": "input",
+      "validation": {
+        "mode": "text",
+        "acceptedAnswers": [
+          "great circle",
+          "great-circle",
+          "great circle arc",
+          "greatcircle",
+          "orthodrome",
+          "geodesic"
+        ]
+      },
+      "explanation": "A plane through the center of a sphere cuts its surface in a circle with the largest possible radius. The shorter arc of that great circle is the shortest surface route between two points. The equator is a great circle, as is any pair of opposite meridians. Other parallels are small circles because their planes miss the sphere's center.\n\nA *geodesic* is the general name for a locally shortest path on a surface. On a sphere, geodesics follow great circles.",
+      "references": "[Wikipedia: Great-circle distance](https://en.wikipedia.org/wiki/Great-circle_distance)"
+    },
+    {
+      "id": "same-latitude-shortest-path",
+      "title": "Two airports sit at exactly 50° N. What does the shortest surface route between them do?",
+      "images": [
+        {
+          "src": "great-circle-vs-parallel.svg",
+          "alt": "A northern hemisphere diagram joins two points at 50 degrees north. A dashed parallel runs directly east to west between them, while the shorter great-circle route curves north toward the pole before returning to 50 degrees north.",
+          "width": 760,
+          "height": 410
+        }
+      ],
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "It bows poleward of the 50° N parallel, staying north of it for most of the way",
+          "isCorrect": true
+        },
+        {
+          "text": "It follows the 50° N parallel exactly, since both endpoints share that latitude",
+          "isCorrect": false
+        },
+        {
+          "text": "It bows toward the equator, where the Earth's radius is greatest",
+          "isCorrect": false
+        },
+        {
+          "text": "It follows the parallel outbound and a great circle on the return leg, because of the Earth's rotation",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Every parallel except the equator is a small circle. Its plane misses Earth's center, so it is not a geodesic. The great circle through the two airports leaves the 50° N parallel, reaches a higher latitude, and returns to 50° N at the destination. Constant latitude is easy to describe, but it does not give the shortest route.\n\nNear the equator, a parallel is close to a great circle, so the routes nearly match. At higher latitudes and across larger longitude gaps, the poleward curve can save a noticeable distance. That is why a far-northern flight may appear to head away from its destination on a rectangular map.",
+      "references": "[Wikipedia: Great circle](https://en.wikipedia.org/wiki/Great_circle)"
+    },
+    {
+      "id": "flight-path-arc-cause",
+      "title": "An in-flight display uses Mercator. The route follows the shortest path, yet the line appears as a pronounced arc. Why?",
+      "images": [
+        {
+          "src": "mercator-great-circle-rhumb.svg",
+          "alt": "A simplified Mercator grid shows the same two endpoints joined by two routes. The great-circle route curves poleward and changes bearing along the way. The rhumb line is straight and crosses each vertical meridian at a constant angle, but it is longer.",
+          "width": 760,
+          "height": 420
+        }
+      ],
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The map is a Mercator, and every great circle except the equator and the meridians projects onto it as a curve",
+          "isCorrect": true
+        },
+        {
+          "text": "The aircraft is being deflected by the Coriolis effect, and the map is faithfully recording the curve it traces",
+          "isCorrect": false
+        },
+        {
+          "text": "The arc is padding added so the route clears restricted airspace",
+          "isCorrect": false
+        },
+        {
+          "text": "The rendering software bends long lines so that they fit inside the display area",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The curve comes from the map projection, not from a detour. On Mercator, a route with a constant compass bearing is straight. A great-circle route usually changes bearing as it travels, so Mercator draws it as a curve that bends toward the nearer pole. On a gnomonic projection, the same great circle is straight. A route's shape on the screen therefore depends on the projection used to draw it.",
+      "references": "[Wikipedia: Rhumb line](https://en.wikipedia.org/wiki/Rhumb_line)"
+    },
+    {
+      "id": "mercator-straight-line-meaning",
+      "title": "What does a straight line drawn between two points on a Mercator map represent?",
+      "images": [
+        {
+          "src": "mercator-great-circle-rhumb.svg",
+          "alt": "A simplified Mercator grid shows the same two endpoints joined by two routes. The straight rhumb line crosses every vertical meridian at the same angle and keeps one compass bearing. The shorter great-circle route curves poleward and requires a changing bearing.",
+          "caption": "On Mercator, straight means constant bearing. It does not usually mean shortest distance.",
+          "placement": "explanation",
+          "width": 760,
+          "height": 420
+        }
+      ],
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "A rhumb line, which crosses every meridian at the same angle and follows one fixed compass bearing",
+          "isCorrect": true
+        },
+        {
+          "text": "The shortest route between the points",
+          "isCorrect": false
+        },
+        {
+          "text": "A line of constant distance from the equator",
+          "isCorrect": false
+        },
+        {
+          "text": "A path of constant altitude above the reference ellipsoid",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Mercator introduced this useful navigation property in 1569. The projection preserves angles and draws meridians as parallel vertical lines. A course that crosses each meridian at the same angle therefore appears as a straight line. A navigator can draw the line with a ruler, read its bearing, and keep that compass heading.\n\nExcept along the equator or a meridian, the rhumb line is longer than the great-circle route. Navigators traditionally plotted the great circle on a gnomonic chart, divided it into shorter sections, and transferred those sections to a Mercator chart as a series of practical headings.",
+      "references": "[Wikipedia: Rhumb line](https://en.wikipedia.org/wiki/Rhumb_line)"
+    },
+    {
+      "id": "gnomonic-name",
+      "title": "Which projection draws every great circle, and therefore every shortest route, as a straight line?",
+      "description": "One word. It is built by projecting the surface outward from the center of the globe onto a tangent plane.",
+      "images": [
+        {
+          "src": "gnomonic-construction.svg",
+          "alt": "A cross-section of a sphere touches a vertical tangent plane. Rays begin at the sphere's center, pass through points on the near hemisphere, and meet the tangent plane. A plane through the sphere's center contains a great circle and intersects the tangent map plane in a straight line.",
+          "width": 760,
+          "height": 420
+        }
+      ],
+      "type": "input",
+      "validation": {
+        "mode": "text",
+        "acceptedAnswers": [
+          "gnomonic",
+          "gnomonic projection"
+        ]
+      },
+      "explanation": "A great circle lies in a plane that passes through the globe's center. A gnomonic projection sends points outward from that same center to a tangent map plane. All rays from one great circle stay in its plane, and that plane meets the map plane in a straight line. The projected great circle must follow that line.\n\nThe projection only shows points less than 90° from its center. The horizon would lie infinitely far away, and distortion rises quickly near the edge. This makes gnomonic maps poor wall maps but useful for planning great-circle routes. Navigators can transfer shorter route sections to a Mercator chart for steering.",
+      "references": "[Wikipedia: Gnomonic projection](https://en.wikipedia.org/wiki/Gnomonic_projection)"
+    },
+    {
+      "id": "azimuthal-equidistant-scope",
+      "title": "An azimuthal equidistant projection is often described as \"preserving distance\". Distance from what?",
+      "images": [
+        {
+          "src": "azimuthal-equidistant-scope.svg",
+          "alt": "A circular azimuthal equidistant map has a marked center and several points on concentric rings. Solid radial lines from the center are labelled true distance and true bearing. A curved line between two outer points is labelled not generally true.",
+          "width": 760,
+          "height": 420
+        }
+      ],
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "From the map's center point. Distances between two other points are generally not preserved",
+          "isCorrect": true
+        },
+        {
+          "text": "Between any two points anywhere on the map",
+          "isCorrect": false
+        },
+        {
+          "text": "Along every parallel, though not along the meridians",
+          "isCorrect": false
+        },
+        {
+          "text": "Only along the map's outer boundary circle",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "No flat map of a sphere can preserve every distance. An azimuthal equidistant projection preserves distance and direction only from its chosen center to every other point. This is useful for radio range, seismic travel times, and other measurements that start at one site. The map does not preserve the distance between two arbitrary points away from the center.\n\nOther equidistant projections use different restrictions. An equirectangular projection has true scale along its meridians, while a two-point equidistant projection preserves distances from two chosen points. The word *equidistant* tells you that some distances are true, so you still need to ask which ones.",
+      "references": "[Wikipedia: Azimuthal equidistant projection](https://en.wikipedia.org/wiki/Azimuthal_equidistant_projection)"
+    },
+    {
+      "id": "projection-property-audit",
+      "title": "Which of these characterizations of well-known projections are correct?",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "Robinson and Winkel tripel are compromise projections: neither conformal nor equal-area",
+          "isCorrect": true
+        },
+        {
+          "text": "Mollweide preserves area but distorts shape badly near the outer edges of its ellipse",
+          "isCorrect": true
+        },
+        {
+          "text": "Mercator preserves angles everywhere it is defined, while inflating area without bound toward the poles",
+          "isCorrect": true
+        },
+        {
+          "text": "Because a compromise projection spreads its error around, it keeps area correct to within a percent or two",
+          "isCorrect": false
+        },
+        {
+          "text": "A compromise projection's indicatrices are congruent circles, since its errors are balanced",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Compromise projections balance several kinds of distortion without preserving any one property exactly. A balanced result can still contain large errors. National Geographic adopted Winkel tripel for world maps in 1998, but it still enlarges high-latitude areas. It enlarges them less than Mercator and keeps shapes closer to their familiar outlines than Mollweide does. Its indicatrices change in both size and shape because both area and angles are distorted.\n\nAsk what a projection guarantees before judging its appearance. It may preserve local angles, area, a limited set of distances, or great circles as straight lines. A compromise projection offers no exact guarantee of that kind.",
+      "references": "[Wikipedia: Winkel tripel projection](https://en.wikipedia.org/wiki/Winkel_tripel_projection)"
+    }
+  ]
+}

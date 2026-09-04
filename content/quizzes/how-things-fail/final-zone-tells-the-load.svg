@@ -1,0 +1,93 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="380" viewBox="0 0 720 380">
+  <style>
+    svg {
+      --panel: #f5f7fb;
+      --title: #20242c;
+      --muted: #526173;
+      --edge: #64748b;
+      --card: #ffffff;
+      --grid: #d7dee9;
+      --accent1: #2563eb;
+      --accent2: #c2410c;
+      --bad: #dc2626;
+      --good: #0f766e;
+      --fill1: #dbe6fb;
+      --fill2: #fbe4d4;
+      --metal: #cbd5e1;
+    }
+    @media (prefers-color-scheme: dark) {
+      svg {
+        --panel: #1a1f27;
+        --title: #e6eaf2;
+        --muted: #9aa8bd;
+        --edge: #8b9bb4;
+        --card: #252b35;
+        --grid: #333c48;
+        --accent1: #7aa2f7;
+        --accent2: #f0a35e;
+        --bad: #f2777a;
+        --good: #4ec9a0;
+        --fill1: #26344a;
+        --fill2: #3a2e26;
+        --metal: #47536a;
+      }
+    }
+    .panel { fill: var(--panel); }
+    .card { fill: var(--card); stroke: var(--edge); }
+    .metal { fill: var(--metal); stroke: var(--edge); }
+    .title { fill: var(--title); }
+    .muted { fill: var(--muted); }
+    .edge { stroke: var(--edge); }
+    .grid { stroke: var(--grid); }
+    .a1 { stroke: var(--accent1); }
+    .a1-f { fill: var(--accent1); }
+    .a2 { stroke: var(--accent2); }
+    .a2-f { fill: var(--accent2); }
+    .bad { stroke: var(--bad); }
+    .bad-f { fill: var(--bad); }
+    .good { stroke: var(--good); }
+    .good-f { fill: var(--good); }
+    .fill1 { fill: var(--fill1); }
+    .fill2 { fill: var(--fill2); }
+    text { font-family: system-ui, sans-serif; }
+    .mono { font-family: ui-monospace, SFMono-Regular, monospace; }
+  </style>
+
+  <rect class="panel" width="720" height="380" rx="20" fill="#f5f7fb" />
+  <text class="title" x="28" y="36" fill="#20242c" font-size="18" font-weight="700">Final-zone size reveals the load</text>
+
+  <g transform="translate(214,52)">
+    <rect class="fill2" x="0" y="0" width="18" height="13" rx="3" fill="#fbe4d4" stroke="#64748b" stroke-width="1.5" />
+    <text class="muted" x="26" y="11" fill="#526173" font-size="12">final fast fracture</text>
+    <rect class="metal" x="150" y="0" width="18" height="13" rx="3" fill="#cbd5e1" stroke="#64748b" stroke-width="1.5" />
+    <text class="muted" x="176" y="11" fill="#526173" font-size="12">fatigue crack growth</text>
+  </g>
+
+  <defs>
+    <clipPath id="lowface"><circle cx="196" cy="200" r="98" /></clipPath>
+    <clipPath id="highface"><circle cx="524" cy="200" r="98" /></clipPath>
+  </defs>
+
+  <g clip-path="url(#lowface)">
+    <rect class="metal" x="98" y="102" width="196" height="196" fill="#cbd5e1" />
+    <path class="fill2" fill-rule="evenodd" fill="#fbe4d4" d="M98 102 H294 V298 H98 Z M196 294 m-168 0 a168 168 0 1 0 336 0 a168 168 0 1 0 -336 0" />
+    <g class="edge" stroke="#64748b" stroke-width="1.5" fill="none">
+      <circle cx="196" cy="294" r="42" /><circle cx="196" cy="294" r="78" /><circle cx="196" cy="294" r="114" /><circle cx="196" cy="294" r="146" />
+    </g>
+  </g>
+  <circle cx="196" cy="200" r="98" class="edge" stroke="#64748b" stroke-width="3" fill="none" />
+
+  <g clip-path="url(#highface)">
+    <rect class="metal" x="426" y="102" width="196" height="196" fill="#cbd5e1" />
+    <path class="fill2" fill-rule="evenodd" fill="#fbe4d4" d="M426 102 H622 V298 H426 Z M524 294 m-76 0 a76 76 0 1 0 152 0 a76 76 0 1 0 -152 0" />
+    <g class="edge" stroke="#64748b" stroke-width="1.5" fill="none">
+      <circle cx="524" cy="294" r="26" /><circle cx="524" cy="294" r="48" /><circle cx="524" cy="294" r="66" />
+    </g>
+  </g>
+  <circle cx="524" cy="200" r="98" class="edge" stroke="#64748b" stroke-width="3" fill="none" />
+
+  <text class="title" x="196" y="336" fill="#20242c" font-size="14.5" font-weight="700" text-anchor="middle">Large fatigue zone</text>
+  <text class="muted" x="196" y="356" fill="#526173" font-size="12.5" text-anchor="middle">low nominal stress, long life</text>
+  <text class="title" x="524" y="336" fill="#20242c" font-size="14.5" font-weight="700" text-anchor="middle">Large final zone</text>
+  <text class="muted" x="524" y="356" fill="#526173" font-size="12.5" text-anchor="middle">high nominal stress, short life</text>
+</svg>

@@ -1,0 +1,509 @@
+{
+  "schemaVersion": 1,
+  "id": "charts-that-lie",
+  "title": "Charts That Lie: Truncated Axes, Twin Scales and Misleading Bubbles",
+  "description": "Every chart in this Quiz uses real numbers, yet each one misleads through its baseline, second y-axis, bubble radius, date range, or scale. Learn to read how a chart encodes data instead of trusting its first impression.",
+  "language": "en",
+  "tags": ["statistics", "data-visualization", "charts", "critical-thinking", "design"],
+  "questions": [
+    {
+      "id": "revenue-truncated-axis-real-growth",
+      "title": "This chart is titled *Revenue is exploding*. Rounded to the nearest whole percent, how much did revenue actually grow from Q1 to Q4?",
+      "description": "Answer with the number of percent only, for example `12`.",
+      "images": [
+        {
+          "src": "revenue-truncated-axis.svg",
+          "alt": "Bar chart titled 'Revenue is exploding', quarterly revenue in millions of dollars. The y-axis runs from 98 to 104. Four bars are labelled Q1 100, Q2 101, Q3 102 and Q4 103. Because the axis starts at 98, the Q4 bar is drawn about two and a half times taller than the Q1 bar.",
+          "width": 720,
+          "height": 400
+        },
+        {
+          "src": "revenue-zero-baseline.svg",
+          "alt": "The same four quarterly revenue values, 100, 101, 102 and 103 million dollars, drawn as bars on a y-axis running from 0 to 120. All four bars are nearly the same height.",
+          "caption": "The same four numbers, same bars, baseline moved to zero.",
+          "placement": "explanation",
+          "width": 720,
+          "height": 400
+        }
+      ],
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [3],
+        "tolerance": 0.1
+      },
+      "explanation": "Revenue rose from 100 to 103, a 3% increase. Yet Q4 looks about two and a half times as tall as Q1.\n\nThe baseline creates the distortion. Because the axis starts at 98, each bar shows `value - 98`: Q1 is 2 units tall and Q4 is 5. Start at 99 and Q4 looks four times as tall. Start at 99.9 and the rise looks extreme. The values never change; only the hidden portion of each bar does.\n\nWith a zero baseline, the four bars are nearly equal, as a 3% increase should look.",
+      "references": "[Wikipedia: Misleading graph](https://en.wikipedia.org/wiki/Misleading_graph)"
+    },
+    {
+      "id": "bars-encode-length-lines-encode-position",
+      "title": "Both panels plot the same seven temperatures on the same axis, which starts at 36.5 °C rather than at zero. In which panel is the truncated axis an actual problem, and why?",
+      "images": [
+        {
+          "src": "bars-versus-line-same-axis.svg",
+          "alt": "Two panels show the same seven body temperatures, from 36.7 to 38.1 degrees Celsius, on axes running from 36.5 to 38.5. The left uses bars that start at 36.5; the right uses a line.",
+          "width": 720,
+          "height": 400
+        }
+      ],
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The bars. A bar's *length* is its value, and a length only means something measured from zero. The line encodes each value by *position* on a labelled scale, so a zoomed baseline is legitimate there.",
+          "isCorrect": true
+        },
+        {
+          "text": "Both, equally. Any chart whose y-axis does not start at zero misstates its data, whatever marks it uses.",
+          "isCorrect": false
+        },
+        {
+          "text": "Neither. The axis is labelled in both panels, and a labelled axis cannot mislead.",
+          "isCorrect": false
+        },
+        {
+          "text": "The line. A line implies continuity between the points, so it needs a zero baseline even more than bars do.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The rule is not *always start at zero*. The mark must match what it encodes.\n\nBars encode magnitude through length, so cutting off the bottom makes their lengths proportional to the wrong quantity. Dots and lines encode values by position on a labelled scale, so a zoomed range is valid.\n\nA zero baseline would make this chart worse. Body temperature varies within a narrow band, and 0 °C is not a meaningful origin because Celsius is an interval scale. *Twice 20 °C* has no physical meaning. Stock prices, IQ scores, and temperature anomalies also need enough zoom to show useful variation.",
+      "references": "[Wikipedia: Misleading graph](https://en.wikipedia.org/wiki/Misleading_graph) · [Correll, Bertini & Franconeri: Truncating the Y-Axis: Threat or Menace? (CHI 2020)](https://arxiv.org/abs/1907.02035)"
+    },
+    {
+      "id": "axis-break-symbol-is-not-a-fix",
+      "title": "A designer keeps the truncated revenue bars but draws a jagged *axis break* symbol across the base of each one to signal the missing range. Does that make the chart honest?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "No. The symbol discloses the truncation, but the bars still have misleading lengths.",
+          "isCorrect": true
+        },
+        {
+          "text": "Yes. An axis break is the standard fix; once the truncation is disclosed, the reader can mentally correct for it.",
+          "isCorrect": false
+        },
+        {
+          "text": "Yes, provided the break symbol appears on the axis line itself and not only inside the bars.",
+          "isCorrect": false
+        },
+        {
+          "text": "No, because axis breaks are valid only on logarithmic axes.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Disclosure does not fix the encoding. Correll, Bertini and Franconeri found that visual warnings on a truncated y-axis did not remove the exaggeration. People still judged the difference by the bar lengths.\n\nA break symbol asks readers to calculate the true comparison while the picture suggests another one. Axis breaks can be useful on dot or line charts when an outlier would flatten the rest of the data, because those marks encode position. On a bar chart, the break leaves the misleading lengths intact.",
+      "references": "[Correll, Bertini & Franconeri: Truncating the Y-Axis: Threat or Menace? (CHI 2020)](https://arxiv.org/abs/1907.02035)"
+    },
+    {
+      "id": "honest-fixes-for-a-flat-quarter",
+      "title": "Revenue moved from 100 to 103 over four quarters and the chart still has to ship. Which of these presentations report that change honestly?",
+      "description": "Select every option that qualifies.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "Bars from a zero baseline with all four values labelled. The change looks small because it is small.",
+          "isCorrect": true
+        },
+        {
+          "text": "A line or dot chart on a zoomed, clearly labelled axis, so the quarter-to-quarter wiggle is legible without any mark claiming a fourfold rise.",
+          "isCorrect": true
+        },
+        {
+          "text": "Retitling the chart *Revenue up 3% over the year*, so the headline states the size of the effect instead of gesturing at it.",
+          "isCorrect": true
+        },
+        {
+          "text": "The truncated bars, with a jagged break symbol drawn across the base of each bar.",
+          "isCorrect": false
+        },
+        {
+          "text": "The truncated bars, with the `98` axis label set in a larger, bolder font so that nobody can miss the baseline.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Zero-based bars preserve honest lengths. A line or dot chart encodes values by position, so it can use a clearly labelled zoomed axis when small changes matter. The title *Revenue up 3% over the year* states the size of the effect directly.\n\nA larger axis label or break symbol only discloses the problem. Neither fixes the bar lengths. If the honest chart looks dull, that tells you the change was small.",
+      "references": "[Wikipedia: How to Lie with Statistics](https://en.wikipedia.org/wiki/How_to_Lie_with_Statistics)"
+    },
+    {
+      "id": "aspect-ratio-changes-the-slope",
+      "title": "These two panels plot identical numbers against an identical axis range. What is the honest description of the difference between them?",
+      "images": [
+        {
+          "src": "aspect-ratio-same-data.svg",
+          "alt": "Two line charts of the same twelve monthly signup figures, rising from 100 to 131 thousand, both drawn against a y-axis from 95 to 135. The left panel is tall and narrow, so the line climbs steeply. The right panel is short and wide, so the same line looks nearly flat.",
+          "width": 720,
+          "height": 400
+        }
+      ],
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Nothing in the data differs. The panel's shape sets the slopes, and slope is what a reader converts into *how fast*.",
+          "isCorrect": true
+        },
+        {
+          "text": "The tall panel is the more accurate one, because stretching the vertical direction resolves smaller changes.",
+          "isCorrect": false
+        },
+        {
+          "text": "The wide panel is the more accurate one, because the flatter reading is the more conservative claim.",
+          "isCorrect": false
+        },
+        {
+          "text": "The difference is cosmetic. Readers take growth from the axis labels, so the shape of the frame does not affect the conclusion.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The frame's shape changes the slopes even when the data and axis range stay fixed. Unlike the axis range, the aspect ratio is not stated on the chart.\n\nCleveland's *banking to 45°* offers a practical choice: people compare slopes best when the line segments average about 45° from horizontal. Very steep segments all look vertical; very shallow ones all look flat. No aspect ratio is neutral, so choose one that supports comparison instead of a preferred story. In either panel, signups rose 31% over twelve months.",
+      "references": "[Wikipedia: Misleading graph](https://en.wikipedia.org/wiki/Misleading_graph)"
+    },
+    {
+      "id": "dual-axis-crossing-point",
+      "title": "The blue and orange lines cross in 2022. What does that crossing tell you?",
+      "images": [
+        {
+          "src": "dual-axis-crossover.svg",
+          "alt": "Line chart titled 'Coffee shops and rent move together', covering 2016 to 2024. A blue line reads against the left axis, coffee shops in the district, which runs from 10 to 70, and rises from 20 to 62. An orange line reads against the right axis, median rent in dollars per month, which runs from 1300 to 2000, and rises from 1400 to 1990. The two lines nearly overlap, and in 2022 the orange rent line rises above the blue coffee shop line.",
+          "width": 720,
+          "height": 420
+        },
+        {
+          "src": "indexed-shared-axis.svg",
+          "alt": "The same coffee shop and rent series, both indexed to 2016 equals 100 and plotted against a single axis. The coffee shop line climbs to 310 by 2024 while the rent line reaches only 142. The two lines diverge steadily and never cross.",
+          "caption": "The same two series on one scale: +210% against +42%.",
+          "placement": "explanation",
+          "width": 720,
+          "height": 420
+        }
+      ],
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Nothing. The crossing is produced by the two axis ranges the author chose; nudge either range and it moves to a different year or disappears.",
+          "isCorrect": true
+        },
+        {
+          "text": "That rent per coffee shop peaked in 2022.",
+          "isCorrect": false
+        },
+        {
+          "text": "That the number of coffee shops stopped predicting rent after 2022.",
+          "isCorrect": false
+        },
+        {
+          "text": "That the two quantities were equal in 2022, which is exactly why the lines meet there.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Lines on separate y-axes do not share a vertical scale. Their crossing depends on four chosen limits, not on a fact about coffee or rent. Set the rent axis to 1300-2100 and the lines never cross. Set it to 1350-1950 and they cross in 2018.\n\nThe two scales also make different trends look alike. On one indexed axis, coffee shops rise 210% while rent rises 42%. Even similar trends would not prove that one causes the other. Both may simply rise over time or share another cause.",
+      "references": "[Wikipedia: Spurious relationship](https://en.wikipedia.org/wiki/Spurious_relationship)"
+    },
+    {
+      "id": "dual-axis-honest-alternatives",
+      "title": "Which of these presentations let a reader compare the coffee shop and rent series without manufacturing a relationship between them?",
+      "description": "Select every option that qualifies.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "Index both series to a common base year and plot them on a single axis.",
+          "isCorrect": true
+        },
+        {
+          "text": "Draw two stacked panels with a shared x-axis and separate y-axes.",
+          "isCorrect": true
+        },
+        {
+          "text": "Plot rent against coffee shops as a scatterplot, one point per year.",
+          "isCorrect": true
+        },
+        {
+          "text": "Keep both y-axes, but force each of them to start at zero.",
+          "isCorrect": false
+        },
+        {
+          "text": "Keep both y-axes, and colour each axis and its tick labels to match its line.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Indexing converts both series to percent change from one base year, so they can share a scale. Stacked panels keep the scales separate while preserving timing. A scatterplot shows the claimed relationship and its scatter directly.\n\nStarting both axes at zero still leaves two independent scales and arbitrary maximums. Matching each axis colour to its line improves legibility, but it does not remove the manufactured crossing or resemblance.",
+      "references": "[Wikipedia: Spurious relationship](https://en.wikipedia.org/wiki/Spurious_relationship)"
+    },
+    {
+      "id": "bubble-radius-versus-area",
+      "title": "The 2025 circle is drawn with twice the radius of the 2015 circle to show that users doubled. How many times more area does the larger circle cover?",
+      "description": "Answer with a number, for example `1.5`.",
+      "images": [
+        {
+          "src": "bubbles-radius-scaled.svg",
+          "alt": "Two blue circles under the headline 'Our users doubled'. The left circle is labelled 2015: 20M. The right circle is labelled 2025: 40M and is drawn with twice the radius, so it covers four times as much of the page.",
+          "width": 720,
+          "height": 340
+        },
+        {
+          "src": "bubbles-area-scaled.svg",
+          "alt": "The same two values drawn with area proportional to the number: the 40M circle's radius is about 1.41 times the 20M circle's, so it covers twice the area. A dashed red outline shows where the radius-doubled circle would have reached.",
+          "caption": "Radius × 1.41 gives area × 2. The dashed outline is the radius-doubled circle from the Question.",
+          "placement": "explanation",
+          "width": 720,
+          "height": 340
+        }
+      ],
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [4],
+        "tolerance": 0.05
+      },
+      "explanation": "Area grows with the square of the radius: `A = πr²`. Double the radius and the area becomes four times as large.\n\nReaders perceive the area, not the radius. To represent a value `v`, set the radius in proportion to `√v`. A doubled value needs a radius factor of `√2 ≈ 1.41`. The same rule applies to any two-dimensional icon scaled in both directions. Because people also tend to underestimate area differences, bubbles should carry value labels even when scaled correctly.",
+      "references": "[Wikipedia: Bubble chart](https://en.wikipedia.org/wiki/Bubble_chart)"
+    },
+    {
+      "id": "bubble-radius-for-nine-times",
+      "title": "You need a bubble representing a value nine times the reference bubble's. By what factor do you multiply the reference radius?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "3, because area grows with the square of the radius.",
+          "isCorrect": true
+        },
+        {
+          "text": "9, so that the radius is proportional to the value it represents.",
+          "isCorrect": false
+        },
+        {
+          "text": "4.5, which is nine scaled by the ratio between a circle's diameter and its radius.",
+          "isCorrect": false
+        },
+        {
+          "text": "81, because the area must grow as the square of the value.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Radius scales with the square root of the value: `√9 = 3`. A circle with radius `3r` has area `π(3r)² = 9πr²`.\n\nChart libraries differ in what their size setting controls. For bubble radii in D3, use `d3.scaleSqrt`, not `d3.scaleLinear`. Other libraries may map size to area for you. When bubbles look unusually dramatic, check what the library scales.",
+      "references": "[D3: scaleSqrt](https://d3js.org/d3-scale/pow#scaleSqrt) · [Wikipedia: Bubble chart](https://en.wikipedia.org/wiki/Bubble_chart)"
+    },
+    {
+      "id": "lie-factor-of-the-bubbles",
+      "title": "What is the lie factor of that radius-doubled bubble chart?",
+      "description": "Edward Tufte's *lie factor* is the size of the effect shown in the graphic divided by the size of the effect in the data, where size of effect is `|second − first| / first`. Users went from 20M to 40M; the drawn areas went from 1 unit to 4. Answer with a number.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [3],
+        "tolerance": 0.05
+      },
+      "explanation": "The data effect is `(40 - 20) / 20 = 1`. The drawn area rises from 1 to 4, so the graphic effect is `(4 - 1) / 1 = 3`. The lie factor is `3 / 1 = 3`, so the picture triples the apparent change.\n\nTufte's rule of thumb accepts roughly 0.95 to 1.05. Values above 1 exaggerate; values below 1 hide the effect.\n\nThe truncated revenue chart is worse. Its data effect is `3 / 100 = 0.03`, while its bars create an effect of `(5 - 2) / 2 = 1.5`. Its lie factor is `1.5 / 0.03 = 50`.",
+      "references": "[Wikipedia: Edward Tufte](https://en.wikipedia.org/wiki/Edward_Tufte) · [Wikipedia: Misleading graph](https://en.wikipedia.org/wiki/Misleading_graph)"
+    },
+    {
+      "id": "cherry-picked-window",
+      "title": "A colleague sends this chart with the note *Product X is dying, down a third*. What can you conclude from the chart alone?",
+      "images": [
+        {
+          "src": "window-2022-only.svg",
+          "alt": "Line chart titled 'Product X is collapsing', showing weekly active users in millions for each month of 2022, falling steadily from 180 in January to 120 in December.",
+          "width": 720,
+          "height": 400
+        },
+        {
+          "src": "window-in-full-series.svg",
+          "alt": "Line chart of the same product's yearly average weekly active users from 2015 to 2025, rising from 30 million to 240 million. The 2022 point, where the value dips from 168 to 145 million, is shaded; every other year rises.",
+          "caption": "The shaded band is the entire chart your colleague sent.",
+          "placement": "explanation",
+          "width": 720,
+          "height": 400
+        }
+      ],
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "That users fell by about a third across these twelve months. Whether that is a death, a dip, or a correction depends entirely on the history the window excludes.",
+          "isCorrect": true
+        },
+        {
+          "text": "That the product is in decline. Twelve monthly points are enough to establish a trend.",
+          "isCorrect": false
+        },
+        {
+          "text": "Nothing, because a single series with no comparison group is uninterpretable.",
+          "isCorrect": false
+        },
+        {
+          "text": "Nothing, because twelve points are too few to plot as a line.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Nothing inside the chart is false. The axis is sensible, the marks are proportional, and the decline is real. The missing context lies outside the chosen endpoints.\n\nIn the full series, 2022 is one down year in a decade that rose from 30M to 240M. The product had roughly doubled in each of the two previous years and resumed growing afterwards.\n\nCherry-picking does not erase the local fact: losing a third of the users in one year still matters. But the window cannot support the broader claim that the product is dying. Ask what happened outside the frame and why those endpoints were chosen.",
+      "references": "[Wikipedia: Cherry picking](https://en.wikipedia.org/wiki/Cherry_picking)"
+    },
+    {
+      "id": "rebound-from-a-depressed-base",
+      "title": "The press release leads with *bookings up 42% year over year*. What does the chart actually support?",
+      "images": [
+        {
+          "src": "rebound-from-a-dip.svg",
+          "alt": "Bar chart titled 'Bookings up 42% year over year', annual bookings in thousands: 2018 is 100, 2019 is 104, 2020 is 62 and drawn in red, 2021 is 88 and drawn in green, 2022 is 99, and 2023 is 106.",
+          "width": 720,
+          "height": 380
+        }
+      ],
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "A rebound off a collapsed base: 2021 is 42% above the 2020 crash and still about 15% below 2019.",
+          "isCorrect": true
+        },
+        {
+          "text": "Record growth. 42% is the largest year-over-year change in the series, so 2021 was the strongest year the company has had.",
+          "isCorrect": false
+        },
+        {
+          "text": "That the 2020 shortfall has been recovered, since bookings are growing again.",
+          "isCorrect": false
+        },
+        {
+          "text": "Nothing at all, because year-over-year percentages cannot be recovered from a bar chart.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The 42% is correct: `88 / 62 ≈ 1.42`. But it mostly reflects the unusually low 2020 base.\n\nThe level gives the missing context. The 2021 value of 88 is still 15% below 2019's 104. Percentage falls and rises do not cancel: 2020 fell 40%, 2021 rose 42%, and `0.60 × 1.42 = 0.85`. Recovering from a 40% fall requires a 67% rise.\n\nCompare the result with the last normal year, as many companies did after 2020, and show the actual level beside the percentage change.",
+      "references": "[Wikipedia: Base effect](https://en.wikipedia.org/wiki/Base_effect)"
+    },
+    {
+      "id": "straight-line-on-a-log-axis",
+      "title": "The case count line here is straight and the climb looks almost gentle. What does a straight line on a logarithmic axis mean?",
+      "images": [
+        {
+          "src": "growth-on-log-axis.svg",
+          "alt": "Line chart of weekly cases over twelve weeks on a logarithmic y-axis whose gridlines are 100, 1,000, 10,000 and 100,000. The line is perfectly straight, running from 100 in week 1 to 17,592 in week 12.",
+          "width": 720,
+          "height": 400
+        },
+        {
+          "src": "growth-on-linear-axis.svg",
+          "alt": "The same twelve weekly case counts on a linear y-axis with gridlines every 5,000. The line hugs the bottom of the chart for eight weeks and then rises almost vertically to 17,592.",
+          "caption": "Identical numbers, linear axis.",
+          "placement": "explanation",
+          "width": 720,
+          "height": 400
+        }
+      ],
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Constant *percentage* growth. Each week is about 1.6 times the previous week.",
+          "isCorrect": true
+        },
+        {
+          "text": "Constant absolute growth: the same number of new cases is added every week.",
+          "isCorrect": false
+        },
+        {
+          "text": "That growth is slowing, since the line is not curving upward.",
+          "isCorrect": false
+        },
+        {
+          "text": "That the outbreak has reached a steady state, which is what a straight line represents.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A log axis gives equal distance to equal multiplication. The gaps from 100 to 1,000 and from 1,000 to 10,000 are equal because both multiply by ten. A straight line therefore means a constant multiplier, or exponential growth.\n\nHere the weekly multiplier is about 1.6, which doubles the count roughly every week and a half: `ln 2 / ln 1.6 ≈ 1.5`. Week 12 has 17,592 cases, 176 times week 1.\n\nA log axis suits multiplicative growth because a change in growth rate appears as a change in slope. Publish a linear view too, or state the endpoint values, so readers can judge the magnitude.",
+      "references": "[Wikipedia: Semi-log plot](https://en.wikipedia.org/wiki/Semi-log_plot)"
+    },
+    {
+      "id": "flattening-on-a-log-axis",
+      "title": "On the same kind of log axis, this curve bends over after week 6. What has actually happened to the weekly case count?",
+      "images": [
+        {
+          "src": "bending-curve-log-axis.svg",
+          "alt": "Line chart of weekly cases over twelve weeks on a logarithmic y-axis with gridlines at 100, 1,000 and 10,000. The line is straight through week 6 and then bends over, ending at 4,550 in week 12.",
+          "width": 720,
+          "height": 400
+        },
+        {
+          "src": "bending-curve-linear-axis.svg",
+          "alt": "The same twelve weekly case counts on a linear y-axis with gridlines every 1,000. The line rises continuously and steeply from 100 in week 1 to 4,550 in week 12, and each week's step is longer than the one before it.",
+          "caption": "The same bending curve, linear axis.",
+          "placement": "explanation",
+          "width": 720,
+          "height": 400
+        }
+      ],
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Cases are still rising, and each week still adds more than the week before. Only the growth *rate* has come down.",
+          "isCorrect": true
+        },
+        {
+          "text": "Cases have started to fall. A downward bend on a log axis is a decline.",
+          "isCorrect": false
+        },
+        {
+          "text": "Cases have levelled off at a roughly constant weekly number.",
+          "isCorrect": false
+        },
+        {
+          "text": "Cases are still rising, but each week now adds fewer new cases than the week before.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "On a log axis, the curve bends below a straight line when the multiplier shrinks. Here it falls from about 1.6 per week to about 1.18. Because the multiplier remains above 1, counts still rise.\n\nThe series is 100, 160, 256, 410, 655, 1,000, 1,450, 1,980, 2,570, 3,200, 3,860, 4,550. Week 2 adds 60 cases; week 12 adds 690. Growth is slower in percentage terms but larger in absolute terms.\n\nOn a log axis, a downward slope means decline, a horizontal line means no change, and any upward slope means growth.",
+      "references": "[Wikipedia: Logarithmic scale](https://en.wikipedia.org/wiki/Logarithmic_scale)"
+    },
+    {
+      "id": "when-a-log-axis-is-right",
+      "title": "When is a logarithmic y-axis the right choice, and what does choosing it cost you?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Choose it when the process is multiplicative or the values span orders of magnitude. The cost is that readers systematically under-read magnitude, so the headline numbers have to be stated as well as drawn.",
+          "isCorrect": true
+        },
+        {
+          "text": "Choose it whenever a linear chart looks too dramatic. It costs nothing, since none of the underlying numbers change.",
+          "isCorrect": false
+        },
+        {
+          "text": "Choose it only for quantities that cannot go negative. The cost is that percentage changes become impossible to read off the chart.",
+          "isCorrect": false
+        },
+        {
+          "text": "Never choose one for a general audience. A log axis is a recognised deceptive technique.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A log axis shows relative speed: growth rates become slopes, and a change in rate becomes a kink. A linear axis shows absolute size and differences.\n\nRomano and colleagues found that people shown COVID-19 deaths on log scales understood the trend less accurately, made worse forecasts, and expressed different policy preferences than people shown the same data on linear scales. They recommended linear scales for public communication.\n\nUse log scales for multiplicative processes or values spanning several orders of magnitude. Use linear scales when absolute size matters. Show both when readers need both views. A log axis also cannot display zero or negative values.",
+      "references": "[Romano, Sotis, Dominioni & Guidi: The scale of COVID-19 graphs affects understanding, attitudes, and policy preferences (Health Economics, 2020)](https://pmc.ncbi.nlm.nih.gov/articles/PMC7461444/) · [Wikipedia: Logarithmic scale](https://en.wikipedia.org/wiki/Logarithmic_scale)"
+    },
+    {
+      "id": "review-the-dashboard-pr",
+      "title": "You are reviewing a dashboard pull request. Which of these choices break the proportionality between the numbers and the ink, whatever the author intended?",
+      "description": "Select every option that qualifies.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "Bar charts whose y-axis starts at 40.",
+          "isCorrect": true
+        },
+        {
+          "text": "Circles whose radius is set equal to the value they represent.",
+          "isCorrect": true
+        },
+        {
+          "text": "A 3-D pie chart tilted so that the slices nearest the viewer are drawn larger than the ones at the back.",
+          "isCorrect": true
+        },
+        {
+          "text": "A line chart whose y-axis starts at 40, with the axis clearly labelled.",
+          "isCorrect": false
+        },
+        {
+          "text": "A log-scaled y-axis, labelled as such, for a metric that spans four orders of magnitude.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Ask whether the mark's size is proportional to its value.\n\nBars encode magnitude by length, bubbles by area, and pie slices by angle and area. A truncated bar axis breaks the length ratio. Mapping value to bubble radius squares the apparent ratio. Tilting a pie enlarges the slices nearest the viewer.\n\nLines encode values by position, so a labelled zoomed axis can reveal small changes without distorting mark size. A labelled log axis also fits values spanning four orders of magnitude. Check that readers can recover the numbers and that twice the value looks twice as large where size carries the meaning.",
+      "references": "[Wikipedia: Misleading graph](https://en.wikipedia.org/wiki/Misleading_graph) · [Wikipedia: How to Lie with Statistics](https://en.wikipedia.org/wiki/How_to_Lie_with_Statistics)"
+    }
+  ]
+}
