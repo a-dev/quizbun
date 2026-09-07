@@ -10,6 +10,7 @@ export function SectionTitle({ title, counter }: Props) {
   return (
     <div className={styles.root}>
       <h2 className={cx(styles.title, utils.cellBackgroundContained)}>
+        <span className={utils.cellBackgroundLayer} />
         {title}
         {counter !== undefined && (
           <span className={styles.counter} aria-hidden="true">

@@ -16,6 +16,7 @@ export function QuizbunHowTo({ quizCount }: Props) {
     <section aria-labelledby="get-quizzes" className={cx(sharedStyles.section, styles.root)}>
       <div className={styles.introFrame}>
         <div className={cx(styles.introWrapper, utils.cellBackgroundContained)}>
+          <span className={utils.cellBackgroundLayer} />
           <div className={styles.intro}>
             <p className={styles.eyebrow}>
               <Compass className={styles.eyebrowIcon} size="16" aria-hidden="true" />

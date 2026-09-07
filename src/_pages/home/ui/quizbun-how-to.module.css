@@ -17,17 +17,16 @@
 .intro-frame {
   composes: rounded-m from "#styles/shape.module.css";
 
-  /*
-   * No `contain`/`transform`/`filter` here: any of those would become the
-   * containing block for the fixed grid in `.cell-background-contained::before`,
-   * re-anchoring it to this card so it scrolls. The grid is clipped to the card
-   * by `clip-path` on `.cell-background-contained` instead.
-   */
+  /* Clips the grid pseudo-element of `.cell-background-contained`. */
   overflow: hidden;
   width: 100%;
 }
 
 .intro-wrapper {
+  /* Clips the grid layer to `.intro-frame`'s rounded rect — `rounded-m`'s radius. */
+
+  --cell-background-radius: 1.166rem;
+
   width: 100%;
   padding-block: clamp(1.5rem, 5vw, 3.25rem);
 }

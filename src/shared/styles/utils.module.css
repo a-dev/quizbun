@@ -67,6 +67,10 @@
   }
 }
 
+/*
+ * `--cell-background-radius` is the clipping card's `border-radius`. Without it
+ * the grid still stays inside the host, just with square corners.
+ */
 .cell-background-contained {
   --_cell-size: 1.1rem;
   --_line-color: color-mix(in oklch, var(--color-bg-cell-border) 10%, transparent);
@@ -75,18 +79,38 @@
 
   isolation: isolate;
   position: relative;
-  clip-path: inset(0);
+  background-color: var(--_bg-color);
+  clip-path: inset(0 round var(--cell-background-radius, 0));
 }
 
-.cell-background-contained::before {
-  content: "";
+/*
+ * A superellipse corner is not a radius, so `inset()` cannot trace it, and no
+ * fixed `shape()` can either: `border-radius` scales down when the box is too
+ * short for it (a 2rem corner on a 37px band renders at ~18.7px) and a written
+ * path cannot follow that. Every engine that has `corner-shape` today is Blink,
+ * which does clip a fixed child by `overflow` and so draws the true corner —
+ * here the clip only has to bound the layer to the card's rect.
+ */
+@supports (corner-shape: superellipse(2)) {
+  .cell-background-contained {
+    clip-path: inset(0);
+  }
+}
 
+.cell-background-layer {
   position: fixed;
   z-index: -1;
-  inset: -50%;
+  inset: 0;
+}
+
+/* Rotate here, never on the layer; `inset` covers the rotation overhang. */
+.cell-background-layer::before {
+  content: "";
+
+  position: absolute;
+  inset: -25%;
   transform: rotate(-2.9deg);
 
-  background-color: var(--_bg-color);
   background-image:
     linear-gradient(to right, var(--_line-color) 1px, transparent 1px),
     linear-gradient(
