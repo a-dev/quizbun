@@ -27,10 +27,14 @@ jobs:
         with:
           fetch-depth: 0
 
+      # Pinned: skills/create-quiz/scripts/validate-quiz.mjs is a committed Bun
+      # bundle checked byte-for-byte, and bundler output shifts between Bun
+      # releases. Bump .bun-version and run `bun run skill:create-quiz:generate`
+      # together.
       - name: Set up Bun
         uses: oven-sh/setup-bun@v2
         with:
-          bun-version: latest
+          bun-version-file: .bun-version
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
@@ -104,10 +108,14 @@ jobs:
           # Full history: the build's recency pipeline reads git first-commit dates.
           fetch-depth: 0
 
+      # Pinned: skills/create-quiz/scripts/validate-quiz.mjs is a committed Bun
+      # bundle checked byte-for-byte, and bundler output shifts between Bun
+      # releases. Bump .bun-version and run `bun run skill:create-quiz:generate`
+      # together.
       - name: Set up Bun
         uses: oven-sh/setup-bun@v2
         with:
-          bun-version: latest
+          bun-version-file: .bun-version
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
