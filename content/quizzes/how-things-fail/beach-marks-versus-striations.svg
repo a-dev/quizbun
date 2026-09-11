@@ -1,0 +1,95 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="360" viewBox="0 0 720 360">
+  <style>
+    svg {
+      --panel: #f5f7fb;
+      --title: #20242c;
+      --muted: #526173;
+      --edge: #64748b;
+      --card: #ffffff;
+      --grid: #d7dee9;
+      --accent1: #2563eb;
+      --accent2: #c2410c;
+      --bad: #dc2626;
+      --good: #0f766e;
+      --fill1: #dbe6fb;
+      --fill2: #fbe4d4;
+      --metal: #cbd5e1;
+    }
+    @media (prefers-color-scheme: dark) {
+      svg {
+        --panel: #1a1f27;
+        --title: #e6eaf2;
+        --muted: #9aa8bd;
+        --edge: #8b9bb4;
+        --card: #252b35;
+        --grid: #333c48;
+        --accent1: #7aa2f7;
+        --accent2: #f0a35e;
+        --bad: #f2777a;
+        --good: #4ec9a0;
+        --fill1: #26344a;
+        --fill2: #3a2e26;
+        --metal: #47536a;
+      }
+    }
+    .panel { fill: var(--panel); }
+    .card { fill: var(--card); stroke: var(--edge); }
+    .metal { fill: var(--metal); stroke: var(--edge); }
+    .title { fill: var(--title); }
+    .muted { fill: var(--muted); }
+    .edge { stroke: var(--edge); }
+    .grid { stroke: var(--grid); }
+    .a1 { stroke: var(--accent1); }
+    .a1-f { fill: var(--accent1); }
+    .a2 { stroke: var(--accent2); }
+    .a2-f { fill: var(--accent2); }
+    .bad { stroke: var(--bad); }
+    .bad-f { fill: var(--bad); }
+    .good { stroke: var(--good); }
+    .good-f { fill: var(--good); }
+    .fill1 { fill: var(--fill1); }
+    .fill2 { fill: var(--fill2); }
+    text { font-family: system-ui, sans-serif; }
+    .mono { font-family: ui-monospace, SFMono-Regular, monospace; }
+  </style>
+
+  <rect class="panel" width="720" height="360" rx="20" fill="#f5f7fb" />
+  <text class="title" x="28" y="36" fill="#20242c" font-size="18" font-weight="700">Beach marks vs. striations</text>
+
+  <g transform="translate(24,56)">
+    <rect class="card" width="304" height="240" rx="14" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <text class="title" x="18" y="30" fill="#20242c" font-size="14.5" font-weight="700">Beach marks</text>
+    <text class="muted" x="18" y="49" fill="#526173" font-size="12.5">visible by eye · millimetres</text>
+    <defs>
+      <clipPath id="bmface"><circle cx="164" cy="150" r="76" /></clipPath>
+    </defs>
+    <g clip-path="url(#bmface)">
+      <rect class="metal" x="88" y="74" width="152" height="152" fill="#cbd5e1" />
+      <path class="fill2" fill-rule="evenodd" fill="#fbe4d4" d="M88 74 H240 V226 H88 Z M164 224 m-112 0 a112 112 0 1 0 224 0 a112 112 0 1 0 -224 0" />
+      <g class="edge" stroke="#64748b" stroke-width="1.5" fill="none">
+        <circle cx="164" cy="224" r="30" /><circle cx="164" cy="224" r="54" />
+        <circle cx="164" cy="224" r="78" /><circle cx="164" cy="224" r="98" />
+      </g>
+    </g>
+    <circle cx="164" cy="150" r="76" class="edge" stroke="#64748b" stroke-width="2.5" fill="none" />
+    <rect x="140" y="168" width="28" height="28" class="a1" stroke="#2563eb" stroke-width="2.5" fill="none" />
+  </g>
+
+  <path class="a1" stroke="#2563eb" stroke-width="2" fill="none" stroke-dasharray="6 4" d="M192 224 L392 60 M192 252 L392 292" />
+
+  <g transform="translate(392,56)">
+    <rect class="card" width="304" height="240" rx="14" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+    <text class="title" x="18" y="30" fill="#20242c" font-size="14.5" font-weight="700">Striations</text>
+    <text class="muted" x="18" y="49" fill="#526173" font-size="12.5">electron microscope · micrometres</text>
+    <g class="edge" stroke="#64748b" stroke-width="2" fill="none">
+      <path d="M40 74 q132 22 224 -6" /><path d="M40 88 q132 22 224 -6" /><path d="M40 102 q132 22 224 -6" />
+      <path d="M40 116 q132 22 224 -6" /><path d="M40 130 q132 22 224 -6" /><path d="M40 144 q132 22 224 -6" />
+      <path d="M40 158 q132 22 224 -6" /><path d="M40 172 q132 22 224 -6" />
+    </g>
+    <path class="a2" stroke="#c2410c" stroke-width="2.5" fill="none" d="M42 202 h34" />
+    <text class="a2-f" x="84" y="207" fill="#c2410c" font-size="12.5" font-weight="700">1 ridge = 1 load cycle</text>
+  </g>
+
+  <text class="muted" x="28" y="326" fill="#526173" font-size="13">One beach mark can span thousands or millions of cycles.</text>
+  <text class="muted" x="28" y="345" fill="#526173" font-size="13">It records a load change, not one cycle.</text>
+</svg>
