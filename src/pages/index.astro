@@ -118,11 +118,15 @@ const featuredIds = new Set(featuredQuizzes.map((summary) => summary.id));
   }
 
 
-@media (width >= 20rem) {
+@media (width >= 70rem) {
   .duo > :global(section) {
     --spread-duo-distance: 2.5rem;
 
-    animation: spread-duo;
+    /* Longhand on purpose: with the `animation` shorthand the minifier folds
+       `animation-timeline` into it, and that shorthand cannot carry a timeline
+       (it resets it to `auto`) — the animation then silently dies in the
+       production build. */
+    animation-name: spread-duo;
     animation-timeline: view();
   }
 
