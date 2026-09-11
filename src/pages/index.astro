@@ -36,11 +36,6 @@ const featuredIds = new Set(featuredQuizzes.map((summary) => summary.id));
 >
 
   <Quizbun />
-  <div class="duo">
-    <QuizbunLearning />
-    <QuizbunPrivate />
-  </div>
-  {/* <QuizbunHowTo quizCount={quizCount} /> */}
   <ContinueRuns client:idle catalogSummaries={summaries} />
   <StorageDurability client:idle needInlineMargin={true} />
 
@@ -89,6 +84,12 @@ const featuredIds = new Set(featuredQuizzes.map((summary) => summary.id));
       >
     </div>
   </section>
+
+  <div class="duo">
+    <QuizbunLearning />
+    <QuizbunPrivate />
+  </div>
+  <QuizbunHowTo quizCount={quizCount} />
 </Layout>
 
 <style>
@@ -98,8 +99,11 @@ const featuredIds = new Set(featuredQuizzes.map((summary) => summary.id));
     align-items: start;
 
     max-inline-size: var(--max-content-width);
-    margin-block: clamp(3rem, 10vw, 8rem) 2rem;
+    margin-block: 4rem 1rem;
     margin-inline: auto;
+    padding-block-start: 3rem;
+    border-top: 2px solid var(--color-quiz-card-border);
+
   }
 
   @media (width >= 48rem) {
@@ -112,4 +116,25 @@ const featuredIds = new Set(featuredQuizzes.map((summary) => summary.id));
     width: fit-content;
     margin-inline-start: auto;
   }
+
+
+@media (width >= 20rem) {
+  .duo > :global(section) {
+    --spread-duo-distance: 2.5rem;
+
+    animation: spread-duo;
+    animation-timeline: view();
+  }
+
+  .duo > :global(section:first-child) {
+    --spread-duo-distance: -2.5rem;
+  }
+
+  @keyframes spread-duo {
+    to {
+      transform: translateX(var(--spread-duo-distance ));
+    }
+  }
+}
+
 </style>
