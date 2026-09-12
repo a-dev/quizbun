@@ -17,7 +17,7 @@ export const SITE_URL = "https://a-dev.github.io/quizbun/";
 export const DOC_SITE_PAGES: Readonly<Record<string, string>> = {
   "docs/contributing.md": "docs/contributing/",
   "docs/examples/README.md": "docs/examples/",
-  "docs/quiz-generation-prompt.md": "docs/prompt/",
+  "docs/quiz-generation-page.md": "docs/prompt/",
   "docs/standard.md": "docs/standard/",
 };
 

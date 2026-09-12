@@ -19,7 +19,7 @@ describe("renderDocMarkdown", () => {
 
   it("rewrites relative doc links and strips raw HTML", () => {
     const html = renderDocMarkdown(
-      'See [the prompt](./quiz-generation-prompt.md). <script>alert("x")</script>',
+      'See [the prompt](./quiz-generation-page.md). <script>alert("x")</script>',
       { base: "/quizbun/", fileExists: () => true, sourceRepoPath: "docs/standard.md" },
     );
 

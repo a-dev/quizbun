@@ -19,7 +19,7 @@ The app version, Standard document revision, and `schemaVersion` are separate. A
 
 Quizbun is a static, explanation-first quiz catalog for self-learners. It uses the versioned JSON Quiz Object Standard, which is designed for AI generation. The MIT-licensed site runs in the browser with no backend, accounts, or server-side runtime.
 
-The core loop is short: generate a Quiz with an AI tool, copy its JSON, Import it into Quizbun, learn from each Explanation, then resume or Retake the Run.
+The core loop is short: generate a Quiz with an AI tool, Import its JSON file or pasted JSON into Quizbun, learn from each Explanation, then resume or Retake the Run.
 
 The same Quiz JSON can be validated, reviewed in a pull request, and rendered by another application.
 

@@ -11,7 +11,7 @@ const context = (overrides: Partial<DocLinkContext> = {}): DocLinkContext => ({
 
 describe("resolveDocLink", () => {
   it("rewrites links between published docs to site routes", () => {
-    expect(resolveDocLink("./quiz-generation-prompt.md", context())).toBe("/quizbun/docs/prompt/");
+    expect(resolveDocLink("./quiz-generation-page.md", context())).toBe("/quizbun/docs/prompt/");
     expect(
       resolveDocLink("../standard.md", context({ sourceRepoPath: "docs/examples/README.md" })),
     ).toBe("/quizbun/docs/standard/");

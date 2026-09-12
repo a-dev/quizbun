@@ -42,7 +42,10 @@ export default defineConfig({
   // unset); base-path correctness is covered separately by
   // scripts/check-dist-base-paths.sh, so specs navigate with RELATIVE paths.
   webServer: {
-    command: `bun run build && bun run preview --port ${PORT}`,
+    // Astro auto-backgrounds preview when it detects an AI agent. Tell it that
+    // backgrounding is already handled so Playwright can own the foreground
+    // server process and stop it after the suite.
+    command: `bun run build && ASTRO_PREVIEW_BACKGROUND=1 bun run preview --port ${PORT}`,
     url: baseURL,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,

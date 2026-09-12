@@ -15,7 +15,7 @@ Quizbun helps people learn rather than merely testing them. After submitting an 
 The main workflow is short:
 
 1. Ask an AI tool to generate a Quiz from the published prompt and JSON Schema.
-2. Copy the JSON from the chat into the Import page.
+2. Save the generated JSON file and choose or drop it on the Import page, or paste the JSON from the chat.
 3. Fix any validation errors or save the Quiz.
 4. Start learning.
 

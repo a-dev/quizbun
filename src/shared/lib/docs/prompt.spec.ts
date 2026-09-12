@@ -10,7 +10,7 @@ const promptDocSource = readFileSync(
   "utf8",
 );
 const promptPageSource = readFileSync(
-  resolve(process.cwd(), "docs/quiz-generation-prompt.md"),
+  resolve(process.cwd(), "docs/quiz-generation-page.md"),
   "utf8",
 );
 
@@ -26,7 +26,7 @@ describe("extractPromptText", () => {
   const promptText = extractPromptText(promptDocSource);
 
   it("starts with the prompt instructions, not the document intro", () => {
-    expect(promptText.startsWith("Generate exactly one Quiz as strict JSON.")).toBe(true);
+    expect(promptText.startsWith("Create one explanation-first Quiz")).toBe(true);
     expect(promptText).not.toContain("## Prompt");
   });
 
@@ -55,6 +55,6 @@ describe("extractPromptText", () => {
 
   it("keeps the copyable prompt out of the docs page source", () => {
     expect(promptPageSource).not.toContain("Generate exactly one Quiz as strict JSON.");
-    expect(promptPageSource).toContain("a-dev/quizbun --skill create-quiz");
+    expect(promptPageSource).toContain("a-dev/quizbun/create-quiz");
   });
 });

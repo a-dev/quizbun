@@ -3,8 +3,10 @@ import { extractPromptText, loadDoc } from "@/shared/lib/docs";
 import DocsLayout from "@/app/docs-layout.astro";
 import { CopyPromptButton } from "@/features/copy-prompt";
 
-const pageDoc = loadDoc("docs/quiz-generation-prompt.md");
+const pageDoc = loadDoc("docs/quiz-generation-page.md");
 const promptDoc = loadDoc("skills/create-quiz/references/quiz-generation-prompt.md");
+const createQuizSkillDoc = loadDoc("docs/create-quiz-skill.md");
+const copyPromptDoc = loadDoc("docs/copy-prompt.md");
 const promptText = extractPromptText(promptDoc.source);
 ---
 
@@ -13,7 +15,10 @@ const promptText = extractPromptText(promptDoc.source);
   description="Install the create-quiz Agent Skill or copy a self-contained prompt that generates one valid Quizbun Quiz in any AI chat."
 >
   <Fragment set:html={pageDoc.html} />
+  <Fragment set:html={copyPromptDoc.html} />
   <CopyPromptButton client:idle promptText={promptText} />
+  <Fragment set:html={createQuizSkillDoc.html} />
+  <hr />
   <Fragment set:html={promptDoc.html} />
   <CopyPromptButton client:idle promptText={promptText} />
 </DocsLayout>

@@ -2,7 +2,7 @@
 
 These JSON files are the canonical v1 authoring surface for Quiz authors. Copy one of them instead of reverse-engineering the schema from runtime code.
 
-The normative reference is [the Quiz Object Standard](../standard.md). Tooling can also consume the generated JSON Schema at `/schema/quiz.v1.json` after the site is built, or [the committed artifact](../../public/schema/quiz.v1.json) in this repository. Drafting with an AI tool? Keep this page open next to the [AI generation page](../quiz-generation-prompt.md).
+The normative reference is [the Quiz Object Standard](../standard.md). Tooling can also consume the generated JSON Schema at `/schema/quiz.v1.json` after the site is built, or [the committed artifact](../../public/schema/quiz.v1.json) in this repository. Drafting with an AI tool? Keep this page open next to the [AI generation page](../quiz-generation-page.md).
 
 ## Copy order
 
@@ -19,7 +19,7 @@ The normative reference is [the Quiz Object Standard](../standard.md). Tooling c
 - [public-quiz-input-text.json](./public-quiz-input-text.json): the minimal text validation object. Matching ignores case and normalizes surrounding and repeated whitespace by default.
 - [public-quiz-input-numeric.json](./public-quiz-input-numeric.json): a numeric answer checked with an explicit tolerance.
 - [public-quiz-media.json](./public-quiz-media.json): bare Image filenames on both media surfaces, attribution in a caption, and a YouTube Video with a start time.
-- [AI generation prompt](../quiz-generation-prompt.md): install the `create-quiz` skill or copy a reusable prompt for generating one strict JSON Quiz object at a time.
+- [AI generation prompt](../quiz-generation-page.md): install the `create-quiz` skill or copy a reusable prompt for generating one strict JSON Quiz object at a time.
 
 ## Validation
 

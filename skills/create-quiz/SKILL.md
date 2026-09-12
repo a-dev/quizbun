@@ -18,7 +18,9 @@ Before creating, repairing, or reviewing a Quiz, read [references/quiz-generatio
 
 Use the user's requested topic. Ignore the surrounding repository unless the user explicitly asks for a Quiz about that project or its code.
 
-Return one JSON object with no Markdown fence or surrounding commentary unless the user requests another presentation.
+For a new Quiz, follow the prompt's clarification stage: ask only for missing details, then generate without a separate plan approval. For repairs or reviews, preserve the existing scope unless the user requests changes.
+
+Follow the prompt's built-in writing review and file-first delivery instructions. Save the validated Quiz as `<quiz-id>.json` and provide an accessible file link. If file creation is unavailable, provide one complete JSON code block with save instructions. Honor an explicit request for raw JSON.
 
 ## Validate every result
 
