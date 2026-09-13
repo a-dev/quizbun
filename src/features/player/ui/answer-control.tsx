@@ -31,6 +31,13 @@ interface AnswerControlProps {
  * Renders the answer widget for a Question's `type`. Option identity is the
  * original JSON order (the Standard carries no option ids). `optionOrder`
  * changes only visual order; each control still submits its original index.
+ *
+ * Each Option group points at the card's `AnswerHint` with `aria-describedby`.
+ * The hint itself is rendered by `QuestionCard` (in the footer, next to
+ * Submit); `aria-describedby` links by id, so DOM nesting doesn't matter.
+ * Assistive tech already distinguishes the two groups by role, so the hint is
+ * a *description* rather than the group's label: it adds the exact-set rule
+ * without displacing the accessible name.
  */
 export function AnswerControl({
   question,
@@ -54,10 +61,13 @@ export function AnswerControl({
   );
   const displayedOptionIndexes = optionOrder ?? optionsHtml.map((_, optionIndex) => optionIndex);
 
+  const hintId = `${idPrefix}-answer-hint`;
+
   switch (question.type) {
     case "single-choice":
       return (
         <RadioGroup
+          aria-describedby={hintId}
           disabled={disabled}
           name={`${idPrefix}-options`}
           value={typeof answer === "number" ? answer : undefined}
@@ -86,6 +96,7 @@ export function AnswerControl({
     case "multiple-choice":
       return (
         <CheckboxGroup
+          aria-describedby={hintId}
           disabled={disabled}
           value={Array.isArray(answer) ? answer.map(String) : []}
           onValueChange={(values) => onDraftChange(values.map(Number).sort((a, b) => a - b))}

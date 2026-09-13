@@ -143,4 +143,27 @@
   /** Quiz card */
   --color-quiz-card-border: light-dark(var(--color-seagrass-200), var(--color-seagrass-600));
   --color-quiz-card-number-text: light-dark(var(--color-seagrass-800), var(--color-seagrass-100));
+
+  /**
+   * The dotted rule between a Question's prompt and its answer controls, and the
+   * wave that crosses it on submit. Both sit a step off the card border: the
+   * border is a continuous 2px line, the rule is sparse dots, and at the
+   * border's stop those dots read as dirt rather than as a divider. The wave
+   * moves the other way in each theme — darker on light, brighter on dark — so
+   * it always gains contrast against the resting row.
+   */
+  --color-quiz-card-divider: light-dark(var(--color-seagrass-400), var(--color-seagrass-500));
+  --color-quiz-card-divider-wave: light-dark(var(--color-seagrass-600), var(--color-seagrass-300));
+
+  /**
+   * Choice control (radio / checkbox). Unchecked, both controls are an outline
+   * on the surface behind them, so the silhouette — circle or square — is the
+   * thing that carries the Question's `type`. The ring must be the same weight
+   * and color on both, or the difference reads as weight rather than shape.
+   *
+   * One stop for both themes: gray-500 clears WCAG 1.4.11's 3:1 for a UI
+   * component boundary against either surface (measured 3.54:1 on light,
+   * 4.47:1 on dark), and a lighter light-mode stop does not.
+   */
+  --color-choice-control-outline: var(--color-gray-500);
 }

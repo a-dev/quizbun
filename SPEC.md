@@ -255,6 +255,7 @@ The Catalog and Library use the same player with different Quiz sources.
 - Learners may visit pages in any order. Resume opens the first page with an unanswered Question.
 - Finish appears after every Question is submitted. Summary links back to each Explanation. Retake replaces the Run.
 - Choice controls use the original Option order in v1. Input Questions share one answer-checking module.
+- Every choice Question shows an answer-count hint above its Options, derived from `type`: "Select one" or "Select all that apply". The Option group points at it with `aria-describedby`, and it stays visible after submission so a reviewed answer still shows the rule it was graded by. Quiz text never states this; see [docs/standard.md](docs/standard.md) Renderer rules.
 - Question media and Explanation media follow the placement rules in section 2. Video activation moves focus to the created iframe.
 - Read aloud appears after the Learner selects a Voice.
 

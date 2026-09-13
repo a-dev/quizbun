@@ -47,15 +47,15 @@ export function QuestionResult({ quizId, question, isCorrect, id, ref }: Questio
   );
 
   return (
-    <div role="status" id={id} ref={ref}>
+    <div role="status" id={id} ref={ref} tabIndex={-1} className={styles.root}>
       <div className={cx(styles.result, isCorrect ? styles.resultCorrect : styles.resultIncorrect)}>
         {isCorrect ? (
           <div className={styles.resultText}>
-            <ThumbsUp size="14" className={styles.resultIcon} /> Correct!
+            <ThumbsUp size="16" className={styles.resultIcon} /> Correct!
           </div>
         ) : (
           <div className={styles.resultText}>
-            <ThumbsDown size="14" className={styles.resultIcon} /> Incorrect
+            <ThumbsDown size="16" className={styles.resultIcon} /> Incorrect
           </div>
         )}
         <ReadAloudButton text={explanationText} voice={voice} label="Read explanation aloud" />

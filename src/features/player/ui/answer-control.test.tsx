@@ -3,7 +3,11 @@ import { useState } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { page } from "vitest/browser";
 
-import type { MultipleChoiceQuestion, SingleChoiceQuestion } from "@/shared/lib/quiz";
+import type {
+  InputQuestion,
+  MultipleChoiceQuestion,
+  SingleChoiceQuestion,
+} from "@/shared/lib/quiz";
 import type { SubmittedAnswer } from "@/shared/lib/storage";
 import checkboxStyles from "@/shared/ui/checkbox/checkbox.module.css";
 import radioStyles from "@/shared/ui/radio/radio.module.css";
@@ -26,6 +30,14 @@ const multipleChoiceQuestion: MultipleChoiceQuestion = {
   ...singleChoiceQuestion,
   id: "multiple",
   type: "multiple-choice",
+};
+
+const inputQuestion: InputQuestion = {
+  id: "input",
+  type: "input",
+  title: "Input",
+  explanation: "Explanation.",
+  validation: { mode: "text", acceptedAnswers: ["answer"] },
 };
 
 function MultipleChoiceHarness({
@@ -81,6 +93,60 @@ describe("AnswerControl", () => {
     await screen.getByRole("checkbox", { name: "Original zero" }).click();
 
     expect(onDraftChange).toHaveBeenLastCalledWith([0, 2]);
+  });
+
+  it("points each Option group at the card's answer-count hint", async () => {
+    const singleChoiceScreen = await page.render(
+      <AnswerControl
+        question={singleChoiceQuestion}
+        answer={undefined}
+        disabled={false}
+        idPrefix="single"
+        inputError={undefined}
+        optionOrder={undefined}
+        onDraftChange={() => undefined}
+        onSubmit={() => undefined}
+      />,
+    );
+
+    await expect
+      .element(singleChoiceScreen.getByRole("radiogroup"))
+      .toHaveAttribute("aria-describedby", "single-answer-hint");
+
+    const multipleChoiceScreen = await page.render(
+      <AnswerControl
+        question={multipleChoiceQuestion}
+        answer={undefined}
+        disabled={false}
+        idPrefix="multiple"
+        inputError={undefined}
+        optionOrder={undefined}
+        onDraftChange={() => undefined}
+        onSubmit={() => undefined}
+      />,
+    );
+
+    await expect
+      .element(multipleChoiceScreen.getByRole("group"))
+      .toHaveAttribute("aria-describedby", "multiple-answer-hint");
+  });
+
+  it("renders no Option group for an input Question", async () => {
+    const screen = await page.render(
+      <AnswerControl
+        question={inputQuestion}
+        answer={undefined}
+        disabled={false}
+        idPrefix="input"
+        inputError={undefined}
+        optionOrder={undefined}
+        onDraftChange={() => undefined}
+        onSubmit={() => undefined}
+      />,
+    );
+
+    await expect.element(screen.getByLabelText("Your answer")).toBeInTheDocument();
+    expect(screen.container.textContent).not.toContain("Select");
   });
 
   it("disables single-choice and multiple-choice controls", async () => {

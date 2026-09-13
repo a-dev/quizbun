@@ -1,4 +1,4 @@
-import { memo, useEffect, useId, useMemo, useRef } from "react";
+import { memo, useCallback, useId, useMemo, useRef, useState } from "react";
 
 import { checkAnswer } from "@/shared/lib/quiz";
 import type { Question } from "@/shared/lib/quiz";
@@ -10,6 +10,7 @@ import { MarkdownRender } from "@/shared/ui/markdown";
 
 import { useAnswerDraft } from "../model/use-answer-draft";
 import { AnswerControl } from "./answer-control";
+import { AnswerHint } from "./answer-hint";
 import { QuestionMedia } from "./question-media";
 import { QuestionResult } from "./question-result";
 
@@ -18,13 +19,9 @@ import styles from "./question-card.module.css";
 interface Props {
   quizId: string;
   question: Question;
-  /** Index in the Quiz's original Question order (0-based). */
   index: number;
-  /** Present iff the Question is submitted; the card then renders locked. */
   progress: QuestionProgress | undefined;
-  /** Display-only order of original JSON Option indexes. */
   optionOrder: readonly number[] | undefined;
-  /** Prioritizes the first Question Image on the current player page. */
   mediaPriority?: boolean;
   onSubmit: (question: Question, answer: SubmittedAnswer, isCorrect: boolean) => void;
 }
@@ -49,10 +46,28 @@ export const QuestionCard = memo(function QuestionCard({
     progress,
   );
 
-  const resultRef = useRef<HTMLDivElement>(null);
+  // Drives the one-shot wave across the dotted rule. State, not `progress`:
+  // `progress` is also set for a Question answered in an earlier session, and
+  // that must not replay the wave on page load or on re-pagination.
+  const [hasJustSubmitted, setHasJustSubmitted] = useState(false);
+
   // Bridges the submit action to the later locked render: focus the result only
   // when the user just produced it, not when reviewing an already-answered Run.
   const justSubmitted = useRef(false);
+
+  // The Submit button unmounts when the card locks; without this, keyboard
+  // focus falls back to <body>. Move it to the result the user just produced.
+  // The result element mounts exactly when the card locks, so its ref callback
+  // is that moment — no effect needed. Stable identity keeps React from
+  // detaching and re-attaching the ref on every later render.
+  // `preventScroll`: the result appears right where the user is already looking,
+  // so the default focus scroll would only yank the card's top off-screen.
+  const focusJustProducedResult = useCallback((node: HTMLDivElement | null) => {
+    if (node !== null && justSubmitted.current) {
+      justSubmitted.current = false;
+      node.focus({ preventScroll: true });
+    }
+  }, []);
 
   // Title/description Markdown is stable for a given Question; render once.
   const titleHtml = useMemo(
@@ -67,20 +82,12 @@ export const QuestionCard = memo(function QuestionCard({
     [question.description],
   );
 
-  // The Submit button unmounts when the card locks; without this, keyboard
-  // focus falls back to <body>. Move it to the result the user just produced.
-  useEffect(() => {
-    if (isLocked && justSubmitted.current) {
-      justSubmitted.current = false;
-      resultRef.current?.focus();
-    }
-  }, [isLocked]);
-
   function submit() {
     const toSubmit = takeSubmittable();
     if (toSubmit === undefined) return;
 
     justSubmitted.current = true;
+    setHasJustSubmitted(true);
     onSubmit(question, toSubmit, checkAnswer(question, toSubmit));
   }
 
@@ -111,27 +118,37 @@ export const QuestionCard = memo(function QuestionCard({
           <MarkdownRender content={descriptionHtml} size="s" className={styles.description} />
         )}
 
-        <AnswerControl
-          question={question}
-          answer={answer}
-          disabled={isLocked}
-          showAnswerFeedback={progress?.isCorrect === false}
-          idPrefix={idPrefix}
-          inputError={inputError}
-          optionOrder={optionOrder}
-          onDraftChange={setDraft}
-          onSubmit={submit}
-        />
+        <section className={styles.answers} data-just-submitted={hasJustSubmitted || undefined}>
+          <AnswerControl
+            question={question}
+            answer={answer}
+            disabled={isLocked}
+            showAnswerFeedback={progress?.isCorrect === false}
+            idPrefix={idPrefix}
+            inputError={inputError}
+            optionOrder={optionOrder}
+            onDraftChange={setDraft}
+            onSubmit={submit}
+          />
+        </section>
 
         {!isLocked && (
-          <Button
-            type="button"
-            onClick={submit}
-            disabled={!submittable}
-            className={styles.submitButton}
-          >
-            Submit
-          </Button>
+          <footer className={styles.footer}>
+            <Button
+              type="button"
+              onClick={submit}
+              disabled={!submittable}
+              className={styles.submitButton}
+            >
+              Submit
+            </Button>
+            {question.type === "single-choice" && (
+              <AnswerHint type="single-choice" id={`${idPrefix}-answer-hint`} />
+            )}
+            {question.type === "multiple-choice" && (
+              <AnswerHint type="multiple-choice" id={`${idPrefix}-answer-hint`} />
+            )}
+          </footer>
         )}
       </fieldset>
 
@@ -145,7 +162,7 @@ export const QuestionCard = memo(function QuestionCard({
       */}
       {progress !== undefined && (
         <QuestionResult
-          ref={resultRef}
+          ref={focusJustProducedResult}
           quizId={quizId}
           question={question}
           isCorrect={progress.isCorrect}

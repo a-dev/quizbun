@@ -37,6 +37,7 @@ Cover the agreed scope and count. Write distinct Questions with plausible distra
 - Options contain only `text` and `isCorrect`. Both choice types require at least 2 Options. `single-choice` requires exactly 1 correct Option. `multiple-choice` requires at least 1 and permits all to be correct; scoring is all-or-nothing.
 - For `input`, include `validation` with `mode: "text"` or `mode: "numeric"` and a non-empty `acceptedAnswers` array. Text answers are case-insensitive, trimmed, and whitespace-normalized by default. Set `caseSensitive` only when exact casing is the learning goal. Numeric answers must be JSON numbers; use `tolerance` only when rounding should be accepted.
 - Include an `explanation` for every Question. Renderers shuffle Options, so never identify an Option by its JSON position or an invented label such as "option B". Quote or paraphrase its text. Labels defined within the Question itself, such as code comments, are allowed.
+- Never write how many Options to select. Renderers state that from `type`, so "(Select all that apply.)", "Select every true statement.", and "Your answer must include every correct choice." all render twice. Write the criterion when it is part of the ask — "Select every commit `git log main..feature` lists" names what to look for — and omit the bare instruction.
 - Use Markdown for learner-facing text. Titles, Option text, and Image captions are inline-only. Descriptions, Explanations, and References support full Markdown. Never use raw HTML or Markdown image syntax; structured `images` is the only Image channel.
 - Tag every fenced code block with its language. Supported highlighting includes `js`, `ts`, `jsx`, `tsx`, `json`, `html`, `css`, `py`, `bash`, `sh`, and `sql`. Other languages render without highlighting.
 - Add `references` when source material or further reading helps. Prefer links naming the publication and topic, such as `[MDN: Array.prototype.sort()](...)`. Never invent citations or URLs. Verify factual claims and use primary sources when research is needed. Do not present uncertain claims as settled facts.
@@ -52,7 +53,7 @@ Cover the agreed scope and count. Write distinct Questions with plausible distra
 
 #### Check the result
 
-Before delivery, check JSON syntax, required fields, unknown fields, unique kebab-case ids, Option correctness counts, and input validation. Check factual accuracy, agreed coverage and count, clear Question titles, useful Explanations, and verified media. Remove any references to shuffled Option positions.
+Before delivery, check JSON syntax, required fields, unknown fields, unique kebab-case ids, Option correctness counts, and input validation. Check factual accuracy, agreed coverage and count, clear Question titles, useful Explanations, and verified media. Remove any references to shuffled Option positions, and any instruction about how many Options to select.
 
 Use a compatible validator when available and fix its errors. The schema below does not enforce every rule, including unique Question ids and correct Option counts. Do not claim you ran validation unless you did.
 

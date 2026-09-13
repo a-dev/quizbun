@@ -12,7 +12,6 @@
   max-inline-size: 46rem;
   margin-inline: auto;
   padding-block: 1.8rem;
-  padding-inline: 1rem 0;
   border-top: 2px solid var(--color-quiz-card-border);
   border-radius: 0;
 }
@@ -25,7 +24,7 @@
   inline-size: 2.2rem;
   block-size: 2.2rem;
   margin-block: -48px 0;
-  margin-inline-start: -1.75rem;
+  margin-inline-start: -7px;
   border-radius: 50%;
 
   font-size: var(--fs-m);
@@ -59,6 +58,97 @@
   color: var(--color-quiz-card-description-text);
 }
 
+.answers {
+  --_dot-size: 4px;
+  --_dot-gap: 8px;
+  --_dot-mask-end: color-mix(in srgb, currentcolor 12%, transparent);
+  --_dot-mask:
+    radial-gradient(closest-side circle, currentcolor 92%, transparent),
+    linear-gradient(to right, var(--_dot-mask-end), currentcolor 50%, var(--_dot-mask-end));
+
+  position: relative;
+  margin-block-start: 0.4rem;
+  padding-block: calc(1.6rem + var(--_dot-size)) 0;
+}
+
+/* The fade lives in the mask, not the color, so the wave below inherits it. */
+.answers::before,
+.answers[data-just-submitted]::after {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline: 0;
+
+  block-size: var(--_dot-size);
+
+  mask-image: var(--_dot-mask);
+  mask-repeat: repeat-x, no-repeat;
+  mask-position: center;
+  mask-size:
+    calc(var(--_dot-size) + var(--_dot-gap)) 100%,
+    100% 100%;
+  mask-composite: intersect;
+}
+
+.answers::before {
+  content: "";
+  background-color: var(--color-quiz-card-divider);
+}
+
+/*
+ * Submitting sends one wave down the row: the same dot grid on a taller strip,
+ * so its dots are bigger and concentric with the resting ones, lit only where a
+ * soft band of color crosses it. At -50% the band has yet to reach the row, at
+ * 150% it has left and the row is back to exactly how it looked. `content` is
+ * what generates the strip, so asking for less motion leaves no extra layer
+ * behind rather than a still one.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  .answers[data-just-submitted]::after {
+    --_wave-size: calc(var(--_dot-size) + 2px);
+
+    content: "";
+
+    inset-block-start: calc((var(--_dot-size) - var(--_wave-size)) / 2);
+
+    block-size: var(--_wave-size);
+
+    background-image: linear-gradient(
+      to right,
+      transparent,
+      var(--color-quiz-card-divider-wave),
+      transparent
+    );
+    background-repeat: no-repeat;
+
+    /*
+     * Where the band sits when no animation is running: past the right end, the
+     * same place the wave leaves it. An animation with no fill mode drops away
+     * on its last frame and the strip falls back to this, so at the default
+     * `0%` that fallback parks a lit band at the head of the line.
+     */
+    background-position: 150% 0;
+    background-size: 30% 100%;
+
+    animation: dot-wave 1s ease;
+  }
+
+  @keyframes dot-wave {
+    from {
+      background-position: -50% 0;
+    }
+
+    to {
+      background-position: 150% 0;
+    }
+  }
+}
+
+.footer {
+  display: flex;
+  gap: 1.6rem;
+  justify-content: start;
+}
+
 .submit-button {
   width: fit-content;
   margin-block-start: 1.5rem;
@@ -67,7 +157,7 @@
 
 @media (width >= 36rem) {
   .root {
-    padding-inline: 1.5rem;
+    padding-inline: 1.8rem;
     border: 2px solid var(--color-quiz-card-border);
     border-radius: revert-layer;
   }
@@ -76,6 +166,6 @@
     position: sticky;
     top: 0.5rem;
     margin-block: -23px;
-    margin-inline-start: -2.5rem;
+    margin-inline-start: -47.5px;
   }
 }

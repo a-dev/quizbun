@@ -24,9 +24,13 @@
     color: var(--color-state-error-text);
   }
 
+  /*
+   * Deliberately not `rounded-xs`: that utility is a 1rem superellipse, which
+   * on a 1.25rem box rounds the square away entirely, leaving a blob that reads
+   * the same as the radio's circle. The corner is the only cue that this
+   * Question accepts more than one Option, so it stays square.
+   */
   .root {
-    composes: rounded-xs from "#styles/shape.module.css";
-
     cursor: inherit;
 
     display: inline-flex;
@@ -38,10 +42,12 @@
     inline-size: 1.25rem;
     block-size: 1.25rem;
     margin-block-start: 4px;
+    border: 2px solid var(--color-choice-control-outline);
+    border-radius: 4px;
 
     color: var(--color-text-white);
 
-    background-color: var(--color-secondary-gray);
+    background-color: transparent;
 
     transition:
       box-shadow 0.2s ease,
@@ -49,11 +55,13 @@
       color 0.2s ease;
 
     &[data-checked] {
+      border-color: var(--color-primary-seagrass);
       color: var(--color-text-on-primary-seagrass);
       background-color: var(--color-primary-seagrass);
     }
 
     &[data-indeterminate] {
+      border-color: var(--color-primary-seagrass-accent);
       color: var(--color-text-on-primary-seagrass);
       opacity: 0.9;
       background-color: var(--color-primary-seagrass-accent);
@@ -61,16 +69,24 @@
 
     &[data-disabled] {
       cursor: auto;
+      border-color: var(--color-panel-outline);
       color: var(--color-text-tertiary);
       background-color: var(--color-panel-disabled-bg);
     }
 
+    /*
+     * The locked card is a `<fieldset disabled>`, so review state is always
+     * *also* `[data-disabled]`. Feedback has to win the border back, or a
+     * reviewed Option loses the outline that names its shape.
+     */
     &.control-feedback-correct {
+      border-color: var(--color-state-success-icon);
       color: var(--color-text-on-primary-seagrass);
       background-color: var(--color-state-success-icon);
     }
 
     &.control-feedback-incorrect {
+      border-color: var(--color-state-error-icon);
       color: var(--color-text-on-primary-orange);
       background-color: var(--color-state-error-icon);
     }
@@ -112,6 +128,7 @@
         :has(.root[data-indeterminate])
       ):hover
       .root {
+      border-color: var(--color-primary-seagrass);
       box-shadow: var(--inset-shadow-seagrass);
     }
   }

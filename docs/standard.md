@@ -52,6 +52,8 @@ Question `id` is part of Progress identity. Changing it creates a new Question f
 
 Renderers display the `title` prominently and the `description` as smaller secondary text. Put the question itself in `title` and use `description` only for supporting context. The Question must remain clear when the `description` is hidden.
 
+Neither field states how many Options the learner may select. That follows from `type`, and a Renderer that does not say it is failing its own job — see [Renderer rules](#renderer-rules). A criterion that is genuinely part of the ask still belongs in the text: "Select every commit `git log main..feature` lists" names what to look for, while "(Select all that apply.)" only repeats the type.
+
 ### Choice questions
 
 Choice Questions use an `options` array. Each Option is a bare object:
@@ -266,6 +268,8 @@ Media adds five Renderer responsibilities:
 A Renderer must not contact a video provider before the learner asks it to. Quizbun renders a Video as a same-origin placeholder and only creates the provider iframe on an explicit click, so opening a Quiz makes no third-party request.
 
 Shuffling, Option labels, pagination, Page size, keyboard controls, media layout, and the placement default are Renderer behavior. They must not be written into the Quiz object. If a Renderer shuffles Options during a Run, it should persist that Run's shuffle order so reloads remain stable.
+
+A Renderer must also tell the learner how many Options a choice Question accepts, derived from `type`. Control shape alone does not carry it: a radio and a checkbox differ by a few pixels of corner, and `multiple-choice` is scored on an exact set match, which no control shape expresses. Because the Quiz never states this, a Renderer that omits it leaves the learner guessing. Quizbun renders "Select one" and "Select all that apply" above the Options, and keeps the line visible after submission so a reviewed answer still shows the rule it was graded by.
 
 ## Markdown
 

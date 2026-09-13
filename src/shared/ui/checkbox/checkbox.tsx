@@ -52,9 +52,9 @@ export function Checkbox({ className, children, feedback, ...props }: Props) {
           className={styles.indicator}
           render={(props) =>
             "data-indeterminate" in props ? (
-              <Minus {...props} size={18} />
+              <Minus {...props} size={14} />
             ) : (
-              <Check {...props} size={18} strokeWidth={3} />
+              <Check {...props} size={14} strokeWidth={3} />
             )
           }
         />
