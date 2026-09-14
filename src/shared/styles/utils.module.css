@@ -92,21 +92,25 @@
   inset: 0;
 }
 
-/* Rotate here, never on the layer; `inset` covers the rotation overhang. */
+/* Draw the -2.9deg tilt into the image. Transforming this pseudo-element can
+ * make Safari expose the fixed layer outside its scrolling card's clip. */
 .cell-background-layer::before {
   content: "";
   position: absolute;
-  inset: -25%;
-  transform: rotate(-2.9deg);
+  inset: 0;
+  background-image:
+    repeating-linear-gradient(87.1deg, var(--_line-color) 0 1px, transparent 1px var(--_cell-size)),
+    repeating-linear-gradient(
+      177.1deg,
+      transparent 0 1px,
+      var(--_orange-line-color) 2px,
+      transparent 4px var(--_cell-size)
+    ),
+    repeating-linear-gradient(177.1deg, var(--_line-color) 0 1px, transparent 1px var(--_cell-size));
 }
 
-/*
- * The paper-grid image itself: vertical lines, one orange rule, horizontal
- * lines. Both the fixed page backdrop and the contained layer draw it, so it
- * is declared once here; each host owns its own position, size and colors.
- */
-.cell-background::before,
-.cell-background-layer::before {
+/* The page backdrop rotates its tiled image as a whole. */
+.cell-background::before {
   background-image:
     linear-gradient(to right, var(--_line-color) 1px, transparent 1px),
     linear-gradient(
