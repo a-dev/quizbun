@@ -8,7 +8,7 @@ Docs are authoritative, in this order:
 
 ## Commands
 
-Bun; Node >= 22.12. Scripts live in `package.json` — `dev`, `build`, `check` (oxlint + oxfmt + Stylelint), `typecheck`, `check:astro`, `css:dts`, `schema:generate`/`schema:check`, `validate:docs-examples`, `validate:public-quizzes`, `test` (Vitest: `.spec.ts` unit + `.test.tsx` browser), `e2e` (Playwright, `e2e/*.e2e.ts` against `astro preview`).
+Bun; Node >= 22.12. Scripts live in `package.json` — `dev`, `build`, `check` (oxlint + oxfmt + Stylelint), `typecheck`, `check:astro`, `css:dts`, `schema:generate`/`schema:check`, `validate:docs-examples`, `validate:public-quizzes`, `test` (Vitest: `.spec.ts` unit + `.test.tsx` browser), `e2e` (Playwright, `e2e/*.e2e.ts` against `astro preview`), `mutate`/`mutate:file`/`mutate:report` (Stryker over the unit lane; optional, never in CI).
 
 ## Rules
 

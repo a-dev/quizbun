@@ -45,6 +45,34 @@ function quizWithImageSrc(src: string) {
   };
 }
 
+function quizWithImage(image: Record<string, unknown>) {
+  const quiz = quizWithImageSrc("diagram.svg") as {
+    questions: Array<{ images: Array<Record<string, unknown>> }>;
+  };
+  quiz.questions[0]!.images = [image];
+
+  return quiz;
+}
+
+/** The issue messages for one failed parse, keyed by dotted path. */
+function issuesByPath(value: unknown): Record<string, string[]> {
+  const result = quizSchema.safeParse(value);
+
+  if (result.success) throw new Error("Expected the document to be rejected.");
+
+  const byPath: Record<string, string[]> = {};
+
+  for (const issue of result.error.issues) {
+    const path = issue.path.join(".");
+    const messages = byPath[path] ?? [];
+
+    messages.push(issue.message);
+    byPath[path] = messages;
+  }
+
+  return byPath;
+}
+
 describe("quizSchema", () => {
   test("accepts every valid fixture", async () => {
     const fixtures = await readJsonFixtures("valid");
@@ -102,6 +130,85 @@ describe("quizSchema", () => {
     ["a non-kebab basename", "Cache_Tiers.svg"],
   ])("rejects %s as an image `src`", (_label, src) => {
     expect(quizSchema.safeParse(quizWithImageSrc(src)).success).toBe(false);
+  });
+
+  test("separates a missing field from a field of the wrong type", () => {
+    const { title, ...withoutTitle } = quizWithImageSrc("diagram.svg");
+
+    expect(issuesByPath(withoutTitle).title).toEqual(["Required field missing."]);
+    expect(issuesByPath({ ...withoutTitle, title: 7 }).title).toEqual(["Expected a string."]);
+    expect(title).toBe("Image src probe");
+  });
+
+  test("separates a missing array from a value that is not an array", () => {
+    const { questions, ...withoutQuestions } = quizWithImageSrc("diagram.svg");
+
+    expect(issuesByPath(withoutQuestions).questions).toEqual(["Required field missing."]);
+    expect(issuesByPath({ ...withoutQuestions, questions: "one" }).questions).toEqual([
+      "Expected an array.",
+    ]);
+    expect(questions).toHaveLength(1);
+  });
+
+  test("says which way an image `src` is wrong", () => {
+    expect(issuesByPath(quizWithImage({ alt: "A diagram" }))["questions.0.images.0.src"]).toEqual([
+      "Required field missing.",
+    ]);
+
+    expect(
+      issuesByPath(quizWithImageSrc("http://example.com/a.png"))["questions.0.images.0.src"],
+    ).toEqual(["Use `https`, not `http`."]);
+
+    expect(issuesByPath(quizWithImageSrc("Cache_Tiers.bmp"))["questions.0.images.0.src"]).toEqual([
+      "Use an `https://` URL or a bare asset filename (kebab-case name plus png/jpg/jpeg/webp/avif/gif/svg).",
+    ]);
+  });
+
+  test("requires image `width` and `height` together", () => {
+    const issues = issuesByPath(
+      quizWithImage({ src: "diagram.svg", alt: "A diagram", width: 100 }),
+    );
+
+    // The issue is reported on the field the author still has to write.
+    expect(issues["questions.0.images.0.height"]).toEqual([
+      "Set `width` and `height` together, or omit both. `height` is missing.",
+    ]);
+
+    expect(
+      issuesByPath(quizWithImage({ src: "diagram.svg", alt: "A diagram", height: 100 }))[
+        "questions.0.images.0.width"
+      ],
+    ).toEqual(["Set `width` and `height` together, or omit both. `width` is missing."]);
+  });
+
+  test("requires a whole pixel count of 1 or more for image dimensions", () => {
+    for (const size of [0, 1.5]) {
+      expect(
+        issuesByPath(
+          quizWithImage({ src: "diagram.svg", alt: "A diagram", width: size, height: size }),
+        )["questions.0.images.0.width"],
+      ).toContain("Use a whole number of pixels, 1 or greater.");
+    }
+  });
+
+  test("points a multiple-choice Question with no correct Option at `options`", () => {
+    const quiz = quizWithImageSrc("diagram.svg") as {
+      questions: Array<Record<string, unknown>>;
+    };
+    quiz.questions[0] = {
+      id: "probe",
+      type: "multiple-choice",
+      title: "Probe?",
+      explanation: "Explanation.",
+      options: [
+        { text: "One", isCorrect: false },
+        { text: "Two", isCorrect: false },
+      ],
+    };
+
+    expect(issuesByPath(quiz)["questions.0.options"]).toEqual([
+      "A multiple-choice Question must have at least one correct Option.",
+    ]);
   });
 
   test("rejects every invalid fixture", async () => {

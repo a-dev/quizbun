@@ -294,6 +294,10 @@ Playwright runs `.e2e.ts` journeys in [e2e](e2e) against a root-base `astro prev
 
 The covered journeys include Import through Summary, Catalog filtering, every Question type, resume, Library management, Page-size changes, Content-hash invalidation, media behavior, preview deep links, keyboard and phone use, theme behavior, install metadata, and storage notices. A deploy-fidelity test for base-path deep links remains open.
 
+Stryker runs mutation testing over the unit lane, driven by [stryker.config.mjs](stryker.config.mjs) and [vitest.stryker.config.ts](vitest.stryker.config.ts). It is a local tool for finding tests that execute code without asserting on it — `bun run mutate` for everything in scope, `bun run mutate:file <glob>` for one file, `bun run mutate:report` to open the HTML report. It is deliberately outside CI: it is slow, its score is advisory, and `thresholds.break` is `null` so it never fails a command. Files the unit lane does not reach show up as "no coverage" rather than as survivors; they are exercised by the component and e2e lanes instead.
+
+`@stryker-mutator/vitest-runner` 10 is patched in [patches](patches) because it builds Vitest's `testNamePattern` by joining suite and test names with a space, while Vitest 5 matches them joined with `" > "` — unpatched, every mutant runs zero tests and survives ([stryker-js#6210](https://github.com/stryker-mutator/stryker-js/issues/6210)). Drop the patch once that ships upstream.
+
 [.github/workflows/ci.yml](.github/workflows/ci.yml) regenerates CSS Module types, type-checks TypeScript and Astro, runs tests and linters, validates documentation examples and Catalog Quizzes, checks generated artifacts, builds Astro, and checks deployment-base paths. Deploy waits for these checks.
 
 While the repository is private, CI runs only through `workflow_dispatch`. Restore automatic push and pull request triggers when the repository becomes public.

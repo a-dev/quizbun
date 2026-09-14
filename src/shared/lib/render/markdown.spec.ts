@@ -1,6 +1,7 @@
 import { describe, expect, test } from "vitest";
 
 import {
+  addHeadingIds,
   renderInlineMarkdown,
   renderInlineMarkdownExcerpt,
   renderInlineMarkdownPlainText,
@@ -46,6 +47,60 @@ describe("renderMarkdown", () => {
     const html = renderMarkdown('<span class="token keyword">const</span>');
 
     expect(html).toBe("<p>const</p>\n");
+  });
+
+  test("highlights a fenced block nested inside another block", () => {
+    const html = renderMarkdown("> quoted\n>\n> ```js\n> const value = 1;\n> ```");
+
+    expect(html).toContain('<pre class="language-js">');
+    expect(html).toContain('<span class="token keyword">const</span>');
+  });
+
+  test("leaves a fence with no language escaped and unhighlighted", () => {
+    const html = renderMarkdown("```\nconst value = 1;\n```");
+
+    expect(html).toContain("<pre><code>const value = 1;\n</code></pre>");
+    expect(html).not.toContain('class="token');
+  });
+
+  test("keeps a relative link free of rel, and marks an external one", () => {
+    expect(renderMarkdown("[docs](/quizbun/docs/)")).not.toContain("rel=");
+    expect(renderMarkdown("[docs](http://example.com/)")).toContain('rel="noreferrer"');
+  });
+
+  test("returns empty string for blank input", () => {
+    expect(renderMarkdown("   \n  ")).toBe("");
+  });
+});
+
+describe("addHeadingIds", () => {
+  test("slugs the visible text, dropping tags and entities", () => {
+    // Tags and entities become separators, not nothing: `Set<em>up</em>` is two
+    // words on screen, so its slug has to be too.
+    expect(addHeadingIds("<h2>Set<em>up</em>the CLI</h2>")).toBe(
+      '<h2 id="set-up-the-cli">Set<em>up</em>the CLI</h2>',
+    );
+    expect(addHeadingIds("<h3>Tags&amp;topics</h3>")).toBe(
+      '<h3 id="tags-topics">Tags&amp;topics</h3>',
+    );
+  });
+
+  test("trims the hyphens punctuation leaves at either end", () => {
+    expect(addHeadingIds("<h2>!Ready?</h2>")).toBe('<h2 id="ready">!Ready?</h2>');
+  });
+
+  test("falls back to `section` when nothing sluggable is left", () => {
+    expect(addHeadingIds("<h2>!!!</h2>")).toBe('<h2 id="section">!!!</h2>');
+  });
+
+  test("disambiguates repeated headings by a running count", () => {
+    expect(addHeadingIds("<h2>Intro</h2><h2>Intro</h2><h2>Intro</h2>")).toBe(
+      '<h2 id="intro">Intro</h2><h2 id="intro-2">Intro</h2><h2 id="intro-3">Intro</h2>',
+    );
+  });
+
+  test("leaves headings that already carry attributes alone", () => {
+    expect(addHeadingIds('<h2 id="kept">Intro</h2>')).toBe('<h2 id="kept">Intro</h2>');
   });
 });
 

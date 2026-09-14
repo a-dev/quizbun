@@ -56,6 +56,36 @@ describe("formatQuizValidationErrors", () => {
 `);
   });
 
+  test("names the object, not a field, when several fields are unknown", () => {
+    expect(
+      reportFor({
+        ...validBaseQuiz,
+        questionsPerPage: 5,
+        shuffleOptions: true,
+      }),
+    ).toMatchInlineSnapshot(`
+      "Quiz JSON is invalid. Please revise it to satisfy the Quiz Object Standard.
+
+      1. Path: \`root\`
+         Problem: Unknown fields \`questionsPerPage\`, \`shuffleOptions\`.
+         Fix: Remove unknown fields; the Standard is strict at every level."
+    `);
+  });
+
+  test("formats an image `width` without its `height`", () => {
+    expect(
+      reportForQuestionMedia({
+        images: [{ src: "diagram.svg", alt: "A diagram", width: 100 }],
+      }),
+    ).toMatchInlineSnapshot(`
+      "Quiz JSON is invalid. Please revise it to satisfy the Quiz Object Standard.
+
+      1. Path: \`questions[0].images[0].height\`
+         Problem: Set \`width\` and \`height\` together, or omit both. \`height\` is missing.
+         Fix: Set both to the image file's own pixel size, or omit both. Never estimate them: an absent pair is valid, a wrong one is not. In the Quizbun repository, \`bun run quiz:sizes:generate\` writes them for you."
+    `);
+  });
+
   test("formats wrong scalar types", () => {
     expect(
       reportFor({

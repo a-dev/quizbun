@@ -33,14 +33,37 @@ describe("validateQuizJson", () => {
 
     assertInvalidResult(result);
 
-    expect(result.report).toContain("not valid JSON");
-    expect(result.report).toContain("Fix:");
+    expect(result.report.split("\n")).toEqual([
+      "This is not valid JSON, so it cannot be checked against the Quiz Object Standard yet.",
+      "",
+      expect.stringContaining("Problem at line"),
+      "Fix: repair the JSON syntax (quotes, commas, brackets), then validate again.",
+    ]);
+  });
+
+  test("points at the line and column the parser failed on", () => {
+    const result = validateQuizJson('{\n  "id": "demo",\n  trailing\n}');
+
+    assertInvalidResult(result);
+
+    // `trailing` starts at the third character of the third line.
+    expect(result.report).toContain("Problem at line 3, column 3:");
   });
 
   test("reports empty input as invalid JSON, not a crash", () => {
     const result = validateQuizJson("");
 
     expect(result.status).toBe("invalid");
+  });
+
+  test("omits the position when the parser message carries none", () => {
+    // `Unexpected end of JSON input` names neither a line/column nor a position.
+    const result = validateQuizJson("[1, 2,");
+
+    assertInvalidResult(result);
+
+    expect(result.report).toContain("Problem: ");
+    expect(result.report).not.toContain("Problem at line");
   });
 
   test("renders schema violations through the M1 formatter, path-precise", () => {

@@ -6,6 +6,7 @@ import {
   parseListUrlState,
   stringifyListUrlState,
 } from "./list-url-state";
+import type { ListUrlState } from "./list-url-state";
 
 const availableTags = ["css", "javascript", "web"] as const;
 
@@ -30,6 +31,24 @@ describe("parseListUrlState", () => {
 
   test("uses the default page when no page param exists", () => {
     expect(parseListUrlState("?tags=web", availableTags, 2).page).toBe(2);
+  });
+
+  test("trims whitespace around each tag and around the title query", () => {
+    expect(parseListUrlState("?tags= web , css &q=%20%20layout%20%20", availableTags)).toEqual({
+      selectedTags: ["css", "web"],
+      tagMatchMode: "and",
+      titleQuery: "layout",
+      page: 1,
+    });
+  });
+
+  test("returns empty selections when the params are absent", () => {
+    expect(parseListUrlState("", availableTags)).toEqual({
+      selectedTags: [],
+      tagMatchMode: "and",
+      titleQuery: "",
+      page: 1,
+    });
   });
 });
 
@@ -61,9 +80,47 @@ describe("stringifyListUrlState", () => {
       ),
     ).toBe("?tags=css");
   });
+
+  test("writes no tags param when nothing is selected", () => {
+    expect(
+      stringifyListUrlState(
+        { selectedTags: [], tagMatchMode: "or", titleQuery: "", page: 1 },
+        availableTags,
+      ),
+    ).toBe("?mode=or");
+  });
+
+  test("returns an empty string when every value is a default", () => {
+    expect(
+      stringifyListUrlState(
+        { selectedTags: [], tagMatchMode: "and", titleQuery: "", page: 1 },
+        availableTags,
+      ),
+    ).toBe("");
+  });
 });
 
 describe("hasActiveListFilters", () => {
+  const inactive: ListUrlState = {
+    selectedTags: [],
+    tagMatchMode: "and",
+    titleQuery: "",
+    page: 1,
+  };
+
+  test("a selected tag is a filter", () => {
+    expect(hasActiveListFilters({ ...inactive, selectedTags: ["css"] })).toBe(true);
+  });
+
+  test("a non-blank title query is a filter", () => {
+    expect(hasActiveListFilters({ ...inactive, titleQuery: "layout" })).toBe(true);
+    expect(hasActiveListFilters({ ...inactive, titleQuery: "   " })).toBe(false);
+  });
+
+  test("a non-default tag match mode is a filter", () => {
+    expect(hasActiveListFilters({ ...inactive, tagMatchMode: "or" })).toBe(true);
+  });
+
   test("does not treat pagination as filtering", () => {
     expect(
       hasActiveListFilters({
