@@ -6,7 +6,16 @@
     ".claude/**",
     ".agents/**"
   ],
-  "plugins": ["typescript", "unicorn", "oxc", "import", "jsx-a11y"],
+  "plugins": [
+    "typescript",
+    "unicorn",
+    "oxc",
+    "import",
+    "jsx-a11y",
+    "vitest",
+    "react",
+    "react-perf"
+  ],
   "jsPlugins": [
     "eslint-plugin-react-you-might-not-need-an-effect",
     {
@@ -20,6 +29,44 @@
   "rules": {
     "no-restricted-imports": "off",
     "import/first": "error",
+    // React performance. Warn, not error: 229 existing hits, and every one is a
+    // judgement call about whether the child is memoized. Visible, non-blocking.
+    "react-perf/jsx-no-new-object-as-prop": "warn",
+    "react-perf/jsx-no-new-array-as-prop": "warn",
+    "react-perf/jsx-no-new-function-as-prop": "warn",
+    "react-perf/jsx-no-jsx-as-prop": "warn",
+    // Vitest rules. These carry, for src/**/*.{test.tsx,spec.ts}, the test
+    // hygiene that eslint-plugin-playwright carries for e2e/** — so the
+    // equivalent sonarjs rules could be dropped without losing coverage.
+    "vitest/no-focused-tests": "error",
+    "vitest/no-disabled-tests": "error",
+    "vitest/no-identical-title": "error",
+    "vitest/valid-title": "error",
+    "vitest/valid-describe-callback": "error",
+    "vitest/expect-expect": "error",
+    "vitest/prefer-hooks-on-top": "error",
+    // React You Might Not Need An Effect rules
+    "react-you-might-not-need-an-effect/no-derived-state": "error",
+    "react-you-might-not-need-an-effect/no-chain-state-updates": "error",
+    "react-you-might-not-need-an-effect/no-event-handler": "error",
+    "react-you-might-not-need-an-effect/no-adjust-state-on-prop-change": "error",
+    "react-you-might-not-need-an-effect/no-reset-all-state-on-prop-change": "error",
+    "react-you-might-not-need-an-effect/no-pass-live-state-to-parent": "error",
+    "react-you-might-not-need-an-effect/no-pass-data-to-parent": "error",
+    "react-you-might-not-need-an-effect/no-external-store-subscription": "error",
+    "react-you-might-not-need-an-effect/no-initialize-state": "error",
+    // SonarJS rules
+    // Pruned to what a static, backend-less site can actually hit. Dropped
+    // wholesale, 48 rules: AWS and cloud infrastructure; HTTP server, headers
+    // and sessions; auth, transport crypto and key material; other frameworks
+    // and XML parsers; Node server runtime; Mocha and Chai idioms. Quizbun has
+    // no server, no session, no auth and no cloud resources, so those could
+    // only ever be dead weight in the report.
+    // Deliberately kept despite the same reasoning: no-hardcoded-secrets and
+    // hardcoded-secret-signatures (a CI token can still land in scripts/ or a
+    // workflow on a public repo), publicly-writable-directories (scripts/ do
+    // build temp dirs, and mkdtempSync under tmpdir() is the pattern it
+    // enforces), and file-permissions (scripts/ write files).
     "sonarjs/class-name": "error",
     "sonarjs/no-fallthrough": "error",
     "sonarjs/no-equals-in-for-termination": "error",
@@ -34,7 +81,6 @@
     "sonarjs/no-parameter-reassignment": "error",
     "sonarjs/no-floating-point-equality": "error",
     "sonarjs/prefer-while": "error",
-    "sonarjs/no-hardcoded-ip": "error",
     "sonarjs/label-position": "error",
     "sonarjs/public-static-readonly": "error",
     "sonarjs/call-argument-line": "error",
@@ -44,7 +90,6 @@
     "sonarjs/code-eval": "error",
     "sonarjs/future-reserved-words": "error",
     "sonarjs/no-primitive-wrappers": "error",
-    "sonarjs/no-skipped-tests": "error",
     "sonarjs/no-identical-expressions": "error",
     "sonarjs/constructor-for-side-effects": "error",
     "sonarjs/no-dead-store": "error",
@@ -53,8 +98,6 @@
     "sonarjs/no-inverted-boolean-check": "error",
     "sonarjs/misplaced-loop-counter": "error",
     "sonarjs/no-nested-functions": "error",
-    "sonarjs/no-hardcoded-passwords": "error",
-    "sonarjs/insecure-cookie": "error",
     "sonarjs/no-useless-increment": "error",
     "sonarjs/no-globals-shadowing": "error",
     "sonarjs/no-empty-test-file": "error",
@@ -64,18 +107,15 @@
     "sonarjs/block-scoped-var": "error",
     "sonarjs/no-ignored-exceptions": "error",
     "sonarjs/no-gratuitous-expressions": "error",
-    "sonarjs/file-uploads": "error",
     "sonarjs/file-permissions": "error",
     "sonarjs/no-unenclosed-multiline-block": "error",
     "sonarjs/no-implicit-global": "error",
     "sonarjs/no-useless-catch": "error",
-    "sonarjs/xml-parser-xxe": "error",
     "sonarjs/non-existent-operator": "error",
     "sonarjs/no-fixed-wait-in-tests": "error",
     "sonarjs/no-incomplete-assertions": "error",
     "sonarjs/no-global-this": "error",
     "sonarjs/no-delete-var": "error",
-    "sonarjs/cookie-no-httponly": "error",
     "sonarjs/no-nested-conditional": "error",
     "sonarjs/inverted-assertion-arguments": "error",
     "sonarjs/updated-const-var": "error",
@@ -104,65 +144,25 @@
     "sonarjs/no-redundant-assignments": "error",
     "sonarjs/prefer-type-guard": "error",
     "sonarjs/use-type-alias": "error",
-    "sonarjs/weak-ssl": "error",
-    "sonarjs/no-weak-keys": "error",
-    "sonarjs/csrf": "error",
     "sonarjs/production-debug": "error",
     "sonarjs/prefer-default-last": "error",
     "sonarjs/no-duplicate-in-composite": "error",
     "sonarjs/no-nested-template-literals": "error",
     "sonarjs/prefer-promise-shorthand": "error",
-    "sonarjs/hashing": "error",
-    "sonarjs/unverified-certificate": "error",
-    "sonarjs/cors": "error",
     "sonarjs/link-with-target-blank": "error",
     "sonarjs/table-header": "error",
     "sonarjs/no-table-as-layout": "error",
     "sonarjs/table-header-reference": "error",
     "sonarjs/object-alt-content": "error",
-    "sonarjs/no-clear-text-protocols": "error",
     "sonarjs/publicly-writable-directories": "error",
-    "sonarjs/unverified-hostname": "error",
-    "sonarjs/encryption-secure-mode": "error",
-    "sonarjs/no-weak-cipher": "error",
-    "sonarjs/insecure-jwt-token": "error",
-    "sonarjs/x-powered-by": "error",
-    "sonarjs/content-length": "error",
-    "sonarjs/content-security-policy": "error",
-    "sonarjs/no-mime-sniff": "error",
-    "sonarjs/no-referrer-policy": "error",
-    "sonarjs/strict-transport-security": "error",
     "sonarjs/no-same-argument-assert": "error",
-    "sonarjs/session-regeneration": "error",
     "sonarjs/prefer-specific-assertions": "error",
     "sonarjs/no-trivial-assertions": "error",
     "sonarjs/test-check-exception": "error",
     "sonarjs/stable-tests": "error",
     "sonarjs/parameterized-tests": "error",
-    "sonarjs/no-code-after-done": "error",
-    "sonarjs/disabled-timeout": "error",
-    "sonarjs/chai-determinate-assertion": "error",
-    "sonarjs/aws-s3-bucket-insecure-http": "error",
-    "sonarjs/aws-s3-bucket-versioning": "error",
-    "sonarjs/aws-s3-bucket-granted-access": "error",
-    "sonarjs/no-angular-bypass-sanitization": "error",
-    "sonarjs/aws-iam-public-access": "error",
-    "sonarjs/aws-ec2-unencrypted-ebs-volume": "error",
-    "sonarjs/aws-s3-bucket-public-access": "error",
-    "sonarjs/aws-iam-all-privileges": "error",
-    "sonarjs/aws-rds-unencrypted-databases": "error",
-    "sonarjs/aws-opensearchservice-domain": "error",
-    "sonarjs/aws-iam-privilege-escalation": "error",
-    "sonarjs/aws-sagemaker-unencrypted-notebook": "error",
-    "sonarjs/aws-restricted-ip-admin-access": "error",
-    "sonarjs/aws-sns-unencrypted-topics": "error",
-    "sonarjs/aws-ec2-rds-dms-public": "error",
-    "sonarjs/aws-sqs-unencrypted-queue": "error",
-    "sonarjs/aws-efs-unencrypted": "error",
-    "sonarjs/aws-apigateway-public-api": "error",
     "sonarjs/stateful-regex": "error",
     "sonarjs/no-hardcoded-secrets": "error",
-    "sonarjs/no-exclusive-tests": "error",
     "sonarjs/hardcoded-secret-signatures": "error",
     "sonarjs/no-hook-setter-in-body": "error",
     "sonarjs/no-useless-react-setstate": "error",
@@ -170,38 +170,95 @@
     "sonarjs/redundant-type-aliases": "error",
     "sonarjs/no-internal-api-use": "error",
     "sonarjs/no-literal-call": "error",
-    "sonarjs/review-blockchain-mnemonic": "error",
     "sonarjs/dynamically-constructed-templates": "error",
-    "sonarjs/no-session-cookies-on-static-assets": "error",
-    "sonarjs/no-duplicate-test-title": "error",
     "sonarjs/async-test-assertions": "error",
-    "sonarjs/no-empty-test-title": "error",
-    "sonarjs/hooks-before-test-cases": "error",
     "sonarjs/no-forced-browser-interaction": "error",
-    "sonarjs/assertions-in-test-cases": "error",
-    "sonarjs/synchronous-suite-callback": "error",
     "sonarjs/super-linear-regex": "error",
     "sonarjs/prefer-native-lodash-alternative": "error",
     "sonarjs/no-default-utility-imports": "error",
     "sonarjs/memoize-cache-key": "error",
     "sonarjs/no-debug-commands-in-ui-tests": "error",
-    "sonarjs/no-mixed-completion-style": "error",
     "sonarjs/no-interpolation-in-inline-snapshots": "error",
-    "sonarjs/explicit-test-skip": "error",
-    "react-you-might-not-need-an-effect/no-derived-state": "error",
-    "react-you-might-not-need-an-effect/no-chain-state-updates": "error",
-    "react-you-might-not-need-an-effect/no-event-handler": "error",
-    "react-you-might-not-need-an-effect/no-adjust-state-on-prop-change": "error",
-    "react-you-might-not-need-an-effect/no-reset-all-state-on-prop-change": "error",
-    "react-you-might-not-need-an-effect/no-pass-live-state-to-parent": "error",
-    "react-you-might-not-need-an-effect/no-pass-data-to-parent": "error",
-    "react-you-might-not-need-an-effect/no-external-store-subscription": "error",
-    "react-you-might-not-need-an-effect/no-initialize-state": "error"
+    "sonarjs/explicit-test-skip": "error"
   },
   "overrides": [
     {
-      "files": ["src/**"],
-      "excludeFiles": ["src/shared/styles/lib/cx.ts"],
+      // eslint-plugin-playwright is scoped here rather than globally: its rules
+      // have no file filtering of their own, so at top level they also judge
+      // src/**/*.test.tsx, where Vitest browser mode uses the same matcher
+      // names with different await semantics.
+      "files": [
+        "e2e/**"
+      ],
+      "jsPlugins": [
+        {
+          "name": "playwright",
+          "specifier": "eslint-plugin-playwright"
+        }
+      ],
+      "rules": {
+        // The plugin's recommended set, promoted to error to match this file.
+        "playwright/consistent-spacing-between-blocks": "error",
+        "playwright/expect-expect": "error",
+        "playwright/max-nested-describe": "error",
+        "playwright/missing-playwright-await": "error",
+        "playwright/no-conditional-expect": "error",
+        "playwright/no-conditional-in-test": "error",
+        "playwright/no-duplicate-hooks": "error",
+        "playwright/no-duplicate-slow": "error",
+        "playwright/no-element-handle": "error",
+        "playwright/no-eval": "error",
+        "playwright/no-focused-test": "error",
+        "playwright/no-force-option": "error",
+        "playwright/no-identical-title": "error",
+        "playwright/no-nested-step": "error",
+        "playwright/no-networkidle": "error",
+        "playwright/no-page-pause": "error",
+        "playwright/no-skipped-test": "error",
+        "playwright/no-standalone-expect": "error",
+        "playwright/no-unnecessary-assertions": "error",
+        "playwright/no-unsafe-references": "error",
+        "playwright/no-unused-locators": "error",
+        "playwright/no-useless-await": "error",
+        "playwright/no-useless-not": "error",
+        "playwright/no-wait-for-navigation": "error",
+        "playwright/no-wait-for-selector": "error",
+        "playwright/no-wait-for-timeout": "error",
+        "playwright/prefer-hooks-in-order": "error",
+        "playwright/prefer-hooks-on-top": "error",
+        "playwright/prefer-locator": "error",
+        "playwright/prefer-to-have-count": "error",
+        "playwright/prefer-to-have-length": "error",
+        "playwright/prefer-web-first-assertions": "error",
+        "playwright/valid-describe-callback": "error",
+        "playwright/valid-expect": "error",
+        "playwright/valid-expect-in-promise": "error",
+        "playwright/valid-test-tags": "error",
+        "playwright/valid-title": "error",
+        // Beyond recommended: defect and locator-stability rules, all verified
+        // clean against the current suite.
+        "playwright/no-action-timeout": "error",
+        "playwright/no-commented-out-tests": "error",
+        "playwright/no-export": "error",
+        "playwright/no-magic-timeouts": "error",
+        "playwright/no-slowed-test": "error",
+        "playwright/no-test-return-statement": "error",
+        "playwright/prefer-comparison-matcher": "error",
+        "playwright/prefer-equality-matcher": "error",
+        "playwright/prefer-native-locators": "error",
+        "playwright/prefer-to-be": "error",
+        "playwright/prefer-to-contain": "error",
+        "playwright/require-annotation-reason": "error",
+        "playwright/require-to-throw-message": "error"
+      }
+    },
+    {
+      "files": [
+        "src/**"
+      ],
+      "excludeFiles": [
+        "src/shared/styles/lib/cx.ts"
+      ],
       "rules": {
         "no-restricted-imports": [
           "error",
@@ -214,11 +271,16 @@
             ],
             "patterns": [
               {
-                "group": ["@base-ui/react", "@base-ui/react/*"],
+                "group": [
+                  "@base-ui/react",
+                  "@base-ui/react/*"
+                ],
                 "message": "Import from '@/shared/ui/*' instead. Direct Base UI imports are reserved for shared/ui wrappers so swapping the headless library stays a one-folder change."
               },
               {
-                "group": ["@/_pages/*/**"],
+                "group": [
+                  "@/_pages/*/**"
+                ],
                 "message": "Import a page slice by its root only (@/_pages/<slice>). Segment paths (ui/lib/model) are slice-private."
               }
             ]
@@ -227,7 +289,12 @@
       }
     },
     {
-      "files": ["src/_pages/**", "src/features/**", "src/entities/**", "src/shared/**"],
+      "files": [
+        "src/_pages/**",
+        "src/features/**",
+        "src/entities/**",
+        "src/shared/**"
+      ],
       "rules": {
         "no-restricted-imports": [
           "error",
@@ -240,11 +307,17 @@
             ],
             "patterns": [
               {
-                "group": ["@base-ui/react", "@base-ui/react/*"],
+                "group": [
+                  "@base-ui/react",
+                  "@base-ui/react/*"
+                ],
                 "message": "Import from '@/shared/ui/*' instead. Direct Base UI imports are reserved for shared/ui wrappers so swapping the headless library stays a one-folder change."
               },
               {
-                "group": ["@/_pages", "@/_pages/**"],
+                "group": [
+                  "@/_pages",
+                  "@/_pages/**"
+                ],
                 "message": "Only route files (src/pages/) may import page slices. Lower layers never import upward, and page slices never import each other — duplicate small glue instead."
               }
             ]
@@ -253,13 +326,19 @@
       }
     },
     {
-      "files": ["src/shared/ui/**"],
+      "files": [
+        "src/shared/ui/**"
+      ],
       "rules": {
-        "no-restricted-imports": ["error"]
+        "no-restricted-imports": [
+          "error"
+        ]
       }
     },
     {
-      "files": ["src/shared/styles/**"],
+      "files": [
+        "src/shared/styles/**"
+      ],
       "rules": {
         "no-restricted-imports": "off"
       }
