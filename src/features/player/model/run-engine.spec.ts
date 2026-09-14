@@ -50,6 +50,28 @@ describe("chunkIntoPages", () => {
     expect(pages[2]!.questions[0]!.index).toBe(6);
   });
 
+  test("numbers every Question by its position in the whole Quiz", () => {
+    const pages = chunkIntoPages(makeQuiz(7), {}, 3);
+
+    // Not just the first of each page: the index has to keep counting within a
+    // page too, or the player mislabels every Question after the first.
+    expect(pages.map((page) => page.questions.map(({ index }) => index))).toEqual([
+      [0, 1, 2],
+      [3, 4, 5],
+      [6],
+    ]);
+  });
+
+  test("adds no empty trailing page when the Quiz divides evenly", () => {
+    expect(chunkIntoPages(makeQuiz(6), {}, 3).map((page) => page.questions.length)).toEqual([3, 3]);
+    expect(chunkIntoPages(makeQuiz(4), {}, 1)).toHaveLength(4);
+    expect(chunkIntoPages(makeQuiz(0), {}, 3)).toEqual([]);
+  });
+
+  test("numbers pages from zero, in order", () => {
+    expect(chunkIntoPages(makeQuiz(7), {}, 3).map((page) => page.index)).toEqual([0, 1, 2]);
+  });
+
   test("attaches progress by Question id", () => {
     const pages = chunkIntoPages(makeQuiz(2), { q2: progress(true) }, 5);
     const [first, second] = pages[0]!.questions;
@@ -86,7 +108,22 @@ describe("completion", () => {
   });
 
   test("countCorrect counts only correct submissions", () => {
+    // Unbalanced on purpose: with one correct and one incorrect, counting the
+    // wrong side of the predicate gives the same total.
     expect(countCorrect(makeQuiz(3), { q1: progress(true), q2: progress(false) })).toBe(1);
+    expect(
+      countCorrect(makeQuiz(4), {
+        q1: progress(true),
+        q2: progress(false),
+        q3: progress(true),
+        q4: progress(false),
+      }),
+    ).toBe(2);
+    expect(countCorrect(makeQuiz(3), { q1: progress(false), q2: progress(false) })).toBe(0);
+  });
+
+  test("countCorrect ignores stale entries for removed Questions", () => {
+    expect(countCorrect(makeQuiz(1), { q1: progress(true), gone: progress(true) })).toBe(1);
   });
 });
 

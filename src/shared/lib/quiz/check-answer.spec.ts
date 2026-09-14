@@ -179,4 +179,17 @@ describe("parseNumericInput", () => {
     expect(parseNumericInput("")).toBeUndefined();
     expect(parseNumericInput("1e5x")).toBeUndefined();
   });
+
+  test("rejects notations JavaScript would happily parse", () => {
+    // The pattern has to match the whole string, not merely start or end it:
+    // `Number("1e5")` is a finite 100000, so anything less than a full-string
+    // match would quietly accept exponent and hex notation the Standard's
+    // "Numeric matching rules" do not allow.
+    expect(parseNumericInput("1e5")).toBeUndefined();
+    expect(parseNumericInput("1E5")).toBeUndefined();
+    expect(parseNumericInput("0x10")).toBeUndefined();
+    expect(parseNumericInput("Infinity")).toBeUndefined();
+    expect(parseNumericInput("12abc")).toBeUndefined();
+    expect(parseNumericInput("abc12")).toBeUndefined();
+  });
 });

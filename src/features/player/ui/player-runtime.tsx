@@ -42,7 +42,7 @@ export function PlayerRuntime({
   urlQuestionId,
   onUrlStateChange,
   onExit,
-}: PlayerProps) {
+}: Readonly<PlayerProps>) {
   const player = usePlayer({ quiz, source, urlView, urlQuestionId, onUrlStateChange });
 
   if (player.status === "load-error") {

@@ -49,21 +49,10 @@
     transform: rotate(-2.9deg);
 
     background-color: var(--_bg-color);
-    background-image:
-      linear-gradient(to right, var(--_line-color) 1px, transparent 1px),
-      linear-gradient(
-        to bottom,
-        transparent 0,
-        transparent 1px,
-        var(--_orange-line-color) 2px,
-        transparent 4px
-      ),
-      linear-gradient(to bottom, var(--_line-color) 1px, transparent 1px);
     background-position:
       0 0,
       0 0,
       0 0;
-    background-size: var(--_cell-size) var(--_cell-size);
   }
 }
 
@@ -106,11 +95,18 @@
 /* Rotate here, never on the layer; `inset` covers the rotation overhang. */
 .cell-background-layer::before {
   content: "";
-
   position: absolute;
   inset: -25%;
   transform: rotate(-2.9deg);
+}
 
+/*
+ * The paper-grid image itself: vertical lines, one orange rule, horizontal
+ * lines. Both the fixed page backdrop and the contained layer draw it, so it
+ * is declared once here; each host owns its own position, size and colors.
+ */
+.cell-background::before,
+.cell-background-layer::before {
   background-image:
     linear-gradient(to right, var(--_line-color) 1px, transparent 1px),
     linear-gradient(

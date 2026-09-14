@@ -68,6 +68,17 @@ describe("renderMarkdown", () => {
     expect(renderMarkdown("[docs](http://example.com/)")).toContain('rel="noreferrer"');
   });
 
+  test("marks an external link whatever the scheme's case", () => {
+    expect(renderMarkdown("[docs](HTTPS://EXAMPLE.COM/)")).toContain('rel="noreferrer"');
+  });
+
+  test("leaves a link that merely contains a scheme free of rel", () => {
+    // The href has to *start* with http(s), not contain it: a relative link
+    // carrying an absolute URL in its query is still same-origin.
+    expect(renderMarkdown("[go](/go?to=http://example.com)")).not.toContain("rel=");
+    expect(renderMarkdown("[frag](#https://example.com)")).not.toContain("rel=");
+  });
+
   test("returns empty string for blank input", () => {
     expect(renderMarkdown("   \n  ")).toBe("");
   });
@@ -115,6 +126,17 @@ describe("renderInlineMarkdown", () => {
     expect(renderInlineMarkdown("[site](https://example.com)")).toBe(
       '<a href="https://example.com" rel="noreferrer">site</a>',
     );
+  });
+
+  test("a link with no usable href keeps no attributes at all", () => {
+    // The anchor is rebuilt from scratch, so a dropped href must not come back
+    // as an empty one.
+    expect(renderInlineMarkdown("[x]()")).toBe("<a>x</a>");
+    expect(renderInlineMarkdown("[x](<>)")).toBe("<a>x</a>");
+  });
+
+  test("strips a javascript: href rather than rendering it", () => {
+    expect(renderInlineMarkdown("[x](javascript:alert(1))")).toBe("<a>x</a>");
   });
 
   test("does not wrap output in a paragraph", () => {

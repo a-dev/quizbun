@@ -3,34 +3,29 @@ import { type ReactNode } from "react";
 import { Checkbox as CheckboxPrimitive, type CheckboxRootProps } from "@base-ui/react/checkbox";
 import { Check, Minus } from "lucide-react";
 
-import { cx, utils } from "#styles";
+import { AnswerFeedbackDescription, type AnswerFeedback } from "@/shared/ui/answer-feedback";
+
+import { cx } from "#styles";
 import styles from "./checkbox.module.css";
 
 const { Root, Indicator } = CheckboxPrimitive;
-
-type Feedback = "correct" | "incorrect";
 
 type Props = Omit<CheckboxRootProps, "children"> & {
   className?: string;
   children: ReactNode;
   /** Post-submission answer state, rendered independently of checked state. */
-  feedback?: Feedback;
+  feedback?: AnswerFeedback;
 };
 
 const LABEL_FEEDBACK_CLASS = {
   correct: styles.feedbackCorrect,
   incorrect: styles.feedbackIncorrect,
-} satisfies Record<Feedback, string>;
+} satisfies Record<AnswerFeedback, string>;
 
 const CONTROL_FEEDBACK_CLASS = {
   correct: styles.controlFeedbackCorrect,
   incorrect: styles.controlFeedbackIncorrect,
-} satisfies Record<Feedback, string>;
-
-const FEEDBACK_DESCRIPTION = {
-  correct: "Correct Option",
-  incorrect: "Your selection is incorrect",
-} satisfies Record<Feedback, string>;
+} satisfies Record<AnswerFeedback, string>;
 
 export function Checkbox({ className, children, feedback, ...props }: Props) {
   return (
@@ -60,9 +55,7 @@ export function Checkbox({ className, children, feedback, ...props }: Props) {
         />
       </Root>
       <div className={styles.text}>{children}</div>
-      {feedback !== undefined && (
-        <span className={utils.visuallyHidden}>. {FEEDBACK_DESCRIPTION[feedback]}</span>
-      )}
+      {feedback !== undefined && <AnswerFeedbackDescription feedback={feedback} />}
     </label>
   );
 }

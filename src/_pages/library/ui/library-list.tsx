@@ -26,6 +26,7 @@ import { QuizCard } from "@/entities/quiz";
 import {
   collectTags,
   filterQuizItems,
+  NoFilterMatches,
   prepareFilterItems,
   TagFilter,
 } from "@/features/filter-by-tags";
@@ -302,15 +303,7 @@ export function LibraryList() {
       {actionError !== undefined && <Note type="error">{actionError}</Note>}
 
       {visibleQuizzes.length === 0 && state.quizzes.length !== 0 ? (
-        <Note type="warning">
-          <p>
-            No quizzes match the selected filters.{" "}
-            <Button variant="destructive" size="s" onClick={clearFilters}>
-              Clear filters
-            </Button>{" "}
-            to see all quizzes.
-          </p>
-        </Note>
+        <NoFilterMatches onClearFilters={clearFilters} />
       ) : (
         <>
           <div className={layout.quizCardGrid}>

@@ -85,7 +85,7 @@ export function usePlayer({
 }: UsePlayerParams): PlayerModel {
   // `undefined` answers = the Run hasn't loaded yet (IndexedDB is async).
   const [answers, setAnswers] = useState<Answers | undefined>(undefined);
-  const [pageSize, setPageSizeState] = useState<PageSize>(DEFAULT_PAGE_SIZE);
+  const [pageSize, setPageSize] = useState<PageSize>(DEFAULT_PAGE_SIZE);
   const [pageIndex, setPageIndex] = useState(0);
   const [activeQuestionId, setActiveQuestionId] = useState<string | undefined>(undefined);
   const [view, setView] = useState<View>("questions");
@@ -125,7 +125,7 @@ export function usePlayer({
 
         const pages = chunkIntoPages(quiz, loaded, initialPageSize);
 
-        setPageSizeState(initialPageSize);
+        setPageSize(initialPageSize);
         setAnswers(loaded);
         // Renderer-only state: generated once for this mounted player session,
         // then kept stable while navigating its pages. It is never written to
@@ -272,7 +272,7 @@ export function usePlayer({
     const applyResize = () => {
       setPageIndex(nextPageIndex);
       setActiveQuestionId(nextAnchor);
-      setPageSizeState(next);
+      setPageSize(next);
       emitRunAnchor(nextAnchor);
     };
 

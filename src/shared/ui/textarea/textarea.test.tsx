@@ -1,3 +1,5 @@
+import { hydrateRoot } from "react-dom/client";
+import { renderToString } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
@@ -17,6 +19,58 @@ describe("Textarea", () => {
     await expect.element(textarea).toHaveValue("First line\nSecond line\nThird line");
     await expect(onChange).toHaveBeenCalled();
     expect(getAutoHeight(textarea)).toBeGreaterThan(initialHeight);
+  });
+
+  it("reports text typed into the prerendered field before the island hydrated", async () => {
+    // Astro serves the field as markup, so people can type into it while the
+    // island is still loading. React keeps that text but starts from the state
+    // it was rendered with, and the owner would otherwise never hear about it.
+    const container = document.createElement("div");
+    container.innerHTML = renderToString(<Textarea aria-label="Quiz JSON" value="" />);
+    document.body.append(container);
+
+    const textarea = container.querySelector("textarea")!;
+    textarea.value = '{ "id": "typed-early" }';
+
+    // The field stays controlled at "", so React rewrites the element as soon
+    // as the replayed event is handled. Read the reported text while it lasts.
+    const reported: string[] = [];
+    const onChange = vi.fn<(event: { target: { value: string } }) => void>((event) => {
+      reported.push(event.target.value);
+    });
+    const root = hydrateRoot(
+      container,
+      <Textarea aria-label="Quiz JSON" value="" onChange={onChange} />,
+    );
+
+    try {
+      await vi.waitFor(() => expect(reported).toEqual(['{ "id": "typed-early" }']));
+    } finally {
+      root.unmount();
+      container.remove();
+    }
+  });
+
+  it("stays quiet when the prerendered field matches the value it hydrates with", async () => {
+    const container = document.createElement("div");
+    container.innerHTML = renderToString(<Textarea aria-label="Quiz JSON" value="{}" />);
+    document.body.append(container);
+
+    const onChange = vi.fn<() => void>();
+    const root = hydrateRoot(
+      container,
+      <Textarea aria-label="Quiz JSON" value="{}" onChange={onChange} />,
+    );
+
+    try {
+      // Unmounting mid-hydration makes React drop the server markup and warn,
+      // so let it finish before asking whether the field stayed silent.
+      await vi.waitFor(() => expect(isHydrated(container)).toBe(true));
+      expect(onChange).not.toHaveBeenCalled();
+    } finally {
+      root.unmount();
+      container.remove();
+    }
   });
 
   it("honors the rows prop as its minimum height", async () => {
@@ -177,3 +231,10 @@ describe("CodeTextarea", () => {
     expect(textareaStyle.lineHeight).toBe(codeStyle.lineHeight);
   });
 });
+
+/** React tags every node it has taken over with an internal props key. */
+function isHydrated(container: HTMLElement): boolean {
+  const textarea = container.querySelector("textarea");
+
+  return textarea !== null && Object.keys(textarea).some((key) => key.startsWith("__react"));
+}

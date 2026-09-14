@@ -1,9 +1,18 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, type ComponentPropsWithRef } from "react";
 
+import { useRecoveredInput } from "@/shared/lib/hydration";
+
 import { cssVars, cx } from "#styles";
 import styles from "./textarea.module.css";
 
 export type TextareaProps = ComponentPropsWithRef<"textarea">;
+
+/** Normalizes every shape a textarea `value` or `defaultValue` can take. */
+export function asText(value: TextareaProps["value"] | TextareaProps["defaultValue"]): string {
+  if (Array.isArray(value)) return value.join("\n");
+
+  return value === undefined ? "" : String(value);
+}
 
 type ScrollPosition = {
   block: number;
@@ -79,6 +88,8 @@ export function Textarea({
   );
 
   useLayoutEffect(resize, [resize, props.defaultValue, props.value]);
+
+  useRecoveredInput(textareaRef, asText(props.value ?? props.defaultValue));
 
   useLayoutEffect(() => {
     restorePageScroll();

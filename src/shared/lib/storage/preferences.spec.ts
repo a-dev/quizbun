@@ -1,21 +1,7 @@
 import { beforeEach, describe, expect, test } from "vitest";
 
+import { fakeLocalStorage } from "./fake-local-storage";
 import { DEFAULT_PAGE_SIZE, getPageSize, setPageSize } from "./preferences";
-
-function fakeLocalStorage(): Storage {
-  const entries = new Map<string, string>();
-
-  return {
-    getItem: (key) => entries.get(key) ?? null,
-    setItem: (key, value) => void entries.set(key, value),
-    removeItem: (key) => void entries.delete(key),
-    clear: () => entries.clear(),
-    key: (index) => [...entries.keys()][index] ?? null,
-    get length() {
-      return entries.size;
-    },
-  };
-}
 
 beforeEach(() => {
   globalThis.localStorage = fakeLocalStorage();

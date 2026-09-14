@@ -18,6 +18,28 @@ async function seedAndOpenLibraryQuiz(page: Page) {
   await expect(page.getByRole("heading", { name: mixedTypesQuiz.title })).toBeVisible();
 }
 
+/**
+ * Start the seeded mixed-types quiz one Question per page and submit the first
+ * two answers: Question 1 correct, Question 2 incorrect. Leaves the Player on
+ * page 2 with two locked Questions.
+ */
+async function submitFirstTwoAnswers(page: Page) {
+  await seedAndOpenLibraryQuiz(page);
+
+  await page.getByRole("button", { name: "Start" }).click();
+  await selectPageSize(page, 1);
+
+  const firstQuestion = questionGroup(page, 1);
+  await firstQuestion.getByRole("radio", { name: "Right" }).check();
+  await firstQuestion.getByRole("button", { name: "Submit" }).click();
+
+  await page.getByRole("button", { name: "Next page" }).click();
+
+  const secondQuestion = questionGroup(page, 2);
+  await secondQuestion.getByRole("checkbox", { name: "Yes", exact: true }).check();
+  await secondQuestion.getByRole("button", { name: "Submit" }).click();
+}
+
 async function tabUntilFocused(page: Page, target: Locator, maxTabs = 12) {
   for (let index = 0; index < maxTabs; index += 1) {
     if (await target.evaluate((element) => element === document.activeElement)) return;
@@ -214,21 +236,8 @@ test("Player checks all Question types with check-answer semantics", async ({ pa
 });
 
 test("Player resumes an in-progress Run with prior answers locked", async ({ page }) => {
-  await seedAndOpenLibraryQuiz(page);
-
-  await page.getByRole("button", { name: "Start" }).click();
-  await selectPageSize(page, 1);
-
-  const firstQuestion = questionGroup(page, 1);
-  await firstQuestion.getByRole("radio", { name: "Right" }).check();
-  await firstQuestion.getByRole("button", { name: "Submit" }).click();
-
-  await page.getByRole("button", { name: "Next page" }).click();
-
-  const secondQuestion = questionGroup(page, 2);
-  await secondQuestion.getByRole("checkbox", { name: "Yes", exact: true }).check();
-  await secondQuestion.getByRole("button", { name: "Submit" }).click();
-  await expect(secondQuestion.getByRole("status")).toContainText("Incorrect");
+  await submitFirstTwoAnswers(page);
+  await expect(questionGroup(page, 2).getByRole("status")).toContainText("Incorrect");
 
   await page.reload();
 
@@ -246,22 +255,12 @@ test("Player resumes an in-progress Run with prior answers locked", async ({ pag
 test("Player keeps submitted answers when Page size re-chunks an in-progress Run", async ({
   page,
 }) => {
-  await seedAndOpenLibraryQuiz(page);
-
-  await page.getByRole("button", { name: "Start" }).click();
-  await selectPageSize(page, 1);
-
-  const firstQuestion = questionGroup(page, 1);
-  await firstQuestion.getByRole("radio", { name: "Right" }).check();
-  await firstQuestion.getByRole("button", { name: "Submit" }).click();
-
-  await page.getByRole("button", { name: "Next page" }).click();
-
-  const secondQuestion = questionGroup(page, 2);
-  await secondQuestion.getByRole("checkbox", { name: "Yes", exact: true }).check();
-  await secondQuestion.getByRole("button", { name: "Submit" }).click();
+  await submitFirstTwoAnswers(page);
 
   await selectPageSize(page, 3);
+
+  const firstQuestion = questionGroup(page, 1);
+  const secondQuestion = questionGroup(page, 2);
 
   await expect(page.getByRole("heading", { name: /E2E — Mixed question types/ })).toBeVisible();
   await expect(page.getByText("page 1 of 2")).toBeVisible();

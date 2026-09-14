@@ -3,7 +3,7 @@ import { useDeferredValue, useMemo, useState } from "react";
 import Prism from "prismjs";
 import "prismjs/components/prism-json.js";
 
-import { Textarea, type TextareaProps } from "./textarea";
+import { asText, Textarea, type TextareaProps } from "./textarea";
 
 import { cx, cssVars } from "#styles";
 import styles from "./code-textarea.module.css";
@@ -14,12 +14,6 @@ type ScrollPosition = {
   block: number;
   inline: number;
 };
-
-function asText(value: TextareaProps["value"] | TextareaProps["defaultValue"]): string {
-  if (Array.isArray(value)) return value.join("\n");
-
-  return value === undefined ? "" : String(value);
-}
 
 export function CodeTextarea({
   className,

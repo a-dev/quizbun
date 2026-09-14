@@ -11,13 +11,16 @@ import {
   withBase,
 } from "@/shared/lib/routing";
 import type { ListUrlState } from "@/shared/lib/routing";
-import { Button } from "@/shared/ui/button";
-import { Note } from "@/shared/ui/note";
 import { Pagination } from "@/shared/ui/pagination";
 
 import { QuizCard } from "@/entities/quiz";
 
-import { filterQuizItems, prepareFilterItems, TagFilter } from "@/features/filter-by-tags";
+import {
+  filterQuizItems,
+  NoFilterMatches,
+  prepareFilterItems,
+  TagFilter,
+} from "@/features/filter-by-tags";
 
 import { layout } from "#styles";
 
@@ -176,15 +179,7 @@ export function QuizzesCatalog({
       />
 
       {visibleQuizzes.length === 0 ? (
-        <Note type="warning">
-          <p>
-            No quizzes match the selected filters.{" "}
-            <Button variant="destructive" size="s" onClick={clearFilters}>
-              Clear filters
-            </Button>{" "}
-            to see all quizzes.
-          </p>
-        </Note>
+        <NoFilterMatches onClearFilters={clearFilters} />
       ) : (
         <>
           <div className={layout.quizCardGrid}>
