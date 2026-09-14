@@ -19,7 +19,7 @@ describe("Radio", () => {
   });
 
   it("selects a radio on click and reports the new value", async () => {
-    const onValueChange = vi.fn();
+    const onValueChange = vi.fn<() => void>();
     const screen = await page.render(
       <RadioGroup aria-label="Quiz source" onValueChange={onValueChange}>
         <Radio value="catalog">Catalog quiz</Radio>
@@ -36,7 +36,7 @@ describe("Radio", () => {
   });
 
   it("does not fire when the group is disabled", async () => {
-    const onValueChange = vi.fn();
+    const onValueChange = vi.fn<() => void>();
     const screen = await page.render(
       <RadioGroup aria-label="Quiz source" disabled onValueChange={onValueChange}>
         <Radio value="catalog">Catalog quiz</Radio>

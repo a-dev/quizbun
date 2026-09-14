@@ -23,7 +23,7 @@ describe("Dialog", () => {
   });
 
   it("closes via the close button and fires onClose", async () => {
-    const onClose = vi.fn();
+    const onClose = vi.fn<() => void>();
     const screen = await page.render(
       <Dialog
         trigger={<button type="button">Open</button>}

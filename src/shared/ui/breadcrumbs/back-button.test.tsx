@@ -24,7 +24,7 @@ describe("BackButton", () => {
   });
 
   it("calls onClick when the button is activated", async () => {
-    const onClick = vi.fn();
+    const onClick = vi.fn<() => void>();
     const screen = await page.render(<BackButton onClick={onClick} />);
     await screen.getByRole("button", { name: "Back" }).click();
     expect(onClick).toHaveBeenCalledOnce();

@@ -5,7 +5,7 @@ import { Input, InputField } from "./input";
 
 describe("Input", () => {
   it("renders a textbox and forwards typed input", async () => {
-    const onChange = vi.fn();
+    const onChange = vi.fn<() => void>();
     const screen = await page.render(<Input aria-label="Quiz title" onChange={onChange} />);
 
     const box = screen.getByRole("textbox", { name: "Quiz title" });

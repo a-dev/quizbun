@@ -10,7 +10,7 @@ describe("Button", () => {
   });
 
   it("calls onClick when activated", async () => {
-    const onClick = vi.fn();
+    const onClick = vi.fn<() => void>();
     const screen = await page.render(<Button onClick={onClick}>Start quiz</Button>);
     await userEvent.click(screen.getByRole("button", { name: "Start quiz" }));
     await expect(onClick).toHaveBeenCalledOnce();
@@ -42,7 +42,7 @@ describe("LinkAsButton", () => {
   });
 
   it("does not expose disabled styling state or activate when enabled", async () => {
-    const onClick = vi.fn();
+    const onClick = vi.fn<() => void>();
     const screen = await page.render(
       <LinkAsButton
         href="/library/"
@@ -63,7 +63,7 @@ describe("LinkAsButton", () => {
   });
 
   it("prevents activation when disabled", async () => {
-    const onClick = vi.fn();
+    const onClick = vi.fn<() => void>();
     const screen = await page.render(
       <LinkAsButton href="/library/" disabled onClick={onClick}>
         Library

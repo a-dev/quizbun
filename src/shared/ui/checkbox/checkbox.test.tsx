@@ -13,7 +13,7 @@ describe("Checkbox", () => {
   });
 
   it("toggles checked state on click", async () => {
-    const onCheckedChange = vi.fn();
+    const onCheckedChange = vi.fn<() => void>();
     const screen = await page.render(
       <Checkbox value="explanations" onCheckedChange={onCheckedChange}>
         Show explanations
@@ -56,7 +56,7 @@ describe("CheckboxGroup", () => {
   });
 
   it("reports the full set of selected values as members toggle", async () => {
-    const onValueChange = vi.fn();
+    const onValueChange = vi.fn<() => void>();
     const screen = await page.render(
       <CheckboxGroup
         aria-label="Review filters"

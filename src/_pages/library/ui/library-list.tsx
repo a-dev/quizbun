@@ -143,7 +143,39 @@ export function LibraryList() {
   }
 
   useEffect(() => {
-    void refresh();
+    let cancelled = false;
+
+    void listQuizzes()
+      .then((loadedQuizzes) => {
+        if (cancelled) return;
+
+        setState({ status: "ready", quizzes: loadedQuizzes });
+
+        // The server-rendered shell can't know the request URL, and the URL's Tag
+        // slugs only resolve against the Tags that exist — so the first read has
+        // to wait for the Library to load.
+        const loadedPrepared = prepareFilterItems(loadedQuizzes);
+        const parsedState = parseListUrlState(window.location.search, collectTags(loadedQuizzes));
+        const nextState = clampToResults(parsedState, loadedPrepared);
+
+        setUrlState(nextState);
+        setHasReadUrl(true);
+
+        if (nextState.page !== parsedState.page) {
+          const href = `${withBase("library/")}${stringifyListUrlState(
+            nextState,
+            collectTags(loadedQuizzes),
+          )}`;
+          window.history.replaceState(window.history.state, "", href);
+        }
+      })
+      .catch((error: unknown) => {
+        if (!cancelled) setState({ status: "error", message: messageFromError(error) });
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   async function exportQuiz(id: string) {

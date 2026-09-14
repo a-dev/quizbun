@@ -54,7 +54,7 @@ describe("quizSchema", () => {
     for (const fixture of fixtures) {
       const result = quizSchema.safeParse(fixture.value);
 
-      expect(result.success, fixture.fileName).toBe(true);
+      expect(result.success).toBe(true);
     }
   });
 
@@ -112,7 +112,7 @@ describe("quizSchema", () => {
     for (const fixture of fixtures) {
       const result = quizSchema.safeParse(fixture.value);
 
-      expect(result.success, fixture.fileName).toBe(false);
+      expect(result.success).toBe(false);
     }
   });
 });

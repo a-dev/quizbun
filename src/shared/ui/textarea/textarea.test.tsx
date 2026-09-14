@@ -7,7 +7,7 @@ const sizesToContentNatively = CSS.supports("field-sizing", "content");
 
 describe("Textarea", () => {
   it("forwards typed input and updates its content height", async () => {
-    const onChange = vi.fn();
+    const onChange = vi.fn<() => void>();
     const screen = await page.render(<Textarea aria-label="Quiz notes" onChange={onChange} />);
     const textarea = screen.getByRole("textbox", { name: "Quiz notes" });
     const initialHeight = getAutoHeight(textarea);

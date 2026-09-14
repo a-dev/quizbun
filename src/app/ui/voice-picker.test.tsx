@@ -1,11 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { page } from "vitest/browser";
 
+import type { useVoicePreference } from "@/shared/lib/speech";
+
 import { VoicePicker } from "./voice-picker";
 
 const speechMocks = vi.hoisted(() => ({
-  selectVoice: vi.fn(),
-  useVoicePreference: vi.fn(),
+  selectVoice: vi.fn<(voiceUri: string | null) => void>(),
+  useVoicePreference: vi.fn<typeof useVoicePreference>(),
 }));
 
 vi.mock("@/shared/lib/speech", () => ({

@@ -37,8 +37,8 @@ function TestTagFilter({
 
 describe("TagFilter", () => {
   it("emits title query and tag match mode changes", async () => {
-    const onTitleQueryChange = vi.fn();
-    const onTagMatchModeChange = vi.fn();
+    const onTitleQueryChange = vi.fn<() => void>();
+    const onTagMatchModeChange = vi.fn<() => void>();
     const screen = await page.render(
       <TestTagFilter
         onTitleQueryChange={onTitleQueryChange}

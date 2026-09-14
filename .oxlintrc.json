@@ -29,8 +29,8 @@
   "rules": {
     "no-restricted-imports": "off",
     "import/first": "error",
-    // React performance. Warn, not error: 229 existing hits, and every one is a
-    // judgement call about whether the child is memoized. Visible, non-blocking.
+    // These rules are useful only where a component's consumers might be
+    // memoized. Tests intentionally create fresh callbacks and fixtures.
     "react-perf/jsx-no-new-object-as-prop": "warn",
     "react-perf/jsx-no-new-array-as-prop": "warn",
     "react-perf/jsx-no-new-function-as-prop": "warn",
@@ -187,9 +187,7 @@
       // have no file filtering of their own, so at top level they also judge
       // src/**/*.test.tsx, where Vitest browser mode uses the same matcher
       // names with different await semantics.
-      "files": [
-        "e2e/**"
-      ],
+      "files": ["e2e/**"],
       "jsPlugins": [
         {
           "name": "playwright",
@@ -253,12 +251,28 @@
       }
     },
     {
+      // Test fixtures and Storybook stories deliberately create local callbacks,
+      // arrays, objects, and JSX. React performance diagnostics belong to
+      // shipped UI only.
       "files": [
-        "src/**"
+        "**/*.test.ts",
+        "**/*.test.tsx",
+        "**/*.spec.ts",
+        "**/*.spec.tsx",
+        "**/*.e2e.ts",
+        ".storybook/**/*.tsx",
+        "src/**/*.stories.tsx"
       ],
-      "excludeFiles": [
-        "src/shared/styles/lib/cx.ts"
-      ],
+      "rules": {
+        "react-perf/jsx-no-new-object-as-prop": "off",
+        "react-perf/jsx-no-new-array-as-prop": "off",
+        "react-perf/jsx-no-new-function-as-prop": "off",
+        "react-perf/jsx-no-jsx-as-prop": "off"
+      }
+    },
+    {
+      "files": ["src/**"],
+      "excludeFiles": ["src/shared/styles/lib/cx.ts"],
       "rules": {
         "no-restricted-imports": [
           "error",
@@ -271,16 +285,11 @@
             ],
             "patterns": [
               {
-                "group": [
-                  "@base-ui/react",
-                  "@base-ui/react/*"
-                ],
+                "group": ["@base-ui/react", "@base-ui/react/*"],
                 "message": "Import from '@/shared/ui/*' instead. Direct Base UI imports are reserved for shared/ui wrappers so swapping the headless library stays a one-folder change."
               },
               {
-                "group": [
-                  "@/_pages/*/**"
-                ],
+                "group": ["@/_pages/*/**"],
                 "message": "Import a page slice by its root only (@/_pages/<slice>). Segment paths (ui/lib/model) are slice-private."
               }
             ]
@@ -289,12 +298,7 @@
       }
     },
     {
-      "files": [
-        "src/_pages/**",
-        "src/features/**",
-        "src/entities/**",
-        "src/shared/**"
-      ],
+      "files": ["src/_pages/**", "src/features/**", "src/entities/**", "src/shared/**"],
       "rules": {
         "no-restricted-imports": [
           "error",
@@ -307,17 +311,11 @@
             ],
             "patterns": [
               {
-                "group": [
-                  "@base-ui/react",
-                  "@base-ui/react/*"
-                ],
+                "group": ["@base-ui/react", "@base-ui/react/*"],
                 "message": "Import from '@/shared/ui/*' instead. Direct Base UI imports are reserved for shared/ui wrappers so swapping the headless library stays a one-folder change."
               },
               {
-                "group": [
-                  "@/_pages",
-                  "@/_pages/**"
-                ],
+                "group": ["@/_pages", "@/_pages/**"],
                 "message": "Only route files (src/pages/) may import page slices. Lower layers never import upward, and page slices never import each other — duplicate small glue instead."
               }
             ]
@@ -326,19 +324,13 @@
       }
     },
     {
-      "files": [
-        "src/shared/ui/**"
-      ],
+      "files": ["src/shared/ui/**"],
       "rules": {
-        "no-restricted-imports": [
-          "error"
-        ]
+        "no-restricted-imports": ["error"]
       }
     },
     {
-      "files": [
-        "src/shared/styles/**"
-      ],
+      "files": ["src/shared/styles/**"],
       "rules": {
         "no-restricted-imports": "off"
       }

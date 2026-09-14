@@ -32,7 +32,7 @@ describe("Select", () => {
   });
 
   it("opens the listbox and selects an option", async () => {
-    const onValueChange = vi.fn();
+    const onValueChange = vi.fn<() => void>();
     const screen = await page.render(<SelectExample onValueChange={onValueChange} />);
 
     await userEvent.click(screen.getByText("Fuji"));

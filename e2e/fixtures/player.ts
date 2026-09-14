@@ -41,7 +41,8 @@ export function pageSizeSelect(page: Page): Locator {
 
 /** Open the Page-size Select and choose a size (one of the `PAGE_SIZES`). */
 export async function selectPageSize(page: Page, size: number): Promise<void> {
-  await pageSizeSelect(page).click();
+  const select = pageSizeSelect(page);
+  await select.click();
   // The listbox is portalled to <body>, so options stay page-scoped; the exact
   // numeric name keeps them distinct from the voice picker's option labels.
   await page.getByRole("option", { name: String(size), exact: true }).click();

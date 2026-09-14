@@ -66,7 +66,7 @@ function MultipleChoiceHarness({
 
 describe("AnswerControl", () => {
   it("renders a shuffled Option but submits its original index", async () => {
-    const onDraftChange = vi.fn();
+    const onDraftChange = vi.fn<() => void>();
     const screen = await page.render(
       <AnswerControl
         question={singleChoiceQuestion}
@@ -88,7 +88,7 @@ describe("AnswerControl", () => {
   });
 
   it("keeps multiple-choice submissions in original-index order", async () => {
-    const onDraftChange = vi.fn();
+    const onDraftChange = vi.fn<() => void>();
     const screen = await page.render(<MultipleChoiceHarness onDraftChange={onDraftChange} />);
 
     // Playwright's role=checkbox click redirects through the label's hidden native

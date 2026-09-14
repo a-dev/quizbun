@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useState } from "react";
 
 import type { Quiz } from "@/shared/lib/quiz";
 import type { PlayerUrlState } from "@/shared/lib/routing";
@@ -54,16 +54,19 @@ export function QuizDetail({ quiz, source, backHref, backLabel, renderPlayer }: 
   // detail article as it remounts on return, instead of letting focus drop to
   // <body> (T7.1). A ref callback fires exactly on that remount — no effect
   // needed; `returnedFromPlayer` keeps the initial visit from stealing focus.
-  const returnedFromPlayer = useRef(false);
-  const focusArticleOnReturn = useCallback((node: HTMLElement | null) => {
-    if (node !== null && returnedFromPlayer.current) {
-      returnedFromPlayer.current = false;
-      node.focus();
-    }
-  }, []);
+  const [returnedFromPlayer, setReturnedFromPlayer] = useState(false);
+  const focusArticleOnReturn = useCallback(
+    (node: HTMLElement | null) => {
+      if (node !== null && returnedFromPlayer) {
+        setReturnedFromPlayer(false);
+        node.focus();
+      }
+    },
+    [returnedFromPlayer],
+  );
 
   const handleExit = useCallback(() => {
-    returnedFromPlayer.current = true;
+    setReturnedFromPlayer(true);
     exit();
     // Returning may have changed progress; refresh the header's "X of Y".
     void refresh();

@@ -56,15 +56,12 @@ export function Pagination({
           disabled={safeCurrentPage === 1}
           ariaLabel="Previous page"
           className={styles.controlButton}
-          children={
-            <>
-              <MoveLeft size="14" /> Previous
-            </>
-          }
           hrefForPage={hrefForPage}
           changePage={changePage}
           handlePageClick={handlePageClick}
-        />
+        >
+          <MoveLeft size="14" /> Previous
+        </Control>
         <Control
           page={safeCurrentPage + 1}
           variant="primary"
@@ -72,16 +69,13 @@ export function Pagination({
           disabled={safeCurrentPage === pageCount}
           ariaLabel="Next page"
           className={styles.controlButton}
-          children={
-            <>
-              Next
-              <MoveRight size="14" />
-            </>
-          }
           hrefForPage={hrefForPage}
           changePage={changePage}
           handlePageClick={handlePageClick}
-        />
+        >
+          Next
+          <MoveRight size="14" />
+        </Control>
       </div>
       <ol className={styles.pages}>
         {items.map((item, index) =>
@@ -100,11 +94,12 @@ export function Pagination({
                 ariaLabel={`Page ${item}`}
                 ariaCurrent={item === safeCurrentPage ? "page" : undefined}
                 className={styles.pageButton}
-                children={item}
                 hrefForPage={hrefForPage}
                 changePage={changePage}
                 handlePageClick={handlePageClick}
-              />
+              >
+                {item}
+              </Control>
             </li>
           ),
         )}

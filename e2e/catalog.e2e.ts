@@ -75,7 +75,6 @@ test("Catalog lists Quizzes, filters by Tags, syncs deep links, and opens a Quiz
   page,
 }) => {
   await page.goto("/quizzes/");
-  await page.waitForLoadState("networkidle");
 
   await expect(page.getByRole("heading", { name: "Quizzes" })).toBeVisible();
   await expect(quizCards(page)).toHaveCount(QUIZZES_PER_PAGE);

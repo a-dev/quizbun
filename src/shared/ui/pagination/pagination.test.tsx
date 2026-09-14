@@ -35,7 +35,7 @@ describe("Pagination", () => {
   });
 
   it("emits page changes from digits and word controls", async () => {
-    const onPageChange = vi.fn();
+    const onPageChange = vi.fn<() => void>();
     const scrollTo = vi.spyOn(window, "scrollTo").mockImplementation(() => undefined);
     const screen = await page.render(
       <Pagination aria-label="Pages" currentPage={6} pageCount={55} onPageChange={onPageChange} />,
@@ -59,7 +59,7 @@ describe("Pagination", () => {
   });
 
   it("renders page links when hrefs are provided", async () => {
-    const onPageChange = vi.fn();
+    const onPageChange = vi.fn<() => void>();
     const scrollTo = vi.spyOn(window, "scrollTo").mockImplementation(() => undefined);
     const screen = await page.render(
       <Pagination
