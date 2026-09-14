@@ -1,0 +1,39 @@
+@layer utils {
+  /*
+   * The shell shared by text-entry controls: border, surface, and the focus,
+   * disabled and invalid states. Composed by `input` and `textarea`, which own
+   * their own box metrics and typography.
+   */
+  .field {
+    border: 1px solid var(--color-border-subtle);
+    color: var(--color-text-primary);
+    background-color: var(--color-panel-bg);
+    transition:
+      border-color 0.2s,
+      box-shadow 0.2s,
+      background-color 0.2s;
+
+    &::placeholder {
+      color: var(--color-text-secondary);
+    }
+
+    &:focus-visible {
+      border-color: var(--color-focus-ring);
+      outline: 0;
+    }
+
+    &:disabled {
+      cursor: not-allowed;
+      color: var(--color-text-secondary);
+      background-color: var(--color-panel-disabled-bg);
+    }
+
+    &[aria-invalid="true"] {
+      border-color: var(--color-primary-orange);
+    }
+
+    &[aria-invalid="true"]:focus-visible {
+      outline: 1px solid var(--color-primary-orange-accent);
+    }
+  }
+}

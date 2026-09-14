@@ -55,7 +55,6 @@ test("Library opens, exports, resets progress, deletes, and re-imports a Quiz", 
   await expect(page.getByRole("region", { name: "Your quizzes" })).toBeVisible();
 
   await page.getByRole("link", { name: "Add new quiz" }).click();
-  await page.waitForLoadState("networkidle");
   await page.getByLabel("Paste quiz JSON").fill(exportedJson);
   await page.getByRole("button", { name: "Validate" }).click();
   await page.getByRole("button", { name: "Save to Library" }).click();

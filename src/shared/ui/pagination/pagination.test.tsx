@@ -35,7 +35,7 @@ describe("Pagination", () => {
   });
 
   it("emits page changes from digits and word controls", async () => {
-    const onPageChange = vi.fn();
+    const onPageChange = vi.fn<() => void>();
     const scrollTo = vi.spyOn(window, "scrollTo").mockImplementation(() => undefined);
     const screen = await page.render(
       <Pagination aria-label="Pages" currentPage={6} pageCount={55} onPageChange={onPageChange} />,
@@ -49,17 +49,17 @@ describe("Pagination", () => {
     await expect(onPageChange).toHaveBeenLastCalledWith(7);
     expect(scrollTo).toHaveBeenLastCalledWith(0, 0);
 
-    await userEvent.click(screen.getByRole("button", { name: "Previous" }));
+    await userEvent.click(screen.getByRole("button", { name: "Previous page" }));
     await expect(onPageChange).toHaveBeenLastCalledWith(5);
     expect(scrollTo).toHaveBeenLastCalledWith(0, 0);
 
-    await userEvent.click(screen.getByRole("button", { name: "Next" }));
+    await userEvent.click(screen.getByRole("button", { name: "Next page" }));
     await expect(onPageChange).toHaveBeenLastCalledWith(7);
     expect(scrollTo).toHaveBeenLastCalledWith(0, 0);
   });
 
   it("renders page links when hrefs are provided", async () => {
-    const onPageChange = vi.fn();
+    const onPageChange = vi.fn<() => void>();
     const scrollTo = vi.spyOn(window, "scrollTo").mockImplementation(() => undefined);
     const screen = await page.render(
       <Pagination

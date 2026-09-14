@@ -28,7 +28,7 @@ describe("Toggle", () => {
   });
 
   it("toggles pressed on click", async () => {
-    const onPressedChange = vi.fn();
+    const onPressedChange = vi.fn<() => void>();
     const screen = await page.render(
       <Toggle aria-label="Bold" onPressedChange={onPressedChange}>
         B

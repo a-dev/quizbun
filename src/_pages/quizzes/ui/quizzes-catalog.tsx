@@ -1,6 +1,7 @@
 import { useDeferredValue, useEffect, useMemo, useState } from "react";
 
 import type { PublicQuizSummary, TagCount } from "@/shared/lib/content";
+import { useClientValue } from "@/shared/lib/hydration";
 import {
   clampPage,
   hasActiveListFilters,
@@ -10,13 +11,16 @@ import {
   withBase,
 } from "@/shared/lib/routing";
 import type { ListUrlState } from "@/shared/lib/routing";
-import { Button } from "@/shared/ui/button";
-import { Note } from "@/shared/ui/note";
 import { Pagination } from "@/shared/ui/pagination";
 
 import { QuizCard } from "@/entities/quiz";
 
-import { filterQuizItems, prepareFilterItems, TagFilter } from "@/features/filter-by-tags";
+import {
+  filterQuizItems,
+  NoFilterMatches,
+  prepareFilterItems,
+  TagFilter,
+} from "@/features/filter-by-tags";
 
 import { layout } from "#styles";
 
@@ -46,44 +50,45 @@ export function QuizzesCatalog({
     () => Object.fromEntries(tags.map(({ tag, count }) => [tag, count])),
     [tags],
   );
-  const [urlState, setUrlState] = useState<ListUrlState>({
-    selectedTags: [],
-    tagMatchMode: "and",
-    titleQuery: "",
-    page: initialPage,
-  });
+  const [navigatedState, setNavigatedState] = useState<ListUrlState | undefined>(undefined);
+  // The server-rendered HTML can't know the request URL, so the real filter
+  // state comes from the address bar as soon as the client takes over. Derived
+  // during render rather than written from an effect, so the server's empty
+  // filters are never committed to the screen for a frame. `syncsUrl` also
+  // gates the history writes below: before hydration there is nothing to sync.
+  const syncsUrl = useClientValue(() => true, false) && syncTagsToUrl;
+  const readUrlState = useMemo<ListUrlState>(
+    () =>
+      syncsUrl
+        ? parseListUrlState(window.location.search, availableTags, readCatalogPathPage())
+        : { selectedTags: [], tagMatchMode: "and", titleQuery: "", page: initialPage },
+    [availableTags, initialPage, syncsUrl],
+  );
+  // Every later change — a filter edit, a page click, Back/Forward — writes the
+  // URL and this state together, so the address bar never has to be re-read.
+  const urlState = navigatedState ?? readUrlState;
   // Typing in the search box updates `titleQuery` synchronously (so the input
   // stays responsive) but defers the expensive re-filter to a low-priority
   // render, keeping keystrokes smooth on large catalogs.
   const deferredTitleQuery = useDeferredValue(urlState.titleQuery);
-  const [hasReadUrl, setHasReadUrl] = useState(false);
   // Precompute normalised search fields once per catalog, not once per keystroke.
   const preparedSummaries = useMemo(() => prepareFilterItems(summaries), [summaries]);
-
-  // The server-rendered HTML can't know the request URL, so the real filter
-  // state is read from the address bar after hydration. `hasReadUrl` gates the
-  // history writes below until this initial read has happened.
-  useEffect(() => {
-    if (!syncTagsToUrl) return;
-
-    setUrlState(parseListUrlState(window.location.search, availableTags, readCatalogPathPage()));
-    setHasReadUrl(true);
-  }, [availableTags, syncTagsToUrl]);
 
   // Keep state in sync with browser Back/Forward, which change the URL without a
   // React update of their own.
   useEffect(() => {
-    if (!syncTagsToUrl) return;
-    if (!hasReadUrl) return;
+    if (!syncsUrl) return;
 
     const onPopState = () => {
-      setUrlState(parseListUrlState(window.location.search, availableTags, readCatalogPathPage()));
+      setNavigatedState(
+        parseListUrlState(window.location.search, availableTags, readCatalogPathPage()),
+      );
     };
 
     window.addEventListener("popstate", onPopState);
 
     return () => window.removeEventListener("popstate", onPopState);
-  }, [availableTags, hasReadUrl, syncTagsToUrl]);
+  }, [availableTags, syncsUrl]);
 
   const visibleQuizzes = useMemo(
     () =>
@@ -95,38 +100,32 @@ export function QuizzesCatalog({
     [deferredTitleQuery, preparedSummaries, urlState.selectedTags, urlState.tagMatchMode],
   );
   const pageCount = Math.ceil(visibleQuizzes.length / QUIZZES_PER_PAGE);
+  // A page number can arrive out of range (a deep link to `/quizzes/page/9/`
+  // carrying filters that match one page), so the view always clamps. The URL
+  // catches up on the next navigation, which writes the clamped state.
   const currentPage = clampPage(urlState.page, Math.max(pageCount, 1));
   const pagedQuizzes = visibleQuizzes.slice(
     (currentPage - 1) * QUIZZES_PER_PAGE,
     currentPage * QUIZZES_PER_PAGE,
   );
 
-  // If filtering shrinks the result set below the active page, snap back into
-  // range and rewrite (not push) the URL so Back doesn't return to an empty page.
-  useEffect(() => {
-    if (urlState.page === currentPage) return;
+  /**
+   * State and address bar move together. Filter changes `replaceState` (they
+   * refine the current view and shouldn't stack Back entries); explicit page
+   * navigation `pushState`, so Back returns to the previous page.
+   */
+  function applyState(nextState: ListUrlState, history: "push" | "replace") {
+    setNavigatedState(nextState);
 
-    setUrlState((state) => {
-      const nextState = { ...state, page: currentPage };
-      replaceUrl(nextState);
+    if (!syncsUrl) return;
 
-      return nextState;
-    });
-  }, [currentPage, urlState.page]);
+    const url = catalogUrlForState(nextState);
 
-  // History strategy: filter and clamp changes `replaceState` (they refine the
-  // current view and shouldn't stack Back entries); explicit page navigation
-  // `pushState` (so Back returns to the previous page).
-  function replaceUrl(nextState: ListUrlState) {
-    if (!syncTagsToUrl || !hasReadUrl) return;
-
-    window.history.replaceState(window.history.state, "", catalogUrlForState(nextState));
-  }
-
-  function pushUrl(nextState: ListUrlState) {
-    if (!syncTagsToUrl || !hasReadUrl) return;
-
-    window.history.pushState(window.history.state, "", catalogUrlForState(nextState));
+    if (history === "push") {
+      window.history.pushState(window.history.state, "", url);
+    } else {
+      window.history.replaceState(window.history.state, "", url);
+    }
   }
 
   // Two URL shapes: a filtered view is a query string on `/quizzes/`, while an
@@ -143,21 +142,11 @@ export function QuizzesCatalog({
   // Any filter edit resets to page 1: the old page number rarely makes sense
   // against a freshly filtered, shorter result set.
   function updateFilters(nextFilters: Partial<Omit<ListUrlState, "page">>) {
-    setUrlState((state) => {
-      const nextState = { ...state, ...nextFilters, page: 1 };
-      replaceUrl(nextState);
-
-      return nextState;
-    });
+    applyState({ ...urlState, ...nextFilters, page: 1 }, "replace");
   }
 
   function changePage(nextPage: number) {
-    setUrlState((state) => {
-      const nextState = { ...state, page: nextPage };
-      pushUrl(nextState);
-
-      return nextState;
-    });
+    applyState({ ...urlState, page: nextPage }, "push");
   }
 
   function catalogPageHref(page: number): string {
@@ -190,15 +179,7 @@ export function QuizzesCatalog({
       />
 
       {visibleQuizzes.length === 0 ? (
-        <Note type="warning">
-          <p>
-            No quizzes match the selected filters.{" "}
-            <Button variant="destructive" size="s" onClick={clearFilters}>
-              Clear filters
-            </Button>{" "}
-            to see all quizzes.
-          </p>
-        </Note>
+        <NoFilterMatches onClearFilters={clearFilters} />
       ) : (
         <>
           <div className={layout.quizCardGrid}>

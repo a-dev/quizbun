@@ -79,42 +79,25 @@ export async function validateStandardInput(
   };
 }
 
+/** The flag part of `CliOptions`, filled in one argument at a time. */
+type CliFlags = Pick<CliOptions, "checkMedia" | "profile" | "stdin">;
+
 export function parseCliArguments(args: string[]): CliOptions {
-  let checkMedia = false;
-  let profile: ValidationProfile = "standard";
-  let stdin = false;
+  const flags: CliFlags = { checkMedia: false, profile: "standard", stdin: false };
   let target: string | undefined;
 
   for (let index = 0; index < args.length; index += 1) {
     const argument = args[index];
 
+    if (argument === undefined) continue;
+
     if (argument === "-h" || argument === "--help") {
-      return { checkMedia, help: true, profile, stdin };
+      return { ...flags, help: true };
     }
 
-    if (argument === "--check-media") {
-      checkMedia = true;
+    if (argument.startsWith("-")) {
+      index += applyOption(flags, argument, args[index + 1]);
       continue;
-    }
-
-    if (argument === "--stdin" || argument === "-") {
-      stdin = true;
-      continue;
-    }
-
-    if (argument === "--profile") {
-      profile = toProfile(args[index + 1]);
-      index += 1;
-      continue;
-    }
-
-    if (argument?.startsWith("--profile=")) {
-      profile = toProfile(argument.slice("--profile=".length));
-      continue;
-    }
-
-    if (argument?.startsWith("-")) {
-      throw new Error(`Unknown option: ${argument}\n\n${USAGE}`);
     }
 
     if (target !== undefined) {
@@ -126,21 +109,55 @@ export function parseCliArguments(args: string[]): CliOptions {
     target = argument;
   }
 
-  if (stdin && target !== undefined) {
+  assertTargetIsCoherent(flags, target);
+
+  return { ...flags, help: false, ...(target !== undefined && { target }) };
+}
+
+/** Applies one `-`-prefixed option, returning how many extra arguments it consumed. */
+function applyOption(flags: CliFlags, argument: string, next: string | undefined): number {
+  if (argument === "--check-media") {
+    flags.checkMedia = true;
+
+    return 0;
+  }
+
+  if (argument === "--stdin" || argument === "-") {
+    flags.stdin = true;
+
+    return 0;
+  }
+
+  if (argument === "--profile") {
+    flags.profile = toProfile(next);
+
+    return 1;
+  }
+
+  if (argument.startsWith("--profile=")) {
+    flags.profile = toProfile(argument.slice("--profile=".length));
+
+    return 0;
+  }
+
+  throw new Error(`Unknown option: ${argument}\n\n${USAGE}`);
+}
+
+/** Exactly one source of Quiz JSON, and one the chosen profile can actually read. */
+function assertTargetIsCoherent(flags: CliFlags, target: string | undefined) {
+  if (flags.stdin && target !== undefined) {
     throw new Error("Use either `--stdin` or a file/directory target, not both.\n\n" + USAGE);
   }
 
-  if (!stdin && target === undefined) {
+  if (!flags.stdin && target === undefined) {
     throw new Error(`Provide a Quiz JSON file, directory, or \`--stdin\`.\n\n${USAGE}`);
   }
 
-  if (stdin && profile === "catalog") {
+  if (flags.stdin && flags.profile === "catalog") {
     throw new Error(
       "Catalog validation requires a directory so filenames and Assets can be checked.",
     );
   }
-
-  return { checkMedia, help: false, profile, stdin, ...(target !== undefined && { target }) };
 }
 
 function toProfile(value: string | undefined): ValidationProfile {

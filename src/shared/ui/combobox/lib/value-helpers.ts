@@ -57,5 +57,7 @@ export function toRootValue<T extends ComboboxOptionValue>(
 export function fromRootValue<T extends ComboboxOptionValue>(
   value: ComboboxOption<T>[] | ComboboxOption<T> | null | undefined,
 ): ComboboxValue<T> {
-  return Array.isArray(value) ? value : value ? [value] : undefined;
+  if (Array.isArray(value)) return value;
+
+  return value ? [value] : undefined;
 }

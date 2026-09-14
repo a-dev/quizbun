@@ -20,7 +20,7 @@ describe("ToggleGroup", () => {
   });
 
   it("single-select: pressing one unpresses the other", async () => {
-    const onChange = vi.fn();
+    const onChange = vi.fn<() => void>();
     const screen = await page.render(
       <ToggleGroup defaultValue={["left"]} onValueChange={onChange} aria-label="Text align">
         <Toggle value="left" aria-label="Left">
@@ -36,7 +36,7 @@ describe("ToggleGroup", () => {
   });
 
   it("multi-select: multiple items can be pressed", async () => {
-    const onChange = vi.fn();
+    const onChange = vi.fn<() => void>();
     const screen = await page.render(
       <ToggleGroup multiple defaultValue={["bold"]} onValueChange={onChange} aria-label="Format">
         <Toggle value="bold" aria-label="Bold">

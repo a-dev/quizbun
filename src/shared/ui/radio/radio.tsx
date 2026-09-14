@@ -2,34 +2,29 @@ import { type ReactNode } from "react";
 
 import { Radio as RadioPrimitive, type RadioRootProps } from "@base-ui/react/radio";
 
-import { cx, utils } from "#styles";
+import { AnswerFeedbackDescription, type AnswerFeedback } from "@/shared/ui/answer-feedback";
+
+import { cx } from "#styles";
 import styles from "./radio.module.css";
 
 const { Root, Indicator } = RadioPrimitive;
-
-type Feedback = "correct" | "incorrect";
 
 type Props = RadioRootProps & {
   className?: string;
   children?: ReactNode;
   /** Post-submission answer state, rendered independently of checked state. */
-  feedback?: Feedback;
+  feedback?: AnswerFeedback;
 };
 
 const LABEL_FEEDBACK_CLASS = {
   correct: styles.feedbackCorrect,
   incorrect: styles.feedbackIncorrect,
-} satisfies Record<Feedback, string>;
+} satisfies Record<AnswerFeedback, string>;
 
 const CONTROL_FEEDBACK_CLASS = {
   correct: styles.controlFeedbackCorrect,
   incorrect: styles.controlFeedbackIncorrect,
-} satisfies Record<Feedback, string>;
-
-const FEEDBACK_DESCRIPTION = {
-  correct: "Correct Option",
-  incorrect: "Your selection is incorrect",
-} satisfies Record<Feedback, string>;
+} satisfies Record<AnswerFeedback, string>;
 
 export function Radio({ className, children, feedback, ...props }: Props) {
   return (
@@ -50,9 +45,7 @@ export function Radio({ className, children, feedback, ...props }: Props) {
         <Indicator className={styles.indicator} />
       </Root>
       {children != null && <span className={styles.text}>{children}</span>}
-      {feedback !== undefined && (
-        <span className={utils.visuallyHidden}>. {FEEDBACK_DESCRIPTION[feedback]}</span>
-      )}
+      {feedback !== undefined && <AnswerFeedbackDescription feedback={feedback} />}
     </label>
   );
 }

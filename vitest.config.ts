@@ -6,7 +6,7 @@ import { sharedViteConfig } from "./vite.shared.ts";
 // Unit lane — `.spec.ts`, pure logic, Node environment. Co-located in `src/`
 // (and `.storybook/`). Resolves through the same Vite aliases as the app so
 // `@`/`#styles` imports behave identically in tests and production.
-const unitProject = defineProject({
+export const unitProject = defineProject({
   resolve: sharedViteConfig.resolve,
   test: {
     name: "unit",

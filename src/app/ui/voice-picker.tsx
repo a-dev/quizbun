@@ -43,7 +43,7 @@ export function VoicePicker() {
   ];
 
   return (
-    <div className={styles.root} role="group" aria-labelledby={labelId}>
+    <fieldset className={styles.root} aria-labelledby={labelId}>
       <span id={labelId} className={styles.label}>
         Read aloud
       </span>
@@ -61,6 +61,6 @@ export function VoicePicker() {
           </Select.Item>
         ))}
       </Select>
-    </div>
+    </fieldset>
   );
 }

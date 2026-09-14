@@ -6,7 +6,6 @@ import { seedQuiz } from "./fixtures/seed";
 
 async function importQuiz(page: Page, quiz = singleChoiceQuiz) {
   await page.goto("/import/");
-  await page.waitForLoadState("networkidle");
   await page.getByLabel("Paste quiz JSON").fill(JSON.stringify(quiz, null, 2));
   await page.getByRole("button", { name: "Validate" }).click();
 }
@@ -31,7 +30,6 @@ test("Import reports path-precise Standard errors", async ({ page }) => {
   const invalidQuiz = JSON.stringify({ ...singleChoiceQuiz, schemaVersion: "1.0" }, null, 2);
 
   await page.goto("/import/");
-  await page.waitForLoadState("networkidle");
   await page.getByLabel("Paste quiz JSON").fill(invalidQuiz);
   await page.getByRole("button", { name: "Validate" }).click();
 

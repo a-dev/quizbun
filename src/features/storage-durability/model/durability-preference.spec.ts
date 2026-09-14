@@ -1,25 +1,12 @@
 import { beforeEach, describe, expect, test } from "vitest";
 
+import { fakeLocalStorage } from "@/shared/lib/storage/fake-local-storage";
+
 import {
   getDurabilityDismissal,
   isDurabilityNoticeDismissed,
   setDurabilityDismissal,
 } from "./durability-preference";
-
-function fakeLocalStorage(): Storage {
-  const entries = new Map<string, string>();
-
-  return {
-    getItem: (key) => entries.get(key) ?? null,
-    setItem: (key, value) => void entries.set(key, value),
-    removeItem: (key) => void entries.delete(key),
-    clear: () => entries.clear(),
-    key: (index) => [...entries.keys()][index] ?? null,
-    get length() {
-      return entries.size;
-    },
-  };
-}
 
 beforeEach(() => {
   globalThis.localStorage = fakeLocalStorage();

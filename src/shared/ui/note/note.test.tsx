@@ -26,7 +26,7 @@ describe("Note", () => {
       </Note>,
     );
     await expect.element(screen.getByTestId("note")).toHaveAttribute("role", "alert");
-    await expect.element(screen.getByRole("alert")).toHaveTextContent("Import failed.");
+    await expect.element(screen.getByRole("alert")).toMatchTextContent("Import failed.");
   });
 
   it("merges a custom className with its own classes", async () => {

@@ -82,7 +82,7 @@ describe("QuestionPreviewList", () => {
   });
 
   it("intercepts only unmodified left clicks", async () => {
-    const onQuestionSelect = vi.fn();
+    const onQuestionSelect = vi.fn<() => void>();
     const screen = await page.render(
       <QuestionPreviewList
         quiz={quiz}
@@ -134,7 +134,7 @@ describe("QuestionPreviewList", () => {
         quiz={longQuiz}
         answers={undefined}
         questionHref={(questionId) => `/quizzes/preview-list/?question=${questionId}`}
-        onQuestionSelect={vi.fn()}
+        onQuestionSelect={vi.fn<() => void>()}
       />,
     );
 

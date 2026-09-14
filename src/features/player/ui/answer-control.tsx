@@ -3,6 +3,7 @@ import { useMemo } from "react";
 import type { Question } from "@/shared/lib/quiz";
 import { renderMarkdownField } from "@/shared/lib/render";
 import type { SubmittedAnswer } from "@/shared/lib/storage";
+import type { AnswerFeedback } from "@/shared/ui/answer-feedback";
 import { Checkbox, CheckboxGroup } from "@/shared/ui/checkbox";
 import { InputField } from "@/shared/ui/input";
 import { MarkdownRender } from "@/shared/ui/markdown";
@@ -28,6 +29,21 @@ interface AnswerControlProps {
 }
 
 /**
+ * Post-submit marking for one Option. Every correct Option is marked correct;
+ * a wrong one is marked only when the Learner actually picked it.
+ */
+function optionFeedback(
+  show: boolean,
+  isCorrect: boolean,
+  isSelected: boolean,
+): AnswerFeedback | undefined {
+  if (!show) return undefined;
+  if (isCorrect) return "correct";
+
+  return isSelected ? "incorrect" : undefined;
+}
+
+/**
  * Renders the answer widget for a Question's `type`. Option identity is the
  * original JSON order (the Standard carries no option ids). `optionOrder`
  * changes only visual order; each control still submits its original index.
@@ -49,7 +65,7 @@ export function AnswerControl({
   optionOrder,
   onDraftChange,
   onSubmit,
-}: AnswerControlProps) {
+}: Readonly<AnswerControlProps>) {
   // Markdown rendering (marked + sanitize-html) is comparatively costly; the
   // option text never changes for a given Question, so render it once.
   const optionsHtml = useMemo(
@@ -77,15 +93,11 @@ export function AnswerControl({
             <Radio
               key={optionIndex}
               value={optionIndex}
-              feedback={
-                showAnswerFeedback
-                  ? question.options[optionIndex]!.isCorrect
-                    ? "correct"
-                    : answer === optionIndex
-                      ? "incorrect"
-                      : undefined
-                  : undefined
-              }
+              feedback={optionFeedback(
+                showAnswerFeedback,
+                question.options[optionIndex]!.isCorrect,
+                answer === optionIndex,
+              )}
             >
               <MarkdownRender as="span" content={optionsHtml[optionIndex]!} size="m" />
             </Radio>
@@ -105,15 +117,11 @@ export function AnswerControl({
             <Checkbox
               key={optionIndex}
               value={String(optionIndex)}
-              feedback={
-                showAnswerFeedback
-                  ? question.options[optionIndex]!.isCorrect
-                    ? "correct"
-                    : Array.isArray(answer) && answer.includes(optionIndex)
-                      ? "incorrect"
-                      : undefined
-                  : undefined
-              }
+              feedback={optionFeedback(
+                showAnswerFeedback,
+                question.options[optionIndex]!.isCorrect,
+                Array.isArray(answer) && answer.includes(optionIndex),
+              )}
             >
               <MarkdownRender as="span" content={optionsHtml[optionIndex]!} size="m" />
             </Checkbox>

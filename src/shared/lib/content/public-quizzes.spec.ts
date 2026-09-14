@@ -1,7 +1,7 @@
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterEach, describe, expect, test } from "vitest";
+import { afterEach, describe, expect, test, vi } from "vitest";
 
 import {
   loadFeaturedQuizIds,
@@ -18,6 +18,8 @@ const fixedNow = new Date("2026-06-12T12:00:00.000Z");
 const temporaryDirectories: string[] = [];
 
 afterEach(() => {
+  vi.restoreAllMocks();
+
   for (const directory of temporaryDirectories.splice(0)) {
     rmSync(directory, { force: true, recursive: true });
   }
@@ -90,13 +92,52 @@ describe("loadPublicQuizzes", () => {
   test("fails on a duplicate quiz id across files", () => {
     expect(() =>
       loadPublicQuizzes(fixtureDir("duplicate-id"), { warnOnDateFallback: false }),
-    ).toThrow(/quiz-b\.json[\s\S]*"quiz-a" is already used by quiz-a\.json/);
+    ).toThrow(
+      [
+        "Duplicate quiz id in src/shared/lib/content/fixtures/duplicate-id/quiz-b.json:",
+        "Path: `id`",
+        'Problem: The id "quiz-a" is already used by quiz-a.json.',
+        "Fix: Give each public quiz a repo-wide unique `id`.",
+      ].join("\n"),
+    );
   });
 
   test("fails when the filename does not match the quiz id", () => {
     expect(() =>
       loadPublicQuizzes(fixtureDir("filename-mismatch"), { warnOnDateFallback: false }),
-    ).toThrow(/quiz-c\.json[\s\S]*id is "actual-id"[\s\S]*Rename the file to `actual-id\.json`/);
+    ).toThrow(
+      [
+        "Filename does not match the quiz id in src/shared/lib/content/fixtures/filename-mismatch/quiz-c.json:",
+        "Path: `id`",
+        'Problem: The quiz id is "actual-id" but the file is named "quiz-c.json".',
+        "Fix: Rename the file to `actual-id.json` (or fix the `id`).",
+      ].join("\n"),
+    );
+  });
+
+  test("warns once when most added dates fell back to the build time", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+
+    loadPublicQuizzes(fixtureDir("valid"), { addedAtByFileName: new Map(), now: fixedNow });
+
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn.mock.calls[0]?.[0]).toContain(
+      "2 of 2 public quiz added dates fell back to the current build time",
+    );
+  });
+
+  test("stays quiet when git supplied a date for most quizzes", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+
+    loadPublicQuizzes(fixtureDir("valid"), {
+      addedAtByFileName: new Map([
+        ["css-layout.json", "2026-01-01T00:00:00.000Z"],
+        ["typescript-basics.json", "2026-01-02T00:00:00.000Z"],
+      ]),
+      now: fixedNow,
+    });
+
+    expect(warn).not.toHaveBeenCalled();
   });
 
   test("fails with a clear message when the content directory is missing", () => {
@@ -248,14 +289,52 @@ describe("parsePublicQuizAddedDates", () => {
 
     expect(addedAtByFileName.get("readded.json")).toBe("2026-06-10T20:40:38+04:00");
   });
+
+  test("keeps the earliest add date whichever order git prints them in", () => {
+    const addedAtByFileName = parsePublicQuizAddedDates(
+      [
+        "2026-06-10T20:40:38+04:00",
+        "A\tcontent/quizzes/readded.json",
+        "2026-06-12T20:40:38+04:00",
+        "A\tcontent/quizzes/readded.json",
+      ].join("\n"),
+    );
+
+    expect(addedAtByFileName.get("readded.json")).toBe("2026-06-10T20:40:38+04:00");
+  });
+
+  test("ignores file lines printed before the first date", () => {
+    const addedAtByFileName = parsePublicQuizAddedDates(
+      [
+        "A\tcontent/quizzes/orphan.json",
+        "2026-06-12T20:40:38+04:00",
+        "A\tcontent/quizzes/dated.json",
+      ].join("\n"),
+    );
+
+    expect([...addedAtByFileName.keys()]).toEqual(["dated.json"]);
+  });
+
+  test("accepts a content directory written with or without a trailing slash", () => {
+    const gitLog = ["2026-06-12T20:40:38+04:00", "A\tcontent/quizzes/css-box-model.json"].join(
+      "\n",
+    );
+
+    expect(parsePublicQuizAddedDates(gitLog, "content/quizzes/").size).toBe(1);
+    expect(parsePublicQuizAddedDates(gitLog, "content/quizzes///").size).toBe(1);
+    expect(parsePublicQuizAddedDates(gitLog, "content/quizzes").size).toBe(1);
+    // A sibling directory must not match on a shared prefix.
+    expect(parsePublicQuizAddedDates(gitLog, "content/quiz").size).toBe(0);
+  });
 });
 
 describe("selectRecentQuizzes", () => {
   test("selects newest summaries with filename-stable tie breaking", () => {
     const summaries = [
       makeSummary("beta", "2026-06-11T00:00:00.000Z"),
-      makeSummary("alpha", "2026-06-12T00:00:00.000Z"),
+      // Listed newest-tie-last-first, so only the id comparison can order these.
       makeSummary("gamma", "2026-06-12T00:00:00.000Z"),
+      makeSummary("alpha", "2026-06-12T00:00:00.000Z"),
     ];
 
     expect(selectRecentQuizzes(summaries, 2).map((summary) => summary.id)).toEqual([
@@ -286,7 +365,12 @@ describe("parseFeaturedQuizIds", () => {
 
   test("fails when a featured Quiz id is not kebab-case", () => {
     expect(() => parseFeaturedQuizIds("TypeScript Basics", "fixture")).toThrow(
-      /line 1[\s\S]*not a valid Quiz id/,
+      [
+        "Invalid featured Quiz id in fixture:",
+        "Path: line 1",
+        'Problem: "TypeScript Basics" is not a valid Quiz id.',
+        "Fix: Use one public Quiz id per line, in kebab-case with lowercase latin letters, digits, and single hyphens.",
+      ].join("\n"),
     );
   });
 
@@ -296,7 +380,14 @@ describe("parseFeaturedQuizIds", () => {
         ["typescript-basics", "css-layout", "typescript-basics"].join("\n"),
         "fixture",
       ),
-    ).toThrow(/line 3[\s\S]*already listed on line 1/);
+    ).toThrow(
+      [
+        "Duplicate featured Quiz id in fixture:",
+        "Path: line 3",
+        'Problem: "typescript-basics" is already listed on line 1.',
+        "Fix: Keep each featured Quiz id only once.",
+      ].join("\n"),
+    );
   });
 });
 
@@ -316,7 +407,12 @@ describe("selectFeaturedQuizzes", () => {
 
   test("fails when a featured Quiz id is not in the public Catalog", () => {
     expect(() => selectFeaturedQuizzes([], ["missing-quiz"], "fixture")).toThrow(
-      /missing-quiz[\s\S]*does not match any public Quiz id/,
+      [
+        "Featured Quiz id not found in fixture:",
+        "Path: `missing-quiz`",
+        'Problem: "missing-quiz" does not match any public Quiz id in content/quizzes.',
+        "Fix: Add the public Quiz JSON file, or remove/fix the id in the featured list.",
+      ].join("\n"),
     );
   });
 });

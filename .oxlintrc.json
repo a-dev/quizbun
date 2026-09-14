@@ -1,15 +1,275 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "ignorePatterns": ["**/create-quiz/scripts/validate-quiz.mjs"],
-  "plugins": ["typescript", "unicorn", "oxc", "import"],
+  "ignorePatterns": [
+    "**/create-quiz/scripts/validate-quiz.mjs",
+    "**/*.d.ts",
+    ".claude/**",
+    ".agents/**"
+  ],
+  "plugins": [
+    "typescript",
+    "unicorn",
+    "oxc",
+    "import",
+    "jsx-a11y",
+    "vitest",
+    "react",
+    "react-perf"
+  ],
+  "jsPlugins": [
+    "eslint-plugin-react-you-might-not-need-an-effect",
+    {
+      "name": "sonarjs",
+      "specifier": "./tools/sonarjs/node_modules/eslint-plugin-sonarjs"
+    }
+  ],
   "categories": {
     "correctness": "error"
   },
   "rules": {
     "no-restricted-imports": "off",
-    "import/first": "error"
+    "import/first": "error",
+    // These rules are useful only where a component's consumers might be
+    // memoized. Tests intentionally create fresh callbacks and fixtures.
+    "react-perf/jsx-no-new-object-as-prop": "warn",
+    "react-perf/jsx-no-new-array-as-prop": "warn",
+    "react-perf/jsx-no-new-function-as-prop": "warn",
+    "react-perf/jsx-no-jsx-as-prop": "warn",
+    // Vitest rules. These carry, for src/**/*.{test.tsx,spec.ts}, the test
+    // hygiene that eslint-plugin-playwright carries for e2e/** — so the
+    // equivalent sonarjs rules could be dropped without losing coverage.
+    "vitest/no-focused-tests": "error",
+    "vitest/no-disabled-tests": "error",
+    "vitest/no-identical-title": "error",
+    "vitest/valid-title": "error",
+    "vitest/valid-describe-callback": "error",
+    "vitest/expect-expect": "error",
+    "vitest/prefer-hooks-on-top": "error",
+    // React You Might Not Need An Effect rules
+    "react-you-might-not-need-an-effect/no-derived-state": "error",
+    "react-you-might-not-need-an-effect/no-chain-state-updates": "error",
+    "react-you-might-not-need-an-effect/no-event-handler": "error",
+    "react-you-might-not-need-an-effect/no-adjust-state-on-prop-change": "error",
+    "react-you-might-not-need-an-effect/no-reset-all-state-on-prop-change": "error",
+    "react-you-might-not-need-an-effect/no-pass-live-state-to-parent": "error",
+    "react-you-might-not-need-an-effect/no-pass-data-to-parent": "error",
+    "react-you-might-not-need-an-effect/no-external-store-subscription": "error",
+    "react-you-might-not-need-an-effect/no-initialize-state": "error",
+    // SonarJS rules
+    // Pruned to what a static, backend-less site can actually hit. Dropped
+    // wholesale, 48 rules: AWS and cloud infrastructure; HTTP server, headers
+    // and sessions; auth, transport crypto and key material; other frameworks
+    // and XML parsers; Node server runtime; Mocha and Chai idioms. Quizbun has
+    // no server, no session, no auth and no cloud resources, so those could
+    // only ever be dead weight in the report.
+    // Deliberately kept despite the same reasoning: no-hardcoded-secrets and
+    // hardcoded-secret-signatures (a CI token can still land in scripts/ or a
+    // workflow on a public repo), publicly-writable-directories (scripts/ do
+    // build temp dirs, and mkdtempSync under tmpdir() is the pattern it
+    // enforces), and file-permissions (scripts/ write files).
+    "sonarjs/class-name": "error",
+    "sonarjs/no-fallthrough": "error",
+    "sonarjs/no-equals-in-for-termination": "error",
+    "sonarjs/no-extra-arguments": "error",
+    "sonarjs/no-labels": "error",
+    "sonarjs/no-nested-assignment": "error",
+    "sonarjs/no-redundant-boolean": "error",
+    "sonarjs/prefer-single-boolean-return": "error",
+    "sonarjs/fixme-tag": "error",
+    "sonarjs/todo-tag": "error",
+    "sonarjs/no-case-label-in-switch": "error",
+    "sonarjs/no-parameter-reassignment": "error",
+    "sonarjs/no-floating-point-equality": "error",
+    "sonarjs/prefer-while": "error",
+    "sonarjs/label-position": "error",
+    "sonarjs/public-static-readonly": "error",
+    "sonarjs/call-argument-line": "error",
+    "sonarjs/max-switch-cases": "error",
+    "sonarjs/no-unused-vars": "error",
+    "sonarjs/function-inside-loop": "error",
+    "sonarjs/code-eval": "error",
+    "sonarjs/future-reserved-words": "error",
+    "sonarjs/no-primitive-wrappers": "error",
+    "sonarjs/no-identical-expressions": "error",
+    "sonarjs/constructor-for-side-effects": "error",
+    "sonarjs/no-dead-store": "error",
+    "sonarjs/no-identical-conditions": "error",
+    "sonarjs/no-duplicated-branches": "error",
+    "sonarjs/no-inverted-boolean-check": "error",
+    "sonarjs/misplaced-loop-counter": "error",
+    "sonarjs/no-nested-functions": "error",
+    "sonarjs/no-useless-increment": "error",
+    "sonarjs/no-globals-shadowing": "error",
+    "sonarjs/no-empty-test-file": "error",
+    "sonarjs/pseudo-random": "error",
+    "sonarjs/for-loop-increment-sign": "error",
+    "sonarjs/updated-loop-counter": "error",
+    "sonarjs/block-scoped-var": "error",
+    "sonarjs/no-ignored-exceptions": "error",
+    "sonarjs/no-gratuitous-expressions": "error",
+    "sonarjs/file-permissions": "error",
+    "sonarjs/no-unenclosed-multiline-block": "error",
+    "sonarjs/no-implicit-global": "error",
+    "sonarjs/no-useless-catch": "error",
+    "sonarjs/non-existent-operator": "error",
+    "sonarjs/no-fixed-wait-in-tests": "error",
+    "sonarjs/no-incomplete-assertions": "error",
+    "sonarjs/no-global-this": "error",
+    "sonarjs/no-delete-var": "error",
+    "sonarjs/no-nested-conditional": "error",
+    "sonarjs/inverted-assertion-arguments": "error",
+    "sonarjs/updated-const-var": "error",
+    "sonarjs/no-invariant-returns": "error",
+    "sonarjs/generator-without-yield": "error",
+    "sonarjs/comma-or-logical-or-case": "error",
+    "sonarjs/no-redundant-jump": "error",
+    "sonarjs/inconsistent-function-call": "error",
+    "sonarjs/no-use-of-empty-return-value": "error",
+    "sonarjs/cognitive-complexity": "error",
+    "sonarjs/no-all-duplicated-branches": "error",
+    "sonarjs/no-same-line-conditional": "error",
+    "sonarjs/no-unthrown-error": "error",
+    "sonarjs/no-unused-collection": "error",
+    // A Sonar *hotspot* rather than a defect check: it fires on any command
+    // resolved through PATH, and the only thing that silences it is an absolute
+    // interpreter path, which is not portable (/usr/bin vs Homebrew vs CI
+    // images). Every child process here is build or test tooling running git,
+    // node, or bun through execFileSync/spawnSync with a literal argv array and
+    // no shell. Left listed rather than deleted, so re-generating the syntactic
+    // rule set does not quietly switch it back on.
+    "sonarjs/no-os-command-from-path": "off",
+    "sonarjs/no-element-overwrite": "error",
+    "sonarjs/no-identical-functions": "error",
+    "sonarjs/no-empty-collection": "error",
+    "sonarjs/no-redundant-assignments": "error",
+    "sonarjs/prefer-type-guard": "error",
+    "sonarjs/use-type-alias": "error",
+    "sonarjs/production-debug": "error",
+    "sonarjs/prefer-default-last": "error",
+    "sonarjs/no-duplicate-in-composite": "error",
+    "sonarjs/no-nested-template-literals": "error",
+    "sonarjs/prefer-promise-shorthand": "error",
+    "sonarjs/link-with-target-blank": "error",
+    "sonarjs/table-header": "error",
+    "sonarjs/no-table-as-layout": "error",
+    "sonarjs/table-header-reference": "error",
+    "sonarjs/object-alt-content": "error",
+    "sonarjs/publicly-writable-directories": "error",
+    "sonarjs/no-same-argument-assert": "error",
+    "sonarjs/prefer-specific-assertions": "error",
+    "sonarjs/no-trivial-assertions": "error",
+    "sonarjs/test-check-exception": "error",
+    "sonarjs/stable-tests": "error",
+    "sonarjs/parameterized-tests": "error",
+    "sonarjs/stateful-regex": "error",
+    "sonarjs/no-hardcoded-secrets": "error",
+    "sonarjs/hardcoded-secret-signatures": "error",
+    "sonarjs/no-hook-setter-in-body": "error",
+    "sonarjs/no-useless-react-setstate": "error",
+    "sonarjs/no-uniq-key": "error",
+    "sonarjs/redundant-type-aliases": "error",
+    "sonarjs/no-internal-api-use": "error",
+    "sonarjs/no-literal-call": "error",
+    "sonarjs/dynamically-constructed-templates": "error",
+    "sonarjs/async-test-assertions": "error",
+    "sonarjs/no-forced-browser-interaction": "error",
+    "sonarjs/super-linear-regex": "error",
+    "sonarjs/prefer-native-lodash-alternative": "error",
+    "sonarjs/no-default-utility-imports": "error",
+    "sonarjs/memoize-cache-key": "error",
+    "sonarjs/no-debug-commands-in-ui-tests": "error",
+    "sonarjs/no-interpolation-in-inline-snapshots": "error",
+    "sonarjs/explicit-test-skip": "error"
   },
   "overrides": [
+    {
+      // eslint-plugin-playwright is scoped here rather than globally: its rules
+      // have no file filtering of their own, so at top level they also judge
+      // src/**/*.test.tsx, where Vitest browser mode uses the same matcher
+      // names with different await semantics.
+      "files": ["e2e/**"],
+      "jsPlugins": [
+        {
+          "name": "playwright",
+          "specifier": "eslint-plugin-playwright"
+        }
+      ],
+      "rules": {
+        // The plugin's recommended set, promoted to error to match this file.
+        "playwright/consistent-spacing-between-blocks": "error",
+        "playwright/expect-expect": "error",
+        "playwright/max-nested-describe": "error",
+        "playwright/missing-playwright-await": "error",
+        "playwright/no-conditional-expect": "error",
+        "playwright/no-conditional-in-test": "error",
+        "playwright/no-duplicate-hooks": "error",
+        "playwright/no-duplicate-slow": "error",
+        "playwright/no-element-handle": "error",
+        "playwright/no-eval": "error",
+        "playwright/no-focused-test": "error",
+        "playwright/no-force-option": "error",
+        "playwright/no-identical-title": "error",
+        "playwright/no-nested-step": "error",
+        "playwright/no-networkidle": "error",
+        "playwright/no-page-pause": "error",
+        "playwright/no-skipped-test": "error",
+        "playwright/no-standalone-expect": "error",
+        "playwright/no-unnecessary-assertions": "error",
+        "playwright/no-unsafe-references": "error",
+        "playwright/no-unused-locators": "error",
+        "playwright/no-useless-await": "error",
+        "playwright/no-useless-not": "error",
+        "playwright/no-wait-for-navigation": "error",
+        "playwright/no-wait-for-selector": "error",
+        "playwright/no-wait-for-timeout": "error",
+        "playwright/prefer-hooks-in-order": "error",
+        "playwright/prefer-hooks-on-top": "error",
+        "playwright/prefer-locator": "error",
+        "playwright/prefer-to-have-count": "error",
+        "playwright/prefer-to-have-length": "error",
+        "playwright/prefer-web-first-assertions": "error",
+        "playwright/valid-describe-callback": "error",
+        "playwright/valid-expect": "error",
+        "playwright/valid-expect-in-promise": "error",
+        "playwright/valid-test-tags": "error",
+        "playwright/valid-title": "error",
+        // Beyond recommended: defect and locator-stability rules, all verified
+        // clean against the current suite.
+        "playwright/no-action-timeout": "error",
+        "playwright/no-commented-out-tests": "error",
+        "playwright/no-export": "error",
+        "playwright/no-magic-timeouts": "error",
+        "playwright/no-slowed-test": "error",
+        "playwright/no-test-return-statement": "error",
+        "playwright/prefer-comparison-matcher": "error",
+        "playwright/prefer-equality-matcher": "error",
+        "playwright/prefer-native-locators": "error",
+        "playwright/prefer-to-be": "error",
+        "playwright/prefer-to-contain": "error",
+        "playwright/require-annotation-reason": "error",
+        "playwright/require-to-throw-message": "error"
+      }
+    },
+    {
+      // Test fixtures and Storybook stories deliberately create local callbacks,
+      // arrays, objects, and JSX. React performance diagnostics belong to
+      // shipped UI only.
+      "files": [
+        "**/*.test.ts",
+        "**/*.test.tsx",
+        "**/*.spec.ts",
+        "**/*.spec.tsx",
+        "**/*.e2e.ts",
+        ".storybook/**/*.tsx",
+        "src/**/*.stories.tsx"
+      ],
+      "rules": {
+        "react-perf/jsx-no-new-object-as-prop": "off",
+        "react-perf/jsx-no-new-array-as-prop": "off",
+        "react-perf/jsx-no-new-function-as-prop": "off",
+        "react-perf/jsx-no-jsx-as-prop": "off"
+      }
+    },
     {
       "files": ["src/**"],
       "excludeFiles": ["src/shared/styles/lib/cx.ts"],

@@ -37,6 +37,44 @@ describe("renderDocMarkdown", () => {
     expect(html).toContain('rel="noreferrer"');
   });
 
+  it("leaves internal links without a rel, and marks plain http as external", () => {
+    const context = { base: "/", fileExists: () => true, sourceRepoPath: "docs/standard.md" };
+
+    expect(renderDocMarkdown("[internal](./quiz-generation-page.md)", context)).not.toContain(
+      "rel=",
+    );
+    expect(renderDocMarkdown("[plain](http://example.com/x)", context)).toContain(
+      'rel="noreferrer"',
+    );
+  });
+
+  it("keeps GFM on and soft line breaks off", () => {
+    const context = { base: "/", fileExists: () => true, sourceRepoPath: "docs/standard.md" };
+
+    expect(renderDocMarkdown("| a | b |\n| --- | --- |\n| 1 | 2 |", context)).toContain("<table>");
+    expect(renderDocMarkdown("line one\nline two", context)).not.toContain("<br");
+  });
+
+  it("replaces an alert marker only when it is the whole line", () => {
+    const context = { base: "/", fileExists: () => true, sourceRepoPath: "docs/standard.md" };
+
+    // Trailing whitespace is still just a marker line.
+    expect(renderDocMarkdown("> [!NOTE]   \n> body", context)).toContain("<strong>Note:</strong>");
+    // Anything else on the line, or a marker mid-sentence, is literal text.
+    expect(renderDocMarkdown("> [!NOTE] extra\n> body", context)).toContain("[!NOTE] extra");
+    expect(renderDocMarkdown("text > [!NOTE] inline", context)).toContain("[!NOTE] inline");
+  });
+
+  it("resolves image sources too, so a broken one fails the build", () => {
+    expect(() =>
+      renderDocMarkdown("![alt](./does-not-exist.md)", {
+        base: "/",
+        fileExists: () => false,
+        sourceRepoPath: "docs/standard.md",
+      }),
+    ).toThrow(/neither a site page nor a repo file/);
+  });
+
   it("fails the build on an unresolvable docs link", () => {
     expect(() =>
       renderDocMarkdown("[broken](./does-not-exist.md)", {

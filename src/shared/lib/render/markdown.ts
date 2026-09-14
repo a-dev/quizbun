@@ -326,12 +326,15 @@ function getMarkdownCodeLanguage(className: string | undefined): MarkdownCodeLan
 
 function createHeadingSlug(text: string): string {
   const baseSlug = text
-    .replace(/<[^>]+>/g, " ")
+    .replace(/<[^<>]+>/g, " ")
     .toLowerCase()
     .trim()
     .replace(/&[a-z0-9#]+;/gi, " ")
     .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
+    // The collapse above leaves no two adjacent hyphens, so a single one is
+    // all there can ever be at either end — matching `-+` here would only add
+    // backtracking.
+    .replace(/^-|-$/g, "");
 
   return baseSlug.length > 0 ? baseSlug : "section";
 }
@@ -581,39 +584,49 @@ function truncateChildren(
       continue;
     }
 
-    if (isText(child)) {
-      truncateTextNode(children, index, child, state, ellipsis, appendEllipsis);
-
-      if (state.truncated) {
-        return;
-      }
-
-      continue;
-    }
-
-    if (isTag(child) && child.name === "br") {
-      truncateBreakNode(children, index, state, ellipsis, appendEllipsis);
-
-      if (state.truncated) {
-        return;
-      }
-
-      continue;
-    }
-
-    if (hasChildren(child)) {
-      truncateChildren(child.children, state, ellipsis, false);
-
-      if (state.truncated) {
-        // Drop the elements that followed the one we cut inside, then place the
-        // ellipsis after that element so it sits outside the closed tag.
-        children.splice(index + 1);
-        appendEllipsisNode(children, index, ellipsis, appendEllipsis);
-
-        return;
-      }
+    if (truncateChild(children, index, child, state, ellipsis, appendEllipsis)) {
+      return;
     }
   }
+}
+
+/** Truncates within one child; `true` once the cut is made and the walk must stop. */
+function truncateChild(
+  siblings: ChildNode[],
+  index: number,
+  child: ChildNode,
+  state: HtmlTruncationState,
+  ellipsis: string,
+  appendEllipsis: boolean,
+): boolean {
+  if (isText(child)) {
+    truncateTextNode(siblings, index, child, state, ellipsis, appendEllipsis);
+
+    return state.truncated;
+  }
+
+  if (isTag(child) && child.name === "br") {
+    truncateBreakNode(siblings, index, state, ellipsis, appendEllipsis);
+
+    return state.truncated;
+  }
+
+  if (!hasChildren(child)) {
+    return false;
+  }
+
+  truncateChildren(child.children, state, ellipsis, false);
+
+  if (!state.truncated) {
+    return false;
+  }
+
+  // Drop the elements that followed the one we cut inside, then place the
+  // ellipsis after that element so it sits outside the closed tag.
+  siblings.splice(index + 1);
+  appendEllipsisNode(siblings, index, ellipsis, appendEllipsis);
+
+  return true;
 }
 
 function truncateTextNode(

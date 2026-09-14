@@ -141,7 +141,7 @@ export function StorageDurability({ showWhenEmpty = false, needInlineMargin = fa
   return (
     <div className={cx(styles.root, needInlineMargin && styles.rootInlineMargin)}>
       {showNotice && (
-        <Note type="warning" role="status">
+        <Note type="warning" as="output">
           <div className={styles.noticeContent}>
             <p className={styles.copy}>
               {hasData

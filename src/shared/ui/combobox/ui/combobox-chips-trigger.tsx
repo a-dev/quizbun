@@ -15,6 +15,29 @@ import styles from "../combobox.module.css";
 
 const { Trigger, Chips, Chip, ChipRemove, Clear, Value, Icon } = Combobox;
 
+/**
+ * One selected value, shared by the visible chip row and the overflow popover
+ * so the two cannot drift apart. Being its own component also keeps the
+ * trigger's nested render callbacks from stacking another level deep.
+ */
+function SelectedChip({ option, removable }: { option: ComboboxOption; removable: boolean }) {
+  return (
+    <Chip className={styles.chip}>
+      <span className={styles.truncate}>{option.label}</span>
+      {removable && (
+        <ChipRemove
+          // The rendered element is an icon, not a `<button>`, so Base UI has
+          // to supply the button role and tab stop itself.
+          nativeButton={false}
+          className={styles.chipRemove}
+          aria-label="Remove"
+          render={<CircleX className={styles.removeIcon} size="14" />}
+        />
+      )}
+    </Chip>
+  );
+}
+
 export function ComboboxChipsTrigger({
   placeholder,
   classNames,
@@ -45,24 +68,16 @@ export function ComboboxChipsTrigger({
                     {!value.length && (
                       <ComboboxPlaceholder placeholder={placeholder} classNames={classNames} />
                     )}
-                    {shown.map((value: ComboboxOption) => (
-                      <Chip key={value.value} className={styles.chip}>
-                        <span className={styles.truncate}>{value.label}</span>
-                        {!disabled && (
-                          <ChipRemove
-                            nativeButton={false}
-                            className={styles.chipRemove}
-                            aria-label={"Remove"}
-                            render={<CircleX className={styles.removeIcon} size="14" />}
-                          />
-                        )}
-                      </Chip>
+                    {shown.map((option: ComboboxOption) => (
+                      <SelectedChip key={option.value} option={option} removable={!disabled} />
                     ))}
                     {Boolean(hidden.length) && (
                       <Popover
                         openOnHover={false}
+                        triggerIsNativeButton
                         trigger={
-                          <div
+                          <button
+                            type="button"
                             className={cx(styles.chip, styles.overflowChip)}
                             data-testid="combobox-overflow-trigger"
                             aria-label={`Show ${hidden.length} more selected options`}
@@ -72,7 +87,7 @@ export function ComboboxChipsTrigger({
                             onKeyDown={(e) => e.stopPropagation()}
                           >
                             <span>{`+${hidden.length}`}</span>
-                          </div>
+                          </button>
                         }
                         classNames={{
                           content: styles.overflowPopover,
@@ -81,19 +96,8 @@ export function ComboboxChipsTrigger({
                           align: "end",
                         }}
                       >
-                        {hidden.map((value: ComboboxOption) => (
-                          <Chip key={value.value} className={styles.chip}>
-                            <span className={styles.truncate}>{value.label}</span>
-                            {!disabled && (
-                              <ChipRemove
-                                className={styles.chipRemove}
-                                aria-label={"Remove"}
-                                render={(props) => (
-                                  <CircleX className={styles.removeIcon} size="14" {...props} />
-                                )}
-                              />
-                            )}
-                          </Chip>
+                        {hidden.map((option: ComboboxOption) => (
+                          <SelectedChip key={option.value} option={option} removable={!disabled} />
                         ))}
                       </Popover>
                     )}

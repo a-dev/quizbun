@@ -36,11 +36,11 @@ export function CopyPromptButton({ promptText }: { promptText: string }) {
       <Button size="l" onClick={copyPrompt}>
         Copy prompt
       </Button>{" "}
-      <span role="status" className={styles.status}>
+      <output className={styles.status}>
         {copyState === "copied" && "Copied to clipboard"}
         {copyState === "failed" &&
           "Copying failed — select the prompt text below and copy it manually"}
-      </span>
+      </output>
     </div>
   );
 }

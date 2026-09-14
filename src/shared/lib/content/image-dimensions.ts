@@ -133,36 +133,23 @@ export function parseJpegDimensions(bytes: Buffer): ImageDimensions {
   let offset = 2;
 
   while (offset < bytes.length) {
-    if (bytes[offset] !== 0xff) {
-      throw new Error(`JPEG marker segment expected at byte ${offset}.`);
-    }
+    const next = readNextMarker(bytes, offset);
 
-    // Any number of 0xFF fill bytes may precede a marker.
-    while (offset < bytes.length && bytes[offset] === 0xff) offset += 1;
+    if (next === undefined) break;
 
-    const marker = bytes[offset];
-    offset += 1;
+    const { marker } = next;
+    offset = next.offset;
 
-    if (marker === undefined) break;
-    // Standalone markers: no length, no payload.
-    if (marker === 0x01 || (marker >= 0xd0 && marker <= 0xd9)) continue;
+    if (isStandaloneMarker(marker)) continue;
     if (offset + 2 > bytes.length) break;
-
-    const segmentLength = bytes.readUInt16BE(offset);
-
-    if (isStartOfFrameMarker(marker)) {
-      if (segmentLength < 7 || offset + 7 > bytes.length) {
-        throw new Error("JPEG Start-of-Frame segment is truncated.");
-      }
-
-      return toDimensions(bytes.readUInt16BE(offset + 5), bytes.readUInt16BE(offset + 3));
-    }
 
     // Start-of-Scan: entropy-coded data follows, so a Start-of-Frame can no
     // longer appear ahead of us.
     if (marker === 0xda) break;
 
-    offset += segmentLength;
+    if (isStartOfFrameMarker(marker)) return readStartOfFrame(bytes, offset);
+
+    offset += bytes.readUInt16BE(offset);
   }
 
   throw new Error("JPEG has no Start-of-Frame segment.");
@@ -190,41 +177,53 @@ export function parseWebpDimensions(bytes: Buffer): ImageDimensions {
     const chunkType = bytes.subarray(offset, offset + 4).toString("latin1");
     const chunkSize = bytes.readUInt32LE(offset + 4);
     const data = offset + 8;
+    const dimensions = readWebpImageChunk(bytes, chunkType, data);
 
-    if (chunkType === "VP8X" && data + 10 <= bytes.length) {
-      return toDimensions(readUInt24LE(bytes, data + 4) + 1, readUInt24LE(bytes, data + 7) + 1);
-    }
-
-    if (chunkType === "VP8 " && data + 10 <= bytes.length) {
-      const hasKeyFrameSignature =
-        bytes[data + 3] === 0x9d && bytes[data + 4] === 0x01 && bytes[data + 5] === 0x2a;
-
-      if (!hasKeyFrameSignature) {
-        throw new Error("WebP `VP8 ` chunk has no key-frame header.");
-      }
-
-      // 14-bit dimensions; the top two bits are the upscaling hint.
-      return toDimensions(
-        bytes.readUInt16LE(data + 6) & 0x3f_ff,
-        bytes.readUInt16LE(data + 8) & 0x3f_ff,
-      );
-    }
-
-    if (chunkType === "VP8L" && data + 5 <= bytes.length) {
-      if (bytes[data] !== 0x2f) {
-        throw new Error("WebP `VP8L` chunk has no lossless signature byte.");
-      }
-
-      const header = bytes.readUInt32LE(data + 1);
-
-      return toDimensions((header & 0x3f_ff) + 1, ((header >>> 14) & 0x3f_ff) + 1);
-    }
+    if (dimensions !== undefined) return dimensions;
 
     // Chunks are padded to an even length.
     offset = data + chunkSize + (chunkSize % 2);
   }
 
   throw new Error("WebP has no `VP8X`, `VP8 `, or `VP8L` chunk.");
+}
+
+/** The size carried by one of the three image chunks, or `undefined` for any other chunk. */
+function readWebpImageChunk(
+  bytes: Buffer,
+  chunkType: string,
+  data: number,
+): ImageDimensions | undefined {
+  if (chunkType === "VP8X" && data + 10 <= bytes.length) {
+    return toDimensions(readUInt24LE(bytes, data + 4) + 1, readUInt24LE(bytes, data + 7) + 1);
+  }
+
+  if (chunkType === "VP8 " && data + 10 <= bytes.length) {
+    const hasKeyFrameSignature =
+      bytes[data + 3] === 0x9d && bytes[data + 4] === 0x01 && bytes[data + 5] === 0x2a;
+
+    if (!hasKeyFrameSignature) {
+      throw new Error("WebP `VP8 ` chunk has no key-frame header.");
+    }
+
+    // 14-bit dimensions; the top two bits are the upscaling hint.
+    return toDimensions(
+      bytes.readUInt16LE(data + 6) & 0x3f_ff,
+      bytes.readUInt16LE(data + 8) & 0x3f_ff,
+    );
+  }
+
+  if (chunkType === "VP8L" && data + 5 <= bytes.length) {
+    if (bytes[data] !== 0x2f) {
+      throw new Error("WebP `VP8L` chunk has no lossless signature byte.");
+    }
+
+    const header = bytes.readUInt32LE(data + 1);
+
+    return toDimensions((header & 0x3f_ff) + 1, ((header >>> 14) & 0x3f_ff) + 1);
+  }
+
+  return undefined;
 }
 
 /**
@@ -371,24 +370,80 @@ function readPropertyIndexes(bytes: Buffer, association: IsoBox, itemId: number)
     const associationCount = bytes[offset] ?? 0;
     offset += 1;
 
-    const indexes: number[] = [];
+    const entryIndexes = readAssociationIndexes(
+      bytes,
+      association.contentEnd,
+      offset,
+      associationCount,
+      usesWideIndexes,
+    );
 
-    for (let index = 0; index < associationCount; index += 1) {
-      if (offset >= association.contentEnd) return undefined;
+    if (entryIndexes === undefined) return undefined;
 
-      if (usesWideIndexes) {
-        indexes.push(bytes.readUInt16BE(offset) & 0x7f_ff);
-        offset += 2;
-      } else {
-        indexes.push((bytes[offset] ?? 0) & 0x7f);
-        offset += 1;
-      }
-    }
+    offset = entryIndexes.end;
 
-    if (entryItemId === itemId) return indexes;
+    if (entryItemId === itemId) return entryIndexes.indexes;
   }
 
   return undefined;
+}
+
+/** One entry's property indexes, with the offset just past them. */
+function readAssociationIndexes(
+  bytes: Buffer,
+  contentEnd: number,
+  start: number,
+  count: number,
+  usesWideIndexes: boolean,
+) {
+  const indexes: number[] = [];
+  let offset = start;
+
+  for (let index = 0; index < count; index += 1) {
+    if (offset >= contentEnd) return undefined;
+
+    if (usesWideIndexes) {
+      indexes.push(bytes.readUInt16BE(offset) & 0x7f_ff);
+      offset += 2;
+    } else {
+      indexes.push((bytes[offset] ?? 0) & 0x7f);
+      offset += 1;
+    }
+  }
+
+  return { end: offset, indexes };
+}
+
+/** The next marker and the offset just past it, or `undefined` at the end of the buffer. */
+function readNextMarker(bytes: Buffer, start: number) {
+  if (bytes[start] !== 0xff) {
+    throw new Error(`JPEG marker segment expected at byte ${start}.`);
+  }
+
+  // Any number of 0xFF fill bytes may precede a marker.
+  let offset = start;
+
+  while (offset < bytes.length && bytes[offset] === 0xff) offset += 1;
+
+  const marker = bytes[offset];
+
+  return marker === undefined ? undefined : { marker, offset: offset + 1 };
+}
+
+/** Markers that carry neither a length nor a payload. */
+function isStandaloneMarker(marker: number) {
+  return marker === 0x01 || (marker >= 0xd0 && marker <= 0xd9);
+}
+
+/** The frame size out of a Start-of-Frame segment, `offset` pointing at its length. */
+function readStartOfFrame(bytes: Buffer, offset: number): ImageDimensions {
+  const segmentLength = bytes.readUInt16BE(offset);
+
+  if (segmentLength < 7 || offset + 7 > bytes.length) {
+    throw new Error("JPEG Start-of-Frame segment is truncated.");
+  }
+
+  return toDimensions(bytes.readUInt16BE(offset + 5), bytes.readUInt16BE(offset + 3));
 }
 
 function isStartOfFrameMarker(marker: number) {
@@ -422,7 +477,11 @@ function readAttribute(tag: string, name: string) {
 function parseSvgLength(value: string | undefined) {
   if (value === undefined) return undefined;
 
-  const match = /^\s*([+-]?[\d.]+(?:e[+-]?\d+)?)\s*([a-z%]*)\s*$/i.exec(value);
+  // Written so no two parts of the pattern can match the same character. A
+  // loose `[\d.]+`, or the two adjacent `\s*` left behind when the unit group
+  // matches nothing, each backtrack super-linearly; trimming first drops the
+  // outer `\s*` altogether.
+  const match = /^([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?)\s*([a-z%]*)$/i.exec(value.trim());
 
   if (match === null) return undefined;
 

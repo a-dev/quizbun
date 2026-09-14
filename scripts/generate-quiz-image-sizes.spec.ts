@@ -6,6 +6,17 @@ import { afterEach, describe, expect, test } from "vitest";
 
 const OPTIONS = '[{ "text": "This one", "isCorrect": true }, { "text": "No", "isCorrect": false }]';
 
+/**
+ * Runs the generator the way `package.json` does, as a real child process — the
+ * script's contract is its exit code and the bytes it leaves on disk.
+ */
+function runGenerator(args: readonly string[]) {
+  return spawnSync("bun", ["scripts/generate-quiz-image-sizes.ts", ...args], {
+    cwd: process.cwd(),
+    encoding: "utf8",
+  });
+}
+
 /** Deliberately uneven author formatting; every byte outside an Image must survive. */
 const UNSIZED_QUIZ_SOURCE = `{
   "schemaVersion": 1,
@@ -53,11 +64,7 @@ describe("quiz:sizes:check", () => {
 
     writeFileSync(imagePath, '<svg viewBox="0 0 30 15"></svg>');
 
-    const result = spawnSync(
-      "bun",
-      ["scripts/generate-quiz-image-sizes.ts", "--check", contentDirectory],
-      { cwd: process.cwd(), encoding: "utf8" },
-    );
+    const result = runGenerator(["--check", contentDirectory]);
 
     expect(result.status).toBe(1);
     expect(result.stderr).toMatch(/questions\[0\]\.images\[0\]: 20×10 → 30×15/);
@@ -85,15 +92,9 @@ describe("quiz:sizes:generate", () => {
     // one line, and one carrying a stale lone `width` the Standard rejects.
     writeFileSync(quizPath, UNSIZED_QUIZ_SOURCE);
 
-    const result = spawnSync("bun", ["scripts/generate-quiz-image-sizes.ts", contentDirectory], {
-      cwd: process.cwd(),
-      encoding: "utf8",
-    });
+    const result = runGenerator([contentDirectory]);
 
-    expect(
-      result.status,
-      result.error?.message || result.stderr || result.stdout || "Child process failed silently.",
-    ).toBe(0);
+    expect(result.status).toBe(0);
     expect(readFileSync(quizPath, "utf8")).toBe(
       UNSIZED_QUIZ_SOURCE.replace(
         '{ "src": "diagram.svg", "alt": "A" }',
@@ -107,15 +108,9 @@ describe("quiz:sizes:generate", () => {
     const quizPath = join(contentDirectory, "sample-quiz.json");
     const before = readFileSync(quizPath, "utf8");
 
-    const result = spawnSync("bun", ["scripts/generate-quiz-image-sizes.ts", contentDirectory], {
-      cwd: process.cwd(),
-      encoding: "utf8",
-    });
+    const result = runGenerator([contentDirectory]);
 
-    expect(
-      result.status,
-      result.error?.message || result.stderr || result.stdout || "Child process failed silently.",
-    ).toBe(0);
+    expect(result.status).toBe(0);
     expect(readFileSync(quizPath, "utf8")).toBe(before);
   });
 });

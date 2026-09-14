@@ -45,13 +45,13 @@ export function parseJsonSource(text: string): JsonNode {
     while (index < text.length && /[\s]/.test(text[index] as string)) index += 1;
   }
 
-  function expect(character: string) {
+  function consume(character: string) {
     if (text[index] !== character) fail(`Expected \`${character}\``);
     index += 1;
   }
 
   function parseString(): string {
-    expect('"');
+    consume('"');
 
     const contentStart = index;
 
@@ -80,7 +80,7 @@ export function parseJsonSource(text: string): JsonNode {
     const start = index;
     const members: JsonMember[] = [];
 
-    expect("{");
+    consume("{");
     skipWhitespace();
 
     if (text[index] === "}") {
@@ -95,7 +95,7 @@ export function parseJsonSource(text: string): JsonNode {
       const key = parseString();
 
       skipWhitespace();
-      expect(":");
+      consume(":");
       skipWhitespace();
 
       members.push({ key, keyStart, value: parseValue() });
@@ -106,7 +106,7 @@ export function parseJsonSource(text: string): JsonNode {
         continue;
       }
 
-      expect("}");
+      consume("}");
 
       return { end: index, members, start };
     }
@@ -116,7 +116,7 @@ export function parseJsonSource(text: string): JsonNode {
     const start = index;
     const items: JsonNode[] = [];
 
-    expect("[");
+    consume("[");
     skipWhitespace();
 
     if (text[index] === "]") {
@@ -134,7 +134,7 @@ export function parseJsonSource(text: string): JsonNode {
         continue;
       }
 
-      expect("]");
+      consume("]");
 
       return { end: index, items, start };
     }

@@ -37,8 +37,8 @@ function TestTagFilter({
 
 describe("TagFilter", () => {
   it("emits title query and tag match mode changes", async () => {
-    const onTitleQueryChange = vi.fn();
-    const onTagMatchModeChange = vi.fn();
+    const onTitleQueryChange = vi.fn<() => void>();
+    const onTagMatchModeChange = vi.fn<() => void>();
     const screen = await page.render(
       <TestTagFilter
         onTitleQueryChange={onTitleQueryChange}
@@ -49,7 +49,7 @@ describe("TagFilter", () => {
     await userEvent.type(screen.getByRole("searchbox", { name: "Filter by title" }), "grid");
     await expect(onTitleQueryChange).toHaveBeenLastCalledWith("grid");
 
-    await userEvent.click(screen.getByRole("button", { name: "OR" }));
+    await userEvent.click(screen.getByRole("button", { name: "or" }));
     await expect(onTagMatchModeChange).toHaveBeenLastCalledWith("or");
   });
 });

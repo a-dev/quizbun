@@ -46,14 +46,16 @@ export function InputField({
   const describedBy = [ariaDescribedBy, errorId].filter(Boolean).join(" ") || undefined;
 
   return (
-    <label className={styles.label}>
-      <span className={styles.labelText}>{label}</span>
+    <div className={styles.label}>
+      <label htmlFor={inputId} className={styles.labelText}>
+        {label}
+      </label>
       <Input {...props} id={inputId} error={error} aria-describedby={describedBy} />
       {!!error && (
         <span id={errorId} className={styles.error}>
           {error}
         </span>
       )}
-    </label>
+    </div>
   );
 }

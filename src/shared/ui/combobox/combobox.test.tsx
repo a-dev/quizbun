@@ -40,7 +40,7 @@ describe("Combobox", () => {
   });
 
   it("opens the dropdown and selects an option", async () => {
-    const onChange = vi.fn();
+    const onChange = vi.fn<() => void>();
     const screen = await page.render(<ComboboxExample onChange={onChange} />);
 
     await userEvent.click(screen.getByTestId("combobox-trigger"));

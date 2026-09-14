@@ -17,8 +17,8 @@ afterEach(() => {
 describe("storage persistence", () => {
   test("reports and grants persistence", async () => {
     stubStorage({
-      persisted: vi.fn().mockResolvedValue(true),
-      persist: vi.fn().mockResolvedValue(true),
+      persisted: vi.fn<StorageManager["persisted"]>().mockResolvedValue(true),
+      persist: vi.fn<StorageManager["persist"]>().mockResolvedValue(true),
     });
 
     await expect(isStoragePersisted()).resolves.toBe(true);
@@ -27,8 +27,8 @@ describe("storage persistence", () => {
 
   test("returns false when persistence is denied", async () => {
     stubStorage({
-      persisted: vi.fn().mockResolvedValue(false),
-      persist: vi.fn().mockResolvedValue(false),
+      persisted: vi.fn<StorageManager["persisted"]>().mockResolvedValue(false),
+      persist: vi.fn<StorageManager["persist"]>().mockResolvedValue(false),
     });
 
     await expect(isStoragePersisted()).resolves.toBe(false);
@@ -44,8 +44,8 @@ describe("storage persistence", () => {
 
   test("degrades when the Storage API throws", async () => {
     stubStorage({
-      persisted: vi.fn().mockRejectedValue(new Error("denied")),
-      persist: vi.fn().mockRejectedValue(new Error("denied")),
+      persisted: vi.fn<StorageManager["persisted"]>().mockRejectedValue(new Error("denied")),
+      persist: vi.fn<StorageManager["persist"]>().mockRejectedValue(new Error("denied")),
     });
 
     await expect(isStoragePersisted()).resolves.toBe(false);
@@ -55,7 +55,10 @@ describe("storage persistence", () => {
 
 describe("storage API availability", () => {
   test("is available when persistence can be both read and requested", () => {
-    stubStorage({ persisted: vi.fn(), persist: vi.fn() });
+    stubStorage({
+      persisted: vi.fn<StorageManager["persisted"]>(),
+      persist: vi.fn<StorageManager["persist"]>(),
+    });
 
     expect(isStorageApiAvailable()).toBe(true);
   });
@@ -69,13 +72,16 @@ describe("storage API availability", () => {
   // A partial StorageManager would otherwise leave the durability UI offering a
   // "Protect storage" action that can never succeed.
   test("is unavailable when persist() is missing", () => {
-    stubStorage({ persisted: vi.fn(), estimate: vi.fn() });
+    stubStorage({
+      persisted: vi.fn<StorageManager["persisted"]>(),
+      estimate: vi.fn<StorageManager["estimate"]>(),
+    });
 
     expect(isStorageApiAvailable()).toBe(false);
   });
 
   test("is unavailable when persisted() is missing", () => {
-    stubStorage({ persist: vi.fn() });
+    stubStorage({ persist: vi.fn<StorageManager["persist"]>() });
 
     expect(isStorageApiAvailable()).toBe(false);
   });

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useState } from "react";
 
 import { Play } from "lucide-react";
 
@@ -19,23 +19,22 @@ function embedUrl(videoId: string, start: number | undefined): string {
 /** A privacy-preserving YouTube facade that creates its iframe only on click. */
 export function YouTubeEmbed({ videoId, title, start, className }: YouTubeEmbedProps) {
   const [loadedVideoId, setLoadedVideoId] = useState<string>();
-  const iframeRef = useRef<HTMLIFrameElement>(null);
   const loaded = loadedVideoId === videoId;
 
   // The activated Play control unmounts with the facade, so focus would fall
   // back to the document body and strand a keyboard learner above the whole
-  // Question. Move it onto the player that replaced the control instead.
-  useEffect(() => {
-    if (loaded) {
-      iframeRef.current?.focus();
-    }
-  }, [loaded]);
+  // Question. Move it onto the player that replaced the control — on attach
+  // rather than in the click handler, since the iframe does not exist yet
+  // while the click is being handled.
+  const focusOnAttach = useCallback((iframe: HTMLIFrameElement | null) => {
+    iframe?.focus();
+  }, []);
 
   return (
     <div className={className}>
       {loaded ? (
         <iframe
-          ref={iframeRef}
+          ref={focusOnAttach}
           src={embedUrl(videoId, start)}
           title={title}
           className={styles.iframe}

@@ -26,6 +26,7 @@ import { QuizCard } from "@/entities/quiz";
 import {
   collectTags,
   filterQuizItems,
+  NoFilterMatches,
   prepareFilterItems,
   TagFilter,
 } from "@/features/filter-by-tags";
@@ -42,14 +43,36 @@ type LoadState =
 const EMPTY_QUIZ_SUMMARIES: QuizSummary[] = [];
 const QUIZZES_PER_PAGE = 12;
 
+const INITIAL_URL_STATE: ListUrlState = {
+  selectedTags: [],
+  tagMatchMode: "and",
+  titleQuery: "",
+  page: 1,
+};
+
+/**
+ * Pulls a page number back into range for the filters it travels with. The
+ * render below clamps for display anyway; this clamps the value that reaches
+ * state and the address bar, so Back never returns to a page with nothing on
+ * it.
+ */
+function clampToResults(
+  nextState: ListUrlState,
+  preparedQuizzes: ReturnType<typeof prepareFilterItems>,
+): ListUrlState {
+  const matchCount = filterQuizItems(preparedQuizzes, {
+    selectedTags: nextState.selectedTags,
+    tagMatchMode: nextState.tagMatchMode,
+    titleQuery: nextState.titleQuery,
+  }).length;
+  const page = clampPage(nextState.page, Math.max(Math.ceil(matchCount / QUIZZES_PER_PAGE), 1));
+
+  return page === nextState.page ? nextState : { ...nextState, page };
+}
+
 export function LibraryList() {
   const [state, setState] = useState<LoadState>({ status: "loading" });
-  const [urlState, setUrlState] = useState<ListUrlState>({
-    selectedTags: [],
-    tagMatchMode: "and",
-    titleQuery: "",
-    page: 1,
-  });
+  const [urlState, setUrlState] = useState<ListUrlState>(INITIAL_URL_STATE);
   const deferredTitleQuery = useDeferredValue(urlState.titleQuery);
   const [hasReadUrl, setHasReadUrl] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<QuizSummary | undefined>(undefined);
@@ -74,13 +97,6 @@ export function LibraryList() {
   );
 
   useEffect(() => {
-    if (state.status !== "ready" || hasReadUrl) return;
-
-    setUrlState(parseListUrlState(window.location.search, availableTags));
-    setHasReadUrl(true);
-  }, [availableTags, hasReadUrl, state.status]);
-
-  useEffect(() => {
     if (!hasReadUrl) return;
 
     const onPopState = () => {
@@ -92,20 +108,33 @@ export function LibraryList() {
     return () => window.removeEventListener("popstate", onPopState);
   }, [availableTags, hasReadUrl]);
 
-  useEffect(() => {
-    if (!hasReadUrl || urlState.page === currentPage) return;
-
-    setUrlState((previousState) => {
-      const nextState = { ...previousState, page: currentPage };
-      replaceUrl(nextState);
-
-      return nextState;
-    });
-  }, [currentPage, hasReadUrl, urlState.page]);
-
   async function refresh() {
     try {
-      setState({ status: "ready", quizzes: await listQuizzes() });
+      const loadedQuizzes = await listQuizzes();
+
+      setState({ status: "ready", quizzes: loadedQuizzes });
+
+      const loadedPrepared = prepareFilterItems(loadedQuizzes);
+
+      if (hasReadUrl) {
+        // A delete can drop the match count below the page being viewed.
+        applyState(clampToResults(urlState, loadedPrepared), "replace");
+
+        return;
+      }
+
+      // The server-rendered shell can't know the request URL, and the URL's Tag
+      // slugs only resolve against the Tags that exist — so the first read has
+      // to wait for the Library to load.
+      const parsedState = parseListUrlState(window.location.search, collectTags(loadedQuizzes));
+      const nextState = clampToResults(parsedState, loadedPrepared);
+
+      setUrlState(nextState);
+      setHasReadUrl(true);
+
+      if (nextState.page !== parsedState.page) {
+        window.history.replaceState(window.history.state, "", libraryUrlForState(nextState));
+      }
     } catch (error) {
       setState({
         status: "error",
@@ -115,7 +144,39 @@ export function LibraryList() {
   }
 
   useEffect(() => {
-    void refresh();
+    let cancelled = false;
+
+    void listQuizzes()
+      .then((loadedQuizzes) => {
+        if (cancelled) return;
+
+        setState({ status: "ready", quizzes: loadedQuizzes });
+
+        // The server-rendered shell can't know the request URL, and the URL's Tag
+        // slugs only resolve against the Tags that exist — so the first read has
+        // to wait for the Library to load.
+        const loadedPrepared = prepareFilterItems(loadedQuizzes);
+        const parsedState = parseListUrlState(window.location.search, collectTags(loadedQuizzes));
+        const nextState = clampToResults(parsedState, loadedPrepared);
+
+        setUrlState(nextState);
+        setHasReadUrl(true);
+
+        if (nextState.page !== parsedState.page) {
+          const href = `${withBase("library/")}${stringifyListUrlState(
+            nextState,
+            collectTags(loadedQuizzes),
+          )}`;
+          window.history.replaceState(window.history.state, "", href);
+        }
+      })
+      .catch((error: unknown) => {
+        if (!cancelled) setState({ status: "error", message: messageFromError(error) });
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   async function exportQuiz(id: string) {
@@ -167,34 +228,31 @@ export function LibraryList() {
     return `${withBase("library/")}${stringifyListUrlState(nextState, availableTags)}`;
   }
 
-  function replaceUrl(nextState: ListUrlState) {
+  /**
+   * State and address bar move together. Filter changes `replaceState` (they
+   * refine the current view and shouldn't stack Back entries); explicit page
+   * navigation `pushState`, so Back returns to the previous page.
+   */
+  function applyState(nextState: ListUrlState, history: "push" | "replace") {
+    setUrlState(nextState);
+
     if (!hasReadUrl) return;
 
-    window.history.replaceState(window.history.state, "", libraryUrlForState(nextState));
-  }
+    const url = libraryUrlForState(nextState);
 
-  function pushUrl(nextState: ListUrlState) {
-    if (!hasReadUrl) return;
-
-    window.history.pushState(window.history.state, "", libraryUrlForState(nextState));
+    if (history === "push") {
+      window.history.pushState(window.history.state, "", url);
+    } else {
+      window.history.replaceState(window.history.state, "", url);
+    }
   }
 
   function updateFilters(nextFilters: Partial<Omit<ListUrlState, "page">>) {
-    setUrlState((previousState) => {
-      const nextState = { ...previousState, ...nextFilters, page: 1 };
-      replaceUrl(nextState);
-
-      return nextState;
-    });
+    applyState({ ...urlState, ...nextFilters, page: 1 }, "replace");
   }
 
   function changePage(nextPage: number) {
-    setUrlState((previousState) => {
-      const nextState = { ...previousState, page: nextPage };
-      pushUrl(nextState);
-
-      return nextState;
-    });
+    applyState({ ...urlState, page: nextPage }, "push");
   }
 
   if (state.status === "loading") return <TopLineLoader />;
@@ -245,15 +303,7 @@ export function LibraryList() {
       {actionError !== undefined && <Note type="error">{actionError}</Note>}
 
       {visibleQuizzes.length === 0 && state.quizzes.length !== 0 ? (
-        <Note type="warning">
-          <p>
-            No quizzes match the selected filters.{" "}
-            <Button variant="destructive" size="s" onClick={clearFilters}>
-              Clear filters
-            </Button>{" "}
-            to see all quizzes.
-          </p>
-        </Note>
+        <NoFilterMatches onClearFilters={clearFilters} />
       ) : (
         <>
           <div className={layout.quizCardGrid}>

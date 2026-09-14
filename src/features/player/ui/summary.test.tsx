@@ -41,14 +41,14 @@ const answers: Answers = {
 };
 
 async function renderSummary(overrides: Partial<Parameters<typeof Summary>[0]> = {}) {
-  const onReviewQuestion = vi.fn();
+  const onReviewQuestion = vi.fn<() => void>();
   const screen = await page.render(
     <Summary
       quiz={quiz}
       answers={answers}
       onReviewQuestion={onReviewQuestion}
-      onRetake={vi.fn()}
-      onBack={vi.fn()}
+      onRetake={vi.fn<() => void>()}
+      onBack={vi.fn<() => void>()}
       {...overrides}
     />,
   );

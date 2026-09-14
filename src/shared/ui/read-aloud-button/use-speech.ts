@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { useClientValue } from "@/shared/lib/hydration";
+
 interface SpeakOptions {
   /**
    * The voice to speak with. Setting it explicitly is what keeps the engine from
@@ -42,17 +44,14 @@ const KEEP_ALIVE_MS = 10_000;
  * utterance plays at a time: starting a new one cancels the rest.
  */
 export function useSpeech(): UseSpeech {
-  // Resolved after mount only. `speechSynthesis` is a browser global, so during
-  // Astro's SSR — and the first hydration render, to stay in lockstep with the
-  // server output — we report `false` and render nothing, avoiding a mismatch.
-  const [supported, setSupported] = useState(false);
+  // `speechSynthesis` is a browser global, so during Astro's SSR — and the
+  // first hydration render, to stay in lockstep with the server output — we
+  // report `false` and render nothing, so the first client render matches the
+  // server output.
+  const supported = useClientValue(() => "speechSynthesis" in window, false);
   const [speaking, setSpeaking] = useState(false);
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
   const keepAliveRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
-
-  useEffect(() => {
-    setSupported("speechSynthesis" in window);
-  }, []);
 
   const reset = useCallback(() => {
     clearInterval(keepAliveRef.current);

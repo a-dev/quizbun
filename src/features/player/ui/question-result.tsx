@@ -20,7 +20,7 @@ interface QuestionResultProps {
   /** Id matching the fieldset's `aria-describedby`, linking verdict to controls. */
   id: string;
   /** Receives focus when the card locks, so the keyboard lands on the result. */
-  ref?: Ref<HTMLDivElement>;
+  ref?: Ref<HTMLOutputElement>;
 }
 
 /** Post-submit verdict + Explanation shown once a Question is locked (T6.x). */
@@ -47,7 +47,7 @@ export function QuestionResult({ quizId, question, isCorrect, id, ref }: Questio
   );
 
   return (
-    <div role="status" id={id} ref={ref} tabIndex={-1} className={styles.root}>
+    <output id={id} ref={ref} tabIndex={-1} className={styles.root}>
       <div className={cx(styles.result, isCorrect ? styles.resultCorrect : styles.resultIncorrect)}>
         {isCorrect ? (
           <div className={styles.resultText}>
@@ -76,6 +76,6 @@ export function QuestionResult({ quizId, question, isCorrect, id, ref }: Questio
           <MarkdownRender content={referencesHtml} size="xs" />
         </section>
       )}
-    </div>
+    </output>
   );
 }

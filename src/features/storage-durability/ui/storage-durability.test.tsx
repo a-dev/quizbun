@@ -4,10 +4,10 @@ import { page, userEvent } from "vitest/browser";
 import { StorageDurability } from "./storage-durability";
 
 const storageMocks = vi.hoisted(() => ({
-  hasStoredData: vi.fn(),
-  isStorageApiAvailable: vi.fn(),
-  isStoragePersisted: vi.fn(),
-  requestStoragePersistence: vi.fn(),
+  hasStoredData: vi.fn<() => Promise<boolean>>(),
+  isStorageApiAvailable: vi.fn<() => boolean>(),
+  isStoragePersisted: vi.fn<() => Promise<boolean>>(),
+  requestStoragePersistence: vi.fn<() => Promise<boolean>>(),
 }));
 
 vi.mock("@/shared/lib/storage", () => storageMocks);
@@ -19,11 +19,11 @@ function mediaQuery(matches = false): MediaQueryList {
     matches,
     media: "(display-mode: standalone)",
     onchange: null,
-    addListener: vi.fn(),
-    removeListener: vi.fn(),
-    addEventListener: vi.fn(),
-    removeEventListener: vi.fn(),
-    dispatchEvent: vi.fn(),
+    addListener: vi.fn<MediaQueryList["addListener"]>(),
+    removeListener: vi.fn<MediaQueryList["removeListener"]>(),
+    addEventListener: vi.fn<MediaQueryList["addEventListener"]>(),
+    removeEventListener: vi.fn<MediaQueryList["removeEventListener"]>(),
+    dispatchEvent: vi.fn<MediaQueryList["dispatchEvent"]>(),
   };
 }
 
@@ -170,7 +170,7 @@ describe("StorageDurability", () => {
   });
 
   it("captures Chromium's install prompt and activates it from the Install button", async () => {
-    const prompt = vi.fn().mockResolvedValue(undefined);
+    const prompt = vi.fn<() => Promise<void>>().mockResolvedValue(undefined);
     const screen = await page.render(<StorageDurability showWhenEmpty />);
     const event = Object.assign(new Event("beforeinstallprompt", { cancelable: true }), { prompt });
 
@@ -184,7 +184,7 @@ describe("StorageDurability", () => {
   // `prompt()` is single-use and throws once spent; that must not surface as an
   // unhandled rejection.
   it("survives an install prompt that rejects", async () => {
-    const prompt = vi.fn().mockRejectedValue(new Error("already used"));
+    const prompt = vi.fn<() => Promise<void>>().mockRejectedValue(new Error("already used"));
     const screen = await page.render(<StorageDurability showWhenEmpty />);
 
     window.dispatchEvent(
