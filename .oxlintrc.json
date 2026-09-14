@@ -1,18 +1,210 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "ignorePatterns": ["**/create-quiz/scripts/validate-quiz.mjs"],
-  "plugins": ["typescript", "unicorn", "oxc", "import"],
+  "ignorePatterns": [
+    "**/create-quiz/scripts/validate-quiz.mjs",
+    "**/*.d.ts",
+    ".claude/**",
+    ".agents/**"
+  ],
+  "plugins": [
+    "typescript",
+    "unicorn",
+    "oxc",
+    "import",
+    "jsx-a11y",
+  ],
+  "jsPlugins": [
+    "eslint-plugin-react-you-might-not-need-an-effect",
+    {
+      "name": "sonarjs",
+      "specifier": "./tools/sonarjs/node_modules/eslint-plugin-sonarjs"
+    }
+  ],
   "categories": {
     "correctness": "error"
   },
   "rules": {
     "no-restricted-imports": "off",
-    "import/first": "error"
+    "import/first": "error",
+    "sonarjs/class-name": "error",
+    "sonarjs/no-fallthrough": "error",
+    "sonarjs/no-equals-in-for-termination": "error",
+    "sonarjs/no-extra-arguments": "error",
+    "sonarjs/no-labels": "error",
+    "sonarjs/no-nested-assignment": "error",
+    "sonarjs/no-redundant-boolean": "error",
+    "sonarjs/prefer-single-boolean-return": "error",
+    "sonarjs/fixme-tag": "error",
+    "sonarjs/todo-tag": "error",
+    "sonarjs/no-case-label-in-switch": "error",
+    "sonarjs/no-parameter-reassignment": "error",
+    "sonarjs/no-floating-point-equality": "error",
+    "sonarjs/prefer-while": "error",
+    "sonarjs/no-hardcoded-ip": "error",
+    "sonarjs/label-position": "error",
+    "sonarjs/public-static-readonly": "error",
+    "sonarjs/call-argument-line": "error",
+    "sonarjs/max-switch-cases": "error",
+    "sonarjs/no-unused-vars": "error",
+    "sonarjs/function-inside-loop": "error",
+    "sonarjs/code-eval": "error",
+    "sonarjs/future-reserved-words": "error",
+    "sonarjs/no-primitive-wrappers": "error",
+    "sonarjs/no-skipped-tests": "error",
+    "sonarjs/no-identical-expressions": "error",
+    "sonarjs/constructor-for-side-effects": "error",
+    "sonarjs/no-dead-store": "error",
+    "sonarjs/no-identical-conditions": "error",
+    "sonarjs/no-duplicated-branches": "error",
+    "sonarjs/no-inverted-boolean-check": "error",
+    "sonarjs/misplaced-loop-counter": "error",
+    "sonarjs/no-nested-functions": "error",
+    "sonarjs/no-hardcoded-passwords": "error",
+    "sonarjs/insecure-cookie": "error",
+    "sonarjs/no-useless-increment": "error",
+    "sonarjs/no-globals-shadowing": "error",
+    "sonarjs/no-empty-test-file": "error",
+    "sonarjs/pseudo-random": "error",
+    "sonarjs/for-loop-increment-sign": "error",
+    "sonarjs/updated-loop-counter": "error",
+    "sonarjs/block-scoped-var": "error",
+    "sonarjs/no-ignored-exceptions": "error",
+    "sonarjs/no-gratuitous-expressions": "error",
+    "sonarjs/file-uploads": "error",
+    "sonarjs/file-permissions": "error",
+    "sonarjs/no-unenclosed-multiline-block": "error",
+    "sonarjs/no-implicit-global": "error",
+    "sonarjs/no-useless-catch": "error",
+    "sonarjs/xml-parser-xxe": "error",
+    "sonarjs/non-existent-operator": "error",
+    "sonarjs/no-fixed-wait-in-tests": "error",
+    "sonarjs/no-incomplete-assertions": "error",
+    "sonarjs/no-global-this": "error",
+    "sonarjs/no-delete-var": "error",
+    "sonarjs/cookie-no-httponly": "error",
+    "sonarjs/no-nested-conditional": "error",
+    "sonarjs/inverted-assertion-arguments": "error",
+    "sonarjs/updated-const-var": "error",
+    "sonarjs/no-invariant-returns": "error",
+    "sonarjs/generator-without-yield": "error",
+    "sonarjs/comma-or-logical-or-case": "error",
+    "sonarjs/no-redundant-jump": "error",
+    "sonarjs/inconsistent-function-call": "error",
+    "sonarjs/no-use-of-empty-return-value": "error",
+    "sonarjs/cognitive-complexity": "error",
+    "sonarjs/no-all-duplicated-branches": "error",
+    "sonarjs/no-same-line-conditional": "error",
+    "sonarjs/no-unthrown-error": "error",
+    "sonarjs/no-unused-collection": "error",
+    "sonarjs/no-os-command-from-path": "error",
+    "sonarjs/no-element-overwrite": "error",
+    "sonarjs/no-identical-functions": "error",
+    "sonarjs/no-empty-collection": "error",
+    "sonarjs/no-redundant-assignments": "error",
+    "sonarjs/prefer-type-guard": "error",
+    "sonarjs/use-type-alias": "error",
+    "sonarjs/weak-ssl": "error",
+    "sonarjs/no-weak-keys": "error",
+    "sonarjs/csrf": "error",
+    "sonarjs/production-debug": "error",
+    "sonarjs/prefer-default-last": "error",
+    "sonarjs/no-duplicate-in-composite": "error",
+    "sonarjs/no-nested-template-literals": "error",
+    "sonarjs/prefer-promise-shorthand": "error",
+    "sonarjs/hashing": "error",
+    "sonarjs/unverified-certificate": "error",
+    "sonarjs/cors": "error",
+    "sonarjs/link-with-target-blank": "error",
+    "sonarjs/table-header": "error",
+    "sonarjs/no-table-as-layout": "error",
+    "sonarjs/table-header-reference": "error",
+    "sonarjs/object-alt-content": "error",
+    "sonarjs/no-clear-text-protocols": "error",
+    "sonarjs/publicly-writable-directories": "error",
+    "sonarjs/unverified-hostname": "error",
+    "sonarjs/encryption-secure-mode": "error",
+    "sonarjs/no-weak-cipher": "error",
+    "sonarjs/insecure-jwt-token": "error",
+    "sonarjs/x-powered-by": "error",
+    "sonarjs/content-length": "error",
+    "sonarjs/content-security-policy": "error",
+    "sonarjs/no-mime-sniff": "error",
+    "sonarjs/no-referrer-policy": "error",
+    "sonarjs/strict-transport-security": "error",
+    "sonarjs/no-same-argument-assert": "error",
+    "sonarjs/session-regeneration": "error",
+    "sonarjs/prefer-specific-assertions": "error",
+    "sonarjs/no-trivial-assertions": "error",
+    "sonarjs/test-check-exception": "error",
+    "sonarjs/stable-tests": "error",
+    "sonarjs/parameterized-tests": "error",
+    "sonarjs/no-code-after-done": "error",
+    "sonarjs/disabled-timeout": "error",
+    "sonarjs/chai-determinate-assertion": "error",
+    "sonarjs/aws-s3-bucket-insecure-http": "error",
+    "sonarjs/aws-s3-bucket-versioning": "error",
+    "sonarjs/aws-s3-bucket-granted-access": "error",
+    "sonarjs/no-angular-bypass-sanitization": "error",
+    "sonarjs/aws-iam-public-access": "error",
+    "sonarjs/aws-ec2-unencrypted-ebs-volume": "error",
+    "sonarjs/aws-s3-bucket-public-access": "error",
+    "sonarjs/aws-iam-all-privileges": "error",
+    "sonarjs/aws-rds-unencrypted-databases": "error",
+    "sonarjs/aws-opensearchservice-domain": "error",
+    "sonarjs/aws-iam-privilege-escalation": "error",
+    "sonarjs/aws-sagemaker-unencrypted-notebook": "error",
+    "sonarjs/aws-restricted-ip-admin-access": "error",
+    "sonarjs/aws-sns-unencrypted-topics": "error",
+    "sonarjs/aws-ec2-rds-dms-public": "error",
+    "sonarjs/aws-sqs-unencrypted-queue": "error",
+    "sonarjs/aws-efs-unencrypted": "error",
+    "sonarjs/aws-apigateway-public-api": "error",
+    "sonarjs/stateful-regex": "error",
+    "sonarjs/no-hardcoded-secrets": "error",
+    "sonarjs/no-exclusive-tests": "error",
+    "sonarjs/hardcoded-secret-signatures": "error",
+    "sonarjs/no-hook-setter-in-body": "error",
+    "sonarjs/no-useless-react-setstate": "error",
+    "sonarjs/no-uniq-key": "error",
+    "sonarjs/redundant-type-aliases": "error",
+    "sonarjs/no-internal-api-use": "error",
+    "sonarjs/no-literal-call": "error",
+    "sonarjs/review-blockchain-mnemonic": "error",
+    "sonarjs/dynamically-constructed-templates": "error",
+    "sonarjs/no-session-cookies-on-static-assets": "error",
+    "sonarjs/no-duplicate-test-title": "error",
+    "sonarjs/async-test-assertions": "error",
+    "sonarjs/no-empty-test-title": "error",
+    "sonarjs/hooks-before-test-cases": "error",
+    "sonarjs/no-forced-browser-interaction": "error",
+    "sonarjs/assertions-in-test-cases": "error",
+    "sonarjs/synchronous-suite-callback": "error",
+    "sonarjs/super-linear-regex": "error",
+    "sonarjs/prefer-native-lodash-alternative": "error",
+    "sonarjs/no-default-utility-imports": "error",
+    "sonarjs/memoize-cache-key": "error",
+    "sonarjs/no-debug-commands-in-ui-tests": "error",
+    "sonarjs/no-mixed-completion-style": "error",
+    "sonarjs/no-interpolation-in-inline-snapshots": "error",
+    "sonarjs/explicit-test-skip": "error",
+    "react-you-might-not-need-an-effect/no-derived-state": "error",
+    "react-you-might-not-need-an-effect/no-chain-state-updates": "error",
+    "react-you-might-not-need-an-effect/no-event-handler": "error",
+    "react-you-might-not-need-an-effect/no-adjust-state-on-prop-change": "error",
+    "react-you-might-not-need-an-effect/no-reset-all-state-on-prop-change": "error",
+    "react-you-might-not-need-an-effect/no-pass-live-state-to-parent": "error",
+    "react-you-might-not-need-an-effect/no-pass-data-to-parent": "error",
+    "react-you-might-not-need-an-effect/no-external-store-subscription": "error",
+    "react-you-might-not-need-an-effect/no-initialize-state": "error"
   },
   "overrides": [
     {
-      "files": ["src/**"],
-      "excludeFiles": ["src/shared/styles/lib/cx.ts"],
+      "files": [
+        "src/**"
+      ],
+      "excludeFiles": [
+        "src/shared/styles/lib/cx.ts"
+      ],
       "rules": {
         "no-restricted-imports": [
           "error",
@@ -25,11 +217,16 @@
             ],
             "patterns": [
               {
-                "group": ["@base-ui/react", "@base-ui/react/*"],
+                "group": [
+                  "@base-ui/react",
+                  "@base-ui/react/*"
+                ],
                 "message": "Import from '@/shared/ui/*' instead. Direct Base UI imports are reserved for shared/ui wrappers so swapping the headless library stays a one-folder change."
               },
               {
-                "group": ["@/_pages/*/**"],
+                "group": [
+                  "@/_pages/*/**"
+                ],
                 "message": "Import a page slice by its root only (@/_pages/<slice>). Segment paths (ui/lib/model) are slice-private."
               }
             ]
@@ -38,7 +235,12 @@
       }
     },
     {
-      "files": ["src/_pages/**", "src/features/**", "src/entities/**", "src/shared/**"],
+      "files": [
+        "src/_pages/**",
+        "src/features/**",
+        "src/entities/**",
+        "src/shared/**"
+      ],
       "rules": {
         "no-restricted-imports": [
           "error",
@@ -51,11 +253,17 @@
             ],
             "patterns": [
               {
-                "group": ["@base-ui/react", "@base-ui/react/*"],
+                "group": [
+                  "@base-ui/react",
+                  "@base-ui/react/*"
+                ],
                 "message": "Import from '@/shared/ui/*' instead. Direct Base UI imports are reserved for shared/ui wrappers so swapping the headless library stays a one-folder change."
               },
               {
-                "group": ["@/_pages", "@/_pages/**"],
+                "group": [
+                  "@/_pages",
+                  "@/_pages/**"
+                ],
                 "message": "Only route files (src/pages/) may import page slices. Lower layers never import upward, and page slices never import each other — duplicate small glue instead."
               }
             ]
@@ -64,13 +272,19 @@
       }
     },
     {
-      "files": ["src/shared/ui/**"],
+      "files": [
+        "src/shared/ui/**"
+      ],
       "rules": {
-        "no-restricted-imports": ["error"]
+        "no-restricted-imports": [
+          "error"
+        ]
       }
     },
     {
-      "files": ["src/shared/styles/**"],
+      "files": [
+        "src/shared/styles/**"
+      ],
       "rules": {
         "no-restricted-imports": "off"
       }
