@@ -49,11 +49,11 @@ describe("Pagination", () => {
     await expect(onPageChange).toHaveBeenLastCalledWith(7);
     expect(scrollTo).toHaveBeenLastCalledWith(0, 0);
 
-    await userEvent.click(screen.getByRole("button", { name: "Previous" }));
+    await userEvent.click(screen.getByRole("button", { name: "Previous page" }));
     await expect(onPageChange).toHaveBeenLastCalledWith(5);
     expect(scrollTo).toHaveBeenLastCalledWith(0, 0);
 
-    await userEvent.click(screen.getByRole("button", { name: "Next" }));
+    await userEvent.click(screen.getByRole("button", { name: "Next page" }));
     await expect(onPageChange).toHaveBeenLastCalledWith(7);
     expect(scrollTo).toHaveBeenLastCalledWith(0, 0);
   });

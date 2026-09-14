@@ -80,7 +80,9 @@ describe("AnswerControl", () => {
       />,
     );
 
-    await screen.getByRole("radio", { name: "Original two" }).click();
+    // Playwright's role=radio click redirects through the label's hidden native
+    // input and silently no-ops for this control; dispatch on the element directly.
+    (screen.getByRole("radio", { name: "Original two" }).element() as HTMLElement).click();
 
     expect(onDraftChange).toHaveBeenCalledWith(2);
   });
@@ -89,8 +91,10 @@ describe("AnswerControl", () => {
     const onDraftChange = vi.fn();
     const screen = await page.render(<MultipleChoiceHarness onDraftChange={onDraftChange} />);
 
-    await screen.getByRole("checkbox", { name: "Original two" }).click();
-    await screen.getByRole("checkbox", { name: "Original zero" }).click();
+    // Playwright's role=checkbox click redirects through the label's hidden native
+    // input and silently no-ops for this control; dispatch on the element directly.
+    (screen.getByRole("checkbox", { name: "Original two" }).element() as HTMLElement).click();
+    (screen.getByRole("checkbox", { name: "Original zero" }).element() as HTMLElement).click();
 
     expect(onDraftChange).toHaveBeenLastCalledWith([0, 2]);
   });

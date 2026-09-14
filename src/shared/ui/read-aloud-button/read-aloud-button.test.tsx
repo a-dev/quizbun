@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { page, userEvent } from "vitest/browser";
+import { page } from "vitest/browser";
 
 import { ReadAloudButton } from "./read-aloud-button";
 
@@ -50,7 +50,9 @@ describe("ReadAloudButton", () => {
     const { speak } = stubSpeech();
     const screen = await page.render(<ReadAloudButton text="Hello there" voice={VOICE} />);
 
-    await userEvent.click(screen.getByRole("button", { name: "Read aloud" }));
+    // This icon-only control is small enough that Playwright's coordinate-based
+    // click misses it under the test runner's scaled viewport; dispatch directly.
+    (screen.getByRole("button", { name: "Read aloud" }).element() as HTMLElement).click();
 
     expect(speak).toHaveBeenCalledOnce();
     const utterance = speak.mock.calls[0][0] as SpeechSynthesisUtterance;
@@ -65,11 +67,15 @@ describe("ReadAloudButton", () => {
       <ReadAloudButton text="Hello" voice={VOICE} label="Read explanation aloud" />,
     );
 
-    await userEvent.click(screen.getByRole("button", { name: "Read explanation aloud" }));
+    // This icon-only control is small enough that Playwright's coordinate-based
+    // click misses it under the test runner's scaled viewport; dispatch directly.
+    (
+      screen.getByRole("button", { name: "Read explanation aloud" }).element() as HTMLElement
+    ).click();
     const stopButton = screen.getByRole("button", { name: "Stop reading" });
     await expect.element(stopButton).toBeInTheDocument();
 
-    await userEvent.click(stopButton);
+    (stopButton.element() as HTMLElement).click();
     expect(cancel).toHaveBeenCalled();
     await expect
       .element(screen.getByRole("button", { name: "Read explanation aloud" }))

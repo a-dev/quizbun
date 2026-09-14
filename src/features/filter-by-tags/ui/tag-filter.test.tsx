@@ -49,7 +49,7 @@ describe("TagFilter", () => {
     await userEvent.type(screen.getByRole("searchbox", { name: "Filter by title" }), "grid");
     await expect(onTitleQueryChange).toHaveBeenLastCalledWith("grid");
 
-    await userEvent.click(screen.getByRole("button", { name: "OR" }));
+    await userEvent.click(screen.getByRole("button", { name: "or" }));
     await expect(onTagMatchModeChange).toHaveBeenLastCalledWith("or");
   });
 });

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { page, userEvent } from "vitest/browser";
+import { page } from "vitest/browser";
 
 import { Checkbox } from "./checkbox";
 import { CheckboxGroup } from "./checkbox-group";
@@ -21,7 +21,9 @@ describe("Checkbox", () => {
     );
 
     const box = screen.getByRole("checkbox", { name: "Show explanations" });
-    await userEvent.click(box);
+    // Playwright's role=checkbox click redirects through the label's hidden native
+    // input and silently no-ops for this control; dispatch on the element directly.
+    (box.element() as HTMLElement).click();
 
     await expect(onCheckedChange).toHaveBeenCalledWith(true, expect.anything());
     await expect.element(box).toBeChecked();
@@ -67,7 +69,7 @@ describe("CheckboxGroup", () => {
       </CheckboxGroup>,
     );
 
-    await userEvent.click(screen.getByRole("checkbox", { name: "Incorrect answers" }));
+    (screen.getByRole("checkbox", { name: "Incorrect answers" }).element() as HTMLElement).click();
 
     await expect(onValueChange).toHaveBeenCalledWith(
       ["explanations", "incorrect"],
