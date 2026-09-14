@@ -62,7 +62,7 @@ export const QuestionCard = memo(function QuestionCard({
   // detaching and re-attaching the ref on every later render.
   // `preventScroll`: the result appears right where the user is already looking,
   // so the default focus scroll would only yank the card's top off-screen.
-  const focusJustProducedResult = useCallback((node: HTMLDivElement | null) => {
+  const focusJustProducedResult = useCallback((node: HTMLOutputElement | null) => {
     if (node !== null && justSubmitted.current) {
       justSubmitted.current = false;
       node.focus({ preventScroll: true });

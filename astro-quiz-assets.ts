@@ -120,12 +120,23 @@ async function copyQuizAssets(contentDirectory: string, outputDirectory: string)
  * segments are validated *after* decoding and before any filesystem access, so
  * traversal is impossible by construction rather than by normalization.
  */
+/** `/^\/+|\/+$/g` backtracks over a long run of slashes, so trim without a regex. */
+function trimSlashes(value: string) {
+  let start = 0;
+  let end = value.length;
+
+  while (start < end && value[start] === "/") start += 1;
+  while (end > start && value[end - 1] === "/") end -= 1;
+
+  return value.slice(start, end);
+}
+
 export function parseAssetRequest(
   requestUrl: string,
   base: string,
 ): { fileName: string; quizId: string } | null | undefined {
   const pathname = new URL(requestUrl, "http://localhost").pathname;
-  const normalizedBase = base === "/" ? "" : `/${base.replace(/^\/+|\/+$/g, "")}`;
+  const normalizedBase = base === "/" ? "" : `/${trimSlashes(base)}`;
   const baseAssetPath = `${normalizedBase}${QUIZ_ASSETS_PATH}`;
   const acceptedAssetPaths =
     baseAssetPath === QUIZ_ASSETS_PATH ? [QUIZ_ASSETS_PATH] : [baseAssetPath, QUIZ_ASSETS_PATH];

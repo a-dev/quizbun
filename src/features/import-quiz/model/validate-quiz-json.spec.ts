@@ -11,7 +11,7 @@ describe("validateQuizJson", () => {
     expect(result.status).toBe("valid");
     if (result.status === "valid") {
       expect(result.quiz.id).toBe(validQuiz.id);
-      expect(result.quiz.questions.length).toBe(validQuiz.questions.length);
+      expect(result.quiz.questions).toHaveLength(validQuiz.questions.length);
     }
   });
 

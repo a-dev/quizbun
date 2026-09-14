@@ -154,10 +154,9 @@ describe("CodeTextarea", () => {
     const element = textarea.element() as HTMLTextAreaElement;
     const initialHeight = element.offsetHeight;
 
-    await userEvent.fill(
-      textarea,
-      `{\n${Array.from({ length: 12 }, (_, i) => `  "key${i}": ${i}`).join(",\n")}\n}`,
-    );
+    const members = Array.from({ length: 12 }, (_, i) => `  "key${i}": ${i}`).join(",\n");
+
+    await userEvent.fill(textarea, `{\n${members}\n}`);
 
     expect(element.offsetHeight).toBeGreaterThan(initialHeight);
     // `inset: 1px` on the wrapper, so the layer is the field less its borders.

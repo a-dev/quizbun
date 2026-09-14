@@ -14,7 +14,7 @@ function parseSemanticColors(colorsCss: string): SemanticColor[] {
   let section = "Other";
 
   for (const line of colorsCss.split("\n")) {
-    const sectionMatch = line.match(/\/\*\*?\s*([^*]+?)\s*\*\//);
+    const sectionMatch = line.match(/\/\*\*?([^*]+)\*\//);
 
     if (sectionMatch) {
       section = sectionMatch[1].trim();

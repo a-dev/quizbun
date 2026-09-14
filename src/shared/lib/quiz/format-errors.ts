@@ -18,6 +18,12 @@ function formatIssueReport(issue: QuizValidationIssue, index: number) {
   return [`${index + 1}. Path: \`${path}\``, `   Problem: ${problem}`, `   Fix: ${fix}`].join("\n");
 }
 
+/**
+ * The report for one issue, from the most specific rule that matches it. Read
+ * the three functions below as a single top-to-bottom chain: they are split for
+ * length alone, so moving a check between them changes which report an issue
+ * comes back with.
+ */
 function explainIssue(issue: QuizValidationIssue) {
   if (issue.code === "unrecognized_keys") {
     const keys = issue.keys.map((key) => `\`${key}\``).join(", ");
@@ -52,6 +58,11 @@ function explainIssue(issue: QuizValidationIssue) {
     }
   }
 
+  return explainFieldIssue(issue);
+}
+
+/** Shape and presence problems on a single field. */
+function explainFieldIssue(issue: QuizValidationIssue) {
   if (issue.code === "invalid_union" && "options" in issue && issue.options !== undefined) {
     const options = issue.options.map((option) => `\`${String(option)}\``).join(", ");
 
@@ -94,6 +105,11 @@ function explainIssue(issue: QuizValidationIssue) {
     };
   }
 
+  return explainRefinementIssue(issue);
+}
+
+/** Cross-field rules the Standard enforces with a refinement, and the catch-all. */
+function explainRefinementIssue(issue: QuizValidationIssue) {
   if (issue.code === "custom" && isPathEnding(issue.path, ["options"])) {
     return {
       path: formatPath(issue.path),

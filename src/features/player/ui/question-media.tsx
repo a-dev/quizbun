@@ -43,8 +43,10 @@ export function QuestionMedia({
   const plainQuestionTitle = renderMarkdownFieldText("questionTitle", questionTitle);
 
   return (
-    <div
-      role="group"
+    // `fieldset` for its native `group` role: the media belongs to the
+    // Question the surrounding controls answer, and it needs an accessible
+    // name to separate Question media from Explanation media.
+    <fieldset
       aria-label={surface === "question" ? "Question media" : "Explanation media"}
       className={cx(styles.root, SURFACE_CLASS[surface])}
     >
@@ -77,6 +79,6 @@ export function QuestionMedia({
           />
         );
       })}
-    </div>
+    </fieldset>
   );
 }

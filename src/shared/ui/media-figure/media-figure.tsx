@@ -53,7 +53,15 @@ export function MediaFigure({
   return (
     <figure className={cx(styles.root, className)}>
       {failed ? (
-        <div className={styles.placeholder} role="img" aria-label={alt}>
+        <div
+          className={styles.placeholder}
+          // The rule asks for an `<img>`, but this branch exists *because* the
+          // `<img>` failed to decode. The placeholder still stands in for the
+          // Image, so it keeps the Image role and the alt text as its name.
+          // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role
+          role="img"
+          aria-label={alt}
+        >
           <span aria-hidden="true" className={styles.placeholderText}>
             {alt}
           </span>

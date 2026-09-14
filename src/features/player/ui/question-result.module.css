@@ -2,6 +2,12 @@
    unmounts when the card locks, so focus is moved here instead of falling back
    to <body>. Keep that focus move, but only paint the outline for real keyboard
    focus — not the focus we force after a submit. */
+.root {
+  /* `<output>` carries the `status` role natively, but it is inline by
+     default — the card's result is a block of flow content. */
+  display: block;
+}
+
 .root:focus:not(:focus-visible) {
   outline: none;
 }

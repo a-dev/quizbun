@@ -49,7 +49,14 @@ export function QuestionPreviewList({
         Questions
       </h2>
 
-      <ol className={styles.list} role="list">
+      <ol
+        className={styles.list}
+        // Not redundant in practice: Safari drops list semantics from a list
+        // whose computed `list-style` is `none`, and `.list` sets exactly that
+        // because each item draws its own outcome-colored position marker.
+        // oxlint-disable-next-line jsx-a11y/no-redundant-roles
+        role="list"
+      >
         {quiz.questions.map((question, index) => {
           const outcome = questionOutcome(answers, question.id);
 

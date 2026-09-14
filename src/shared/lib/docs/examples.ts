@@ -24,7 +24,7 @@ export interface DocExample {
  */
 export function parseExampleDescriptions(readmeSource: string): Map<string, string> {
   const descriptions = new Map<string, string>();
-  const bulletPattern = /^- \[([a-z0-9-]+\.json)\]\([^)]+\):\s*(.+)$/gm;
+  const bulletPattern = /^- \[([a-z0-9-]+\.json)\]\([^()]+\):[ \t]*(\S.*)$/gm;
 
   for (const match of readmeSource.matchAll(bulletPattern)) {
     const [, fileName, description] = match;

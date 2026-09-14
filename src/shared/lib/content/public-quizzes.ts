@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { lstatSync, readdirSync, readFileSync } from "node:fs";
+import { type Dirent, lstatSync, readdirSync, readFileSync } from "node:fs";
 import { basename, relative, resolve } from "node:path";
 
 import {
@@ -132,12 +132,21 @@ export function loadPublicQuizzes(
   };
 }
 
+/** `/\/+$/` backtracks over a long run of slashes, so normalize without a regex. */
+function withTrailingSlash(directoryPath: string) {
+  let end = directoryPath.length;
+
+  while (end > 0 && directoryPath[end - 1] === "/") end -= 1;
+
+  return `${directoryPath.slice(0, end)}/`;
+}
+
 export function parsePublicQuizAddedDates(
   gitLogOutput: string,
   contentDir: string = PUBLIC_QUIZZES_DIR,
 ): Map<string, string> {
   const addedAtByFileName = new Map<string, string>();
-  const contentPathPrefix = `${contentDir.replace(/\/+$/, "")}/`;
+  const contentPathPrefix = withTrailingSlash(contentDir);
   let currentAddedAt: string | undefined;
 
   for (const line of gitLogOutput.split(/\r?\n/)) {
@@ -310,6 +319,12 @@ function parseAndValidateQuizFile(directoryPath: string, fileName: string, fileL
 
 function validatePublicQuizAssets(directoryPath: string, quizzes: readonly Quiz[]) {
   const quizzesById = new Map(quizzes.map((quiz) => [quiz.id, quiz]));
+
+  validateAssetFolders(directoryPath, quizzesById, collectReferencedAssets(directoryPath, quizzes));
+}
+
+/** Validates every Image reference, returning the filenames each Quiz uses. */
+function collectReferencedAssets(directoryPath: string, quizzes: readonly Quiz[]) {
   const referencedFilesByQuizId = new Map<string, Set<string>>();
 
   for (const quiz of quizzes) {
@@ -318,62 +333,85 @@ function validatePublicQuizAssets(directoryPath: string, quizzes: readonly Quiz[
 
     for (const [questionIndex, question] of quiz.questions.entries()) {
       for (const [imageIndex, image] of (question.images ?? []).entries()) {
-        const imagePath = `questions[${questionIndex}].images[${imageIndex}]`;
-        const sourcePath = `${imagePath}.src`;
-
-        if (image.src.startsWith("https://")) {
-          throw assetValidationError({
-            fileLabel: toWorkspacePathLabel(resolve(directoryPath, `${quiz.id}.json`)),
-            heading: "Remote Image is not allowed in a public Quiz",
-            path: sourcePath,
-            problem: `The Image source "${image.src}" is remote, but Catalog Images must be vendored in the repository.`,
-            fix: `Download the Image into "${toWorkspacePathLabel(resolve(directoryPath, quiz.id))}" and replace the src value with its bare asset filename.`,
-          });
-        }
-
-        referencedFiles.add(image.src);
-        const assetPath = resolve(directoryPath, quiz.id, image.src);
-
-        if (!isRegularFile(assetPath)) {
-          throw assetValidationError({
-            fileLabel: toWorkspacePathLabel(resolve(directoryPath, `${quiz.id}.json`)),
-            heading: "Referenced Quiz asset is missing",
-            path: sourcePath,
-            problem: `The Image references "${image.src}", but "${toWorkspacePathLabel(assetPath)}" is not a file.`,
-            fix: `Add the file to "${toWorkspacePathLabel(resolve(directoryPath, quiz.id))}", or fix/remove this Image reference.`,
-          });
-        }
-
-        const dimensions = readAssetDimensions({
-          assetPath,
+        validateQuizImage(
           directoryPath,
-          imagePath,
-          quizId: quiz.id,
-        });
-
-        if (image.width === undefined || image.height === undefined) {
-          throw assetValidationError({
-            fileLabel: toWorkspacePathLabel(resolve(directoryPath, `${quiz.id}.json`)),
-            heading: "Quiz Image dimensions are missing",
-            path: imagePath,
-            problem: `The Image does not record the intrinsic ${dimensions.width}×${dimensions.height} size of "${image.src}".`,
-            fix: "Run `bun run quiz:sizes:generate` and commit the updated Quiz JSON.",
-          });
-        }
-
-        if (image.width !== dimensions.width || image.height !== dimensions.height) {
-          throw assetValidationError({
-            fileLabel: toWorkspacePathLabel(resolve(directoryPath, `${quiz.id}.json`)),
-            heading: "Quiz Image dimensions do not match the asset",
-            path: imagePath,
-            problem: `The Image records ${image.width}×${image.height}, but "${image.src}" is ${dimensions.width}×${dimensions.height}.`,
-            fix: `Run \`bun run quiz:sizes:generate\` to set \`width\` to ${dimensions.width} and \`height\` to ${dimensions.height}, then commit the updated Quiz JSON.`,
-          });
-        }
+          quiz,
+          image,
+          `questions[${questionIndex}].images[${imageIndex}]`,
+        );
+        referencedFiles.add(image.src);
       }
     }
   }
 
+  return referencedFilesByQuizId;
+}
+
+/** One Image: vendored, present on disk, and carrying the file's real size. */
+function validateQuizImage(
+  directoryPath: string,
+  quiz: Quiz,
+  image: NonNullable<Quiz["questions"][number]["images"]>[number],
+  imagePath: string,
+) {
+  const sourcePath = `${imagePath}.src`;
+
+  if (image.src.startsWith("https://")) {
+    throw assetValidationError({
+      fileLabel: toWorkspacePathLabel(resolve(directoryPath, `${quiz.id}.json`)),
+      heading: "Remote Image is not allowed in a public Quiz",
+      path: sourcePath,
+      problem: `The Image source "${image.src}" is remote, but Catalog Images must be vendored in the repository.`,
+      fix: `Download the Image into "${toWorkspacePathLabel(resolve(directoryPath, quiz.id))}" and replace the src value with its bare asset filename.`,
+    });
+  }
+
+  const assetPath = resolve(directoryPath, quiz.id, image.src);
+
+  if (!isRegularFile(assetPath)) {
+    throw assetValidationError({
+      fileLabel: toWorkspacePathLabel(resolve(directoryPath, `${quiz.id}.json`)),
+      heading: "Referenced Quiz asset is missing",
+      path: sourcePath,
+      problem: `The Image references "${image.src}", but "${toWorkspacePathLabel(assetPath)}" is not a file.`,
+      fix: `Add the file to "${toWorkspacePathLabel(resolve(directoryPath, quiz.id))}", or fix/remove this Image reference.`,
+    });
+  }
+
+  const dimensions = readAssetDimensions({
+    assetPath,
+    directoryPath,
+    imagePath,
+    quizId: quiz.id,
+  });
+
+  if (image.width === undefined || image.height === undefined) {
+    throw assetValidationError({
+      fileLabel: toWorkspacePathLabel(resolve(directoryPath, `${quiz.id}.json`)),
+      heading: "Quiz Image dimensions are missing",
+      path: imagePath,
+      problem: `The Image does not record the intrinsic ${dimensions.width}×${dimensions.height} size of "${image.src}".`,
+      fix: "Run `bun run quiz:sizes:generate` and commit the updated Quiz JSON.",
+    });
+  }
+
+  if (image.width !== dimensions.width || image.height !== dimensions.height) {
+    throw assetValidationError({
+      fileLabel: toWorkspacePathLabel(resolve(directoryPath, `${quiz.id}.json`)),
+      heading: "Quiz Image dimensions do not match the asset",
+      path: imagePath,
+      problem: `The Image records ${image.width}×${image.height}, but "${image.src}" is ${dimensions.width}×${dimensions.height}.`,
+      fix: `Run \`bun run quiz:sizes:generate\` to set \`width\` to ${dimensions.width} and \`height\` to ${dimensions.height}, then commit the updated Quiz JSON.`,
+    });
+  }
+}
+
+/** Every asset folder on disk: matched to a Quiz, and holding only files that Quiz uses. */
+function validateAssetFolders(
+  directoryPath: string,
+  quizzesById: ReadonlyMap<string, Quiz>,
+  referencedFilesByQuizId: ReadonlyMap<string, Set<string>>,
+) {
   const assetFolders = readdirSync(directoryPath, { withFileTypes: true })
     .filter((entry) => entry.isDirectory())
     .sort((left, right) => left.name.localeCompare(right.name, "en"));
@@ -398,40 +436,51 @@ function validatePublicQuizAssets(directoryPath: string, quizzes: readonly Quiz[
     );
 
     for (const assetEntry of assetEntries) {
-      const assetPath = resolve(folderPath, assetEntry.name);
-      const assetLabel = toWorkspacePathLabel(assetPath);
-
-      if (!assetEntry.isFile() || !ASSET_FILE_NAME_PATTERN.test(assetEntry.name)) {
-        throw assetValidationError({
-          fileLabel: assetLabel,
-          heading: "Invalid Quiz asset filename",
-          path: assetLabel,
-          problem: `"${assetEntry.name}" is not a bare kebab-case asset filename with an allowed image extension.`,
-          fix: "Rename it using lowercase latin letters, digits, and single hyphens plus png/jpg/jpeg/webp/avif/gif/svg, then update its Image reference.",
-        });
-      }
-
-      if (!referencedFiles.has(assetEntry.name)) {
-        throw assetValidationError({
-          fileLabel: assetLabel,
-          heading: "Orphan Quiz asset file",
-          path: assetLabel,
-          problem: `The file is not referenced by any Image in ${quiz.id}.json.`,
-          fix: "Remove the file, or add its bare filename to an Image `src` in the Quiz.",
-        });
-      }
-
-      const fileSize = lstatSync(assetPath).size;
-      if (fileSize > MAX_ASSET_FILE_SIZE_BYTES) {
-        throw assetValidationError({
-          fileLabel: assetLabel,
-          heading: "Quiz asset file is too large",
-          path: assetLabel,
-          problem: `The file is ${fileSize} bytes; the per-file limit is ${MAX_ASSET_FILE_SIZE_BYTES} bytes (500 KB).`,
-          fix: "Compress or resize the Image so the file is at most 500 KB.",
-        });
-      }
+      validateAssetFile(folderPath, assetEntry, quiz.id, referencedFiles);
     }
+  }
+}
+
+/** One file inside an asset folder: named to the profile, referenced, and small enough. */
+function validateAssetFile(
+  folderPath: string,
+  assetEntry: Dirent,
+  quizId: string,
+  referencedFiles: ReadonlySet<string>,
+) {
+  const assetPath = resolve(folderPath, assetEntry.name);
+  const assetLabel = toWorkspacePathLabel(assetPath);
+
+  if (!assetEntry.isFile() || !ASSET_FILE_NAME_PATTERN.test(assetEntry.name)) {
+    throw assetValidationError({
+      fileLabel: assetLabel,
+      heading: "Invalid Quiz asset filename",
+      path: assetLabel,
+      problem: `"${assetEntry.name}" is not a bare kebab-case asset filename with an allowed image extension.`,
+      fix: "Rename it using lowercase latin letters, digits, and single hyphens plus png/jpg/jpeg/webp/avif/gif/svg, then update its Image reference.",
+    });
+  }
+
+  if (!referencedFiles.has(assetEntry.name)) {
+    throw assetValidationError({
+      fileLabel: assetLabel,
+      heading: "Orphan Quiz asset file",
+      path: assetLabel,
+      problem: `The file is not referenced by any Image in ${quizId}.json.`,
+      fix: "Remove the file, or add its bare filename to an Image `src` in the Quiz.",
+    });
+  }
+
+  const fileSize = lstatSync(assetPath).size;
+
+  if (fileSize > MAX_ASSET_FILE_SIZE_BYTES) {
+    throw assetValidationError({
+      fileLabel: assetLabel,
+      heading: "Quiz asset file is too large",
+      path: assetLabel,
+      problem: `The file is ${fileSize} bytes; the per-file limit is ${MAX_ASSET_FILE_SIZE_BYTES} bytes (500 KB).`,
+      fix: "Compress or resize the Image so the file is at most 500 KB.",
+    });
   }
 }
 

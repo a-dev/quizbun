@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { RefObject } from "react";
 
+import { flushSync } from "react-dom";
+
 import { messageFromError } from "@/shared/lib/errors";
 import { computeContentHash } from "@/shared/lib/quiz";
 import type { Question, Quiz } from "@/shared/lib/quiz";
@@ -141,8 +143,11 @@ export function usePlayer({
         const reviewingQuestion = urlView === "questions" && urlQuestionId !== undefined;
 
         if (isRunComplete(quiz, loaded) && !reviewingQuestion) {
-          setView("summary");
-          emitSummary();
+          commitNavigation(() => {
+            setView("summary");
+            emitSummary();
+          });
+
           return;
         }
 
@@ -151,10 +156,12 @@ export function usePlayer({
         const nextPageIndex = urlPageIndex ?? firstUnsubmittedPageIndex(pages);
         const anchor = urlQuestionId ?? firstQuestionIdOnPage(pages[nextPageIndex]!);
 
-        setView("questions");
-        setPageIndex(nextPageIndex);
-        setActiveQuestionId(anchor);
-        emitRunAnchor(anchor);
+        commitNavigation(() => {
+          setView("questions");
+          setPageIndex(nextPageIndex);
+          setActiveQuestionId(anchor);
+          emitRunAnchor(anchor);
+        }, anchor);
       } catch (error) {
         if (!cancelled) setLoadError(messageFromError(error));
       }
@@ -191,25 +198,32 @@ export function usePlayer({
     if (isLoaded || loadError !== undefined) releaseTransitionHold.current?.();
   }, [isLoaded, loadError]);
 
-  // Move focus to the page heading on entry and on page/view changes (T7.1).
-  // The player only mounts when the user activates the primary action, whose
-  // button unmounts with the detail surface — without this, focus drops to
-  // <body>. `isLoaded` is in the deps so focus also runs once loading ends.
-  useEffect(() => {
-    if (isLoaded) headingRef.current?.focus();
-  }, [isLoaded, pageIndex, view]);
+  /**
+   * Commits one navigation and then puts the Learner where it landed (T7.1).
+   *
+   * Focus moves to the page heading: the player mounts from a primary action
+   * whose button unmounts with the detail surface, so focus would otherwise
+   * drop to `<body>`. When the URL anchors a Question, the viewport moves to
+   * it — a fragment can name a Question that only exists once its page has
+   * rendered, so the browser's one-shot fragment scroll during document load
+   * cannot be relied on.
+   *
+   * `flushSync` lets both run from the caller instead of an effect: the
+   * heading has to carry its new text before focus reaches it, and the new page
+   * has to be in the DOM before `getElementById` can find the Question.
+   */
+  function commitNavigation(update: () => void, anchorQuestionId?: string) {
+    flushSync(update);
+    headingRef.current?.focus();
 
-  // A fragment may be present before the async Run load mounts its Question.
-  // Scroll after that Question's page has committed instead of relying on the
-  // browser's one-shot fragment scroll during the initial document load.
-  useEffect(() => {
-    if (!isLoaded || view !== "questions" || activeQuestionId === undefined) return;
+    if (anchorQuestionId === undefined) return;
 
-    const anchorId = questionAnchorId(activeQuestionId);
+    const anchorId = questionAnchorId(anchorQuestionId);
+
     if (window.location.hash !== `#${anchorId}`) return;
 
     document.getElementById(anchorId)?.scrollIntoView();
-  }, [activeQuestionId, isLoaded, pageIndex, view]);
+  }
 
   const pages = useMemo(
     () => (answers === undefined ? [] : chunkIntoPages(quiz, answers, pageSize)),
@@ -246,34 +260,52 @@ export function usePlayer({
 
     const anchorQuestionId = activeQuestionId ?? firstQuestionIdOnPage(currentPage);
     const nextPages = chunkIntoPages(quiz, answers, next);
-
-    persistPageSize(next);
     // Immediate re-chunking: keep the current page's first Question visible.
-    setPageIndex(
+    const nextPageIndex =
       anchorQuestionId === ""
         ? pageIndexAfterResize(currentPage.index, pageSize, next)
-        : pageIndexForQuestionId(nextPages, anchorQuestionId),
-    );
+        : pageIndexForQuestionId(nextPages, anchorQuestionId);
     const nextAnchor = anchorQuestionId === "" ? undefined : anchorQuestionId;
-    setActiveQuestionId(nextAnchor);
-    setPageSizeState(next);
-    emitRunAnchor(nextAnchor);
+
+    persistPageSize(next);
+
+    const applyResize = () => {
+      setPageIndex(nextPageIndex);
+      setActiveQuestionId(nextAnchor);
+      setPageSizeState(next);
+      emitRunAnchor(nextAnchor);
+    };
+
+    // Resizing in place is not a navigation: only a re-chunk that lands the
+    // Learner on a different page moves focus and the viewport.
+    if (nextPageIndex === pageIndex) {
+      applyResize();
+
+      return;
+    }
+
+    commitNavigation(applyResize, nextAnchor);
   }
 
   function goToPage(pageNumber: number) {
     const nextPage = pages[pageNumber - 1];
+    const anchor = nextPage === undefined ? undefined : firstQuestionIdOnPage(nextPage);
 
-    setPageIndex(pageNumber - 1);
-    if (nextPage !== undefined) {
-      const anchor = firstQuestionIdOnPage(nextPage);
-      setActiveQuestionId(anchor);
-      emitRunAnchor(anchor);
-    }
+    commitNavigation(() => {
+      setPageIndex(pageNumber - 1);
+
+      if (anchor !== undefined) {
+        setActiveQuestionId(anchor);
+        emitRunAnchor(anchor);
+      }
+    }, anchor);
   }
 
   function showSummary() {
-    setView("summary");
-    emitSummary();
+    commitNavigation(() => {
+      setView("summary");
+      emitSummary();
+    });
   }
 
   function reviewQuestion(questionId: string) {
@@ -281,10 +313,12 @@ export function usePlayer({
       questions.some(({ question }) => question.id === questionId),
     );
 
-    setPageIndex(page?.index ?? 0);
-    setActiveQuestionId(questionId);
-    setView("questions");
-    emitRunAnchor(questionId);
+    commitNavigation(() => {
+      setPageIndex(page?.index ?? 0);
+      setActiveQuestionId(questionId);
+      setView("questions");
+      emitRunAnchor(questionId);
+    }, questionId);
   }
 
   function retake() {
@@ -294,21 +328,20 @@ export function usePlayer({
         await resetRun(source, quiz.id);
         const anchor = quiz.questions[0]?.id;
 
-        setAnswers({});
-        setPageIndex(0);
-        setActiveQuestionId(anchor);
-        setView("questions");
-        emitRunAnchor(anchor);
+        commitNavigation(() => {
+          setAnswers({});
+          setPageIndex(0);
+          setActiveQuestionId(anchor);
+          setView("questions");
+          emitRunAnchor(anchor);
+        }, anchor);
       } catch (error) {
         setActionError(messageFromError(error));
       }
     })();
   }
 
-  // A load failure replaces the screen; an action failure (submit/retake) is
-  // inline and recoverable, so the player stays mounted.
-  const status: PlayerModel["status"] =
-    !isLoaded && loadError !== undefined ? "load-error" : isLoaded ? "ready" : "loading";
+  const status = resolveStatus(isLoaded, loadError);
 
   return {
     status,
@@ -329,4 +362,15 @@ export function usePlayer({
     reviewQuestion,
     retake,
   };
+}
+
+/**
+ * A load failure replaces the screen; an action failure (submit/retake) is
+ * inline and recoverable, so the player stays mounted and reports `ready`.
+ */
+function resolveStatus(isLoaded: boolean, loadError: string | undefined): PlayerModel["status"] {
+  if (isLoaded) return "ready";
+  if (loadError !== undefined) return "load-error";
+
+  return "loading";
 }

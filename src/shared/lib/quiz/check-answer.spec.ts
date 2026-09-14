@@ -106,7 +106,11 @@ describe("checkAnswer: numeric input", () => {
 
 describe("parseNumericInput", () => {
   test("trims and accepts dot or comma decimals", () => {
+    // Exact equality is the contract under test: the parser has to land on the
+    // same double `3.14` denotes, so a tolerance would hide a real regression.
+    // oxlint-disable-next-line sonarjs/no-floating-point-equality
     expect(parseNumericInput(" 3.14 ")).toBe(3.14);
+    // oxlint-disable-next-line sonarjs/no-floating-point-equality
     expect(parseNumericInput("3,14")).toBe(3.14);
     expect(parseNumericInput("-0,5")).toBe(-0.5);
     expect(parseNumericInput(".5")).toBe(0.5);

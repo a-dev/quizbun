@@ -39,8 +39,9 @@ export function Combobox<T extends ComboboxOptionValue>({
   // re-running `fuzzysort.prepare()` for every option on every render.
   const labelIndex = useMemo(() => fuzzysort.snapshot(options, { key: "label" }), [options]);
 
+  const controlledSelection = Array.isArray(value) ? value : [];
   const normalizedControlledValue = isControlled
-    ? (Array.isArray(value) ? value : [])
+    ? controlledSelection
         .map((selectedOption) => {
           return options.find((option) => option.value === selectedOption.value);
         })

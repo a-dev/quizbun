@@ -28,6 +28,21 @@ interface AnswerControlProps {
 }
 
 /**
+ * Post-submit marking for one Option. Every correct Option is marked correct;
+ * a wrong one is marked only when the Learner actually picked it.
+ */
+function optionFeedback(
+  show: boolean,
+  isCorrect: boolean,
+  isSelected: boolean,
+): "correct" | "incorrect" | undefined {
+  if (!show) return undefined;
+  if (isCorrect) return "correct";
+
+  return isSelected ? "incorrect" : undefined;
+}
+
+/**
  * Renders the answer widget for a Question's `type`. Option identity is the
  * original JSON order (the Standard carries no option ids). `optionOrder`
  * changes only visual order; each control still submits its original index.
@@ -77,15 +92,11 @@ export function AnswerControl({
             <Radio
               key={optionIndex}
               value={optionIndex}
-              feedback={
-                showAnswerFeedback
-                  ? question.options[optionIndex]!.isCorrect
-                    ? "correct"
-                    : answer === optionIndex
-                      ? "incorrect"
-                      : undefined
-                  : undefined
-              }
+              feedback={optionFeedback(
+                showAnswerFeedback,
+                question.options[optionIndex]!.isCorrect,
+                answer === optionIndex,
+              )}
             >
               <MarkdownRender as="span" content={optionsHtml[optionIndex]!} size="m" />
             </Radio>
@@ -105,15 +116,11 @@ export function AnswerControl({
             <Checkbox
               key={optionIndex}
               value={String(optionIndex)}
-              feedback={
-                showAnswerFeedback
-                  ? question.options[optionIndex]!.isCorrect
-                    ? "correct"
-                    : Array.isArray(answer) && answer.includes(optionIndex)
-                      ? "incorrect"
-                      : undefined
-                  : undefined
-              }
+              feedback={optionFeedback(
+                showAnswerFeedback,
+                question.options[optionIndex]!.isCorrect,
+                Array.isArray(answer) && answer.includes(optionIndex),
+              )}
             >
               <MarkdownRender as="span" content={optionsHtml[optionIndex]!} size="m" />
             </Checkbox>

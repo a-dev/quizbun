@@ -72,7 +72,9 @@ describe("formatQuizValidationErrors", () => {
   });
 
   test("formats missing required fields", () => {
-    const { title: _title, ...quizWithoutTitle } = validBaseQuiz;
+    const quizWithoutTitle: Record<string, unknown> = { ...validBaseQuiz };
+
+    delete quizWithoutTitle.title;
 
     expect(reportFor(quizWithoutTitle)).toMatchInlineSnapshot(`
 "Quiz JSON is invalid. Please revise it to satisfy the Quiz Object Standard.

@@ -1,4 +1,4 @@
-import type { ComponentPropsWithoutRef, ReactNode } from "react";
+import type { HTMLAttributes, ReactNode } from "react";
 
 import { CircleAlert, CircleCheck, TriangleAlert } from "lucide-react";
 
@@ -7,9 +7,14 @@ import styles from "./note.module.css";
 
 export type NoteType = "info" | "warning" | "error" | "success";
 
-type Props = ComponentPropsWithoutRef<"div"> & {
+type Props = HTMLAttributes<HTMLElement> & {
   type: NoteType;
   children: ReactNode;
+  /**
+   * `"output"` for a Note that is a live region: the element exposes `status`
+   * natively, so no explicit `role` is needed to announce it politely.
+   */
+  as?: "div" | "output";
 };
 
 const TYPE_CLASS = {
@@ -42,18 +47,16 @@ const DEFAULT_ROLE = {
   success: "status",
 } as const;
 
-export function Note({ type, children, className, role, ...props }: Props) {
+export function Note({ type, children, className, role, as: Tag = "div", ...props }: Props) {
   const Icon = TYPE_ICON[type];
+  // Only a bare `div` needs the role spelled out; `output` already has it.
+  const resolvedRole = role ?? (Tag === "output" ? undefined : DEFAULT_ROLE[type]);
 
   return (
-    <div
-      className={cx(styles.root, TYPE_CLASS[type], className)}
-      role={role ?? DEFAULT_ROLE[type]}
-      {...props}
-    >
+    <Tag className={cx(styles.root, TYPE_CLASS[type], className)} role={resolvedRole} {...props}>
       <Icon className={styles.icon} />
       <span className={utils.visuallyHidden}>{TYPE_LABEL[type]}</span>
       <div className={styles.content}>{children}</div>
-    </div>
+    </Tag>
   );
 }
