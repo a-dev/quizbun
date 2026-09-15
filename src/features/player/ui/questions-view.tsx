@@ -2,7 +2,6 @@ import type { Ref } from "react";
 
 import type { Question, Quiz } from "@/shared/lib/quiz";
 import type { PageSize, SubmittedAnswer } from "@/shared/lib/storage";
-import { quizTransitionStyle } from "@/shared/lib/view-transition";
 import { Button } from "@/shared/ui/button";
 import { Note } from "@/shared/ui/note";
 import { Pagination } from "@/shared/ui/pagination";
@@ -59,11 +58,7 @@ export function QuestionsView({
       statusBar={
         <div className={styles.statusBar}>
           {submitted > 0 ? (
-            <div
-              className={styles.submittedCounter}
-              // Pairs with the detail header's progress line for the swap morph.
-              style={quizTransitionStyle("progress", quiz.id)}
-            >
+            <div className={styles.submittedCounter}>
               {submitted} of {quiz.questions.length} answered
             </div>
           ) : null}

@@ -50,10 +50,6 @@ export function PlayerRuntime({
   }
 
   if (player.status === "loading" || player.currentPage === undefined) {
-    // The full frame, not a bare loader: the detail → player view transition
-    // captures this state as its "after" frame, so the title must already be
-    // in place for the morph to connect (and the header appearing instantly
-    // reads faster regardless).
     return (
       <PlayerFrame quiz={quiz} headingRef={player.headingRef} onExit={onExit}>
         <TopLineLoader />

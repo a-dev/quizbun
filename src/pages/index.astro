@@ -24,10 +24,6 @@ const quizCount = summaries.length;
 const featuredQuizIds = loadFeaturedQuizIds();
 const featuredQuizzes = selectFeaturedQuizzes(summaries, featuredQuizIds);
 const recentQuizzes = selectRecentQuizzes(summaries, 10);
-// A quiz can appear in both sections, but only one card per id may carry the
-// view-transition morph names — duplicates make the browser skip the whole
-// transition.
-const featuredIds = new Set(featuredQuizzes.map((summary) => summary.id));
 ---
 
 <Layout
@@ -49,7 +45,6 @@ const featuredIds = new Set(featuredQuizzes.map((summary) => summary.id));
               summary={summary}
               href={withBase(`quizzes/${encodeURIComponent(summary.id)}/`)}
               showDescription
-              morph
             />
           ))}
         </div>
@@ -70,7 +65,6 @@ const featuredIds = new Set(featuredQuizzes.map((summary) => summary.id));
               href={withBase(`quizzes/${encodeURIComponent(summary.id)}/`)}
               showDescription
               showCreatedAt
-              morph={!featuredIds.has(summary.id)}
             />
           ))}
         </div>

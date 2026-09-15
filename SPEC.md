@@ -267,7 +267,7 @@ Library lists, opens, exports, and deletes Quizzes from IndexedDB. Deleting a Qu
 
 Quiz detail shows metadata, Export, Reset progress, a Question preview, and a Run-aware action. The action is Start, Continue, See summary, or Retake. Public pages render a static Start fallback so the primary action exists before hydration.
 
-Preview titles are real deep links into the player. Starting a Run swaps the player into the same route. The `features/player` shell lazy-loads its runtime, which keeps Question controls and Summary code out of the initial detail bundle. Its loading frame retains the Quiz title so the detail-to-player view transition can connect. This code split reduced eager quiz-page JavaScript from 528 KB to 419 KB raw, and from 187 KB to 146 KB compressed.
+Preview titles are real deep links into the player. Starting a Run swaps the player into the same route. The `features/player` shell lazy-loads its runtime, which keeps Question controls and Summary code out of the initial detail bundle. Its loading frame retains the Quiz title while a Run loads. This code split reduced eager quiz-page JavaScript from 528 KB to 419 KB raw, and from 187 KB to 146 KB compressed.
 
 Reset progress and Retake both delete the saved Run.
 

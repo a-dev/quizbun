@@ -4,8 +4,6 @@ import { ArrowRight } from "lucide-react";
 
 import { renderInlineMarkdownExcerpt, renderMarkdownFieldText } from "@/shared/lib/render";
 import type { QuizSummary } from "@/shared/lib/storage";
-import { quizTransitionStyle } from "@/shared/lib/view-transition";
-import type { QuizTransitionPart } from "@/shared/lib/view-transition";
 import { Badge } from "@/shared/ui/badge";
 import { MarkdownRender } from "@/shared/ui/markdown";
 
@@ -29,13 +27,6 @@ export interface QuizCardProps {
   showCreatedAt?: boolean;
   isPreview?: boolean;
   size?: "s" | "m";
-  /**
-   * Opt into the shared-element view transition toward the quiz page: title,
-   * tags, description, and question counter get per-quiz `view-transition-name`s.
-   * At most one card per quiz id may opt in on a page — a duplicate name makes
-   * the browser skip the whole transition.
-   */
-  morph?: boolean;
   /** Caller-provided actions (Export, delete, …); the card stays data-only. */
   actions?: ReactNode;
 }
@@ -65,14 +56,8 @@ export function QuizCard({
   showDescription = false,
   isPreview = false,
   size = "m",
-  morph = false,
   actions,
 }: QuizCardProps) {
-  // Inline by necessity: `view-transition-name` is a per-quiz dynamic ident,
-  // so it cannot live in a stylesheet class.
-  const morphStyle = (part: QuizTransitionPart) =>
-    morph ? quizTransitionStyle(part, summary.id) : undefined;
-
   const descriptionExcerpt =
     showDescription && summary.description !== undefined
       ? renderInlineMarkdownExcerpt(firstParagraph(summary.description), {
@@ -89,9 +74,7 @@ export function QuizCard({
     >
       <div className={styles.header}>
         <div className={styles.meta}>
-          <span className={styles.counter} style={morphStyle("count")}>
-            {questionsLabelPluralized}
-          </span>{" "}
+          <span className={styles.counter}>{questionsLabelPluralized}</span>{" "}
           {showCreatedAt && summary.addedAt && (
             <time dateTime={summary.addedAt} className={styles.addedAt}>
               {" "}
@@ -114,11 +97,7 @@ export function QuizCard({
         ) : (
           <a href={href} className={cx(typography.hLink, styles.titleLink)}>
             <>
-              {/* Name the text span, not the heading, so the arrow icon stays
-                  out of the title morph. */}
-              <span style={morphStyle("title")}>
-                {renderMarkdownFieldText("quizTitle", summary.title)}
-              </span>
+              {renderMarkdownFieldText("quizTitle", summary.title)}
               <ArrowRight size="18" className={styles.arrowLink} />
             </>
           </a>
@@ -130,11 +109,10 @@ export function QuizCard({
           content={descriptionExcerpt}
           size="s"
           className={styles.description}
-          style={morphStyle("description")}
         />
       )}
       {summary.tags.length > 0 && (
-        <div aria-label="Tags" className={styles.tags} style={morphStyle("tags")}>
+        <div aria-label="Tags" className={styles.tags}>
           {summary.tags.map((tag) => (
             <Badge key={tag} size="s">
               {tag}

@@ -1,5 +1,3 @@
-import type { CSSProperties } from "react";
-
 import { cx } from "#styles";
 import styles from "./prose.module.css";
 
@@ -23,12 +21,6 @@ type Props = {
    */
   as?: "div" | "span" | "p" | "legend";
   className?: string;
-  /**
-   * Integration boundary for caller-owned inline styles — today only a
-   * per-quiz `view-transition-name`, which is a dynamic ident and so cannot
-   * live in a stylesheet class.
-   */
-  style?: CSSProperties;
 };
 
 // Typed class lookup (not styles[`size-${size}`], which is undefined under
@@ -42,11 +34,10 @@ const sizeClass = {
   article: styles.sizeArticle,
 } satisfies Record<MarkdownSize, string>;
 
-export function MarkdownRender({ content, size = "m", as: Tag = "div", className, style }: Props) {
+export function MarkdownRender({ content, size = "m", as: Tag = "div", className }: Props) {
   return (
     <Tag
       className={cx(styles.prose, sizeClass[size], className)}
-      style={style}
       dangerouslySetInnerHTML={{ __html: content }}
     />
   );

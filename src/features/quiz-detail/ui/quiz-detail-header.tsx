@@ -6,7 +6,6 @@ import { downloadQuizJson } from "@/shared/lib/quiz";
 import type { Quiz } from "@/shared/lib/quiz";
 import { renderMarkdownField } from "@/shared/lib/render";
 import type { RunStatus } from "@/shared/lib/storage";
-import { quizTransitionStyle } from "@/shared/lib/view-transition";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { MarkdownRender } from "@/shared/ui/markdown";
@@ -36,12 +35,9 @@ function QuizDetailHeaderComponent({ quiz, runStatus }: QuizDetailHeaderProps) {
   );
 
   return (
-    // View-transition names are inline by necessity (per-quiz dynamic idents).
-    // They pair this header with the Catalog/home card (cross-document) and
-    // with the player header (same-document swap).
     <header className={styles.root}>
       {quiz.tags.length > 0 && (
-        <div className={styles.tags} aria-label="Tags" style={quizTransitionStyle("tags", quiz.id)}>
+        <div className={styles.tags} aria-label="Tags">
           {quiz.tags.map((tag) => (
             <Badge key={tag}>{tag}</Badge>
           ))}
@@ -51,16 +47,15 @@ function QuizDetailHeaderComponent({ quiz, runStatus }: QuizDetailHeaderProps) {
         id="quiz-detail-title"
         className={typography.h1}
         dangerouslySetInnerHTML={{ __html: titleHtml }}
-        style={quizTransitionStyle("title", quiz.id)}
       />
       <div className={styles.meta} aria-label="Quiz metadata">
-        <span style={quizTransitionStyle("count", quiz.id)}>
+        <span>
           {quiz.questions.length} {quiz.questions.length === 1 ? "question" : "questions"}
         </span>
         {quiz.author !== undefined && <> · by {quiz.author}</>}
         {/* Progress lives in the header meta, not the button label (description.md). */}
         {runStatus !== undefined && runStatus.kind !== "none" && runStatus.answered > 0 && (
-          <div className={styles.progress} style={quizTransitionStyle("progress", quiz.id)}>
+          <div className={styles.progress}>
             {`${runStatus.answered} of ${runStatus.total} answered`}
           </div>
         )}
@@ -75,12 +70,7 @@ function QuizDetailHeaderComponent({ quiz, runStatus }: QuizDetailHeaderProps) {
       </div>
 
       {descriptionHtml !== undefined && (
-        <MarkdownRender
-          content={descriptionHtml}
-          size="m"
-          className={styles.description}
-          style={quizTransitionStyle("description", quiz.id)}
-        />
+        <MarkdownRender content={descriptionHtml} size="m" className={styles.description} />
       )}
     </header>
   );

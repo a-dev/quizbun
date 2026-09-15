@@ -18,10 +18,8 @@ const PlayerRuntime = lazy(async () => ({
  * someone actually enters.
  *
  * The fallback is the same frame + loader pair `PlayerRuntime` shows while it
- * reads the Run: the quiz title (and the `view-transition-name` on it) has to
- * exist in the first frame after the swap for the detail → player morph to
- * connect. The two loading states are indistinguishable, so a cold chunk only
- * lengthens the wait the Run read already produces.
+ * reads the Run. The two loading states are indistinguishable, so a cold chunk
+ * only lengthens the wait the Run read already produces.
  */
 export function Player(props: PlayerProps) {
   return (

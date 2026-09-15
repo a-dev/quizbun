@@ -3,7 +3,6 @@ import { useCallback, useMemo, useSyncExternalStore } from "react";
 import type { Quiz } from "@/shared/lib/quiz";
 import { parsePlayerUrlState, questionAnchorId, updatePlayerUrlSearch } from "@/shared/lib/routing";
 import type { PlayerUrlState } from "@/shared/lib/routing";
-import { withViewTransition } from "@/shared/lib/view-transition";
 
 import { surfaceFromState } from "./player-route";
 import type { PlayerView, Surface } from "./player-route";
@@ -19,18 +18,12 @@ import type { PlayerView, Surface } from "./player-route";
 const listeners = new Set<() => void>();
 
 function subscribe(onStoreChange: () => void): () => void {
-  // Browser Back/Forward flips the surface too (detail ↔ player), so it gets
-  // the same view transition as the in-page actions below. On this route a
-  // popstate is always a surface flip: player-internal state only ever
-  // `replaceState`s, so it never creates entries to pop between.
-  const onPopState = () => withViewTransition(onStoreChange);
-
   listeners.add(onStoreChange);
-  window.addEventListener("popstate", onPopState);
+  window.addEventListener("popstate", onStoreChange);
 
   return () => {
     listeners.delete(onStoreChange);
-    window.removeEventListener("popstate", onPopState);
+    window.removeEventListener("popstate", onStoreChange);
   };
 }
 
@@ -87,15 +80,10 @@ export function usePlayerRoute(quiz: Quiz): PlayerRoute {
   const questionIds = useMemo(() => quiz.questions.map((question) => question.id), [quiz]);
   const state = useMemo(() => parsePlayerUrlState(search, questionIds), [search, questionIds]);
 
-  // Enter/exit swap the whole surface, so they run inside a same-document
-  // view transition (detail ↔ player morph). `replace` stays unwrapped: it
-  // only mirrors player-internal state into the URL, nothing visual swaps.
   const enter = useCallback((view: PlayerView, questionId?: string) => {
-    withViewTransition(() => {
-      writeHistory("push", {
-        mode: view === "summary" ? "summary" : "run",
-        ...(view === "questions" && questionId !== undefined && { questionId }),
-      });
+    writeHistory("push", {
+      mode: view === "summary" ? "summary" : "run",
+      ...(view === "questions" && questionId !== undefined && { questionId }),
     });
   }, []);
 
@@ -108,9 +96,7 @@ export function usePlayerRoute(quiz: Quiz): PlayerRoute {
   );
 
   const exit = useCallback(() => {
-    withViewTransition(() => {
-      writeHistory("replace", { mode: "detail" });
-    });
+    writeHistory("replace", { mode: "detail" });
   }, []);
 
   const replace = useCallback((next: PlayerUrlState) => {

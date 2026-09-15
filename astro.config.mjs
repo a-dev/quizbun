@@ -51,12 +51,6 @@ export default defineConfig({
     quizAssets(),
   ],
   output: "static",
-  // A cross-document view transition only starts once the next page has
-  // arrived; prefetching every link on hover/focus makes that near-instant on
-  // static hosting, so the morph plays without a pause.
-  prefetch: {
-    prefetchAll: true,
-  },
   site: githubPagesSite,
   vite: {
     ...sharedViteConfig,
