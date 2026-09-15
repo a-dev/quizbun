@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 
-import { LayoutGrid } from "lucide-react";
+import { Database, ScrollText } from "lucide-react";
 
+import { withBase } from "@/shared/lib/routing";
 import {
   hasStoredData,
   isStorageApiAvailable,
@@ -17,11 +18,7 @@ import {
   isDurabilityNoticeDismissed,
   setDurabilityDismissal,
 } from "../model/durability-preference";
-import {
-  type BeforeInstallPromptEvent,
-  isStandaloneDisplay,
-  resolveInstallPath,
-} from "../model/install-environment";
+import { isStandaloneDisplay } from "../model/install-environment";
 
 import { cx } from "#styles";
 import styles from "./storage-durability.module.css";
@@ -37,13 +34,15 @@ type Props = {
  */
 type PersistenceRequest = "idle" | "pending" | "granted" | "declined";
 
-export function StorageDurability({ showWhenEmpty = false, needInlineMargin = false }: Props) {
+export function StorageDurability({
+  showWhenEmpty = false,
+  needInlineMargin = false,
+}: Readonly<Props>) {
   const [storageAvailable] = useState(isStorageApiAvailable);
   const [persisted, setPersisted] = useState<boolean | null>(null);
   const [hasData, setHasData] = useState<boolean | null>(null);
   const [dismissal, setDismissal] = useState(getDurabilityDismissal);
-  const [standalone, setStandalone] = useState(isStandaloneDisplay);
-  const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  const [standalone] = useState(isStandaloneDisplay);
   const [request, setRequest] = useState<PersistenceRequest>("idle");
 
   useEffect(() => {
@@ -82,27 +81,6 @@ export function StorageDurability({ showWhenEmpty = false, needInlineMargin = fa
     };
   }, [persisted, standalone]);
 
-  useEffect(() => {
-    if (standalone) return;
-
-    const onBeforeInstallPrompt = (event: Event) => {
-      event.preventDefault();
-      setInstallPrompt(event as BeforeInstallPromptEvent);
-    };
-    const onInstalled = () => {
-      setStandalone(true);
-      setInstallPrompt(null);
-    };
-
-    window.addEventListener("beforeinstallprompt", onBeforeInstallPrompt);
-    window.addEventListener("appinstalled", onInstalled);
-
-    return () => {
-      window.removeEventListener("beforeinstallprompt", onBeforeInstallPrompt);
-      window.removeEventListener("appinstalled", onInstalled);
-    };
-  }, [standalone]);
-
   if (!storageAvailable || persisted === null || hasData === null) return null;
   if (!hasData && !showWhenEmpty) return null;
 
@@ -110,7 +88,6 @@ export function StorageDurability({ showWhenEmpty = false, needInlineMargin = fa
 
   const dismissed = isDurabilityNoticeDismissed(dismissal, hasData);
   const showNotice = !persisted && !dismissed && !standalone;
-  const installPath = resolveInstallPath(installPrompt !== null);
   const pending = request === "pending";
 
   async function protectStorage() {
@@ -119,16 +96,6 @@ export function StorageDurability({ showWhenEmpty = false, needInlineMargin = fa
     const granted = await requestStoragePersistence();
     setPersisted(granted);
     setRequest(granted ? "granted" : "declined");
-  }
-
-  async function install() {
-    if (installPrompt === null) return;
-
-    try {
-      await installPrompt.prompt();
-    } catch {}
-
-    setInstallPrompt(null);
   }
 
   function dismiss() {
@@ -141,67 +108,39 @@ export function StorageDurability({ showWhenEmpty = false, needInlineMargin = fa
   return (
     <div className={cx(styles.root, needInlineMargin && styles.rootInlineMargin)}>
       {showNotice && (
-        <Note type="warning" as="output">
-          <div className={styles.noticeContent}>
-            <p className={styles.copy}>
-              {hasData
-                ? "Don't lose your quizzes and progress. "
-                : "Before you start, one thing worth knowing. "}
-              Browsers delete stored data to free up space (e.g., Safari deletes it after seven days
-              without a visit).{" "}
-              {installPath === "none"
-                ? "Allowing persistent storage reduces that risk."
-                : "Installing Quizbun and allowing persistent storage both reduce that risk."}
+        <Note type="warning" as="output" onClose={dismiss}>
+          <p className={styles.copy}>
+            Browsers may delete a site's stored data to free up space. For example, Safari deletes
+            it after seven days if you don't visit the site. To protect your own progress and
+            quizzes, you can:
+            <br /> • install Quizbun as a web app from your browser's menu (
+            <a href={withBase("docs/how-to-install-app/")}>
+              <ScrollText size="14" aria-hidden="true" className={styles.iconInText} />
+              <span className={styles.noteActionText}>see the instructions</span>
+            </a>
+            ),
+            <br /> • or{" "}
+            <Button
+              variant="link"
+              size="s"
+              className={styles.persistenceAction}
+              onClick={() => void protectStorage()}
+              disabled={pending || request === "declined"}
+              aria-busy={pending || undefined}
+            >
+              <Database size="14" aria-hidden="true" className={styles.iconInText} />
+              <span className={styles.noteActionText}>ask browser to keep this data</span>
+            </Button>
+            .
+          </p>
+
+          {request === "declined" && (
+            <p className={styles.declinedCopy}>
+              This browser didn't grant the request. Only{" "}
+              <a href={withBase("docs/how-to-install-app/")}>installing Quizbun as a web app</a>{" "}
+              helps you keep your data.
             </p>
-
-            {/* The separate storage jar is WebKit-only — a Chromium PWA shares
-                storage with the browser — so "install first" is advice that only
-                belongs on this branch. */}
-            {installPath === "ios-safari" && (
-              <p className={styles.copy}>
-                Open Safari's Share menu, then choose <strong>Add to Home Screen</strong>. The
-                installed app gets its own separate storage,{" "}
-                {hasData
-                  ? "so what you've saved in Safari won't appear there — you'd add it again in the app"
-                  : "so installing before you save anything saves you doing it twice"}
-              </p>
-            )}
-
-            {installPath === "browser-menu" && (
-              <p className={styles.copy}>
-                <LayoutGrid size="20" className={styles.copyIcon} /> Install Quizbun from your
-                browser's app or page menu.
-              </p>
-            )}
-
-            {request === "declined" && (
-              <p className={styles.declinedCopy}>
-                {installPath === "none"
-                  ? "Sorry, this browser turned that down, so your data stays deletable"
-                  : "Sorry, this browser turned that down. Installing Quizbun as an web app is the only reliable way to get it."}
-              </p>
-            )}
-
-            <div className={styles.actions}>
-              {installPrompt === null ? (
-                <Button
-                  size="m"
-                  onClick={() => void protectStorage()}
-                  disabled={pending || request === "declined"}
-                  aria-busy={pending || undefined}
-                >
-                  Ask browser to keep this data
-                </Button>
-              ) : (
-                <Button size="m" onClick={() => void install()}>
-                  Install Quizbun
-                </Button>
-              )}
-              <Button size="s" variant="destructive" onClick={dismiss}>
-                Dismiss
-              </Button>
-            </div>
-          </div>
+          )}
         </Note>
       )}
     </div>

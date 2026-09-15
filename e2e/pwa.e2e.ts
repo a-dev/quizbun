@@ -1,6 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 
-import { seedCatalogRun } from "./fixtures/seed";
+import { singleChoiceQuiz } from "./fixtures/quizzes";
+import { seedCatalogRun, seedQuiz } from "./fixtures/seed";
 
 interface WebAppManifest {
   id: string;
@@ -65,26 +66,28 @@ async function stubPersistedStorage(page: Page) {
 }
 
 const durabilityNotice = (page: Page) =>
-  page.getByRole("status").filter({ hasText: "Browsers delete stored data" });
+  page.getByRole("status").filter({ hasText: "Browsers may delete a site's stored data" });
 
 test("the Library durability notice stays dismissed after reload", async ({ page }) => {
   await stubBestEffortStorage(page);
   await page.goto("/library/");
+  await expect(page.getByRole("region", { name: "Your quizzes" })).toBeVisible();
+  await seedQuiz(page, singleChoiceQuiz);
+  await page.reload();
 
   const notice = durabilityNotice(page);
   await expect(notice).toBeVisible();
-  await notice.getByRole("button", { name: "Dismiss" }).click();
+  await notice.getByRole("button", { name: "Close note" }).click();
   await expect(notice).toBeHidden();
 
   await page.reload();
 
   await expect(page.getByRole("region", { name: "Your quizzes" })).toBeVisible();
   await expect(notice).toBeHidden();
-  // Scoped to what was stored when it was taken: nothing, so the notice returns
-  // once there is data (covered in the component lane).
+  // A dismissal taken while a Library Quiz is stored remains final.
   await expect
     .poll(() => page.evaluate(() => localStorage.getItem("quizbun.durability-notice-dismissed")))
-    .toBe("nothing-stored");
+    .toBe("data-stored");
 });
 
 // Protected is the quiet state: no notice, and no standing line reporting health.
@@ -113,6 +116,11 @@ test("Home surfaces durability once a Catalog Run exists, not before", async ({ 
   await page.goto("/library/");
   await expect(page.getByRole("region", { name: "Your quizzes" })).toBeVisible();
   await seedCatalogRun(page);
+
+  await page.reload();
+  await expect(page.getByRole("region", { name: "Your quizzes" })).toBeVisible();
+  await expect(durabilityNotice(page)).toBeHidden();
+
   await page.goto("/");
 
   await expect(durabilityNotice(page)).toBeVisible();

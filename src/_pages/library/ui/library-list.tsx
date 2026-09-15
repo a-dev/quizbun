@@ -261,12 +261,12 @@ export function LibraryList() {
     return <Note type="error">Could not load the Library: {state.message}</Note>;
   }
 
+  const quizCountLabel = quizzes.length === 1 ? "quiz" : "quizzes";
+  const counter = quizzes.length > 0 ? `${quizzes.length} ${quizCountLabel} available` : undefined;
+
   return (
     <section aria-label="Your quizzes" className={layout.section}>
-      <SectionTitle
-        title="My library"
-        counter={`${quizzes.length} ${quizzes.length === 1 ? "quiz" : "quizzes"} available`}
-      />
+      <SectionTitle title="My library" counter={counter} />
       <div className={styles.intro}>
         <LinkAsButton variant="primary" size="m" href={withBase("import/")}>
           Add new quiz
@@ -283,11 +283,7 @@ export function LibraryList() {
           </p>
         </div>
       </div>
-
-      {/* `showWhenEmpty`: arriving here is intent to store quizzes, so the
-          install advice should land before there is anything to strand. */}
-      <StorageDurability showWhenEmpty />
-
+      {quizzes.length > 0 && <StorageDurability />}
       {state.quizzes.length !== 0 && (
         <TagFilter
           availableTags={availableTags}

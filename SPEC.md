@@ -179,11 +179,11 @@ The Content hash is SHA-256 over a stable serialization of the whole Question. R
 
 The app shows durability advice only while browser storage is not persistent. It never reports a byte count because `estimate()` covers the whole origin and browsers may pad it.
 
-Installation is the primary action when the browser offers it. In standalone mode, the app calls `persist()` automatically. An explicit request button appears only when installation is unavailable. The app registers no service worker because installability no longer requires one and offline support has not shipped.
+The notice links to browser-specific installation instructions and offers an explicit request for persistent storage. In standalone mode, the app calls `persist()` automatically. The app registers no service worker because installability no longer requires one and offline support has not shipped.
 
 The notice appears on Home and Library because Catalog Runs and Library Quizzes share IndexedDB. `hasStoredData()` checks both stores. Home waits until data exists. Library may advise installation before the first Import.
 
-Safari keeps home-screen storage separate from browser storage. The notice warns Learners to add browser Quizzes again after installation. Dismissal has separate `nothing-stored` and `data-stored` states so an early dismissal expires once data exists.
+Dismissal has separate `nothing-stored` and `data-stored` states so an early dismissal expires once data exists.
 
 ### Private Quiz routes
 

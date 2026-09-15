@@ -12,7 +12,7 @@ const storageMocks = vi.hoisted(() => ({
 
 vi.mock("@/shared/lib/storage", () => storageMocks);
 
-const STORAGE_RISK_COPY = /Browsers delete stored data to free up space/;
+const STORAGE_RISK_COPY = /Browsers may delete a site's stored data to free up space/;
 
 function mediaQuery(matches = false): MediaQueryList {
   return {
@@ -56,11 +56,19 @@ describe("StorageDurability", () => {
     await expect.element(screen.getByRole("status")).toBeInTheDocument();
     expect(storageMocks.requestStoragePersistence).not.toHaveBeenCalled();
 
-    await userEvent.click(screen.getByRole("button", { name: "Ask browser to keep this data" }));
+    await userEvent.click(screen.getByRole("button", { name: "ask browser to keep this data" }));
 
     expect(storageMocks.requestStoragePersistence).toHaveBeenCalledOnce();
     // A successful request quietly removes the notice.
     await expect.element(screen.getByRole("status")).not.toBeInTheDocument();
+  });
+
+  it("links to the installation instructions", async () => {
+    const screen = await page.render(<StorageDurability showWhenEmpty />);
+
+    await expect
+      .element(screen.getByRole("link", { name: "see the instructions" }))
+      .toHaveAttribute("href", "/docs/how-to-install-app/");
   });
 
   // A denial is the ordinary outcome; the click must still produce visible
@@ -68,13 +76,13 @@ describe("StorageDurability", () => {
   it("says so when the browser declines the persistence request", async () => {
     const screen = await page.render(<StorageDurability showWhenEmpty />);
 
-    await userEvent.click(screen.getByRole("button", { name: "Ask browser to keep this data" }));
+    await userEvent.click(screen.getByRole("button", { name: "ask browser to keep this data" }));
 
     await expect
-      .element(screen.getByText(/Sorry, this browser turned that down/))
+      .element(screen.getByText(/This browser didn't grant the request/))
       .toBeInTheDocument();
     await expect
-      .element(screen.getByRole("button", { name: "Ask browser to keep this data" }))
+      .element(screen.getByRole("button", { name: "ask browser to keep this data" }))
       .toBeDisabled();
   });
 
@@ -107,9 +115,13 @@ describe("StorageDurability", () => {
 
   it("records dismissal against what is stored right now", async () => {
     storageMocks.hasStoredData.mockResolvedValue(true);
-    const screen = await page.render(<StorageDurability showWhenEmpty />);
+    const screen = await page.render(
+      <div style={{ paddingBlockStart: "1rem" }}>
+        <StorageDurability showWhenEmpty />
+      </div>,
+    );
 
-    await userEvent.click(screen.getByRole("button", { name: "Dismiss" }));
+    await userEvent.click(screen.getByRole("button", { name: "Close note" }));
 
     await expect.element(screen.getByRole("status")).not.toBeInTheDocument();
     expect(localStorage.getItem("quizbun.durability-notice-dismissed")).toBe("data-stored");
@@ -167,74 +179,5 @@ describe("StorageDurability", () => {
 
     await expect.element(screen.getByRole("status")).not.toBeInTheDocument();
     expect(storageMocks.isStoragePersisted).not.toHaveBeenCalled();
-  });
-
-  it("captures Chromium's install prompt and activates it from the Install button", async () => {
-    const prompt = vi.fn<() => Promise<void>>().mockResolvedValue(undefined);
-    const screen = await page.render(<StorageDurability showWhenEmpty />);
-    const event = Object.assign(new Event("beforeinstallprompt", { cancelable: true }), { prompt });
-
-    window.dispatchEvent(event);
-    await userEvent.click(screen.getByRole("button", { name: "Install Quizbun" }));
-
-    expect(event.defaultPrevented).toBe(true);
-    expect(prompt).toHaveBeenCalledOnce();
-  });
-
-  // `prompt()` is single-use and throws once spent; that must not surface as an
-  // unhandled rejection.
-  it("survives an install prompt that rejects", async () => {
-    const prompt = vi.fn<() => Promise<void>>().mockRejectedValue(new Error("already used"));
-    const screen = await page.render(<StorageDurability showWhenEmpty />);
-
-    window.dispatchEvent(
-      Object.assign(new Event("beforeinstallprompt", { cancelable: true }), { prompt }),
-    );
-    await userEvent.click(screen.getByRole("button", { name: "Install Quizbun" }));
-
-    expect(prompt).toHaveBeenCalledOnce();
-    await expect
-      .element(screen.getByRole("button", { name: "Install Quizbun" }))
-      .not.toBeInTheDocument();
-    await expect.element(screen.getByRole("status")).toBeInTheDocument();
-  });
-
-  it("warns iOS users about Safari and installed-app storage isolation", async () => {
-    storageMocks.hasStoredData.mockResolvedValue(true);
-    vi.spyOn(navigator, "userAgent", "get").mockReturnValue("iPhone");
-    const screen = await page.render(<StorageDurability showWhenEmpty />);
-
-    await expect
-      .element(screen.getByText(/what you've saved in Safari won't appear there/))
-      .toBeInTheDocument();
-  });
-
-  // Firefox has no install path at all, so install instructions there would be
-  // simply wrong; the request button is the whole notice.
-  it("omits install instructions on a browser that cannot install", async () => {
-    vi.spyOn(navigator, "userAgent", "get").mockReturnValue(
-      "Mozilla/5.0 (X11; Linux x86_64; rv:130.0) Gecko/20100101 Firefox/130.0",
-    );
-    const screen = await page.render(<StorageDurability showWhenEmpty />);
-
-    await expect
-      .element(screen.getByText("Allowing persistent storage reduces that risk.", { exact: false }))
-      .toBeInTheDocument();
-    await expect.element(screen.getByText(/browser's app or page menu/)).not.toBeInTheDocument();
-    await expect.element(screen.getByText(/Add to Home Screen/)).not.toBeInTheDocument();
-    await expect
-      .element(screen.getByRole("button", { name: "Ask browser to keep this data" }))
-      .toBeInTheDocument();
-  });
-
-  // Installing before saving anything only matters on WebKit, where the home-screen
-  // app gets its own storage jar. A Chromium PWA shares storage with the browser.
-  it("gives the install-first reason only on iOS", async () => {
-    vi.spyOn(navigator, "userAgent", "get").mockReturnValue("iPhone");
-    const screen = await page.render(<StorageDurability showWhenEmpty />);
-
-    await expect
-      .element(screen.getByText(/installing before you save anything saves you doing it twice/))
-      .toBeInTheDocument();
   });
 });

@@ -1,15 +1,19 @@
 import type { HTMLAttributes, ReactNode } from "react";
 
-import { CircleAlert, CircleCheck, TriangleAlert } from "lucide-react";
+import { CircleAlert, CircleCheck, CircleX, TriangleAlert } from "lucide-react";
+
+import { Button } from "../button";
 
 import { cx, utils } from "#styles";
 import styles from "./note.module.css";
 
 export type NoteType = "info" | "warning" | "error" | "success";
 
-type Props = HTMLAttributes<HTMLElement> & {
+type Props = Omit<HTMLAttributes<HTMLElement>, "onClose"> & {
   type: NoteType;
   children: ReactNode;
+  /** Shows a close button and runs this callback when the button is activated. */
+  onClose?: () => void;
   /**
    * `"output"` for a Note that is a live region: the element exposes `status`
    * natively, so no explicit `role` is needed to announce it politely.
@@ -47,16 +51,41 @@ const DEFAULT_ROLE = {
   success: "status",
 } as const;
 
-export function Note({ type, children, className, role, as: Tag = "div", ...props }: Props) {
+export function Note({
+  type,
+  children,
+  className,
+  role,
+  as: Tag = "div",
+  onClose,
+  ...props
+}: Props) {
   const Icon = TYPE_ICON[type];
   // Only a bare `div` needs the role spelled out; `output` already has it.
   const resolvedRole = role ?? (Tag === "output" ? undefined : DEFAULT_ROLE[type]);
 
   return (
-    <Tag className={cx(styles.root, TYPE_CLASS[type], className)} role={resolvedRole} {...props}>
+    <Tag
+      className={cx(styles.root, TYPE_CLASS[type], className)}
+      role={resolvedRole}
+      data-closable={onClose === undefined ? undefined : ""}
+      {...props}
+    >
       <Icon className={styles.icon} />
       <span className={utils.visuallyHidden}>{TYPE_LABEL[type]}</span>
       <div className={styles.content}>{children}</div>
+      {onClose !== undefined && (
+        <Button
+          type="button"
+          variant="icon"
+          size="icon-s"
+          className={styles.close}
+          aria-label="Close note"
+          onClick={onClose}
+        >
+          <CircleX size={24} aria-hidden="true" strokeWidth={2} />
+        </Button>
+      )}
     </Tag>
   );
 }

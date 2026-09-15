@@ -29,6 +29,12 @@ type Story = StoryObj<typeof meta>;
 
 export const NoteSettings: Story = {};
 
+export const Closable: Story = {
+  args: {
+    onClose: () => undefined,
+  },
+};
+
 export const Types: Story = {
   parameters: {
     controls: { disable: true },

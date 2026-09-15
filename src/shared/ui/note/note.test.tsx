@@ -1,5 +1,5 @@
-import { describe, it, expect } from "vitest";
-import { page } from "vitest/browser";
+import { describe, it, expect, vi } from "vitest";
+import { page, userEvent } from "vitest/browser";
 
 import { Note } from "./note";
 
@@ -36,5 +36,27 @@ describe("Note", () => {
       </Note>,
     );
     await expect.element(screen.getByTestId("note")).toHaveClass("custom-note");
+  });
+
+  it("does not render a close button without an onClose callback", async () => {
+    const screen = await page.render(<Note type="info">Heads up.</Note>);
+    await expect
+      .element(screen.getByRole("button", { name: "Close note" }))
+      .not.toBeInTheDocument();
+  });
+
+  it("renders a close button and calls onClose when activated", async () => {
+    const onClose = vi.fn<() => void>();
+    const screen = await page.render(
+      <div style={{ paddingBlockStart: "1rem" }}>
+        <Note type="info" onClose={onClose}>
+          Heads up.
+        </Note>
+      </div>,
+    );
+
+    await userEvent.click(screen.getByRole("button", { name: "Close note" }));
+
+    await expect(onClose).toHaveBeenCalledOnce();
   });
 });
