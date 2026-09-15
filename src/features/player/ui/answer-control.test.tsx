@@ -64,7 +64,44 @@ function MultipleChoiceHarness({
   );
 }
 
+function SingleChoiceHarness() {
+  const [answer, setAnswer] = useState<SubmittedAnswer>();
+
+  return (
+    <AnswerControl
+      question={singleChoiceQuestion}
+      answer={answer}
+      disabled={false}
+      idPrefix="single"
+      inputError={undefined}
+      optionOrder={undefined}
+      onDraftChange={setAnswer}
+      onSubmit={() => undefined}
+    />
+  );
+}
+
 describe("AnswerControl", () => {
+  it("keeps the single-choice RadioGroup controlled while selecting an Option", async () => {
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const consoleWarn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    try {
+      const screen = await page.render(<SingleChoiceHarness />);
+
+      (screen.getByRole("radio", { name: "Original zero" }).element() as HTMLElement).click();
+
+      const consoleOutput = [...consoleError.mock.calls, ...consoleWarn.mock.calls]
+        .flat()
+        .join(" ");
+      expect(consoleOutput).not.toContain(
+        "changing the uncontrolled value state of RadioGroup to be controlled",
+      );
+    } finally {
+      consoleError.mockRestore();
+      consoleWarn.mockRestore();
+    }
+  });
+
   it("renders a shuffled Option but submits its original index", async () => {
     const onDraftChange = vi.fn<() => void>();
     const screen = await page.render(

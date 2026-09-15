@@ -5,8 +5,7 @@
 
 .intro {
   display: grid;
-  grid-template-columns: max-content auto;
-  gap: 1.5rem;
+  gap: 1.2rem;
   align-items: start;
 
   margin-block-end: 1.5rem;
@@ -21,9 +20,32 @@
   line-height: var(--lh-l);
 
   text-box-edge: cap alphabetic;
-  text-box-trim: trim-start;
+  text-box-trim: trim-both;
 
   p:not(:last-child) {
     margin-block-end: 0.5rem;
   }
+}
+
+@media (width >= 620px) {
+  .intro {
+    grid-template-columns: auto max-content;
+    gap: 1.2rem;
+  }
+
+  .intro-text {
+    padding-inline: 1.2rem;
+    border-inline-start: 2px solid var(--color-primary-blue);
+  }
+}
+
+.note {
+  margin-block-start: 0.5rem;
+  font-size: var(--fs-s);
+  line-height: var(--lh-m);
+  color: var(--color-text-secondary);
+}
+
+.icon {
+  margin-inline-end: 0.5rem;
 }

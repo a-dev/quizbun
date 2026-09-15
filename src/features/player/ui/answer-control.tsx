@@ -86,7 +86,7 @@ export function AnswerControl({
           aria-describedby={hintId}
           disabled={disabled}
           name={`${idPrefix}-options`}
-          value={typeof answer === "number" ? answer : undefined}
+          value={typeof answer === "number" ? answer : null}
           onValueChange={(value) => onDraftChange(value as number)}
         >
           {displayedOptionIndexes.map((optionIndex) => (

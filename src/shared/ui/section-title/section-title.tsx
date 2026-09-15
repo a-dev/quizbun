@@ -6,7 +6,7 @@ type Props = {
   counter?: string;
 };
 
-export function SectionTitle({ title, counter }: Props) {
+export function SectionTitle({ title, counter }: Readonly<Props>) {
   return (
     <div className={styles.root}>
       <h2 className={cx(styles.title, utils.cellBackgroundContained)}>

@@ -1,6 +1,6 @@
 import { useDeferredValue, useEffect, useMemo, useState } from "react";
 
-import { Trash2, Download } from "lucide-react";
+import { Trash2, Download, CirclePlus } from "lucide-react";
 
 import { messageFromError } from "@/shared/lib/errors";
 import { downloadQuizJson } from "@/shared/lib/quiz";
@@ -268,20 +268,20 @@ export function LibraryList() {
     <section aria-label="Your quizzes" className={layout.section}>
       <SectionTitle title="My library" counter={counter} />
       <div className={styles.intro}>
-        <LinkAsButton variant="primary" size="m" href={withBase("import/")}>
-          Add new quiz
-        </LinkAsButton>
         <div className={styles.introText}>
           <p>
-            Here you can import quizzes you create. Your browser stores everything locally in
-            IndexedDB. That means quizzes stay on this device and browser. Clearing cookies won't
-            erase your progress, but clearing site data or using private browsing will.
+            Here you can import quizzes you create. They stay on this device and browser. Read more
+            about how <a href={withBase("docs/prompt/")}>generate quiz with your AI</a>.
           </p>
-          <p>
-            Read more about how <a href={withBase("docs/prompt/")}>generate quiz with your AI</a>{" "}
-            and <a href={withBase("docs/standard/")}>description of the standard</a>.
+          <p className={styles.note}>
+            * Your browser stores everything locally in IndexedDB. Clearing cookies won't erase your
+            progress, but clearing site data or using private browsing will.
           </p>
         </div>
+        <LinkAsButton variant="primary" size="m" href={withBase("import/")}>
+          <CirclePlus aria-hidden="true" className={styles.icon} size={18} />
+          Add new quiz
+        </LinkAsButton>
       </div>
       {quizzes.length > 0 && <StorageDurability />}
       {state.quizzes.length !== 0 && (
