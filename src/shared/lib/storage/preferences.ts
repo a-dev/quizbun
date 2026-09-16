@@ -6,6 +6,7 @@ export const DEFAULT_PAGE_SIZE: PageSize = 5;
 
 // Page size is a global UI preference (not per quiz), so a single key suffices.
 const PAGE_SIZE_KEY = "quizbun.page-size";
+const pageSizeListeners = new Set<() => void>();
 
 function isPageSize(value: number): value is PageSize {
   return (PAGE_SIZES as readonly number[]).includes(value);
@@ -31,6 +32,23 @@ export function setPageSize(pageSize: PageSize): void {
   } catch {
     // Storage may be unavailable (private mode, quota); the preference simply doesn't persist.
   }
+
+  for (const listener of pageSizeListeners) listener();
+}
+
+/** Subscribe React surfaces that derive links from the global Page-size preference. */
+export function subscribePageSize(listener: () => void): () => void {
+  pageSizeListeners.add(listener);
+
+  const onStorage = (event: StorageEvent) => {
+    if (event.key === PAGE_SIZE_KEY) listener();
+  };
+  globalThis.addEventListener?.("storage", onStorage);
+
+  return () => {
+    pageSizeListeners.delete(listener);
+    globalThis.removeEventListener?.("storage", onStorage);
+  };
 }
 
 // The read-aloud voice, identified by its `voiceURI`. Absent means the user

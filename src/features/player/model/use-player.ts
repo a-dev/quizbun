@@ -38,7 +38,7 @@ export interface UsePlayerParams {
   source: RunSource;
   urlView: View;
   urlQuestionId: string | undefined;
-  onUrlStateChange?: (state: PlayerUrlState) => void;
+  onUrlStateChange?: (state: PlayerUrlState, pageSize?: PageSize) => void;
 }
 
 /** What the player UI needs to render — no storage or routing concerns leak out. */
@@ -101,8 +101,10 @@ export function usePlayer({
   // pattern for callbacks read by effects/handlers.
   const emitRef = useRef(onUrlStateChange);
   emitRef.current = onUrlStateChange;
-  const emitRunAnchor = useCallback((questionId: string | undefined) => {
-    if (questionId !== undefined) emitRef.current?.({ mode: "run", questionId });
+  const emitRunAnchor = useCallback((questionId: string | undefined, activePageSize: PageSize) => {
+    if (questionId !== undefined) {
+      emitRef.current?.({ mode: "run", questionId }, activePageSize);
+    }
   }, []);
   const emitSummary = useCallback(() => emitRef.current?.({ mode: "summary" }), []);
 
@@ -159,7 +161,7 @@ export function usePlayer({
           setView("questions");
           setPageIndex(nextPageIndex);
           setActiveQuestionId(anchor);
-          emitRunAnchor(anchor);
+          emitRunAnchor(anchor, initialPageSize);
         }, anchor);
       } catch (error) {
         if (!cancelled) setLoadError(messageFromError(error));
@@ -248,7 +250,7 @@ export function usePlayer({
       setPageIndex(nextPageIndex);
       setActiveQuestionId(nextAnchor);
       setPageSize(next);
-      emitRunAnchor(nextAnchor);
+      emitRunAnchor(nextAnchor, next);
     };
 
     // Resizing in place is not a navigation: only a re-chunk that lands the
@@ -271,7 +273,7 @@ export function usePlayer({
 
       if (anchor !== undefined) {
         setActiveQuestionId(anchor);
-        emitRunAnchor(anchor);
+        emitRunAnchor(anchor, pageSize);
       }
     }, anchor);
   }
@@ -292,7 +294,7 @@ export function usePlayer({
       setPageIndex(page?.index ?? 0);
       setActiveQuestionId(questionId);
       setView("questions");
-      emitRunAnchor(questionId);
+      emitRunAnchor(questionId, pageSize);
     }, questionId);
   }
 
@@ -308,7 +310,7 @@ export function usePlayer({
           setPageIndex(0);
           setActiveQuestionId(anchor);
           setView("questions");
-          emitRunAnchor(anchor);
+          emitRunAnchor(anchor, pageSize);
         }, anchor);
       } catch (error) {
         setActionError(messageFromError(error));

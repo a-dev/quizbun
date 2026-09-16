@@ -3,7 +3,7 @@ import { useCallback, useState } from "react";
 
 import type { Quiz } from "@/shared/lib/quiz";
 import type { PlayerUrlState } from "@/shared/lib/routing";
-import type { RunSource } from "@/shared/lib/storage";
+import type { PageSize, RunSource } from "@/shared/lib/storage";
 import { BackButton } from "@/shared/ui/breadcrumbs";
 import { TopLineLoader } from "@/shared/ui/loader";
 import { Note } from "@/shared/ui/note";
@@ -35,7 +35,7 @@ export interface QuizDetailProps {
     source: RunSource;
     urlView: PlayerView;
     urlQuestionId?: string;
-    onUrlStateChange: (state: PlayerUrlState) => void;
+    onUrlStateChange: (state: PlayerUrlState, pageSize?: PageSize) => void;
     onExit: () => void;
   }) => ReactNode;
 }

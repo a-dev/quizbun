@@ -1,9 +1,9 @@
 import { renderToString } from "react-dom/server";
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import { page } from "vitest/browser";
 
 import type { Quiz } from "@/shared/lib/quiz";
-import { saveAnswer, type QuestionProgress } from "@/shared/lib/storage";
+import { saveAnswer, setPageSize, type QuestionProgress } from "@/shared/lib/storage";
 
 import { QuizDetail } from "./quiz-detail";
 
@@ -58,6 +58,15 @@ async function renderDetail(quiz: Quiz) {
   );
 }
 
+beforeEach(() => {
+  localStorage.clear();
+  const url = new URL(window.location.href);
+  url.searchParams.delete("mode");
+  url.searchParams.delete("question");
+  url.hash = "";
+  window.history.replaceState(window.history.state, "", url);
+});
+
 describe("QuizDetail", () => {
   it("server-renders the primary action and the Question preview before Run status loads", () => {
     const html = renderToString(
@@ -77,7 +86,8 @@ describe("QuizDetail", () => {
 
     expect(html).toContain("Questions");
     expect(html).toContain("Not answered");
-    expect(html).toContain("?mode=run&amp;question=q-one#question-q-one");
+    expect(html).toContain('href="?mode=run&amp;question=q-one"');
+    expect(html).toContain("?mode=run&amp;question=q-two#question-q-two");
 
     // Duplicates of this page under a query param: linked for people, not for
     // crawlers — the Start stand-in plus one per Question.
@@ -89,6 +99,36 @@ describe("QuizDetail", () => {
 
     await expect.element(screen.getByRole("button", { name: "Start" })).toBeInTheDocument();
     await expect.element(screen.getByRole("link", { name: "Start" })).not.toBeInTheDocument();
+  });
+
+  it("omits fragments for the first Question on each saved-size page", async () => {
+    setPageSize(3);
+    const baseQuiz = makeQuiz("detail-question-links");
+    const quiz: Quiz = {
+      ...baseQuiz,
+      questions: [
+        ...baseQuiz.questions,
+        { ...baseQuiz.questions[0]!, id: "q-three", title: "Three" },
+        { ...baseQuiz.questions[0]!, id: "q-four", title: "Four" },
+      ],
+    };
+    const screen = await renderDetail(quiz);
+
+    const firstPageLink = screen.getByRole("link", { name: "One" });
+    const middleLink = screen.getByRole("link", { name: "Three" });
+    const secondPageLink = screen.getByRole("link", { name: "Four" });
+
+    const linkUrl = (element: Element) =>
+      new URL(element.getAttribute("href")!, window.location.href);
+
+    expect(linkUrl(firstPageLink.element()).hash).toBe("");
+    expect(linkUrl(middleLink.element()).hash).toBe("#question-q-three");
+    await expect.poll(() => linkUrl(secondPageLink.element()).hash).toBe("");
+    expect(linkUrl(secondPageLink.element()).searchParams.get("question")).toBe("q-four");
+
+    await secondPageLink.click();
+    expect(new URL(window.location.href).searchParams.get("question")).toBe("q-four");
+    expect(window.location.hash).toBe("");
   });
 
   it("offers Start before a Run exists", async () => {

@@ -1,6 +1,6 @@
 import type { Quiz } from "@/shared/lib/quiz";
 import type { PlayerUrlState } from "@/shared/lib/routing";
-import type { RunSource } from "@/shared/lib/storage";
+import type { PageSize, RunSource } from "@/shared/lib/storage";
 import { TopLineLoader } from "@/shared/ui/loader";
 import { Note } from "@/shared/ui/note";
 
@@ -20,7 +20,7 @@ export interface PlayerProps {
   /** Question anchor requested by the route URL. */
   urlQuestionId?: string;
   /** Emits durable route state: mode plus Question anchor, never raw page. */
-  onUrlStateChange?: (state: PlayerUrlState) => void;
+  onUrlStateChange?: (state: PlayerUrlState, pageSize?: PageSize) => void;
   /** Returns to the detail surface on the same route (SPEC.md §4). */
   onExit: () => void;
 }

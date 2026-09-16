@@ -5,6 +5,7 @@ export {
   PAGE_SIZES,
   setPageSize,
   setVoicePreference,
+  subscribePageSize,
 } from "./preferences";
 export type { PageSize } from "./preferences";
 

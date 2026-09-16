@@ -59,6 +59,14 @@ test("Question preview opens the selected Question in the player", async ({ page
 
   expect(questionCount).toBeGreaterThan(5);
 
+  // With the default five Questions per page, the first Question on each page
+  // needs no fragment: selecting it should leave the Player at the page top.
+  const pageUrl = page.url();
+  for (const firstQuestionLink of [questionLinks.first(), questionLinks.nth(5)]) {
+    const href = await firstQuestionLink.getAttribute("href");
+    expect(new URL(href!, pageUrl).hash).toBe("");
+  }
+
   const targetQuestion = questionLinks.last();
   const targetHref = await targetQuestion.getAttribute("href");
   const targetUrl = new URL(targetHref!, page.url());
