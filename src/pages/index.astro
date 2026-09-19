@@ -7,23 +7,27 @@ import {
   selectFeaturedQuizzes,
   selectRecentQuizzes,
 } from "@/shared/lib/content";
+import { extractPromptText, loadDoc } from "@/shared/lib/docs";
 import { withBase } from "@/shared/lib/routing";
 import { ContinueRuns } from "@/features/continue-runs";
+import { CopyPromptButton } from "@/features/copy-prompt";
 import { StorageDurability } from "@/features/storage-durability";
 import { LinkAsButton } from "@/shared/ui/button";
 import { SectionTitle } from "@/shared/ui/section-title";
 
-import { Quizbun, QuizbunHowTo, QuizbunLearning, QuizbunPrivate } from "@/_pages/home";
+import { Quizbun } from "@/_pages/home";
 
 import { ArrowRight } from "@lucide/astro";
 
 import { layout } from "#styles";
 
 const { summaries } = loadPublicQuizzes();
-const quizCount = summaries.length;
 const featuredQuizIds = loadFeaturedQuizIds();
 const featuredQuizzes = selectFeaturedQuizzes(summaries, featuredQuizIds);
 const recentQuizzes = selectRecentQuizzes(summaries, 10);
+
+const promptDoc = loadDoc("skills/create-quiz/references/quiz-generation-prompt.md");
+const promptText = extractPromptText(promptDoc.source);
 ---
 
 <Layout
@@ -31,7 +35,14 @@ const recentQuizzes = selectRecentQuizzes(summaries, 10);
   description="Quizbun is a static, explanation-first quiz catalog for self-learners, with public quizzes, private local imports, and an AI-first quiz format."
 >
 
-  <Quizbun />
+  <Quizbun>
+    <CopyPromptButton
+      client:idle
+      promptText={promptText}
+      failureHint="open the prompt page and copy it from there"
+      slot="copyPrompt"
+    />
+  </Quizbun>
   <ContinueRuns client:idle catalogSummaries={summaries} />
   <StorageDurability client:idle needInlineMargin={true} />
 
@@ -78,61 +89,11 @@ const recentQuizzes = selectRecentQuizzes(summaries, 10);
       >
     </div>
   </section>
-
-  <div class="duo">
-    <QuizbunLearning />
-    <QuizbunPrivate />
-  </div>
-  <QuizbunHowTo quizCount={quizCount} />
 </Layout>
 
 <style>
-  .duo {
-    display: grid;
-    gap: clamp(1rem, 4vw, 3rem);
-    align-items: start;
-
-    max-inline-size: var(--max-content-width);
-    margin-block: 4rem 1rem;
-    margin-inline: auto;
-    padding-block-start: 3rem;
-    border-top: 2px solid var(--color-quiz-card-border);
-
-  }
-
-  @media (width >= 48rem) {
-    .duo {
-      grid-template-columns: 1fr 1fr;
-    }
-  }
-
   .button{
     width: fit-content;
     margin-inline-start: auto;
   }
-
-
-@media (width >= 70rem) {
-  .duo > :global(section) {
-    --spread-duo-distance: 2.5rem;
-
-    /* Longhand on purpose: with the `animation` shorthand the minifier folds
-       `animation-timeline` into it, and that shorthand cannot carry a timeline
-       (it resets it to `auto`) — the animation then silently dies in the
-       production build. */
-    animation-name: spread-duo;
-    animation-timeline: view();
-  }
-
-  .duo > :global(section:first-child) {
-    --spread-duo-distance: -2.5rem;
-  }
-
-  @keyframes spread-duo {
-    to {
-      transform: translateX(var(--spread-duo-distance ));
-    }
-  }
-}
-
 </style>

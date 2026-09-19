@@ -1,15 +1,21 @@
-import { withBase } from "@/shared/lib/routing";
+import type { ReactNode } from "react";
 
-import { cx } from "#styles";
+import { QuizbunCreate } from "./quizbun-create";
+
 import styles from "./quizbun.module.css";
 
-export function Quizbun() {
+type Props = {
+  copyPrompt?: ReactNode;
+};
+
+export function Quizbun({ copyPrompt }: Readonly<Props>) {
   return (
     <section className={styles.root}>
       <div className={styles.inner}>
         <p className={styles.body}>
-          With Quizbun, every answer comes with an explanation, so you learn something new with each
-          try. Browse{" "}
+          With Quizbun, every answer comes with an explanation, so you learn something new with each
+          try.
+          {/* Browse{" "}
           <a href={withBase("quizzes/")} className={cx(styles.link, styles.catalog)}>
             the Catalog
           </a>
@@ -27,8 +33,10 @@ export function Quizbun() {
           <a href={withBase("docs/prompt/")} className={cx(styles.link, styles.prompt)}>
             write one for you
           </a>
-          .
+          . */}
         </p>
+
+        <QuizbunCreate copyPrompt={copyPrompt} />
       </div>
     </section>
   );

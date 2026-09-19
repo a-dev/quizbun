@@ -8,12 +8,25 @@ type CopyState = "idle" | "copied" | "failed";
 
 const CONFIRMATION_MS = 3000;
 
+/** True where the prompt source is rendered on the same page. */
+const DEFAULT_FAILURE_HINT = "select the prompt text below and copy it manually";
+
+type Props = {
+  promptText: string;
+  /**
+   * How to finish the job by hand when the clipboard write is refused. The
+   * default points at the prompt source; a page that does not render it, such
+   * as Home, has to send the Creator somewhere that does.
+   */
+  failureHint?: string;
+};
+
 /**
- * The one piece of interactivity in the docs section (T3.1): copies the prompt
- * source text — passed in at build time, never scraped from the rendered HTML —
- * with a visible, screen-reader-announced confirmation that auto-clears.
+ * Copies the prompt source text — passed in at build time, never scraped from
+ * the rendered HTML — with a visible, screen-reader-announced confirmation
+ * that auto-clears.
  */
-export function CopyPromptButton({ promptText }: { promptText: string }) {
+export function CopyPromptButton({ promptText, failureHint = DEFAULT_FAILURE_HINT }: Props) {
   const [copyState, setCopyState] = useState<CopyState>("idle");
   const resetTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
@@ -38,8 +51,7 @@ export function CopyPromptButton({ promptText }: { promptText: string }) {
       </Button>{" "}
       <output className={styles.status}>
         {copyState === "copied" && "Copied to clipboard"}
-        {copyState === "failed" &&
-          "Copying failed — select the prompt text below and copy it manually"}
+        {copyState === "failed" && `Copying failed — ${failureHint}`}
       </output>
     </div>
   );

@@ -50,3 +50,28 @@ test.describe("with a dark system theme", () => {
     );
   });
 });
+
+test("Home keeps the quiz-making thread behind a disclosure the keyboard can open", async ({
+  page,
+}) => {
+  await page.goto("/");
+
+  // The block's own `details`, not the "What is a skill?" one nested inside it.
+  const disclosure = page.locator("main details").first();
+  const summary = disclosure.locator("summary").first();
+  const thread = page.getByText("water-cycle.json");
+
+  // Closed on arrival: the hero opens on the Catalog, not on a tutorial.
+  await expect(disclosure).not.toHaveAttribute("open", /.*/);
+  await expect(thread).toBeHidden();
+
+  // `press` focuses first, so this also proves the summary takes focus.
+  await summary.press("Enter");
+
+  await expect(disclosure).toHaveAttribute("open", /.*/);
+  await expect(thread).toBeVisible();
+
+  await summary.press("Enter");
+
+  await expect(thread).toBeHidden();
+});

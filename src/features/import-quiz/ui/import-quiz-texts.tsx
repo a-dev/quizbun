@@ -9,13 +9,13 @@ export function ImportQuizTexts() {
       <h1 className={typography.h1}>Import a quiz</h1>
       <div className={styles.texts}>
         <p className={styles.paragraph}>
-          Studying something? Turn it into a quiz. Pull from your notes, a course, or any docs - and
+          Studying something? Turn it into a quiz. Pull from your notes, a course, or any docs, and
           after each answer you get an explanation of why it's right, so you actually learn instead
           of just guessing.
         </p>
         <p className={styles.paragraph}>
-          It all stays on your device. Your quizzes and progress never leave this browser and never
-          go public - this is your own private space.
+          It all stays on your device: your quizzes and progress never leave this browser and never
+          go public. This is your own private space.
         </p>
         <p className={styles.paragraph}>
           The quick way: copy the <a href={withBase("docs/prompt/")}>AI prompt</a>, tell any AI chat
@@ -25,8 +25,7 @@ export function ImportQuizTexts() {
         </p>
         <p className={styles.paragraph}>
           Paste anything and it's checked right here before it's saved. If something's off, you get
-          the exact spot and how to fix it - handy whether you patch it yourself or hand it back to
-          the AI.
+          the exact spot and how to fix it.
         </p>
       </div>
     </div>

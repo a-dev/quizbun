@@ -181,9 +181,7 @@
       // have no file filtering of their own, so at top level they also judge
       // src/**/*.test.tsx, where Vitest browser mode uses the same matcher
       // names with different await semantics.
-      "files": [
-        "e2e/**"
-      ],
+      "files": ["e2e/**"],
       "jsPlugins": [
         {
           "name": "playwright",
@@ -267,12 +265,8 @@
       }
     },
     {
-      "files": [
-        "src/**"
-      ],
-      "excludeFiles": [
-        "src/shared/styles/lib/cx.ts"
-      ],
+      "files": ["src/**"],
+      "excludeFiles": ["src/shared/styles/lib/cx.ts"],
       "rules": {
         "no-restricted-imports": [
           "error",
@@ -285,16 +279,11 @@
             ],
             "patterns": [
               {
-                "group": [
-                  "@base-ui/react",
-                  "@base-ui/react/*"
-                ],
+                "group": ["@base-ui/react", "@base-ui/react/*"],
                 "message": "Import from '@/shared/ui/*' instead. Direct Base UI imports are reserved for shared/ui wrappers so swapping the headless library stays a one-folder change."
               },
               {
-                "group": [
-                  "@/_pages/*/**"
-                ],
+                "group": ["@/_pages/*/**"],
                 "message": "Import a page slice by its root only (@/_pages/<slice>). Segment paths (ui/lib/model) are slice-private."
               }
             ]
@@ -303,12 +292,7 @@
       }
     },
     {
-      "files": [
-        "src/_pages/**",
-        "src/features/**",
-        "src/entities/**",
-        "src/shared/**"
-      ],
+      "files": ["src/_pages/**", "src/features/**", "src/entities/**", "src/shared/**"],
       "rules": {
         "no-restricted-imports": [
           "error",
@@ -321,17 +305,11 @@
             ],
             "patterns": [
               {
-                "group": [
-                  "@base-ui/react",
-                  "@base-ui/react/*"
-                ],
+                "group": ["@base-ui/react", "@base-ui/react/*"],
                 "message": "Import from '@/shared/ui/*' instead. Direct Base UI imports are reserved for shared/ui wrappers so swapping the headless library stays a one-folder change."
               },
               {
-                "group": [
-                  "@/_pages",
-                  "@/_pages/**"
-                ],
+                "group": ["@/_pages", "@/_pages/**"],
                 "message": "Only route files (src/pages/) may import page slices. Lower layers never import upward, and page slices never import each other — duplicate small glue instead."
               }
             ]
@@ -340,19 +318,13 @@
       }
     },
     {
-      "files": [
-        "src/shared/ui/**"
-      ],
+      "files": ["src/shared/ui/**"],
       "rules": {
-        "no-restricted-imports": [
-          "error"
-        ]
+        "no-restricted-imports": ["error"]
       }
     },
     {
-      "files": [
-        "src/shared/styles/**"
-      ],
+      "files": ["src/shared/styles/**"],
       "rules": {
         "no-restricted-imports": "off"
       }
