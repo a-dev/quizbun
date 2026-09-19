@@ -66,6 +66,7 @@ export function CodeTextarea({
         wrap="soft"
         onInput={handleInput}
         onScroll={handleScroll}
+        placeholder="... or copy your JSON here"
       />
     </div>
   );
