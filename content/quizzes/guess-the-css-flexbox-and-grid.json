@@ -1,0 +1,508 @@
+{
+  "schemaVersion": 1,
+  "id": "guess-the-css-flexbox-and-grid",
+  "title": "Guess the CSS: Flexbox and Grid Edition",
+  "description": "Each Question shows a rendered layout. Can you tell which CSS produced it? Every picture is drawn from box sizes measured in a real browser. You'll work through the main axis versus the cross axis, `flex: 1` versus `flex: auto`, `fr` versus `%`, `grid-auto-flow: dense`, and why `margin: auto` centers in some layouts but not others.",
+  "language": "en",
+  "tags": ["css", "frontend", "layout", "flexbox", "css-grid"],
+  "questions": [
+    {
+      "id": "row-centered-main-axis",
+      "title": "Which declaration on `.row` produced this layout?",
+      "description": "Here's the starting CSS:\n\n```css\n.row        { display: flex; width: 600px; height: 200px; }\n.row > div  { width: 80px; height: 60px; }\n```\n\nThen one more declaration was added to `.row`.",
+      "images": [
+        {
+          "src": "row-center.svg",
+          "alt": "A 600 by 200 container. Three 80 by 60 boxes sit side by side with no space between them. As a group they are centered left to right, but they touch the top edge of the container.",
+          "width": 720,
+          "height": 340
+        }
+      ],
+      "type": "single-choice",
+      "options": [
+        { "text": "`justify-content: center`", "isCorrect": true },
+        { "text": "`align-items: center`", "isCorrect": false },
+        { "text": "`align-content: center`", "isCorrect": false },
+        { "text": "`justify-items: center`", "isCorrect": false },
+        { "text": "`text-align: center`", "isCorrect": false }
+      ],
+      "explanation": "In a row flex container, the **main axis** runs left to right, and `justify-content` always works on the main axis. The three boxes take up 240px, which leaves 360px free. `center` puts 180px on each side, so the group starts at x = 180.\n\nThe boxes stay at the top because nothing changed the **cross axis**. The default `align-items: stretch` can't stretch a box with a fixed `height`, so each box stays at the top of the line.\n\nWhy the other options don't work:\n\n- `align-items: center` works on the cross axis. The boxes would move to the vertical middle (y = 70) and stay on the left.\n- `align-content` positions whole *flex lines*. This container doesn't wrap, so it has one line, and that line already fills the full 200px height. There's no space left to share, so nothing moves.\n- `justify-items` is ignored in flex layout. It only does something in grid and block layout.\n- `text-align` aligns text and other inline content *inside* each box. It never moves flex items.",
+      "references": "[MDN: justify-content](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/justify-content) · [CSS Flexbox: align-content](https://www.w3.org/TR/css-flexbox-1/#align-content-property)"
+    },
+    {
+      "id": "column-centered-cross-axis",
+      "title": "Which declaration on `.stack` produced this layout?",
+      "description": "Here's the starting CSS:\n\n```css\n.stack       { display: flex; flex-direction: column; width: 600px; height: 300px; }\n.stack > div { width: 80px; height: 50px; }\n```\n\nThen one more declaration was added to `.stack`.",
+      "images": [
+        {
+          "src": "column-center.svg",
+          "alt": "A 600 by 300 container. Three 80 by 50 boxes are stacked vertically with no space between them. The stack is centered left to right and touches the top edge.",
+          "width": 720,
+          "height": 440
+        }
+      ],
+      "type": "single-choice",
+      "options": [
+        { "text": "`align-items: center`", "isCorrect": true },
+        { "text": "`justify-content: center`", "isCorrect": false },
+        { "text": "`justify-items: center`", "isCorrect": false },
+        { "text": "`text-align: center`", "isCorrect": false }
+      ],
+      "explanation": "`flex-direction: column` makes the main axis vertical, so the **cross axis** is now horizontal. The boxes moved sideways, so a cross-axis property did it: `align-items: center`.\n\nThe property names don't mean \"horizontal\" or \"vertical\". They follow the axes:\n\n- `justify-content` always works on the **main** axis (vertical here). With `center`, the stack would move to the vertical middle (y = 75 to 225) and stay against the left edge.\n- `align-items` always works on the **cross** axis (horizontal here).\n\nFlex containers ignore `justify-items`, and `text-align` only centers inline content inside each box. Neither one moves the boxes, so both leave the stack in the top-left corner.",
+      "references": "[MDN: align-items](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/align-items) · [MDN: justify-content](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/justify-content)"
+    },
+    {
+      "id": "space-around-half-gaps",
+      "title": "Which declaration on `.row` distributed the space like this?",
+      "description": "Three 80px-wide boxes in a 600px-wide flex row:\n\n```css\n.row        { display: flex; width: 600px; }\n.row > div  { width: 80px; height: 60px; }\n```",
+      "images": [
+        {
+          "src": "space-around.svg",
+          "alt": "A 600px-wide row with three 80px boxes. Measured empty space from left to right: 60px, then 120px, then 120px, then 60px.",
+          "width": 720,
+          "height": 284
+        },
+        {
+          "src": "space-compare.svg",
+          "alt": "Three rows compared. space-between: 0, 180, 180, 0 with the outer boxes touching the edges. space-around: 60, 120, 120, 60. space-evenly: 90, 90, 90, 90.",
+          "caption": "The same 360px of free space, shared three ways.",
+          "placement": "explanation",
+          "width": 720,
+          "height": 664
+        }
+      ],
+      "type": "single-choice",
+      "options": [
+        { "text": "`justify-content: space-around`", "isCorrect": true },
+        { "text": "`justify-content: space-evenly`", "isCorrect": false },
+        { "text": "`justify-content: space-between`", "isCorrect": false },
+        { "text": "`gap: 120px`", "isCorrect": false }
+      ],
+      "explanation": "The boxes take up 240px, which leaves 360px to share. Each value shares it in its own way:\n\n- `space-around` gives every box the same space on *both* sides: 360 ÷ 3 = 120px per box, so 60px on each side. Between two boxes, two 60px halves add up to 120px. At the edges there's only one half, 60px. That matches the picture.\n- `space-evenly` makes all four gaps equal: 360 ÷ 4 = 90px each.\n- `space-between` puts no space at the edges. The outer boxes touch the walls, with 180px between neighbors.\n- `gap: 120px` only adds space *between* items. The boxes start at the left edge (x = 0, 200, and 400), and the leftover 120px ends up on the right.\n\nA quick way to spot `space-around`: the edge gaps are exactly half the inner gaps.",
+      "references": "[MDN: justify-content](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/justify-content)"
+    },
+    {
+      "id": "align-content-packs-lines",
+      "title": "Which declaration on `.tags` packed both rows at the top?",
+      "description": "Five 160 × 60 items wrap onto two flex lines:\n\n```css\n.tags        { display: flex; flex-wrap: wrap; width: 600px; height: 300px; }\n.tags > span { width: 160px; height: 60px; }\n```",
+      "images": [
+        {
+          "src": "wrapped-lines.svg",
+          "alt": "A 600 by 300 container. Items 1 to 3 form a row along the top edge. Items 4 and 5 form a second row directly beneath them with no space between the rows. The bottom 180px of the container is empty.",
+          "width": 720,
+          "height": 440
+        },
+        {
+          "src": "wrapped-lines-compare.svg",
+          "alt": "Two containers compared. By default, each flex line is 150px tall, so the second row of items starts halfway down. With align-content: flex-start, each line is only 60px tall and both lines sit at the top.",
+          "placement": "explanation",
+          "width": 720,
+          "height": 796
+        }
+      ],
+      "type": "single-choice",
+      "options": [
+        { "text": "`align-content: flex-start`", "isCorrect": true },
+        { "text": "`align-items: flex-start`", "isCorrect": false },
+        { "text": "`align-items: stretch`", "isCorrect": false },
+        { "text": "`justify-content: flex-start`", "isCorrect": false }
+      ],
+      "explanation": "A wrapping flex container aligns things on the cross axis at two levels:\n\n- `align-content` positions the *lines* inside the container.\n- `align-items` positions the *items* inside their own line.\n\nBy default, `align-content: normal` behaves like `stretch`. The two lines split the 300px height, so each line is 150px tall and the second one starts at y = 150. The items sit at the top of their lines, leaving a 90px band under each row.\n\n`align-content: flex-start` turns off that stretching. Each line shrinks to fit its tallest item (60px), both lines pack at the top, and the second row starts at y = 60.\n\nThe other options change nothing here:\n\n- `align-items: flex-start` only moves items within their 150px lines. These items already sit at the top, because their fixed `height` blocks stretching.\n- `align-items: stretch` is the default.\n- `justify-content` works on the main axis, which is horizontal here.",
+      "references": "[MDN: align-content](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/align-content) · [CSS Flexbox: Packing flex lines](https://www.w3.org/TR/css-flexbox-1/#align-content-property)"
+    },
+    {
+      "id": "gap-versus-margins",
+      "title": "Which declaration produced these gutters?",
+      "description": "Three cards that grow to fill the row:\n\n```css\n.cards        { display: flex; width: 660px; }\n.cards > div  { flex: 1; height: 60px; }\n```\n\nAll three cards are the same width. The outer cards touch the container edges, and there are 30px between neighboring cards.",
+      "images": [
+        {
+          "src": "gap-vs-margin.svg",
+          "alt": "A 660px-wide row with three cards, each 200px wide. The first card touches the left edge and the last touches the right edge. There are 30px of empty space between neighboring cards.",
+          "width": 720,
+          "height": 279
+        }
+      ],
+      "type": "single-choice",
+      "options": [
+        { "text": "`gap: 30px` on `.cards`", "isCorrect": true },
+        { "text": "`margin-right: 30px` on each card", "isCorrect": false },
+        { "text": "`margin: 0 15px` on each card", "isCorrect": false },
+        { "text": "`justify-content: space-between` on `.cards`", "isCorrect": false }
+      ],
+      "explanation": "`gap` adds space only *between* items, never at the outer edges. Two 30px gutters leave 600px for the cards, so each card is 200px wide and the outer ones touch the edges.\n\nMargins belong to each item, including the first and last ones:\n\n- `margin-right: 30px` also adds 30px after the last card. The cards shrink to 190px, and a 30px strip is left empty on the right.\n- `margin: 0 15px` puts 15px at both outer edges and 30px between cards (15 + 15). The cards are 190px wide, and neither end touches the container.\n- `justify-content: space-between` has nothing to share, because the `flex: 1` cards already took all the free space. The cards grow to 220px each and touch each other.",
+      "references": "[MDN: gap](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/gap)"
+    },
+    {
+      "id": "flex-one-ignores-width",
+      "title": "Which declaration, applied to every item, made the three items equal?",
+      "description": "The items start with different widths:\n\n```css\n.row          { display: flex; width: 600px; }\n.row > :nth-child(1) { width: 40px; }\n.row > :nth-child(2) { width: 120px; }\n.row > :nth-child(3) { width: 200px; }\n```\n\nThen one declaration was added to all three items.",
+      "images": [
+        {
+          "src": "flex-equal.svg",
+          "alt": "A 600px-wide row filled by three items, each exactly 200px wide.",
+          "width": 720,
+          "height": 284
+        }
+      ],
+      "type": "single-choice",
+      "options": [
+        { "text": "`flex: 1`", "isCorrect": true },
+        { "text": "`flex: auto`", "isCorrect": false },
+        { "text": "`flex-grow: 1`", "isCorrect": false },
+        { "text": "`flex: none`", "isCorrect": false }
+      ],
+      "explanation": "`flex: 1` is short for `flex: 1 1 0%`, so the **flex basis is zero**. The `width` values no longer set the starting size. All 600px counts as free space, and three equal grow factors split it into 200px each.\n\nThe other options keep `flex-basis: auto`, so each item starts from its `width`:\n\n- `flex: auto` (`1 1 auto`) and `flex-grow: 1` start at 40, 120, and 200px. That leaves 240px of free space, and each item gets 80px of it: 120, 200, and 280px. The items stay different sizes.\n- `flex: none` (`0 0 auto`) doesn't grow at all. The items stay at 40, 120, and 200px, with 240px empty on the right.\n\nUse `flex: 1` when you want equal columns. Use `flex: auto` when larger items should stay larger.",
+      "references": "[MDN: flex](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/flex) · [CSS Flexbox: Common values of flex](https://www.w3.org/TR/css-flexbox-1/#flex-common)"
+    },
+    {
+      "id": "flex-auto-keeps-differences",
+      "title": "Which declarations, applied to every item, render exactly these widths?",
+      "description": "Same starting CSS as before:\n\n```css\n.row          { display: flex; width: 600px; }\n.row > :nth-child(1) { width: 40px; }\n.row > :nth-child(2) { width: 120px; }\n.row > :nth-child(3) { width: 200px; }\n```\n\nThis time the rendered widths are 120, 200, and 280px.",
+      "images": [
+        {
+          "src": "flex-unequal.svg",
+          "alt": "A 600px-wide row filled by three items measuring 120px, 200px, and 280px.",
+          "width": 720,
+          "height": 284
+        }
+      ],
+      "type": "multiple-choice",
+      "options": [
+        { "text": "`flex: auto`", "isCorrect": true },
+        { "text": "`flex: 1 1 auto`", "isCorrect": true },
+        { "text": "`flex-grow: 1`", "isCorrect": true },
+        { "text": "`flex: 1`", "isCorrect": false },
+        { "text": "`flex: 1 0 0`", "isCorrect": false }
+      ],
+      "explanation": "Each rendered width is its starting `width` plus 80px: 40 + 80, 120 + 80, and 200 + 80. So the items started from their widths (`flex-basis: auto`), and equal grow factors split the 240px of free space (600 − 360) evenly.\n\n- `flex: auto` means `flex: 1 1 auto`, so these two are the same declaration.\n- `flex-grow: 1` on its own leaves `flex-shrink` at its initial `1` and `flex-basis` at its initial `auto`. That makes it `1 1 auto` as well.\n- `flex: 1` and `flex: 1 0 0` both set the basis to zero. The widths stop mattering, and every item ends up 200px.\n\nWatch out: `flex: 1` and `flex-grow: 1` are not the same. A single number in `flex` also sets the basis to zero.",
+      "references": "[MDN: flex](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/flex) · [MDN: flex-grow](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/flex-grow)"
+    },
+    {
+      "id": "flex-grow-two-not-double",
+      "title": "How wide does `.b` render, in px?",
+      "description": "```css\n.row { display: flex; width: 500px; }\n.a   { width: 100px; flex: 1 1 auto; }\n.b   { width: 100px; flex: 2 1 auto; }\n```\n\nEnter a number.",
+      "images": [
+        {
+          "src": "grow-two-start.svg",
+          "alt": "A 500px-wide row. Items A and B each start at 100px, leaving 300px of free space on the right.",
+          "width": 720,
+          "height": 284
+        },
+        {
+          "src": "grow-two-result.svg",
+          "alt": "Two rows compared. With flex: 1 1 auto and flex: 2 1 auto, A is 200px and B is 300px. With flex: 1 and flex: 2, A is 166.67px and B is 333.33px.",
+          "caption": "Only a zero basis turns the grow ratio into a width ratio.",
+          "placement": "explanation",
+          "width": 720,
+          "height": 464
+        }
+      ],
+      "type": "input",
+      "validation": { "mode": "numeric", "acceptedAnswers": [300] },
+      "explanation": "`flex-grow` shares out the **free space**, not the total width. Both items start at their 100px basis, so 500 − 200 = 300px is free. Grow factors 1 and 2 split it into three parts of 100px:\n\n- `.a`: 100 + 100 = 200px\n- `.b`: 100 + 200 = **300px**\n\nB gets twice as much of the *extra* space, but it isn't twice as wide as A. For a true 1 : 2 width ratio, start both items from zero with `flex: 1` and `flex: 2`. Then all 500px is free space, and the widths come out to 166.67px and 333.33px.",
+      "references": "[MDN: flex-grow](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/flex-grow) · [CSS Flexbox: Resolving flexible lengths](https://www.w3.org/TR/css-flexbox-1/#resolve-flexible-lengths)"
+    },
+    {
+      "id": "min-width-auto-blocks-shrink",
+      "title": "Why won't `.main` shrink to the 400px that's left?",
+      "description": "```css\n.layout  { display: flex; width: 600px; }\n.sidebar { flex: 0 0 200px; }\n.main    { flex: 1; }\n```\n\n```html\n<div class=\"layout\">\n  <nav class=\"sidebar\">…</nav>\n  <main class=\"main\"><pre>…a code line 600px wide…</pre></main>\n</div>\n```",
+      "images": [
+        {
+          "src": "min-width-overflow.svg",
+          "alt": "A 600px-wide layout. The sidebar is 200px. The main column is 600px wide because it holds a 600px-wide child, and it sticks out 200px past the container's right edge.",
+          "width": 720,
+          "height": 322
+        },
+        {
+          "src": "min-width-fixes.svg",
+          "alt": "Two fixed layouts. With min-width: 0, main is 400px but its 600px child spills outside it. With overflow: auto, main is 400px and the child is clipped inside it, ready to scroll.",
+          "placement": "explanation",
+          "width": 720,
+          "height": 451
+        }
+      ],
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Flex items default to `min-width: auto`, which keeps `.main` from shrinking below the 600px min-content width of its content.",
+          "isCorrect": true
+        },
+        { "text": "`flex: 1` sets `flex-shrink: 0`, so `.main` can grow but never shrink.", "isCorrect": false },
+        { "text": "A `0%` flex basis is resolved against the content, so the basis becomes 600px.", "isCorrect": false },
+        { "text": "`<pre>` is taken out of flex layout, so its width is added to the container.", "isCorrect": false }
+      ],
+      "explanation": "The flex algorithm did try to make `.main` 400px, but flex items have an **automatic minimum size**. Their initial `min-width` is `auto`, which for a flex item means \"no narrower than my min-content width\". A `<pre>` line can't wrap, so its min-content width is 600px, and that minimum wins over the flex result.\n\nTwo common fixes:\n\n- `min-width: 0` on `.main`: the box shrinks to 400px, but the `<pre>` still spills out of it.\n- `overflow: auto` (or `hidden`) on `.main`: scroll containers have an automatic minimum of 0. The box shrinks to 400px, and the code scrolls inside it.\n\nWhy the other options are wrong:\n\n- `flex: 1` means `1 1 0%`, so shrinking is allowed.\n- A `0%` basis resolves against the container, not the content.\n- `<pre>` is an ordinary in-flow child.\n\nRaising `flex-shrink` or adding `max-width: 100%` doesn't help either, because the minimum still wins.",
+      "references": "[CSS Flexbox: Automatic minimum size of flex items](https://www.w3.org/TR/css-flexbox-1/#min-size-auto) · [MDN: min-width](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/min-width)"
+    },
+    {
+      "id": "percent-columns-ignore-gap",
+      "title": "Which `grid-template-columns` value made the grid overflow by 20px?",
+      "description": "```css\n.split { display: grid; width: 600px; gap: 20px; }\n```\n\nThe grid has two columns and one row.",
+      "images": [
+        {
+          "src": "percent-gap.svg",
+          "alt": "A 600px-wide container with two 300px columns and a 20px gap between them. The right column ends 20px past the container's right edge.",
+          "width": 720,
+          "height": 288
+        }
+      ],
+      "type": "single-choice",
+      "options": [
+        { "text": "`50% 50%`", "isCorrect": true },
+        { "text": "`1fr 1fr`", "isCorrect": false },
+        { "text": "`repeat(2, minmax(0, 1fr))`", "isCorrect": false },
+        { "text": "`calc(50% - 10px) calc(50% - 10px)`", "isCorrect": false }
+      ],
+      "explanation": "A percentage track is measured against the grid container's full content width, and it ignores the gap. `50%` of 600 is 300, so the grid needs 300 + 20 + 300 = **620px** and overflows by 20px.\n\n`fr` units share the space that's *left after* fixed sizes and gaps. With `1fr 1fr`, the grid sets aside 20px for the gap first, then splits the remaining 580px: 290px per column, a perfect fit. `repeat(2, minmax(0, 1fr))` also gives 290 and 290 here.\n\nThe `calc(50% - 10px)` version fixes the math by hand (290 + 20 + 290 = 600). With `fr` you don't have to, because the gaps are already accounted for.",
+      "references": "[MDN: grid-template-columns](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/grid-template-columns) · [CSS Grid: Flexible lengths, the fr unit](https://www.w3.org/TR/css-grid-1/#fr-unit)"
+    },
+    {
+      "id": "fr-shares-leftover-space",
+      "title": "Which `grid-template-columns` values render exactly these column widths?",
+      "description": "```css\n.grid { display: grid; width: 860px; gap: 30px; }\n```\n\nThe measured columns are 200, 200, and 400px, and the grid fits the container exactly.",
+      "images": [
+        {
+          "src": "fr-leftover.svg",
+          "alt": "An 860px-wide grid with three columns measuring 200px, 200px, and 400px, separated by two 30px gaps. The grid fills the container exactly.",
+          "width": 720,
+          "height": 228
+        }
+      ],
+      "type": "multiple-choice",
+      "options": [
+        { "text": "`200px 1fr 2fr`", "isCorrect": true },
+        { "text": "`1fr 1fr 2fr`", "isCorrect": true },
+        { "text": "`200px 200px 1fr`", "isCorrect": true },
+        { "text": "`25% 25% 50%`", "isCorrect": false },
+        { "text": "`200px 25% 50%`", "isCorrect": false }
+      ],
+      "explanation": "Subtract the gaps first: 860 − 2 × 30 = **800px** for the tracks. `fr` units share whatever is left after fixed tracks and gaps:\n\n- `200px 1fr 2fr`: 800 − 200 = 600 over 3 fr → 200 and 400. ✓\n- `1fr 1fr 2fr`: 800 over 4 fr → 200, 200, 400. ✓\n- `200px 200px 1fr`: 800 − 400 = 400 for the single fr. ✓\n\nPercentages are measured against the full 860px and ignore the gaps:\n\n- `25% 25% 50%` → 215, 215, 430. That's 920px with the gaps, so it overflows by 60px.\n- `200px 25% 50%` → 200, 215, 430. That's 905px, so it overflows by 45px.\n\nA rendered layout only shows the final sizes, so different CSS can produce the same picture. Here, all three `fr` versions do.",
+      "references": "[CSS Grid: Flexible lengths, the fr unit](https://www.w3.org/TR/css-grid-1/#fr-unit) · [MDN: grid-template-columns](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/grid-template-columns)"
+    },
+    {
+      "id": "fr-has-min-content-floor",
+      "title": "The author wanted two equal columns. Which `grid-template-columns` value gave this 400 / 200 split instead?",
+      "description": "```css\n.split { display: grid; width: 600px; }\n```\n\nCell 1 holds a 400px-wide child that can't wrap, such as a wide table or a long line of code.",
+      "images": [
+        {
+          "src": "fr-min-content.svg",
+          "alt": "A 600px-wide grid with two columns. Column 1 is 400px wide and exactly fits its 400px child. Column 2 is 200px wide.",
+          "width": 720,
+          "height": 274
+        },
+        {
+          "src": "fr-min-content-compare.svg",
+          "alt": "Two grids compared. With 1fr 1fr, the columns are 400 and 200 pixels. With repeat(2, minmax(0, 1fr)), both columns are 300px, and the 400px child spills 100px into column 2.",
+          "placement": "explanation",
+          "width": 720,
+          "height": 444
+        }
+      ],
+      "type": "single-choice",
+      "options": [
+        { "text": "`1fr 1fr`", "isCorrect": true },
+        { "text": "`repeat(2, minmax(0, 1fr))`", "isCorrect": false },
+        { "text": "`50% 50%`", "isCorrect": false },
+        { "text": "`auto auto`", "isCorrect": false }
+      ],
+      "explanation": "`1fr` on its own means `minmax(auto, 1fr)`, and that `auto` minimum is the item's **min-content** width. Column 1 can't get narrower than its 400px child, so the grid fixes that column at 400px and gives the remaining 200px to column 2.\n\nThis is the grid version of the flexbox `min-width: auto` trap, and the fix works the same way:\n\n- `repeat(2, minmax(0, 1fr))` sets the minimum to 0. The columns come out at an honest 300 and 300, and the child spills 100px into column 2. Add `overflow: auto` to the cell to contain it.\n- `50% 50%` also renders 300 and 300, because percentages ignore content.\n- `auto auto` starts from the content (400 and 0) and then shares the 200px left over equally: **500 and 100**.",
+      "references": "[CSS Grid: Flexible lengths, the fr unit](https://www.w3.org/TR/css-grid-1/#fr-unit) · [MDN: grid-template-columns](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/grid-template-columns)"
+    },
+    {
+      "id": "auto-fit-collapses-tracks",
+      "title": "Which `grid-template-columns` value stretched two items across the whole row?",
+      "description": "```css\n.gallery { display: grid; width: 600px; }\n```\n\nThe gallery has only two items right now.",
+      "images": [
+        {
+          "src": "auto-fit.svg",
+          "alt": "A 600px-wide grid with two items, each 300px wide, filling the row with no empty space.",
+          "width": 720,
+          "height": 244
+        },
+        {
+          "src": "auto-fill-compare.svg",
+          "alt": "Two grids compared. With auto-fill, there are six 100px tracks: the two items fill the first two and four empty tracks remain. With auto-fit, the empty tracks collapse and the two items are 300px each.",
+          "placement": "explanation",
+          "width": 720,
+          "height": 404
+        }
+      ],
+      "type": "single-choice",
+      "options": [
+        { "text": "`repeat(auto-fit, minmax(100px, 1fr))`", "isCorrect": true },
+        { "text": "`repeat(auto-fill, minmax(100px, 1fr))`", "isCorrect": false },
+        { "text": "`repeat(auto-fill, 100px)`", "isCorrect": false },
+        { "text": "`repeat(3, 1fr)`", "isCorrect": false }
+      ],
+      "explanation": "`auto-fill` and `auto-fit` both start by creating as many tracks as fit: 600 ÷ 100 = six tracks. The difference is what happens to tracks that no item uses:\n\n- `auto-fill` keeps the empty tracks. All six share the `1fr` maximum, so every track is 100px, and the two items sit in the first 200px.\n- `auto-fit` collapses empty tracks to 0px. Only the two used tracks share the space, so each one is 300px.\n\n`repeat(auto-fill, 100px)` also renders two 100px items with empty space after them. `repeat(3, 1fr)` makes three 200px columns, and the third one stays empty.\n\nIn practice, `auto-fit` stretches a short row across the container, while `auto-fill` keeps each item the size it would be in a full row.",
+      "references": "[MDN: repeat()](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Values/repeat) · [CSS Grid: Repeat-to-fill](https://www.w3.org/TR/css-grid-1/#auto-repeat)"
+    },
+    {
+      "id": "place-content-moves-tracks",
+      "title": "Which declaration on `.board` moved the whole grid to the center?",
+      "description": "```css\n.board {\n  display: grid;\n  width: 600px;\n  height: 300px;\n  grid-template-columns: 100px 100px;\n  grid-template-rows: 60px 60px;\n}\n```\n\nEach of the four items contains a single digit.",
+      "images": [
+        {
+          "src": "place-content.svg",
+          "alt": "A 600 by 300 container. A 2 by 2 block of four 100 by 60 items sits in the exact center, with empty space on all four sides.",
+          "width": 720,
+          "height": 440
+        }
+      ],
+      "type": "single-choice",
+      "options": [
+        { "text": "`place-content: center`", "isCorrect": true },
+        { "text": "`place-items: center`", "isCorrect": false },
+        { "text": "`justify-content: center`", "isCorrect": false },
+        { "text": "`align-items: center`", "isCorrect": false }
+      ],
+      "explanation": "The tracks add up to 200 × 120, which is smaller than the 600 × 300 container, so there's free space *around the grid*. The `*-content` properties move the **tracks** within the container. `place-content: center` is shorthand for `align-content: center` plus `justify-content: center`, so the whole grid moves to the middle (x = 200, y = 90).\n\nThe `*-items` properties work one level down. They align each item **inside its own cell**:\n\n- `place-items: center` shrinks each item to fit its digit and centers it in its 100 × 60 cell. The cells stay in the top-left corner.\n- `align-items: center` does the same, but only vertically.\n- `justify-content: center` moves the tracks horizontally, but the grid stays at the top.\n\nAn easy way to remember it: *content* moves the whole grid, and *items* move each item inside its cell.",
+      "references": "[MDN: place-content](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/place-content)"
+    },
+    {
+      "id": "dense-backfills-hole",
+      "title": "Which declaration produced this placement?",
+      "description": "```css\n.grid {\n  display: grid;\n  grid-template-columns: repeat(4, 1fr);\n  grid-auto-rows: 70px;\n  gap: 10px;\n}\n.item-1 { grid-column: span 3; }\n.item-2 { grid-column: span 2; }\n```\n\nThe items are in DOM order 1, 2, 3, 4, yet item 3 renders *above* item 2.",
+      "images": [
+        {
+          "src": "dense-a.svg",
+          "alt": "A four-column grid. Row 1: item 1 spans columns 1 to 3 and item 3 fills column 4. Row 2: item 2 spans columns 1 and 2, item 4 fills column 3, and column 4 is empty.",
+          "width": 720,
+          "height": 290
+        }
+      ],
+      "type": "single-choice",
+      "options": [
+        { "text": "`grid-auto-flow: row dense` on `.grid`", "isCorrect": true },
+        { "text": "Nothing: this is the default auto-placement", "isCorrect": false },
+        { "text": "`order: -1` on item 3", "isCorrect": false },
+        { "text": "`grid-auto-flow: column` on `.grid`", "isCorrect": false }
+      ],
+      "explanation": "The default auto-placement is **sparse**: the placement cursor only moves forward. Item 1 takes columns 1 to 3. Item 2 needs two columns, but only column 4 is left in row 1, so it wraps to row 2. Items 3 and 4 follow it in row 2. Column 4 of row 1 stays empty, because the cursor never goes back to fill it.\n\nWith `dense`, the search starts from the top of the grid for every item. Item 3 is the first item that fits the one-column gap, so it moves up into row 1. Item 4 takes the next free cell in row 2, and the empty cell moves to the end.\n\n`order: -1` would move item 3 to the *front*: item 3 in column 1 and item 1 in columns 2 to 4. `grid-auto-flow: column` fills columns instead of rows, and with no explicit rows every item lands in one row.",
+      "references": "[MDN: grid-auto-flow](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/grid-auto-flow) · [CSS Grid: Grid item placement algorithm](https://www.w3.org/TR/css-grid-1/#auto-placement-algo)"
+    },
+    {
+      "id": "dense-which-item-moves",
+      "title": "Add `grid-auto-flow: dense`. Which item moves into the empty cell?",
+      "description": "```css\n.grid {\n  display: grid;\n  grid-template-columns: repeat(3, 1fr);\n  grid-auto-rows: 70px;\n  gap: 10px;\n}\n.item-1, .item-2, .item-5 { grid-column: span 2; }\n```\n\nThe picture shows the default placement. Answer with the item's number.",
+      "images": [
+        {
+          "src": "dense-b-sparse.svg",
+          "alt": "A three-column grid in default placement. Row 1: item 1 spans columns 1 and 2, and column 3 is empty. Row 2: item 2 spans columns 1 and 2, and item 3 fills column 3. Row 3: item 4 fills column 1, and item 5 spans columns 2 and 3.",
+          "width": 720,
+          "height": 370
+        },
+        {
+          "src": "dense-b-dense.svg",
+          "alt": "The same grid with dense placement. Row 1: item 1, then item 3 in column 3. Row 2: item 2, then item 4 in column 3. Row 3: item 5 spans columns 1 and 2, and column 3 is empty.",
+          "caption": "The picture changes, but the DOM order, tab order, and screen reader order stay the same.",
+          "placement": "explanation",
+          "width": 720,
+          "height": 370
+        }
+      ],
+      "type": "input",
+      "validation": { "mode": "text", "acceptedAnswers": ["3", "item 3", "item-3", ".item-3"] },
+      "explanation": "Dense packing still places items in DOM order, but for each item it searches from the **start** of the grid for the first slot that fits:\n\n1. Item 1 stays in row 1, columns 1 and 2.\n2. Item 2 needs two columns side by side. The empty cell is only one column wide, so item 2 still lands in row 2.\n3. **Item 3** spans one column, so it's the first item that fits the gap. It moves up into row 1, column 3.\n4. Item 4 takes row 2, column 3, and item 5 moves to row 3, columns 1 and 2. The empty cell is now at the end.\n\nDense packing doesn't change the DOM order. Keyboard focus and screen readers still go 1 → 2 → 3, so focus jumps from item 2 in row 2 back up to item 3 in row 1. Use `dense` when the order doesn't matter, like a photo wall. Avoid it for steps, articles, or forms.",
+      "references": "[CSS Grid: Grid item placement algorithm](https://www.w3.org/TR/css-grid-1/#auto-placement-algo) · [WCAG 2.2: Understanding Meaningful Sequence](https://www.w3.org/WAI/WCAG22/Understanding/meaningful-sequence.html)"
+    },
+    {
+      "id": "margin-auto-block-horizontal-only",
+      "title": "`margin: auto` centered the box horizontally but left it at the top. Why?",
+      "description": "```css\n.frame { display: block; width: 600px; height: 300px; }\n.box   { width: 200px; height: 100px; margin: auto; }\n```",
+      "images": [
+        {
+          "src": "margin-block.svg",
+          "alt": "A 600 by 300 container. A 200 by 100 box is centered left to right but touches the top edge.",
+          "width": 720,
+          "height": 440
+        }
+      ],
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "In normal block flow, `auto` top and bottom margins compute to `0`. Only the left and right `auto` margins split the leftover width.",
+          "isCorrect": true
+        },
+        { "text": "`margin: auto` is shorthand for `margin: 0 auto`, so the vertical margins were never set.", "isCorrect": false },
+        { "text": "Vertical centering needs a parent with a fixed height, and `.frame` doesn't have one.", "isCorrect": false },
+        { "text": "The vertical `auto` margins collapse into the parent's margins and cancel out.", "isCorrect": false }
+      ],
+      "explanation": "In block layout, the container's width is known before the box is laid out, so the leftover horizontal space is known too. CSS 2 says that when both horizontal margins are `auto`, they share that space equally: (600 − 200) ÷ 2 = 200px each. That centers the box.\n\nThere's no matching rule for height. A parent's height normally comes *from* its children, so there's no leftover vertical space to share. The spec says an `auto` top or bottom margin on an in-flow block **computes to 0**. Even with `height: 300px` on `.frame`, the box stays at the top.\n\nWhy the other options are wrong:\n\n- `margin: auto` sets all four sides to `auto`. The top and bottom ones just resolve to 0.\n- `.frame` does have a fixed height.\n- Margins that compute to 0 have nothing to collapse.\n\nTo center vertically, make the parent a flex or grid container, or use absolute positioning with insets. All three give `auto` margins space in both directions.",
+      "references": "[CSS 2: Block-level non-replaced elements in normal flow (height)](https://www.w3.org/TR/CSS2/visudet.html#normal-block) · [CSS 2: Block-level non-replaced elements in normal flow (width)](https://www.w3.org/TR/CSS2/visudet.html#blockwidth)"
+    },
+    {
+      "id": "margin-auto-flex-both-axes",
+      "title": "Which single declaration on `.box` centers it in both directions?",
+      "description": "```css\n.frame { display: flex; width: 600px; height: 300px; }\n.box   { width: 200px; height: 100px; }\n```",
+      "images": [
+        {
+          "src": "margin-flex.svg",
+          "alt": "A 600 by 300 flex container. A 200 by 100 box sits exactly in the center, with 200px on the left and right and 100px above and below.",
+          "width": 720,
+          "height": 440
+        }
+      ],
+      "type": "single-choice",
+      "options": [
+        { "text": "`margin: auto`", "isCorrect": true },
+        { "text": "`align-self: center`", "isCorrect": false },
+        { "text": "`place-self: center`", "isCorrect": false },
+        { "text": "`justify-self: center`", "isCorrect": false }
+      ],
+      "explanation": "In flex layout, unlike block flow, `auto` margins take up free space on **both** axes. They do it before `justify-content` or `align-self` get a turn.\n\n- Main axis: 600 − 200 = 400px free, split between the left and right margins, 200px each.\n- Cross axis: 300 − 100 = 200px free, split between the top and bottom margins, 100px each.\n\nWhy the other options fall short:\n\n- `align-self: center` only works on the cross axis. The box is centered vertically but stays at the left edge.\n- Flex items ignore `justify-self`, because the main axis belongs to `justify-content`.\n- `place-self: center` sets both of those, so only the `align-self` half does anything. The box ends up centered vertically and still on the left.",
+      "references": "[CSS Flexbox: Aligning with auto margins](https://www.w3.org/TR/css-flexbox-1/#auto-margins) · [MDN: margin](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/margin)"
+    },
+    {
+      "id": "margin-auto-pushes-item",
+      "title": "Which declaration pushed item 4 to the far right while items 1 to 3 stayed on the left?",
+      "description": "```css\n.toolbar     { display: flex; align-items: center; gap: 10px; width: 600px; }\n.toolbar > * { width: 80px; }\n```",
+      "images": [
+        {
+          "src": "margin-push.svg",
+          "alt": "A 600px-wide toolbar. Items 1, 2, and 3 sit at the left edge with 10px gaps. Item 4 is at the right edge, with 260px of empty space between item 3 and item 4.",
+          "width": 720,
+          "height": 244
+        }
+      ],
+      "type": "single-choice",
+      "options": [
+        { "text": "`margin-left: auto` on item 4", "isCorrect": true },
+        { "text": "`justify-self: end` on item 4", "isCorrect": false },
+        { "text": "`float: right` on item 4", "isCorrect": false },
+        { "text": "`justify-content: space-between` on `.toolbar`", "isCorrect": false }
+      ],
+      "explanation": "An `auto` margin on the main axis takes all the free space on its side. The row has 600 − 4 × 80 − 3 × 10 = **250px** free. Item 4's left margin takes all of it, so the space before item 4 is the 10px gap plus 250px: 260px. Items 1 to 3 stay at the start.\n\nWhy the other options are wrong:\n\n- Flex items ignore `justify-self`.\n- `float` has no effect on a flex item.\n- `justify-content: space-between` spreads out *all* the items, so items 2 and 3 move toward the middle too.\n\nIf the layout also needs to work right to left, use `margin-inline-start: auto`. It does the same job and follows the writing direction.",
+      "references": "[CSS Flexbox: Aligning with auto margins](https://www.w3.org/TR/css-flexbox-1/#auto-margins)"
+    },
+    {
+      "id": "margin-auto-which-setups-center",
+      "title": "Which parent setups make `margin: auto` center this box in both directions?",
+      "description": "```css\n.parent { width: 600px; height: 300px; }\n.box    { width: 200px; height: 100px; margin: auto; }\n```\n\nEach option adds declarations to this CSS.",
+      "images": [
+        {
+          "src": "margin-centered.svg",
+          "alt": "The target: a 600 by 300 parent with a 200 by 100 box exactly in its center.",
+          "width": 720,
+          "height": 440
+        }
+      ],
+      "type": "multiple-choice",
+      "options": [
+        { "text": "`.parent { display: flex; }`", "isCorrect": true },
+        { "text": "`.parent { display: grid; }`", "isCorrect": true },
+        {
+          "text": "`.parent { position: relative; }` and `.box { position: absolute; inset: 0; }`",
+          "isCorrect": true
+        },
+        { "text": "`.parent { display: block; }`", "isCorrect": false },
+        {
+          "text": "`.parent { position: relative; }` and `.box { position: absolute; }` with no inset",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`auto` margins center a box only when the layout gives them a known amount of leftover space in that direction:\n\n- Flex: the free space on both axes goes to `auto` margins first.\n- Grid: the box sits in a 600 × 300 grid area. `auto` margins take the space left over inside that area on both axes, and they win over `justify-self` and `align-self`.\n- Absolute with `inset: 0`: top, bottom, height, and the margins must add up to the containing block's height. The height is fixed at 100 and both insets are 0, so the margins are the only values left to adjust, and they split the leftover 200px. The same happens horizontally.\n\nThe two setups that don't work:\n\n- Block flow: vertical `auto` margins compute to 0, so the box is centered horizontally but stays at the top.\n- Absolute without insets: `top` and `left` are `auto`, so the box stays at its static position in the top-left corner, and the margins resolve to 0.",
+      "references": "[CSS 2: Absolutely positioned, non-replaced elements (height)](https://www.w3.org/TR/CSS2/visudet.html#abs-non-replaced-height) · [CSS Flexbox: Aligning with auto margins](https://www.w3.org/TR/css-flexbox-1/#auto-margins) · [MDN: margin](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/margin)"
+    }
+  ]
+}
