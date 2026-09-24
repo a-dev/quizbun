@@ -1,81 +1,81 @@
 {
   "schemaVersion": 1,
   "id": "compression-what-actually-shrinks",
-  "title": "Compression: What Actually Shrinks",
-  "description": "Compression is the cheapest performance win on the web and the one most often applied to the wrong bytes. This Quiz covers what makes data compressible, how Huffman and LZ77 actually work, why Brotli beats gzip on text, and why base64 inlining costs you a third of the file.",
+  "title": "Compression on the web: Huffman, LZ77, Brotli, and the base64 tax",
+  "description": "Compression is the cheapest speed win on the web, and it's often applied to the wrong bytes. Learn what makes data compressible, how Huffman coding and LZ77 work, why Brotli beats gzip on text, and why inlining a file as base64 makes it a third bigger.",
   "language": "en",
   "tags": ["compression", "http", "performance", "encoding", "networking"],
   "questions": [
     {
       "id": "why-compression-needs-structure",
-      "title": "What property does a compression algorithm actually exploit to shrink data?",
+      "title": "What does a compression algorithm exploit to shrink data?",
       "type": "single-choice",
       "options": [
-        { "text": "Redundancy and predictable structure — repeated patterns, skewed symbol frequencies, or correlations between parts of the data.", "isCorrect": true },
-        { "text": "High entropy — the more unpredictable the bytes, the more room there is to shrink them.", "isCorrect": false },
-        { "text": "Whether the data is stored as text rather than binary.", "isCorrect": false },
-        { "text": "Whether the data has already been encrypted.", "isCorrect": false }
+        { "text": "Redundancy: repeated patterns, uneven symbol frequencies, or correlations between parts of the data.", "isCorrect": true },
+        { "text": "High entropy: the more unpredictable the bytes, the more there is to shrink.", "isCorrect": false },
+        { "text": "Whether the data is text or binary.", "isCorrect": false },
+        { "text": "Whether the data is already encrypted.", "isCorrect": false }
       ],
-      "explanation": "Every general-purpose compressor, from Huffman to LZ77 to Brotli, is ultimately finding and exploiting *structure*: symbols that repeat, sequences that recur, or a probability distribution that isn't flat. That structure is what lets the compressor replace something long and predictable with something short. High-entropy data is the opposite case — by definition it has no exploitable pattern left, which is exactly why encrypted or already-compressed data barely shrinks at all (a theme that comes back throughout this Quiz). Text versus binary is a red herring: plenty of binary formats are highly structured and compress well, and plenty of text (like a list of random UUIDs) barely compresses at all.",
+      "explanation": "Every general-purpose compressor, from Huffman to LZ77 to Brotli, works by finding *structure*: symbols that repeat, sequences that recur, or a probability distribution that isn't flat. That structure lets it replace something long and predictable with something short. High-entropy data has no pattern left to exploit, which is why encrypted or already-compressed data barely shrinks. Text versus binary doesn't matter. Many binary formats are highly structured and compress well, while text like a list of random UUIDs barely compresses.",
       "references": "[Wikipedia: Data compression](https://en.wikipedia.org/wiki/Data_compression)"
     },
     {
       "id": "double-gzip-doesnt-help",
-      "title": "Why does gzipping an already-`.gz`-compressed file usually make it slightly *bigger*, not smaller?",
+      "title": "Why does gzipping a file that's already `.gz` usually make it slightly *bigger*?",
       "type": "single-choice",
       "options": [
-        { "text": "The first pass already squeezed out the exploitable structure, so the output looks close to random to a second pass — and the second gzip container adds its own header and checksum bytes on top.", "isCorrect": true },
-        { "text": "gzip has a bug where it can only compress a file once, ever.", "isCorrect": false },
-        { "text": "Compressing twice always exactly halves the size again, which rounds up to a bigger file for small inputs.", "isCorrect": false },
-        { "text": "The operating system adds padding to any file with a `.gz` extension.", "isCorrect": false }
+        { "text": "The first pass already removed the structure, so the output looks almost random to the second pass. The second gzip wrapper then adds its own header and checksum.", "isCorrect": true },
+        { "text": "gzip has a bug that lets it compress a file only once.", "isCorrect": false },
+        { "text": "Compressing twice always halves the size again, which rounds up to a bigger file for small inputs.", "isCorrect": false },
+        { "text": "The operating system pads any file with a `.gz` extension.", "isCorrect": false }
       ],
-      "explanation": "A well-compressed stream has no meaningful redundancy or skewed byte frequencies left for a second pass to find — it approximates random noise from the compressor's point of view. Feeding it through gzip again can't shrink that noise, but the outer gzip *container* still has to add its own fixed header, flags, and CRC-32 trailer, so the net result is a few extra bytes with nothing gained. This is the same underlying fact that makes compressing an encrypted payload pointless, covered in the next Question.",
+      "explanation": "Well-compressed output has no redundancy or uneven byte frequencies left, so to a second compressor it looks like random noise. gzip can't shrink noise, but the outer gzip wrapper still adds its fixed header, flags, and CRC-32 trailer. You end up with a few extra bytes and no savings. The same fact makes compressing encrypted data pointless, as a later Question shows.",
       "references": "[RFC 1952: GZIP file format specification](https://www.rfc-editor.org/rfc/rfc1952)"
     },
     {
       "id": "pigeonhole-principle-statements",
-      "title": "The pigeonhole principle applied to lossless compression",
+      "title": "The pigeonhole principle and lossless compression",
       "description": "Select every correct statement.",
       "type": "multiple-choice",
       "options": [
-        { "text": "There are always more possible N-bit inputs than there are strings shorter than N bits, so not every N-bit input can map to a shorter output.", "isCorrect": true },
-        { "text": "Because of this, no lossless compressor can guarantee it shrinks every possible input — some inputs must stay the same size or grow.", "isCorrect": true },
-        { "text": "A cleverly enough designed general-purpose algorithm could still guarantee at least 1 bit of savings on any input, including truly random data.", "isCorrect": false },
-        { "text": "This is why real compressors fall back to storing an incompressible chunk with a small marker instead of corrupting it, rather than promising to always shrink it.", "isCorrect": true }
+        { "text": "There are more possible N-bit inputs than strings shorter than N bits, so not every N-bit input can map to a shorter output.", "isCorrect": true },
+        { "text": "So no lossless compressor can shrink every possible input. Some inputs must stay the same size or grow.", "isCorrect": true },
+        { "text": "A clever enough general-purpose algorithm could still save at least 1 bit on every input, even truly random data.", "isCorrect": false },
+        { "text": "That's why real compressors store an incompressible chunk as-is with a small marker instead of promising to always shrink it.", "isCorrect": true }
       ],
-      "explanation": "Counting settles this: there are exactly 2ⁿ distinct N-bit inputs, but only 2ⁿ − 1 strings of length less than N bits (all the 0-bit through (N−1)-bit strings combined). If a lossless algorithm is invertible — and it must be, or it isn't lossless — it can map at most as many inputs to 'shorter than N bits' as there are distinct short outputs available, which is fewer than 2ⁿ. So at least one N-bit input has nowhere shorter to go. This isn't a limitation of any particular algorithm; it's a hard counting argument that applies to *every* lossless scheme, which is exactly why formats like gzip and Brotli include an uncompressed 'stored' block type as an escape hatch for data that won't shrink.",
+      "explanation": "It comes down to counting. There are 2ⁿ distinct N-bit inputs but only 2ⁿ − 1 strings shorter than N bits (all the strings from 0 to N−1 bits combined). A lossless compressor must be reversible, so each short output can stand for only one input. That leaves at least one N-bit input with no shorter output available. The argument applies to every lossless scheme, which is why gzip and Brotli include an uncompressed 'stored' block type for data that won't shrink.",
       "references": "[Wikipedia: Pigeonhole principle](https://en.wikipedia.org/wiki/Pigeonhole_principle)"
     },
     {
       "id": "compress-before-encrypt",
-      "title": "You need to both gzip and encrypt a payload before sending it. In which order should you apply them?",
+      "title": "You need to gzip and encrypt a payload before sending it. Which comes first?",
       "type": "single-choice",
       "options": [
-        { "text": "Compress first, then encrypt — compression needs exploitable structure, and good ciphertext has none left.", "isCorrect": true },
-        { "text": "Encrypt first, then compress — compression works better on the more 'random-looking' encrypted bytes.", "isCorrect": false },
-        { "text": "The order makes no measurable difference either way.", "isCorrect": false },
-        { "text": "Apply both operations at once with a single combined cipher-and-compressor pass.", "isCorrect": false }
+        { "text": "Compress, then encrypt. Compression needs structure, and good ciphertext has none.", "isCorrect": true },
+        { "text": "Encrypt, then compress. Compression works better on random-looking encrypted bytes.", "isCorrect": false },
+        { "text": "The order makes no measurable difference.", "isCorrect": false },
+        { "text": "Do both at once in a single combined cipher-and-compressor pass.", "isCorrect": false }
       ],
-      "explanation": "Strong ciphertext is designed to be indistinguishable from random noise — that's the entire point of good encryption. Feed it to a compressor afterward and there is no structure left to exploit, so you pay the compression CPU cost for essentially nothing. Compress while the plaintext still has real redundancy, then encrypt the smaller result. There is one important caveat covered later in this Quiz: compressing a response that mixes a *secret* with *attacker-controlled* input, even before encryption, can itself leak the secret through the resulting length — that's the BREACH/CRIME family of attacks.",
+      "explanation": "Good ciphertext is designed to look like random noise. Compress it afterward and there's no structure left, so you spend CPU for nothing. Compress the plaintext while it still has redundancy, then encrypt the smaller result. One caveat, covered later in this quiz: if a response mixes a *secret* with *attacker-controlled* input, compressing it can leak the secret through the response length, even when it's encrypted afterward. That's how the BREACH and CRIME attacks work.",
       "references": "[Wikipedia: BREACH](https://en.wikipedia.org/wiki/BREACH)"
     },
     {
       "id": "lossless-vs-lossy-is-about-the-consumer",
-      "title": "What should actually decide whether you export an image as lossless or lossy?",
-      "description": "A photo tool offers both a lossless (PNG-like) master export and a lossy (JPEG-like) web export of the same source image.",
+      "title": "What should decide whether you export an image as lossless or lossy?",
+      "description": "A photo tool offers a lossless (PNG-like) master export and a lossy (JPEG-like) web export of the same image.",
       "type": "single-choice",
       "options": [
-        { "text": "What the downstream consumer needs and can tolerate — for example, an archival master that must survive future edits versus a web thumbnail where imperceptible detail loss is an easy trade for a much smaller file.", "isCorrect": true },
-        { "text": "Always pick whichever format produces the smaller file, regardless of use case.", "isCorrect": false },
-        { "text": "Lossless is objectively higher quality, so it should always be preferred when storage allows.", "isCorrect": false },
-        { "text": "The image's content decides it: photographs must always be stored lossy.", "isCorrect": false }
+        { "text": "What the next consumer needs. An archival master must survive future edits, while a web thumbnail can lose invisible detail in exchange for a much smaller file.", "isCorrect": true },
+        { "text": "Always pick whichever format produces the smaller file.", "isCorrect": false },
+        { "text": "Lossless is objectively better quality, so prefer it whenever storage allows.", "isCorrect": false },
+        { "text": "The content decides: photographs must always be stored lossy.", "isCorrect": false }
       ],
-      "explanation": "Lossy versus lossless isn't a property baked into the data — the exact same source image can legitimately be stored either way. The right choice depends entirely on what happens to the bytes next: an archival master or an image headed for further editing needs every pixel preserved exactly (lossless), while a thumbnail rendered once on a phone screen can shed detail nobody will ever perceive in exchange for a much smaller download (lossy). 'Smaller is always better' ignores that lossy compression permanently discards information — fine for some consumers, unacceptable for others (a raw photo negative, a medical scan, source code). And photographs are routinely stored losslessly too, in RAW or PNG form, whenever fidelity matters more than size.",
+      "explanation": "The same image can be stored either way, so the choice depends on what happens to the bytes next. An archival master, or an image you'll keep editing, needs every pixel preserved (lossless). A thumbnail shown once on a phone screen can drop detail nobody will notice and download much faster (lossy). Picking the smallest file ignores that lossy compression throws information away for good. That's fine for some uses and unacceptable for others, like a RAW photo, a medical scan, or source code. And photos are often stored losslessly, as RAW or PNG, when fidelity matters more than size.",
       "references": "[Wikipedia: Lossy compression](https://en.wikipedia.org/wiki/Lossy_compression)"
     },
     {
       "id": "huffman-shortest-code-symbol",
-      "title": "Given these symbol frequencies out of 100 total occurrences, which symbol gets the shortest Huffman codeword?",
+      "title": "With these symbol frequencies (out of 100), which symbol gets the shortest Huffman codeword?",
       "description": "Frequencies: `a`=45, `b`=13, `c`=12, `d`=16, `e`=9, `f`=5.",
       "images": [
         {
@@ -88,18 +88,18 @@
       ],
       "type": "single-choice",
       "options": [
-        { "text": "`a` — it occurs far more often than every other symbol combined with any one of the others.", "isCorrect": true },
-        { "text": "`f` — the least frequent symbol always gets the shortest code, to make room for the common ones.", "isCorrect": false },
-        { "text": "All six symbols end up with the same length, since Huffman always produces a fixed-length code.", "isCorrect": false },
-        { "text": "`d` — the middle value in the frequency table gets the shortest code.", "isCorrect": false }
+        { "text": "`a`, because it appears far more often than any other symbol.", "isCorrect": true },
+        { "text": "`f`, because the rarest symbol always gets the shortest code to leave room for the common ones.", "isCorrect": false },
+        { "text": "All six get the same length, because Huffman codes are fixed-length.", "isCorrect": false },
+        { "text": "`d`, because the middle frequency gets the shortest code.", "isCorrect": false }
       ],
-      "explanation": "Huffman coding builds its tree bottom-up by repeatedly merging the two *least* frequent nodes, which pushes the most frequent symbols toward the root and gives them the fewest bits to traverse. With `a` at 45 out of 100 — more than a third of the whole message — the optimal tree gives it a single-bit codeword (`0`), while `f` at only 5 occurrences ends up four bits deep. That's the entire point of variable-length coding: spend fewer bits on what shows up constantly, and more bits on what's rare, so the *expected* length per symbol drops below what a fixed-length code could ever achieve.",
+      "explanation": "Huffman coding builds its tree bottom-up by repeatedly merging the two *least* frequent nodes. Rare symbols end up deep in the tree, and frequent ones stay near the root with fewer bits. `a` makes up 45 of the 100 symbols, so it gets a 1-bit codeword (`0`), while `f`, with 5, ends up 4 bits deep. Spending fewer bits on common symbols and more on rare ones brings the average length per symbol below what any fixed-length code can reach.",
       "references": "[Wikipedia: Huffman coding](https://en.wikipedia.org/wiki/Huffman_coding)"
     },
     {
       "id": "huffman-total-encoded-bits",
-      "title": "What is the minimum possible total length, in bits, of a 100-symbol message with these frequencies under an optimal Huffman code?",
-      "description": "Frequencies: `a`=45, `b`=13, `c`=12, `d`=16, `e`=9, `f`=5 (100 symbols total). Build the Huffman tree for these frequencies, read off each symbol's codeword length, and sum (frequency × codeword length) across all six symbols.",
+      "title": "What's the shortest total length, in bits, of this 100-symbol message under an optimal Huffman code?",
+      "description": "Frequencies: `a`=45, `b`=13, `c`=12, `d`=16, `e`=9, `f`=5 (100 symbols total). Build the Huffman tree, read off each symbol's codeword length, then add up frequency × codeword length for all six symbols.",
       "images": [
         {
           "src": "huffman-frequencies.svg",
@@ -118,30 +118,30 @@
       ],
       "type": "input",
       "validation": { "mode": "numeric", "acceptedAnswers": [224] },
-      "explanation": "Building the tree by repeatedly merging the two smallest nodes gives: `f`(5)+`e`(9)→14, `c`(12)+`b`(13)→25, `d`(16)+14→30, 25+30→55, and finally `a`(45)+55→100. Reading codeword lengths off that tree: `a`=1 bit, `b`=`c`=3 bits, `d`=3 bits, `e`=`f`=4 bits. The total is (45×1) + (13×3) + (12×3) + (16×3) + (9×4) + (5×4) = 45 + 39 + 36 + 48 + 36 + 20 = **224 bits** — versus 300 bits (100 symbols × 3 bits each) for the smallest *fixed*-length code that could distinguish six symbols. That roughly 25% saving comes entirely from spending fewer bits on `a`, which shows up almost half the time.",
+      "explanation": "Merge the two smallest nodes each time: `f`(5)+`e`(9)→14, `c`(12)+`b`(13)→25, `d`(16)+14→30, 25+30→55, then `a`(45)+55→100. That gives these codeword lengths: `a` is 1 bit, `b`, `c`, and `d` are 3 bits, and `e` and `f` are 4 bits. The total is (45×1) + (13×3) + (12×3) + (16×3) + (9×4) + (5×4) = 45 + 39 + 36 + 48 + 36 + 20 = **224 bits**. The smallest fixed-length code for six symbols needs 3 bits each, or 300 bits. The saving of about 25% comes from giving `a`, almost half the message, a single bit.",
       "references": "[Wikipedia: Huffman coding](https://en.wikipedia.org/wiki/Huffman_coding)"
     },
     {
       "id": "why-prefix-free-codes",
-      "title": "Why must every Huffman codeword be \"prefix-free\" (no codeword may be a prefix of another)?",
+      "title": "Why must Huffman codewords be prefix-free (no codeword is the start of another)?",
       "type": "single-choice",
       "options": [
-        { "text": "It lets a decoder read the bitstream left to right and recognize the instant a complete codeword has arrived, with no delimiters or lookahead needed.", "isCorrect": true },
-        { "text": "It guarantees every codeword ends up the same number of bits long.", "isCorrect": false },
-        { "text": "It's a legal requirement for compression formats, not a technical necessity.", "isCorrect": false },
-        { "text": "It's what allows the encoder to run in constant time regardless of input size.", "isCorrect": false }
+        { "text": "The decoder can read bits left to right and know the moment a codeword is complete, with no separators or lookahead.", "isCorrect": true },
+        { "text": "It makes every codeword the same length.", "isCorrect": false },
+        { "text": "It's a legal requirement for compression formats, not a technical one.", "isCorrect": false },
+        { "text": "It lets the encoder run in constant time regardless of input size.", "isCorrect": false }
       ],
-      "explanation": "A prefix-free code guarantees that once a decoder has read enough bits to match some codeword exactly, no *longer* codeword in the table could also start with those exact same bits — so there's never a need to peek ahead or insert separator bits between codewords. The decoder just walks the tree bit by bit until it hits a leaf, emits that symbol, and starts over at the root. Variable-length codes are only practical because of this property; without it, the compressed bitstream would be genuinely ambiguous to decode, which the next Question demonstrates directly.",
+      "explanation": "With a prefix-free code, once the bits read so far match a codeword, no longer codeword can start with those same bits. The decoder never has to peek ahead or look for separators. It walks the tree bit by bit until it reaches a leaf, outputs that symbol, and starts again at the root. Variable-length codes depend on this property. Without it, decoding needs lookahead and can even become ambiguous, as the next Question shows.",
       "references": "[Wikipedia: Prefix code](https://en.wikipedia.org/wiki/Prefix_code)"
     },
     {
       "id": "prefix-violation-ambiguous-decode",
       "title": "What goes wrong when a code isn't prefix-free?",
-      "description": "A broken code assigns `0` to symbol A and `01` to symbol B. Since `01` begins with A's own codeword `0`, this code is not prefix-free. The diagram traces what happens when a decoder tries to read the bitstream `010`.",
+      "description": "A broken code assigns `0` to symbol A and `01` to symbol B. Because `01` starts with A's codeword `0`, the code isn't prefix-free. The diagram shows a decoder trying to read the bitstream `010`.",
       "images": [
         {
           "src": "prefix-free-violation.svg",
-          "alt": "The bitstream 010 being decoded two different ways under a non-prefix-free code, ending in two different, equally valid results",
+          "alt": "The bitstream 010 decoded two ways under a non-prefix-free code: taking A first gets stuck on a leftover 10, while waiting for B first parses as B then A",
           "placement": "question",
           "width": 720,
           "height": 360
@@ -149,44 +149,44 @@
       ],
       "type": "single-choice",
       "options": [
-        { "text": "It's genuinely ambiguous: `010` could be read as A (`0`) followed by an incomplete, unreadable fragment, or as B (`01`) followed by A (`0`) — nothing in the bits themselves says which the encoder meant.", "isCorrect": true },
-        { "text": "Nothing breaks — a correct decoder always tries the longest matching codeword first, so this resolves cleanly every time.", "isCorrect": false },
-        { "text": "The bitstream simply ends up exactly one bit longer than it needs to be.", "isCorrect": false },
-        { "text": "This only becomes a problem once codewords are longer than four bits.", "isCorrect": false }
+        { "text": "After reading `0`, the decoder can't tell whether it has A or the start of B. Taking A leaves `10`, which matches nothing; only reading B (`01`) and then A (`0`) works. The bits alone don't say where codewords end.", "isCorrect": true },
+        { "text": "Nothing breaks: any variable-length code can be decoded left to right with no lookahead, prefix-free or not.", "isCorrect": false },
+        { "text": "The bitstream ends up exactly one bit longer than it needs to be.", "isCorrect": false },
+        { "text": "It only becomes a problem once codewords are longer than four bits.", "isCorrect": false }
       ],
-      "explanation": "Because `01` is `0` with an extra bit tacked on, a decoder reading `010` left to right hits a real fork: after the first `0`, it has already matched a complete, valid codeword (A) — but if it commits to that, it's stuck with a leftover `10` that doesn't parse as anything, or it can wait, treat `01` as B, and be left with a trailing `0` that parses fine as another A. Both readings are internally consistent; nothing in the bitstream distinguishes 'the encoder meant A here' from 'the encoder meant B here.' This is precisely the failure prefix-free codes are designed to rule out, and it's why Huffman's tree-construction algorithm always produces one — it's a correctness requirement, not a nicety.",
+      "explanation": "`01` is `0` with one more bit, so a decoder reading `010` hits a fork after the first `0`. It has already matched A, but B might be coming. If it commits to A, it's left with `10`, which isn't a codeword. To decode correctly, it has to look ahead or back up and try B (`01`) followed by A (`0`). With a slightly bigger code, things get worse: add C = `10`, and `010` is both B A and A C, with nothing in the bits to say which the encoder meant. Prefix-free codes rule this out, and Huffman's tree construction always produces one. It's a correctness requirement.",
       "references": "[Wikipedia: Prefix code](https://en.wikipedia.org/wiki/Prefix_code)"
     },
     {
       "id": "huffman-one-bit-floor",
-      "title": "A symbol occurs 99% of the time. Why can't Huffman coding get its average cost below 1 bit per occurrence, and what technique can?",
+      "title": "A symbol appears 99% of the time. Why can't Huffman coding spend less than 1 bit on it, and what can?",
       "type": "single-choice",
       "options": [
-        { "text": "Huffman codewords must be a whole number of bits, so 1 bit is the floor for any symbol; arithmetic (or range) coding can spend a *fractional* number of bits and gets much closer to the true entropy limit.", "isCorrect": true },
-        { "text": "Huffman simply cannot handle any probability above 90% — there is no known way to compress such data further.", "isCorrect": false },
-        { "text": "The fix is to add more symbols to the alphabet until the frequencies even out.", "isCorrect": false },
-        { "text": "Increasing the compressor's numeric compression level removes this limit.", "isCorrect": false }
+        { "text": "Huffman codewords are whole numbers of bits, so 1 bit is the minimum. Arithmetic (or range) coding can spend a *fraction* of a bit per symbol and get much closer to the entropy limit.", "isCorrect": true },
+        { "text": "Huffman can't handle probabilities above 90%, and nothing can compress such data further.", "isCorrect": false },
+        { "text": "Add more symbols to the alphabet until the frequencies even out.", "isCorrect": false },
+        { "text": "Raise the compressor's compression level.", "isCorrect": false }
       ],
-      "explanation": "Information theory says a symbol with probability 0.99 carries only about 0.014 bits of information (−log₂ 0.99), so an ideal coder would spend well under 1 bit encoding it. But every Huffman codeword is an integer number of bits — there's no such thing as a 'zero-point-one-four-bit' codeword in a tree of binary branches — so 1 bit per occurrence is the best Huffman can ever do for a symbol that dominant, no matter how skewed the distribution gets. Arithmetic coding (and its modern relative, range coding) sidesteps this entirely by encoding the *whole message* as one fractional-precision number, letting individual symbols effectively cost less than one bit on average. This is exactly why formats chasing the best possible ratio (like the video codecs behind HEVC/AV1, or newer general compressors) use arithmetic/range coding instead of, or layered with, Huffman.",
+      "explanation": "A symbol with probability 0.99 carries only about 0.014 bits of information (−log₂ 0.99), so an ideal coder would spend far less than 1 bit on it. A Huffman tree has binary branches, so every codeword is a whole number of bits, and 1 bit per occurrence is the best Huffman can do however skewed the data is. Arithmetic coding, and its relative range coding, avoid this by encoding the whole message as one high-precision number, so a very common symbol can cost well under a bit on average. That's why formats chasing the best ratio, like the HEVC and AV1 video codecs, use arithmetic or range coding instead of Huffman, or alongside it.",
       "references": "[Wikipedia: Arithmetic coding](https://en.wikipedia.org/wiki/Arithmetic_coding)"
     },
     {
       "id": "static-vs-dynamic-huffman-tables",
       "title": "Static versus dynamic Huffman tables",
-      "description": "A compressor can use a fixed, pre-agreed Huffman table, or build a fresh one tailored to each file's actual symbol frequencies. Select every correct statement.",
+      "description": "A compressor can use a fixed Huffman table agreed on in advance, or build a new one from each file's actual symbol frequencies. Select every correct statement.",
       "type": "multiple-choice",
       "options": [
-        { "text": "A dynamic table adapts to the file's real symbol frequencies, which can compress better than a generic, one-size-fits-all static table.", "isCorrect": true },
-        { "text": "A dynamic table has to be transmitted or stored alongside the compressed data itself, which adds overhead the static approach avoids.", "isCorrect": true },
-        { "text": "On a very small file, a dynamic table's own storage cost can outweigh the savings it earns from adapting to that file's frequencies.", "isCorrect": true },
-        { "text": "A static table must be rebuilt and re-sent with every single file, exactly like a dynamic one.", "isCorrect": false }
+        { "text": "A dynamic table fits the file's real symbol frequencies, so it can compress better than a generic static table.", "isCorrect": true },
+        { "text": "A dynamic table has to be stored with the compressed data, which adds overhead a static table avoids.", "isCorrect": true },
+        { "text": "On a very small file, storing a dynamic table can cost more than it saves.", "isCorrect": true },
+        { "text": "A static table has to be rebuilt and sent with every file, just like a dynamic one.", "isCorrect": false }
       ],
-      "explanation": "The trade is real and symmetric. A dynamic table (as DEFLATE builds per block) can match the exact frequency profile of the data at hand, but the decoder needs that same table to decode — so the table's own description has to travel with the compressed bytes, paid for out of the very savings it's trying to earn. On a tiny file, that per-file table cost can eat most or all of the benefit. A *static* table, by contrast, is agreed upon once in advance (baked into the format or negotiated), so it costs nothing extra per file — the trade-off being it's tuned for typical data in general, not this specific file. The false statement gets this backwards: not needing to resend the table with every file is the entire advantage of going static.",
+      "explanation": "A dynamic table (DEFLATE builds one per block) matches the data's exact frequencies. But the decoder needs the same table, so the table travels with the compressed bytes and its size comes out of the savings. On a tiny file, that cost can eat most or all of the benefit. A static table is agreed on in advance, built into the format or negotiated, so it costs nothing per file. The downside is that it's tuned for typical data, not your file. The false statement has it backwards: not resending the table is the whole point of a static one.",
       "references": "[RFC 1951: DEFLATE Compressed Data Format Specification](https://www.rfc-editor.org/rfc/rfc1951)"
     },
     {
       "id": "lz77-distance-length-meaning",
-      "title": "LZ77 replaces a repeated run of bytes with a back-reference. What do the two numbers in a `(distance, length)` pair mean?",
+      "title": "LZ77 replaces a repeated run of bytes with a back-reference. What do the numbers in a `(distance, length)` pair mean?",
       "images": [
         {
           "src": "lz77-sliding-window.svg",
@@ -198,35 +198,35 @@
       ],
       "type": "single-choice",
       "options": [
-        { "text": "`distance` is how many bytes back in the already-output data the match starts; `length` is how many bytes to copy forward from there.", "isCorrect": true },
-        { "text": "`distance` is how many bytes to skip ahead in the output; `length` is the total size of the sliding window.", "isCorrect": false },
-        { "text": "`distance` is the byte offset from the very start of the file; `length` is a count of how many matches have been found so far.", "isCorrect": false },
-        { "text": "The pair is really two independent Huffman codeword lengths, unrelated to matching.", "isCorrect": false }
+        { "text": "`distance` is how many bytes back in the output the match starts; `length` is how many bytes to copy from there.", "isCorrect": true },
+        { "text": "`distance` is how many bytes to skip ahead in the output; `length` is the size of the sliding window.", "isCorrect": false },
+        { "text": "`distance` is the offset from the start of the file; `length` is how many matches have been found so far.", "isCorrect": false },
+        { "text": "They're two unrelated Huffman codeword lengths.", "isCorrect": false }
       ],
-      "explanation": "LZ77 keeps a sliding window of recently output bytes and continuously looks for the current lookahead data inside that window. When it finds a match, instead of re-emitting those bytes it emits a compact token: *go back `distance` bytes from here, and copy `length` bytes forward*. The decoder, which has already produced everything in the window, can replay that copy instruction exactly. Distance is always relative to the *current* output position (not the start of the file), which is what makes 'sliding' the right word — the window moves forward as decoding proceeds, and only what's inside the window right now is reachable by a back-reference.",
+      "explanation": "LZ77 keeps a sliding window of recent output and looks for the upcoming bytes inside it. When it finds a match, it emits a short token instead of the bytes: go back `distance` bytes and copy `length` bytes. The decoder has already produced everything in the window, so it can repeat the copy exactly. Distance is measured from the current position, not the start of the file. The window moves forward as decoding goes on, and a back-reference can only reach what's inside it.",
       "references": "[Wikipedia: LZ77 and LZ78](https://en.wikipedia.org/wiki/LZ77_and_LZ78)"
     },
     {
       "id": "lz77-window-size-max-distance",
-      "title": "An LZ77-based compressor uses a 32 KiB sliding window. What is the maximum `distance`, in bytes, that a back-reference in this compressor can point backward?",
+      "title": "An LZ77-based compressor has a 32 KiB sliding window. What's the largest `distance`, in bytes, a back-reference can reach?",
       "description": "1 KiB = 1024 bytes.",
       "type": "input",
       "validation": { "mode": "numeric", "acceptedAnswers": [32768] },
-      "explanation": "32 KiB = 32 × 1024 = **32,768 bytes**, and that's the hard ceiling on how far back a match can reach — DEFLATE (used by gzip and zlib) fixes exactly this window size. Anything that repeats *within* the last 32,768 bytes of output is fair game for a cheap back-reference; anything that repeated only *further back* than that is invisible to the matcher and must be re-encoded from scratch as if it were new. This is also why a long file with content that repeats across large distances (a big log file, a large HTML page with a far-apart repeated block) benefits more from a *bigger* window — formats like Brotli and zstd support windows well beyond DEFLATE's 32 KiB precisely to catch that longer-range repetition.",
+      "explanation": "32 KiB = 32 × 1024 = **32,768 bytes**. That's the hard limit on how far back a match can reach, and DEFLATE (used by gzip and zlib) uses exactly this window size. Anything repeated within the last 32,768 bytes can become a cheap back-reference. Anything that last appeared further back is invisible to the matcher and gets encoded again from scratch. Files that repeat content over long distances, like big logs or a large HTML page with repeated blocks far apart, benefit from bigger windows. That's why Brotli and zstd support windows much larger than DEFLATE's 32 KiB.",
       "references": "[RFC 1951: DEFLATE Compressed Data Format Specification](https://www.rfc-editor.org/rfc/rfc1951)"
     },
     {
       "id": "lz77-hand-encode-repetition",
-      "title": "Encoding `abcabcabcabc` by hand: how many back-reference tokens are needed?",
-      "description": "The 12-character string `abcabcabcabc` is encoded starting with the first `abc` as three literal characters (nothing precedes them to reference yet). Each of the remaining three `abc` repetitions is then encoded as exactly one `(distance=3, length=3)` back-reference token. How many back-reference tokens does that take to cover the remaining 9 characters?",
+      "title": "Encoding `abcabcabcabc` by hand: how many back-reference tokens do you need?",
+      "description": "The 12-character string starts with the first `abc` as three literal characters, since there's nothing earlier to reference. Each of the remaining three `abc` repetitions becomes one `(distance=3, length=3)` token. How many back-reference tokens cover the remaining 9 characters?",
       "type": "input",
       "validation": { "mode": "numeric", "acceptedAnswers": [3] },
-      "explanation": "The first `abc` (characters 1–3) has to be stored literally — there's no earlier data to point back to. That leaves 9 characters (positions 4–12), covering three more repetitions of `abc`. Encoding each repetition as its own `(distance=3, length=3)` token — 'go back 3 bytes, copy 3 bytes forward' — takes exactly **3 tokens**. (A cleverer encoder could actually do this in a *single* token: because LZ77 copies byte by byte, a length can legally exceed its distance, so one `(distance=3, length=9)` token copies `abc`, then re-reads the `abc` it just wrote, then re-reads that — covering all 9 remaining characters at once. That overlapping-copy trick is a real feature of DEFLATE and friends, not a special case.)",
+      "explanation": "The first `abc` (characters 1 to 3) has to be stored as literals because there's nothing earlier to point to. The remaining 9 characters are three more copies of `abc`, and one `(distance=3, length=3)` token per copy makes **3 tokens**. A smarter encoder can do it with one. LZ77 copies byte by byte, so a length can be longer than its distance: a single `(distance=3, length=9)` token copies `abc`, then copies the `abc` it just wrote, and so on, covering all 9 characters. DEFLATE and similar formats support these overlapping copies.",
       "references": "[Wikipedia: LZ77 and LZ78](https://en.wikipedia.org/wiki/LZ77_and_LZ78)"
     },
     {
       "id": "deflate-two-stages",
-      "title": "DEFLATE runs LZ77 first, then Huffman coding. Which kind of redundancy does each stage catch?",
+      "title": "DEFLATE runs LZ77 first, then Huffman coding. What kind of redundancy does each stage catch?",
       "images": [
         {
           "src": "deflate-two-stages.svg",
@@ -238,31 +238,31 @@
       ],
       "type": "single-choice",
       "options": [
-        { "text": "LZ77 catches repeated substrings via back-references; Huffman then catches skewed frequencies among what's left over (the literals and back-reference codes themselves).", "isCorrect": true },
-        { "text": "Huffman catches repeated substrings; LZ77 catches skewed symbol frequencies.", "isCorrect": false },
-        { "text": "Both stages target exactly the same redundancy — the second pass is purely a safety margin.", "isCorrect": false },
-        { "text": "LZ77 only processes text characters; Huffman only processes binary data.", "isCorrect": false }
+        { "text": "LZ77 catches repeated substrings with back-references; Huffman then catches uneven frequencies in what's left (the literals and back-reference codes).", "isCorrect": true },
+        { "text": "Huffman catches repeated substrings; LZ77 catches uneven symbol frequencies.", "isCorrect": false },
+        { "text": "Both stages catch the same redundancy; the second pass is only a safety margin.", "isCorrect": false },
+        { "text": "LZ77 only handles text, and Huffman only handles binary data.", "isCorrect": false }
       ],
-      "explanation": "The two stages are complementary, not redundant. LZ77 goes first and hunts for *repeated sequences* — the same substring showing up again — replacing repeats with short back-reference tokens. What comes out of that stage is a stream of literal bytes and reference tokens whose *individual values* are usually far from uniformly distributed (some literals and some reference lengths/distances show up much more than others). Huffman coding then takes a second, different kind of bite: it assigns shorter codewords to whichever literals and tokens appear most often in that stream, catching the skewed-frequency redundancy that LZ77's substring matching can't see at all. Neither stage alone would do as well — LZ77 leaves an unevenly distributed token stream, and Huffman alone would miss any repeated multi-byte sequences entirely.",
+      "explanation": "The stages complement each other. LZ77 runs first and finds repeated sequences, replacing repeats with short back-reference tokens. Its output is a stream of literal bytes and tokens whose values are unevenly distributed: some literals, lengths, and distances show up much more often than others. Huffman coding then gives the most common ones shorter codewords, catching frequency skew that substring matching can't see. Either stage alone does worse. LZ77 alone leaves that uneven token stream, and Huffman alone misses repeated multi-byte sequences.",
       "references": "[Wikipedia: DEFLATE](https://en.wikipedia.org/wiki/DEFLATE)"
     },
     {
       "id": "gzip-zlib-raw-deflate-containers",
-      "title": "gzip, zlib, and \"raw deflate\" all compress with the same DEFLATE algorithm. Select every correct statement about how they differ.",
+      "title": "gzip, zlib, and raw deflate all use the same DEFLATE algorithm. Select every correct statement about how they differ.",
       "type": "multiple-choice",
       "options": [
-        { "text": "gzip wraps the DEFLATE stream in its own header plus a CRC-32 checksum trailer, and is the format behind HTTP's `Content-Encoding: gzip`.", "isCorrect": true },
-        { "text": "zlib wraps the same DEFLATE stream in a smaller header and an Adler-32 checksum, and shows up inside formats like PNG.", "isCorrect": true },
-        { "text": "Raw deflate has no header or checksum of its own at all — just the bitstream — and is used when a surrounding container (like a ZIP entry) already provides that framing.", "isCorrect": true },
-        { "text": "The three formats are incompatible at the algorithm level and each needs an entirely different decompressor for the compressed data itself.", "isCorrect": false }
+        { "text": "gzip wraps the DEFLATE stream in its own header and a CRC-32 checksum trailer. It's the format behind HTTP's `Content-Encoding: gzip`.", "isCorrect": true },
+        { "text": "zlib wraps the same stream in a smaller header and an Adler-32 checksum, and appears inside formats like PNG.", "isCorrect": true },
+        { "text": "Raw deflate is just the bitstream, with no header or checksum. It's used when an outer container, like a ZIP entry, already provides that framing.", "isCorrect": true },
+        { "text": "The three formats use incompatible algorithms, and each needs a completely different decompressor for the compressed data.", "isCorrect": false }
       ],
-      "explanation": "All three are the identical DEFLATE compression algorithm underneath — the differences are entirely in the *wrapper*. gzip (RFC 1952) adds its own header (with fields like a filename and timestamp) and a CRC-32 trailer for integrity checking; it's what you see on the wire whenever a server sends `Content-Encoding: gzip`. zlib (RFC 1950) is a thinner wrapper — a 2-byte header plus a 4-byte Adler-32 checksum — and it's what PNG images and Git objects use internally. Raw deflate (RFC 1951) is the bare compressed bitstream with no framing at all, appropriate when the outer format (like a `.zip` file's own per-entry metadata) already tracks size and checksums. Because the underlying compressed data is the same algorithm in every case, a decompressor really only needs to know which few bytes of wrapper to strip off first — it isn't three separate compression schemes.",
+      "explanation": "All three run the same DEFLATE algorithm; they differ only in the wrapper. gzip (RFC 1952) adds a header, with fields like a filename and timestamp, and a CRC-32 trailer for integrity checks. It's what a server sends with `Content-Encoding: gzip`. zlib (RFC 1950) is a thinner wrapper, a 2-byte header plus a 4-byte Adler-32 checksum, used inside PNG images and Git objects. Raw deflate (RFC 1951) is the bare bitstream, used when the outer format (like a `.zip` file's per-entry metadata) already tracks sizes and checksums. A decompressor only has to know which wrapper bytes to strip first.",
       "references": "[RFC 1952: GZIP file format specification](https://www.rfc-editor.org/rfc/rfc1952)"
     },
     {
       "id": "compression-level-tradeoff",
-      "title": "Choosing a gzip compression level: level 6 versus level 9",
-      "description": "Select every correct statement about the size/time trade-off as compression level increases.",
+      "title": "Choosing a gzip compression level: 6 versus 9",
+      "description": "Select every correct statement about how size and time change as the compression level goes up.",
       "images": [
         {
           "src": "size-vs-level.svg",
@@ -274,92 +274,92 @@
       ],
       "type": "multiple-choice",
       "options": [
-        { "text": "Level 9 typically buys only a small extra reduction in size over level 6, for a considerably larger increase in compression time.", "isCorrect": true },
-        { "text": "Static assets compressed once at build time and served from cache many times over can reasonably justify paying for level 9.", "isCorrect": true },
-        { "text": "Dynamically generated responses compressed fresh on every request usually favor a faster level like 6, since the encode time sits directly on the request's critical path.", "isCorrect": true },
-        { "text": "Level 9 also decompresses noticeably slower for the client, which is the main reason it's avoided.", "isCorrect": false }
+        { "text": "Level 9 usually saves only a little more than level 6, but takes much longer to compress.", "isCorrect": true },
+        { "text": "Static assets compressed once at build time and served from cache many times can justify level 9.", "isCorrect": true },
+        { "text": "Dynamic responses compressed on every request usually do better with a faster level like 6, because compression time adds directly to response time.", "isCorrect": true },
+        { "text": "Level 9 also decompresses noticeably slower for the client, which is the main reason to avoid it.", "isCorrect": false }
       ],
-      "explanation": "The size-versus-level curve is steeply diminishing: going from level 1 to level 6 recovers most of the achievable savings, and pushing on to level 9 typically shaves off only a few more percent while the encoder's search effort — and therefore its time cost — keeps climbing much faster than the size keeps dropping. That asymmetry is exactly why the *same* build pipeline reasonably uses different levels in different places: an asset bundled once and served from a CDN for months can absorb a slow, maximal-ratio build step, while an API response regenerated on every request needs to compress fast because that time is added directly to the response latency. The false statement mixes up encode and decode cost: DEFLATE decompression speed is essentially independent of which level produced the data, so slow decoding isn't the reason high levels get skipped for hot paths — slow *encoding* is.",
+      "explanation": "Returns drop off fast. Going from level 1 to 6 gets most of the possible savings. Level 9 usually trims only a few more percent, while the encoder's search effort, and its time, keeps climbing. That's why one build pipeline can use different levels in different places. An asset built once and served from a CDN for months can afford a slow, maximum-ratio step. An API response generated on every request needs fast compression, because that time adds to the response latency. The false statement confuses encoding with decoding. DEFLATE decompresses at about the same speed whatever level produced the data, so slow *encoding* is why high levels are skipped on hot paths.",
       "references": "[Wikipedia: DEFLATE](https://en.wikipedia.org/wiki/DEFLATE)"
     },
     {
       "id": "brotli-static-dictionary-small-files",
-      "title": "Brotli ships with a large built-in static dictionary of common web text. Why does this make it beat gzip specifically on small HTML/CSS/JS files?",
+      "title": "Brotli ships with a large built-in dictionary of common web text. Why does that help it beat gzip on small HTML, CSS, and JS files?",
       "type": "single-choice",
       "options": [
-        { "text": "The dictionary lets Brotli reference common web strings it already 'knows,' even in a tiny file with little or no internal repetition of its own — something gzip's LZ77 window can't do, since it only ever looks backward within the file being compressed.", "isCorrect": true },
-        { "text": "The dictionary makes Brotli's compression faster, not smaller.", "isCorrect": false },
-        { "text": "Brotli's dictionary applies only to images, not to text formats.", "isCorrect": false },
+        { "text": "Brotli can reference common web strings it already knows, even in a tiny file with little repetition of its own. gzip's LZ77 window can't do that, because it only looks back within the file being compressed.", "isCorrect": true },
+        { "text": "The dictionary makes Brotli compress faster, not smaller.", "isCorrect": false },
+        { "text": "Brotli's dictionary only applies to images, not text.", "isCorrect": false },
         { "text": "gzip actually beats Brotli on small files; the dictionary only matters for streaming video.", "isCorrect": false }
       ],
-      "explanation": "Brotli's built-in dictionary bakes in tens of thousands of strings and byte sequences drawn from real web content — common HTML tags, CSS property names, JavaScript keywords, frequent English words and phrases. A small file, by definition, doesn't have much room to repeat *itself*, so a plain LZ77-based compressor like gzip — limited to matching only against bytes it has already seen *within that same file* — gets little to work with. Brotli, by contrast, can match against its pre-loaded dictionary from the very first byte, effectively giving even a tiny file the benefit of 'having already seen' a huge amount of typical web text. That's precisely the scenario — small, boilerplate-heavy text files — where Brotli's advantage over gzip is largest.",
+      "explanation": "Brotli's built-in dictionary holds common strings taken from real web content: HTML tags, CSS property names, JavaScript keywords, and frequent English words and phrases. A small file doesn't have much room to repeat itself, and gzip can only match against bytes it has already seen in that same file, so it has little to work with. Brotli can match against its dictionary from the first byte, as if it had already read a lot of typical web text. That's why its lead over gzip is largest on small, boilerplate-heavy text files.",
       "references": "[RFC 7932: Brotli Compressed Data Format](https://www.rfc-editor.org/rfc/rfc7932)"
     },
     {
       "id": "brotli-advantage-shrinks-large-unique",
-      "title": "Why does Brotli's edge over gzip shrink on a large, unique payload — say, a big proprietary binary blob?",
+      "title": "Why does Brotli's lead over gzip shrink on a large, unique payload, like a big proprietary binary file?",
       "type": "single-choice",
       "options": [
-        { "text": "The built-in dictionary is tuned for common web-text patterns that a large, unique payload doesn't contain much of, so both compressors end up relying mainly on the file's own internal redundancy, where their designs are much closer in effectiveness.", "isCorrect": true },
-        { "text": "Brotli automatically disables its dictionary above a fixed file-size threshold.", "isCorrect": false },
-        { "text": "Large files can't be entropy-coded with Huffman-style methods at all.", "isCorrect": false },
-        { "text": "gzip is given a larger sliding window than Brotli once files grow past a certain size.", "isCorrect": false }
+        { "text": "The built-in dictionary is tuned for web text, which a large unique payload barely contains. Both compressors then rely mostly on the file's own redundancy, where they perform much more alike.", "isCorrect": true },
+        { "text": "Brotli turns off its dictionary above a fixed file size.", "isCorrect": false },
+        { "text": "Large files can't be entropy-coded with Huffman-style methods.", "isCorrect": false },
+        { "text": "gzip gets a larger sliding window than Brotli once files pass a certain size.", "isCorrect": false }
       ],
-      "explanation": "Brotli's dictionary is a fixed resource built from typical *web* content — it helps precisely when the input resembles the kind of text it was trained on. A large, unique binary blob mostly doesn't look like that at all, so the dictionary has little to contribute, and Brotli falls back on the same kind of within-file LZ77-plus-entropy-coding approach gzip already uses. Brotli still tends to have a larger match window and somewhat more sophisticated entropy coding than gzip, so it can still edge ahead — but the *dramatic* win seen on small HTML/CSS/JS comes specifically from the dictionary, and that advantage is largely unavailable once the payload is big and unlike common web text.",
+      "explanation": "Brotli's dictionary is fixed and built from typical web content, so it only helps when the input looks like that. A large, unique binary file mostly doesn't, so Brotli falls back on the same kind of within-file LZ77 plus entropy coding that gzip uses. Brotli still has a larger match window and somewhat better entropy coding, so it can stay a bit ahead. The big win on small HTML, CSS, and JS comes from the dictionary, though, and a large payload unlike web text doesn't get it.",
       "references": "[Wikipedia: Brotli](https://en.wikipedia.org/wiki/Brotli)"
     },
     {
       "id": "brotli-quality-build-vs-request-time",
-      "title": "Brotli quality levels and when to use the highest one",
-      "description": "Brotli exposes quality levels similar in spirit to gzip's, but its top levels are dramatically slower to *encode*. Select every correct statement.",
+      "title": "Brotli quality levels: when is the highest one worth it?",
+      "description": "Brotli has quality levels, much like gzip's compression levels, but its top levels are far slower to *encode*. Select every correct statement.",
       "type": "multiple-choice",
       "options": [
-        { "text": "Quality 11 (maximum) is a reasonable choice for static assets compressed once at build time and then served from cache repeatedly.", "isCorrect": true },
-        { "text": "A much lower quality level is the right choice for compressing dynamic, per-request responses on the fly, since encode time sits on the request's critical path.", "isCorrect": true },
-        { "text": "Choosing quality 11 for a one-time build artifact costs nothing at request time — it only lengthens the build step, not any page load.", "isCorrect": true },
-        { "text": "Higher quality levels also make decoding noticeably slower for the browser.", "isCorrect": false }
+        { "text": "Quality 11 (the maximum) makes sense for static assets compressed once at build time and then served from cache.", "isCorrect": true },
+        { "text": "Dynamic responses compressed on every request should use a much lower quality, because compression time adds directly to response time.", "isCorrect": true },
+        { "text": "Using quality 11 for a one-time build artifact costs nothing at request time. It only makes the build longer.", "isCorrect": true },
+        { "text": "Higher quality levels also make decoding noticeably slower in the browser.", "isCorrect": false }
       ],
-      "explanation": "Brotli's quality parameter overwhelmingly affects *encode* effort — how hard the compressor searches for matches and how it builds its entropy tables — not decode effort. That asymmetry is exactly why the same site can use two different settings: assets bundled once at build time and served unchanged for months can absorb quality 11's much longer compression time, since that cost is paid once, offline, and never touches a user's request. A dynamically generated response, by contrast, has to be compressed fresh on every request, so a slow quality-11 encode would add real latency to every page load — which is why servers doing on-the-fly Brotli typically pick a much lower quality. Decoding, meanwhile, stays fast and roughly quality-independent on the browser side either way, so decode speed isn't the deciding factor here.",
+      "explanation": "Brotli's quality setting mostly changes *encoding* effort: how hard the compressor searches for matches and builds its tables. Decoding stays fast at any quality. So a site can use two settings. Assets built once and served unchanged for months can take quality 11's long compression time, because that cost is paid once, offline, and never during a request. A dynamic response is compressed on every request, so a slow quality-11 encode would add latency to every page load. That's why servers compressing on the fly usually pick a much lower quality.",
       "references": "[RFC 7932: Brotli Compressed Data Format](https://www.rfc-editor.org/rfc/rfc7932)"
     },
     {
       "id": "zstd-speed-ratio-position",
-      "title": "Where does zstd typically sit on the speed/ratio curve relative to gzip and Brotli/xz?",
+      "title": "Where does zstd usually sit on the speed/ratio curve compared with gzip and Brotli/xz?",
       "description": "Select every correct statement.",
       "type": "multiple-choice",
       "options": [
-        { "text": "At comparable settings, zstd is typically much faster than gzip while matching or beating gzip's compression ratio.", "isCorrect": true },
-        { "text": "At its highest levels, zstd's ratio can approach — though doesn't always match — Brotli/xz, while still decoding very quickly.", "isCorrect": true },
-        { "text": "zstd exposes a wide range of tunable levels, letting you trade speed for ratio similarly in spirit to gzip's own level parameter.", "isCorrect": true },
-        { "text": "zstd achieves its speed by being a lossy algorithm, unlike gzip and Brotli.", "isCorrect": false }
+        { "text": "At similar settings, zstd is usually much faster than gzip and compresses as well or better.", "isCorrect": true },
+        { "text": "At its highest levels, zstd's ratio can approach Brotli/xz, though not always match it, while still decompressing very fast.", "isCorrect": true },
+        { "text": "zstd has a wide range of levels, so you can trade speed for ratio much like gzip's level setting.", "isCorrect": true },
+        { "text": "zstd gets its speed by being lossy, unlike gzip and Brotli.", "isCorrect": false }
       ],
-      "explanation": "zstd was designed explicitly to push the speed/ratio trade-off curve outward relative to older tools: at its default and lower levels it dramatically outpaces gzip in both compression *and* decompression speed while achieving similar or better ratios, which is why it's become popular for hot paths like log storage and network protocols. At its highest levels it trades some of that speed to chase ratios in the neighborhood of Brotli or xz, without fully matching the best cases of either, all while keeping decompression fast regardless of the level used to encode. Like gzip and Brotli, zstd is fully lossless — every one of these codecs reconstructs the exact original bytes; none of them discard information.",
+      "explanation": "zstd was designed to get a better speed/ratio trade-off than older tools. At its default and lower levels, it compresses and decompresses much faster than gzip with similar or better ratios, which is why it's popular for hot paths like log storage and network protocols. At its highest levels, it gives up some speed to reach ratios near Brotli or xz, without fully matching their best results, and decompression stays fast at every level. zstd is lossless, like gzip and Brotli: all of them restore the exact original bytes.",
       "references": "[Wikipedia: Zstd](https://en.wikipedia.org/wiki/Zstd)"
     },
     {
       "id": "custom-shared-dictionaries",
-      "title": "A company serves thousands of small, similarly-shaped JSON API responses and trains a *custom* shared compression dictionary on its own past traffic. What's the underlying idea?",
+      "title": "A company serves thousands of small, similar JSON API responses and trains a *custom* compression dictionary on its past traffic. What's the idea?",
       "type": "single-choice",
       "options": [
-        { "text": "The same trick as Brotli's built-in web-text dictionary, but aimed at your own corpus: it gives the compressor 'lookback' into patterns common across your specific payloads, even when any single response is too small or too fresh to contain much repetition of its own.", "isCorrect": true },
-        { "text": "Custom dictionaries only work for image formats, not for structured text like JSON.", "isCorrect": false },
-        { "text": "A shared dictionary replaces Huffman/entropy coding entirely with a plain lookup table.", "isCorrect": false },
-        { "text": "Custom dictionaries make individual responses larger, in exchange for faster generation.", "isCorrect": false }
+        { "text": "It's Brotli's built-in dictionary trick applied to your own data. The compressor can reference patterns common across your payloads, even when a single response is too small to repeat much on its own.", "isCorrect": true },
+        { "text": "Custom dictionaries only work for image formats, not structured text like JSON.", "isCorrect": false },
+        { "text": "A shared dictionary replaces Huffman and other entropy coding with a plain lookup table.", "isCorrect": false },
+        { "text": "Custom dictionaries make each response bigger in exchange for faster generation.", "isCorrect": false }
       ],
-      "explanation": "A shared or custom dictionary generalizes exactly the mechanism behind Brotli's built-in one: instead of common *web* text, it's built from a sample of *your* actual traffic — repeated JSON keys, boilerplate structure, common field values — so the compressor can reference that shared context on the very first byte of a brand-new, otherwise tiny response. This is the same underlying insight as concatenating many small files before gzipping them (covered later in this Quiz): small individual payloads compress poorly in isolation because they lack internal repetition, but they often repeat heavily *against each other*, and a shared dictionary (or shared file) is what lets a compressor see that cross-payload structure.",
+      "explanation": "A custom dictionary works like Brotli's built-in one, but it's built from a sample of *your* traffic instead of general web text: repeated JSON keys, boilerplate structure, and common field values. The compressor can reference that shared context from the first byte of a new, tiny response. Concatenating small files before gzipping them, covered later in this quiz, uses the same idea. Small payloads compress poorly alone because they don't repeat much internally, but they often repeat a lot *across* each other. A shared dictionary, or a shared file, lets the compressor use that.",
       "references": "[MDN: Content-Encoding](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Encoding)"
     },
     {
       "id": "accept-encoding-vs-content-encoding",
-      "title": "A browser sends `Accept-Encoding: gzip, br` and gets back a response with `Content-Encoding: br`. What did each header do?",
+      "title": "A browser sends `Accept-Encoding: gzip, br` and gets a response with `Content-Encoding: br`. What does each header do?",
       "type": "single-choice",
       "options": [
-        { "text": "`Accept-Encoding` (on the request) lists the encodings the client is able to decode; `Content-Encoding` (on the response) states which one the server actually used for this specific body.", "isCorrect": true },
-        { "text": "The two headers mean the same thing — one just happens to appear on requests and the other on responses, arbitrarily.", "isCorrect": false },
-        { "text": "`Accept-Encoding` is what selects the encoding; `Content-Encoding` is only relevant for image responses.", "isCorrect": false },
-        { "text": "`Content-Encoding` on a response instructs the browser to compress its *next* request the same way.", "isCorrect": false }
+        { "text": "`Accept-Encoding` (on the request) lists the encodings the client can decode; `Content-Encoding` (on the response) says which one the server used for this body.", "isCorrect": true },
+        { "text": "They mean the same thing; one just appears on requests and the other on responses.", "isCorrect": false },
+        { "text": "`Accept-Encoding` picks the encoding; `Content-Encoding` only matters for image responses.", "isCorrect": false },
+        { "text": "`Content-Encoding` on a response tells the browser to compress its *next* request the same way.", "isCorrect": false }
       ],
-      "explanation": "This is a negotiation, and each header plays a distinct role in it. The client's `Accept-Encoding` is a *capability* announcement — 'here is what I know how to decode' — and the server is free to pick any encoding from that list, or none at all (falling back to identity). The response's `Content-Encoding` is then a *fact* about the bytes actually being sent — 'this body has been gzip/br/etc.-compressed; decode it before reading it as the underlying media type.' Mixing these up is a common source of confusion, especially once `Transfer-Encoding` enters the picture — covered in the next Question — since all three headers have 'Encoding' in the name but govern three genuinely different concerns.",
+      "explanation": "The two headers are a negotiation. `Accept-Encoding` tells the server what the client can decode, and the server can pick any encoding from that list or none at all (identity). `Content-Encoding` then states what was actually done to this body: it was compressed with gzip, br, or similar, and the client must decode it before reading it as its media type. People often mix these up, especially once `Transfer-Encoding` joins in (the next Question). All three have 'Encoding' in the name but handle different things.",
       "references": "[MDN: Accept-Encoding](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Accept-Encoding)"
     },
     {
@@ -376,30 +376,30 @@
       ],
       "type": "single-choice",
       "options": [
-        { "text": "`Transfer-Encoding` (e.g. `chunked`) describes how the message body is framed for this one hop over the wire, and is stripped off by the receiving layer before the payload is handed upward; `Content-Encoding` (e.g. `gzip`) is an end-to-end property of the payload itself that the final consumer has to decode.", "isCorrect": true },
-        { "text": "`Transfer-Encoding` is a deprecated header that no longer appears in modern HTTP traffic.", "isCorrect": false },
-        { "text": "The two headers are interchangeable names for the same underlying mechanism.", "isCorrect": false },
-        { "text": "`Transfer-Encoding` only ever applies to requests, never to responses.", "isCorrect": false }
+        { "text": "`Transfer-Encoding` (like `chunked`) describes how the body is framed for one hop over the wire, and the receiver strips it before passing the payload on. `Content-Encoding` (like `gzip`) belongs to the payload itself, end to end, and the final consumer decodes it.", "isCorrect": true },
+        { "text": "`Transfer-Encoding` is deprecated and no longer appears in modern HTTP.", "isCorrect": false },
+        { "text": "The two headers are different names for the same mechanism.", "isCorrect": false },
+        { "text": "`Transfer-Encoding` only applies to requests, never responses.", "isCorrect": false }
       ],
-      "explanation": "The key distinction is *hop-by-hop* versus *end-to-end*. `Transfer-Encoding: chunked` describes how the body is broken into pieces for transmission across a single connection — a proxy in the middle is allowed to un-chunk and re-chunk it differently, and by the time it reaches an application layer, the chunking has already been stripped away entirely; it's about wire framing, not the payload's actual content. `Content-Encoding: gzip`, by contrast, travels all the way to the final consumer unchanged — a proxy must **not** silently strip it, because doing so would corrupt the payload the receiving application expects to decode itself. `Transfer-Encoding` is very much alive in modern HTTP (chunked transfer is the standard way to stream a response of unknown length), and the two headers can appear on the very same response simultaneously, each doing its own job at its own layer.",
+      "explanation": "The difference is *hop-by-hop* versus *end-to-end*. `Transfer-Encoding: chunked` describes how the body is split into pieces on one connection. A proxy can un-chunk it and re-chunk it differently, and the chunking is gone by the time the body reaches the application. It's wire framing, not content. `Content-Encoding: gzip` travels unchanged to the final consumer. A proxy must not quietly strip it, because the receiving application expects to decode the payload itself. `Transfer-Encoding` is still common in HTTP/1.1, where chunked transfer is the standard way to stream a response of unknown length, and both headers can appear on the same response, each working at its own layer.",
       "references": "[MDN: Transfer-Encoding](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Transfer-Encoding)"
     },
     {
       "id": "vary-accept-encoding-cache-poisoning",
-      "title": "A server returns different bodies for the same URL depending on `Accept-Encoding`, but omits `Vary: Accept-Encoding`. What can go wrong?",
+      "title": "A server returns different bodies for the same URL based on `Accept-Encoding` but leaves out `Vary: Accept-Encoding`. What can go wrong?",
       "type": "single-choice",
       "options": [
-        { "text": "A shared cache (a CDN or proxy) may cache the response keyed only by URL, then later serve the gzip-compressed bytes to a client that sent no `Accept-Encoding` — or the uncompressed bytes to a client expecting gzip — leaving that client unable to correctly read the body.", "isCorrect": true },
-        { "text": "Nothing meaningful — `Vary` only affects server-side access logs.", "isCorrect": false },
-        { "text": "The browser refuses to render any page served through a cache that lacks `Vary`.", "isCorrect": false },
-        { "text": "Without `Vary`, the server permanently stops compressing responses for that URL.", "isCorrect": false }
+        { "text": "A shared cache (a CDN or proxy) may store the response under the URL alone, then serve the gzip-compressed bytes to a client that sent no `Accept-Encoding` and can't read them.", "isCorrect": true },
+        { "text": "Nothing much; `Vary` only affects server access logs.", "isCorrect": false },
+        { "text": "Browsers refuse to render any page served through a cache that lacks `Vary`.", "isCorrect": false },
+        { "text": "Without `Vary`, the server stops compressing responses for that URL for good.", "isCorrect": false }
       ],
-      "explanation": "A shared cache normally treats a URL as the cache key and assumes any client asking for that URL gets an interchangeable response. But when the *same* URL genuinely produces different bytes depending on a request header — exactly what happens when a server picks gzip, br, or identity encoding based on `Accept-Encoding` — that assumption breaks. `Vary: Accept-Encoding` tells the cache 'key your cached copies by this header too,' so a gzip response and an uncompressed response for the same URL are stored and served as distinct cache entries. Omit it, and a cache can hand a client bytes encoded for a *different* client's capabilities — compressed gibberish to a client that never asked for compression, or vice versa — which is a real, observed class of cache-correctness bug, not just a theoretical edge case.",
+      "explanation": "A shared cache normally uses the URL as the cache key and assumes every client gets the same response. That breaks when one URL produces different bytes depending on a request header, as it does when the server picks gzip, br, or no encoding based on `Accept-Encoding`. `Vary: Accept-Encoding` tells the cache to include that header in the key, so compressed and uncompressed versions are stored as separate entries. Without it, a cache can hand one client bytes encoded for another, like compressed data to a client that never asked for compression. This bug shows up in real deployments.",
       "references": "[MDN: Vary](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Vary)"
     },
     {
       "id": "compressing-already-compressed-media",
-      "title": "For which of these does applying gzip/Brotli on top wastes CPU for close to 0% additional savings?",
+      "title": "For which of these does adding gzip or Brotli on top waste CPU for close to 0% extra savings?",
       "description": "Select every format where this is true.",
       "type": "multiple-choice",
       "options": [
@@ -408,26 +408,26 @@
         { "text": "An MP4 video", "isCorrect": true },
         { "text": "A hand-written CSS stylesheet", "isCorrect": false }
       ],
-      "explanation": "JPEG, WebP, and MP4 are all already the *output* of their own dedicated, highly-tuned compression pipelines — each format's own encoder has already squeezed out the redundancy its particular kind of data has to offer, using techniques (transform coding, motion prediction, entropy coding tuned to pixel/audio statistics) far more specialized than a general-purpose byte-level compressor. Running gzip or Brotli over the result finds essentially no exploitable structure left — the same 'compressing something that's already compressed' problem covered earlier in this Quiz — so the server burns CPU cycles for a rounding error in size, or occasionally a slight *increase*. Plain-text formats like CSS, by contrast, are exactly the case general-purpose compression is built for: real repeated tokens, whitespace, and skewed character frequencies that a JPEG or MP4 simply doesn't have anymore.",
+      "explanation": "JPEG, WebP, and MP4 are already the output of specialized compressors. Their encoders have removed most of the redundancy using techniques like transform coding, motion prediction, and entropy coding tuned to image, video, and audio data, which go far beyond what a general byte-level compressor does. gzip or Brotli finds almost no structure left, the same problem as compressing compressed data covered earlier, so the server spends CPU for a tiny change in size, or sometimes a slightly bigger file. Plain text like CSS is what general-purpose compression is built for: repeated tokens, whitespace, and uneven character frequencies.",
       "references": "[web.dev: Text compression with gzip and Brotli](https://web.dev/articles/reduce-network-payloads-using-text-compression)"
     },
     {
       "id": "why-not-compress-tiny-responses",
-      "title": "Why do most servers skip compressing very small responses, such as under roughly 1 KB?",
+      "title": "Why do most servers skip compressing very small responses, say under about 1 KB?",
       "type": "single-choice",
       "options": [
-        { "text": "The compressed format's own overhead — headers, tables, checksums — plus the CPU cost of compressing can outweigh or erase the savings on a payload that small, occasionally making the result larger than the original.", "isCorrect": true },
-        { "text": "Small responses are already implicitly encrypted, making compression redundant.", "isCorrect": false },
-        { "text": "HTTP itself forbids using `Content-Encoding` on responses under 1 KB.", "isCorrect": false },
-        { "text": "Browsers silently ignore `Content-Encoding` on any response that small.", "isCorrect": false }
+        { "text": "The format's own overhead (headers, tables, checksums) plus the CPU cost can cancel out the savings on something that small, and the result is sometimes bigger than the original.", "isCorrect": true },
+        { "text": "Small responses are already implicitly encrypted, so compression is redundant.", "isCorrect": false },
+        { "text": "HTTP forbids `Content-Encoding` on responses under 1 KB.", "isCorrect": false },
+        { "text": "Browsers ignore `Content-Encoding` on responses that small.", "isCorrect": false }
       ],
-      "explanation": "Every compression format carries some fixed cost regardless of payload size: a header, perhaps a checksum, and — for something like DEFLATE — the machinery of at least one Huffman table describing the symbols used. On a large payload that fixed cost is negligible next to the savings; on a response that's only a few hundred bytes to begin with, the overhead can be a meaningful fraction of the original size, and in the worst case can make the 'compressed' output bigger than the input, on top of spending CPU time to get there. Most servers and CDNs set a minimum size threshold specifically to avoid paying that cost on responses too small to benefit — there's no such restriction in the HTTP specification itself, and browsers happily decode compressed responses of any size.",
+      "explanation": "Every compression format has a fixed cost regardless of payload size: a header, maybe a checksum, and for DEFLATE, possibly a Huffman table. On a large payload that cost is negligible. On a response of a few hundred bytes, it's a real fraction of the size and can make the output bigger than the input, after spending CPU to produce it. Servers and CDNs set a minimum size to avoid this. HTTP itself has no such rule, and browsers decode compressed responses of any size.",
       "references": "[MDN: Content-Encoding](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Encoding)"
     },
     {
       "id": "breach-crime-mechanism",
-      "title": "A response mixes a secret token with attacker-controlled input, and the response is compressed before being sent over HTTPS. What does the compressed length leak?",
-      "description": "This is the setup behind the BREACH and CRIME family of attacks.",
+      "title": "A response mixes a secret token with attacker-controlled input and is compressed before being sent over HTTPS. What does the compressed length leak?",
+      "description": "This is the setup behind the BREACH and CRIME attacks.",
       "images": [
         {
           "src": "breach-length-leak.svg",
@@ -439,31 +439,31 @@
       ],
       "type": "single-choice",
       "options": [
-        { "text": "When an attacker's guessed substring matches part of the secret, that overlap can be replaced with a cheap back-reference, shrinking the compressed output in an observably measurable way — repeating guesses while watching response length lets the attacker recover the secret byte by byte.", "isCorrect": true },
-        { "text": "Compression exposes the encryption key directly as bytes inside the compressed output.", "isCorrect": false },
-        { "text": "The attack works even when the attacker has no way to influence any part of the response body.", "isCorrect": false },
-        { "text": "This only affects plain, unencrypted HTTP — HTTPS responses are immune.", "isCorrect": false }
+        { "text": "When the attacker's guess matches part of the secret, the compressor replaces the overlap with a cheap back-reference and the response gets measurably shorter. By repeating guesses and watching the length, the attacker recovers the secret byte by byte.", "isCorrect": true },
+        { "text": "Compression exposes the encryption key as bytes in the compressed output.", "isCorrect": false },
+        { "text": "The attack works even when the attacker can't influence any part of the response body.", "isCorrect": false },
+        { "text": "It only affects plain HTTP; HTTPS responses are immune.", "isCorrect": false }
       ],
-      "explanation": "The attack doesn't need to break the encryption at all — it exploits what compression does *before* encryption ever runs. If a response body contains both a secret (say, a CSRF token) and some text the attacker can influence (a reflected query parameter, for instance), the attacker can repeatedly request the page with different guessed characters or substrings appended to their own input. Whenever a guess happens to match part of the real secret, the compressor's back-reference finds that overlap and represents it more cheaply, making the *overall compressed length* measurably shorter — and length is visible to the attacker even through TLS, since encryption hides content but not the size of the ciphertext. By trying one character at a time and watching for the dip, the attacker reconstructs the secret without ever decrypting anything. Critically, this requires *both* ingredients — a secret in the response *and* attacker-influenced content in that same compressed response — which is exactly what the mitigation in the next Question targets.",
+      "explanation": "The attack never breaks the encryption. It uses what compression does before encryption runs. Say a response contains a secret, like a CSRF token, and text the attacker controls, like a reflected query parameter. The attacker requests the page many times with different guesses in their input. When a guess matches part of the secret, the compressor encodes the overlap as a back-reference and the compressed response gets shorter. TLS hides content but not size, so the attacker can see that. Trying one character at a time and watching for the drop, they rebuild the secret without decrypting anything. The attack needs *both* a secret and attacker-controlled content in the same compressed response, which is what the defenses in the next Question target.",
       "references": "[Wikipedia: BREACH](https://en.wikipedia.org/wiki/BREACH)"
     },
     {
       "id": "breach-crime-mitigation",
-      "title": "What's the standard mitigation for BREACH/CRIME-style compression length attacks?",
+      "title": "What's the standard defense against BREACH and CRIME-style compression attacks?",
       "type": "single-choice",
       "options": [
-        { "text": "Don't compress responses that mix a secret with attacker-influenced content — separate secrets from any reflected input, disable compression for such responses, or add random padding/masking so length no longer tracks the secret cleanly.", "isCorrect": true },
-        { "text": "Switch from gzip to Brotli, which is inherently immune to this entire class of attack.", "isCorrect": false },
-        { "text": "Use a longer TLS encryption key.", "isCorrect": false },
-        { "text": "Disable HTTPS and serve the page over plain HTTP instead.", "isCorrect": false }
+        { "text": "Don't compress responses that mix a secret with attacker-influenced content. Keep secrets away from reflected input, turn off compression for those responses, or add random padding or masking so the length no longer tracks the secret.", "isCorrect": true },
+        { "text": "Switch from gzip to Brotli, which is immune to this kind of attack.", "isCorrect": false },
+        { "text": "Use a longer TLS key.", "isCorrect": false },
+        { "text": "Turn off HTTPS and serve the page over plain HTTP.", "isCorrect": false }
       ],
-      "explanation": "The vulnerability isn't in any particular compression algorithm's bits — it's in the *situation*: a secret and attacker-controllable content sharing one compressed, encrypted response, where the attacker can observe length. That means the fix has to break that situation, not swap algorithms: never reflect the secret and untrusted input into the same compressible response, disable compression specifically for responses carrying sensitive tokens, randomize secret tokens per request so a partial match doesn't help across requests, or add random padding that decouples observable length from the secret's true content. Brotli compresses using the same back-reference principle as gzip, so it's just as susceptible in this scenario — the algorithm was never the vulnerable part. And neither a longer TLS key nor dropping HTTPS touches the actual mechanism at all; the leak happens at the compression layer, before encryption even enters the picture, and dropping HTTPS would only add new, far worse problems.",
+      "explanation": "The weakness is the situation, not the algorithm: a secret and attacker-controlled content share one compressed, encrypted response, and the attacker can see its length. The fix has to change that situation. Don't put secrets and untrusted input in the same compressed response, turn off compression for responses carrying sensitive tokens, randomize secret tokens per request so a partial match doesn't carry over, or add random padding so the length doesn't reveal the secret. Brotli uses back-references just like gzip, so switching doesn't help. A longer TLS key doesn't help either, because the leak happens in compression before encryption, and dropping HTTPS would only make things much worse.",
       "references": "[Wikipedia: CRIME](https://en.wikipedia.org/wiki/CRIME)"
     },
     {
       "id": "base64-expansion-numeric",
-      "title": "A binary asset is exactly 300,000 bytes. Approximately how many bytes will its base64-encoded text form be, ignoring the small fixed padding?",
-      "description": "Base64 maps every 3 input bytes to 4 output characters, each 1 byte.",
+      "title": "A binary file is exactly 300,000 bytes. About how many bytes is its base64 text, ignoring padding?",
+      "description": "Base64 turns every 3 input bytes into 4 output characters of 1 byte each.",
       "images": [
         {
           "src": "base64-expansion.svg",
@@ -475,61 +475,61 @@
       ],
       "type": "input",
       "validation": { "mode": "numeric", "acceptedAnswers": [400000] },
-      "explanation": "300,000 bytes divides evenly into 100,000 groups of 3 bytes, and each group becomes 4 output characters: 100,000 × 4 = **400,000 bytes** of base64 text — a full +33% larger than the original binary, with no padding needed in this case since 300,000 is exactly divisible by 3. That +33% overhead is the direct, unavoidable cost of representing 8-bit binary data using only 64 printable ASCII characters (6 bits of information per character): 3 bytes (24 bits) becomes 4 characters (24 bits split into four 6-bit chunks), and there's no way around that ratio for any base64-encoded payload.",
+      "explanation": "300,000 bytes is exactly 100,000 groups of 3 bytes, and each group becomes 4 characters: 100,000 × 4 = **400,000 bytes**, 33% larger than the original. No padding is needed because 300,000 divides evenly by 3. The 33% comes from using only 64 printable ASCII characters, which carry 6 bits each: 3 bytes (24 bits) become 4 characters of 6 bits. Every base64 payload pays this ratio.",
       "references": "[MDN: Base64 encoding and decoding](https://developer.mozilla.org/en-US/docs/Glossary/Base64)"
     },
     {
       "id": "base64-inlining-tradeoff",
-      "title": "When does inlining an image as a base64 data URI actually help performance, and when does it hurt?",
-      "description": "A 2 KB SVG icon is embedded directly in the HTML as a base64 data URI instead of linked as a separate file.",
+      "title": "When does inlining an image as a base64 data URI help performance, and when does it hurt?",
+      "description": "A 2 KB SVG icon is embedded in the HTML as a base64 data URI instead of linked as a separate file.",
       "type": "single-choice",
       "options": [
-        { "text": "It can help for a single tiny, critical, above-the-fold asset by saving one network round trip; it hurts for anything reused across pages, since the roughly +33% base64 overhead is duplicated in every response and the asset loses its own independent browser cache entry.", "isCorrect": true },
-        { "text": "It always helps, because base64-encoded text compresses better than the original binary asset.", "isCorrect": false },
-        { "text": "It always hurts and should never be used under any circumstance.", "isCorrect": false },
-        { "text": "The trade-off only becomes relevant for assets larger than 1 MB.", "isCorrect": false }
+        { "text": "It can help for one tiny, critical, above-the-fold asset by saving a network round trip. It hurts for assets used across pages, since the roughly 33% base64 overhead repeats in every response and the asset loses its own browser cache entry.", "isCorrect": true },
+        { "text": "It always helps, because base64 text compresses better than the original binary.", "isCorrect": false },
+        { "text": "It always hurts and should never be used.", "isCorrect": false },
+        { "text": "The trade-off only matters for assets larger than 1 MB.", "isCorrect": false }
       ],
-      "explanation": "Inlining trades one cost (an extra network request) for another (a bigger, less cacheable HTML document), so the win depends entirely on which cost matters more in a given case. A single small, critical asset needed immediately — an above-the-fold icon that would otherwise block rendering while its own request completes — can genuinely benefit from being inlined, since eliminating that round trip can matter more than the base64 size penalty. But an asset reused across many pages loses far more than it gains: instead of being fetched once and cached by the browser for every subsequent page, its bloated base64 form gets re-downloaded, uncompressed relative to its potential, inside *every single HTML response* that references it. And that base64 overhead is real regardless of size — it isn't a large-file-only concern.",
+      "explanation": "Inlining swaps one cost, an extra request, for another, a bigger HTML document that caches less well. Which wins depends on the case. A small, critical asset needed right away, like an above-the-fold icon that would otherwise wait on its own request, can benefit, because saving the round trip matters more than the base64 overhead. An asset used on many pages loses out. Instead of downloading once and then coming from the browser cache, its larger base64 form is downloaded again inside every HTML page that uses it. The base64 overhead applies at any size, not only to large files.",
       "references": "[MDN: data: URLs](https://developer.mozilla.org/en-US/docs/Web/URI/Reference/Schemes/data)"
     },
     {
       "id": "data-uri-blocks-css",
-      "title": "A CSS file embeds a large image as a base64 `data:` URI inside a `background-image` rule. What's a downside specific to putting it in CSS rather than in HTML?",
+      "title": "A CSS file embeds a large image as a base64 `data:` URI in a `background-image` rule. What's the downside of putting it in CSS instead of HTML?",
       "type": "single-choice",
       "options": [
-        { "text": "The browser can't apply any of the rules in that stylesheet — including ones with nothing to do with the image — until the entire file, inflated base64 blob included, has finished downloading and parsing, so one embedded image can delay the whole stylesheet.", "isCorrect": true },
-        { "text": "CSS cannot legally contain `data:` URIs at all, so the page breaks entirely.", "isCorrect": false },
-        { "text": "Embedding an image this way forces it to render at the wrong resolution.", "isCorrect": false },
-        { "text": "It disables gzip/Brotli compression for the rest of the file.", "isCorrect": false }
+        { "text": "The browser can't apply any rule in that stylesheet, even ones unrelated to the image, until the whole file, base64 data included, has downloaded and been parsed. One embedded image can delay all the styles.", "isCorrect": true },
+        { "text": "CSS can't contain `data:` URIs, so the page breaks.", "isCorrect": false },
+        { "text": "Embedding the image this way makes it render at the wrong resolution.", "isCorrect": false },
+        { "text": "It turns off gzip/Brotli compression for the rest of the file.", "isCorrect": false }
       ],
-      "explanation": "CSS is render-blocking by nature — the browser withholds painting until it has the full stylesheet, because any later rule could in principle override an earlier one. Normally that's a manageable cost since CSS files are usually small and quick to fetch. But stuffing a large base64-encoded image directly into that file inflates the very thing the browser is blocked on: every unrelated rule in that stylesheet — layout, typography, colors, none of which have anything to do with the embedded image — now has to wait for that oversized blob to finish downloading and parsing too. An external image reference, by contrast, loads independently and doesn't hold up the rest of the CSS at all. (The `data:` syntax is entirely legal CSS, and compression still applies to the file as a whole — the problem is purely the blocking behavior of the file it now lives inside.)",
+      "explanation": "CSS blocks rendering: the browser doesn't paint until it has the full stylesheet, because a later rule could override an earlier one. That's usually fine, since CSS files tend to be small. A large base64 image makes the blocking file much bigger, so every unrelated rule (layout, typography, colors) waits for the image data to download and parse. A normal image URL loads separately and doesn't hold up the CSS. The `data:` syntax is valid CSS, and compression still applies to the whole file. The problem is only that the image now sits inside a render-blocking file.",
       "references": "[web.dev: Render-blocking CSS](https://web.dev/articles/critical-rendering-path/render-blocking-css)"
     },
     {
       "id": "minify-then-compress-ordering",
-      "title": "Minifying a JS file before gzipping it, versus gzipping the original unminified file: how does minification's raw-size saving compare to its saving *after* gzip?",
+      "title": "You can minify a JS file before gzipping it, or gzip the unminified original. How does minification's raw-size saving compare with its saving *after* gzip?",
       "type": "single-choice",
       "options": [
-        { "text": "Minification still reduces the gzipped size, but by much less than the raw-size difference suggests — gzip already squeezes out most of the redundancy (whitespace, repeated tokens, long identifier names) that minification also targets, so their gains overlap heavily.", "isCorrect": true },
-        { "text": "Minification makes no difference whatsoever once gzip is applied afterward.", "isCorrect": false },
-        { "text": "Minification and gzip's savings simply add together, with no overlap between what each one targets.", "isCorrect": false },
-        { "text": "Minifying the already-gzipped output compresses better than minifying before gzipping.", "isCorrect": false }
+        { "text": "Minification still makes the gzipped file smaller, but by much less than the raw difference suggests. gzip already removes much of the same redundancy (whitespace, repeated tokens, long names), so their gains overlap.", "isCorrect": true },
+        { "text": "Minification makes no difference once gzip runs.", "isCorrect": false },
+        { "text": "Minification and gzip savings simply add up, with no overlap.", "isCorrect": false },
+        { "text": "Minifying the gzipped output compresses better than minifying before gzipping.", "isCorrect": false }
       ],
-      "explanation": "Minification and gzip both attack a lot of the *same* redundancy from different angles: stripping whitespace and comments removes bytes gzip would otherwise have compressed away almost for free (highly repetitive runs of spaces compress extremely well already), and shortening variable names reduces textual redundancy that gzip's own back-references were also catching to a significant degree. The result is real but muted overlap — minifying typically shrinks a raw file dramatically (often 30–60%), but the *gzipped* size difference between minified and unminified versions of the same file is usually a much smaller percentage, because gzip had already recovered a good chunk of what minification removes. Minification is still worth doing (it also reduces parse/execution time, not just transfer size, and gzip can't undo genuinely shorter identifier names), but predicting its gzip-level benefit purely from the raw diff overstates the win. (Gzipping binary data and then trying to minify it doesn't meaningfully apply — minifiers operate on source text, not compressed bytes.)",
+      "explanation": "Minification and gzip go after much of the same redundancy. Whitespace and comments are cheap for gzip anyway, since repeated runs of spaces compress very well, and gzip's back-references already catch much of the repetition in long variable names. So minifying often cuts the raw file by 30 to 60%, but the gap between the minified and unminified *gzipped* files is much smaller. Minifying is still worth it: it also cuts parse and execution time, and gzip can't make identifiers shorter. Just don't estimate the gzipped benefit from the raw difference. (Minifying gzipped output makes no sense, since minifiers work on source text, not compressed bytes.)",
       "references": "[web.dev: Minify CSS](https://web.dev/articles/unminified-css)"
     },
     {
       "id": "concatenate-then-gzip-many-small-files",
-      "title": "Why does gzipping 200 small JSON files after concatenating them into one file beat gzipping each file separately?",
+      "title": "Why does gzipping 200 small JSON files concatenated into one beat gzipping each file separately?",
       "description": "Select every statement that correctly explains the size difference.",
       "type": "multiple-choice",
       "options": [
-        { "text": "Concatenated data lets LZ77 back-reference repeated structure — shared keys, shared formatting — across what used to be separate files, exploiting redundancy that each file alone couldn't offer.", "isCorrect": true },
-        { "text": "The fixed per-file container overhead (gzip's header and CRC-32 trailer) is paid once for the combined file instead of 200 separate times.", "isCorrect": true },
-        { "text": "One shared Huffman table amortizes its own storage cost across all the data, instead of a fresh table being built and stored for every tiny file.", "isCorrect": true },
-        { "text": "gzip decompresses a single concatenated archive noticeably faster than 200 separate files, and that's the actual source of the size difference.", "isCorrect": false }
+        { "text": "In one stream, LZ77 can back-reference structure repeated across what used to be separate files, like shared keys and formatting.", "isCorrect": true },
+        { "text": "The fixed gzip header and CRC-32 trailer are paid once instead of 200 times.", "isCorrect": true },
+        { "text": "Huffman tables are built and stored for the combined data, instead of a new table for every tiny file.", "isCorrect": true },
+        { "text": "gzip decompresses one concatenated file noticeably faster than 200 separate files, and that's what makes it smaller.", "isCorrect": false }
       ],
-      "explanation": "This is the same underlying insight as Brotli's built-in dictionary and custom shared dictionaries, both covered earlier: small files in isolation lack internal repetition to exploit, but they very often repeat heavily *against each other* — same JSON keys, same structural boilerplate — and a compressor can only exploit cross-file repetition if the files are actually presented together in one stream. Concatenating them first hands LZ77 that cross-file context, lets a single dynamic Huffman table cover the whole batch instead of being rebuilt (and re-paid for) 200 times, and collapses 200 sets of gzip header/checksum overhead into one. None of that has anything to do with decompression speed — decompression time is a separate concern from compressed size, and it isn't the mechanism producing the smaller output here.",
+      "explanation": "This is the same idea as Brotli's built-in dictionary and custom shared dictionaries, both covered earlier. Small files don't repeat much internally, but they often repeat a lot across each other: the same JSON keys and the same boilerplate. A compressor can only use that repetition if the files come in one stream. Concatenating them gives LZ77 the cross-file context, lets Huffman tables cover the whole batch instead of paying for 200 of them, and replaces 200 gzip headers and trailers with one. Decompression speed has nothing to do with it, since it doesn't affect compressed size.",
       "references": "[RFC 1951: DEFLATE Compressed Data Format Specification](https://www.rfc-editor.org/rfc/rfc1951)"
     }
   ]

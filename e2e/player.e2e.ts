@@ -130,7 +130,7 @@ test("Catalog single-choice Run locks the Question, shows the Explanation, and c
 
   await page.getByRole("button", { name: "Start" }).click();
 
-  await expect(page.getByRole("heading", { name: /Undo, Redo, and Back/ })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Undo, redo, and back/ })).toBeVisible();
   await expect(page.getByText(/exactly what Undo needs/)).toBeHidden();
 
   // Finish only appears once every Question is answered, so show all 10 on one page.

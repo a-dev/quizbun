@@ -106,7 +106,7 @@ export function StorageDurability({
   }
 
   return (
-    <div className={cx(styles.root, needInlineMargin && styles.rootInlineMargin)}>
+    <div className={cx(styles.root, needInlineMargin && showNotice && styles.rootInlineMargin)}>
       {showNotice && (
         <Note type="warning" as="output" onClose={dismiss}>
           <p className={styles.copy}>

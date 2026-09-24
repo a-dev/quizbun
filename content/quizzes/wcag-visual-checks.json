@@ -1,0 +1,836 @@
+{
+  "schemaVersion": 1,
+  "id": "wcag-visual-checks",
+  "title": "WCAG 2.2 visual checks: contrast, focus, target size & reading order",
+  "description": "Each Question shows a screen with an accessibility problem you can spot by eye. The Explanation then shows the same screen as an accessibility tree, so you can compare what assistive technology gets with what only shows up in the pixels. Topics: WCAG 2.2 AA contrast for text and controls, focus rings that are removed, covered, or lost in forced colors mode, 24px targets and their exceptions, placeholders used as labels, and DOM order versus visual order.",
+  "language": "en",
+  "tags": [
+    "accessibility",
+    "frontend",
+    "css",
+    "design",
+    "wcag"
+  ],
+  "questions": [
+    {
+      "id": "gray-body-text-777",
+      "title": "Does this 16px gray body text meet WCAG 2.2 contrast at level AA?",
+      "description": "The paragraph uses `color: #777777` on a `#ffffff` background at 16px regular weight. Its contrast ratio is 4.48:1.",
+      "images": [
+        {
+          "src": "gray-body-text-screen.svg",
+          "alt": "A product page section headed Delivery. Below it, two lines of mid-gray body text: Ships in 3–5 business days. Free returns within 30 days of delivery.",
+          "width": 720,
+          "height": 290
+        },
+        {
+          "src": "gray-body-text-tree.svg",
+          "alt": "Accessibility tree: RootWebArea, a level 2 heading named Delivery, and a paragraph containing two highlighted StaticText nodes with the full sentences. A note says no color, size, or contrast appears in the tree.",
+          "placement": "explanation",
+          "width": 720,
+          "height": 322
+        }
+      ],
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "No. 4.48:1 is below the 4.5:1 minimum, and ratios are not rounded up.",
+          "isCorrect": true
+        },
+        {
+          "text": "Yes. 4.48:1 rounds to 4.5:1.",
+          "isCorrect": false
+        },
+        {
+          "text": "Yes. Body text only needs 3:1.",
+          "isCorrect": false
+        },
+        {
+          "text": "Yes. The text is complete in the accessibility tree, so everyone can perceive it.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Success criterion 1.4.3 Contrast (Minimum) asks for **4.5:1** for normal-size text. The Understanding document adds that you don't round the ratio: even 4.499:1 fails. `#777777` on white is 4.48:1, so it misses by a hair. One step darker, `#767676`, gives 4.54:1 and passes. That's why people often call it the lightest gray you can use for text on white.\n\n3:1 is enough only for large text: 24px regular, or about 18.7px bold. 16px regular is normal text.\n\nNow look at the tree. The whole paragraph is there as StaticText, with no color, size, or ratio attached, so a screen reader user gets every word. This fails the people reading the pixels: low-vision users, or anyone reading a dim phone in sunlight. A check that only reads the tree or the DOM text will miss it. You need a tool that measures the rendered colors, such as the contrast readout in the DevTools color picker.",
+      "references": "[W3C: Understanding 1.4.3 Contrast (Minimum)](https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum.html)"
+    },
+    {
+      "id": "large-text-threshold",
+      "title": "All four samples use `#888888` on white (3.54:1). Which ones meet WCAG 2.2 AA contrast?",
+      "description": "- Sample 1: an `<h2>` at 16px bold\n- Sample 2: a `<p>` at 24px regular\n- Sample 3: a `<p>` at 19px bold\n- Sample 4: a `<p>` at 18px bold",
+      "images": [
+        {
+          "src": "large-text-screen.svg",
+          "alt": "Four rows labeled Sample 1 to Sample 4, each reading Order summary in the same mid-gray on white, at different sizes and weights. Each row lists its element and CSS size on the right.",
+          "width": 720,
+          "height": 352
+        },
+        {
+          "src": "large-text-tree.svg",
+          "alt": "Accessibility tree: a level 2 heading for Sample 1 marked normal text, fails; paragraphs for Samples 2 and 3 marked large text, pass; a paragraph for Sample 4 marked normal text, fails.",
+          "placement": "explanation",
+          "width": 720,
+          "height": 322
+        }
+      ],
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "Sample 1, the 16px bold `<h2>`",
+          "isCorrect": false
+        },
+        {
+          "text": "Sample 2, the 24px regular `<p>`",
+          "isCorrect": true
+        },
+        {
+          "text": "Sample 3, the 19px bold `<p>`",
+          "isCorrect": true
+        },
+        {
+          "text": "Sample 4, the 18px bold `<p>`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "3.54:1 sits between 3:1 and 4.5:1, so it passes only for **large-scale text**. WCAG sets that at 18pt (24px) regular or larger, or 14pt (about 18.7px) bold or larger.\n\n- Sample 2: 24px regular is exactly on the 18pt line. Pass.\n- Sample 3: 19px bold is above 18.7px. Pass.\n- Sample 4: 18px bold is 13.5pt, just under 14pt. That makes it normal text, which needs 4.5:1. Fail.\n\nSample 1 is the trap. The tree calls it a level 2 `heading`, and headings *feel* big. WCAG only looks at the rendered size, though, so a 16px `<h2>` is normal text. It works the other way too: a plain `<p>` at 24px counts as large, even though the tree just calls it a paragraph.",
+      "references": "[W3C: Understanding 1.4.3 Contrast (Minimum)](https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum.html)"
+    },
+    {
+      "id": "input-border-contrast",
+      "title": "The email field's only visible edge is a `#dddddd` border on white (1.36:1). What is the WCAG 2.2 AA verdict?",
+      "images": [
+        {
+          "src": "input-border-screen.svg",
+          "alt": "A newsletter form headed Get the newsletter. A bold label Email address sits above a text field whose border is so pale it is barely visible, next to a blue Subscribe button.",
+          "width": 720,
+          "height": 300
+        },
+        {
+          "src": "input-border-tree.svg",
+          "alt": "Accessibility tree: a heading, a highlighted textbox named Email address marked named and reachable, and a Subscribe button. A note says the border isn't in the tree.",
+          "placement": "explanation",
+          "width": 720,
+          "height": 294
+        }
+      ],
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "It fails 1.4.11 Non-text Contrast. The border shows where the field is, so it needs 3:1 against the white around it.",
+          "isCorrect": true
+        },
+        {
+          "text": "It passes. The field has a visible label and a correct accessible name.",
+          "isCorrect": false
+        },
+        {
+          "text": "It fails 1.4.3 Contrast (Minimum). The border needs 4.5:1, like text.",
+          "isCorrect": false
+        },
+        {
+          "text": "It passes. Borders are decoration, and contrast rules only cover text.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Success criterion 1.4.11 Non-text Contrast asks for **3:1** for anything visual you need to identify a UI component. The Understanding document spells it out: if a border is what tells you a text input is there, that border needs 3:1. At 1.36:1, many users see a label floating above blank white space.\n\nThe label tells you *what* to type, but only the border shows *where* to click. And a border is a graphic, so the 3:1 rule applies here, not the 4.5:1 rule for text.\n\nThe tree looks perfect: a focusable `textbox` named \"Email address\". A screen reader user has no trouble, and a checker that only hunts for missing names passes the page. The border lives only in the pixels. A darker border such as `#8a8f98` (3.25:1) fixes it. So does a filled field background with enough contrast against the page.",
+      "references": "[W3C: Understanding 1.4.11 Non-text Contrast](https://www.w3.org/WAI/WCAG22/Understanding/non-text-contrast.html)"
+    },
+    {
+      "id": "looks-disabled-but-enabled",
+      "title": "Is this pale **Place order** button exempt from WCAG 2.2 contrast requirements?",
+      "description": "The designer made the button pale to show that checkout isn't finished yet. The markup is `<button class=\"is-pending\">Place order</button>`. Clicking it scrolls to the first missing field.",
+      "images": [
+        {
+          "src": "pale-button-screen.svg",
+          "alt": "A checkout page headed Review your order, with the text 2 of 3 steps complete. Below it, a washed-out grayish-blue button reads Place order in white text.",
+          "width": 720,
+          "height": 290
+        },
+        {
+          "src": "pale-button-tree.svg",
+          "alt": "Accessibility tree: a heading, the text 2 of 3 steps complete, and a highlighted focusable button named Place order, marked no disabled state.",
+          "placement": "explanation",
+          "width": 720,
+          "height": 294
+        }
+      ],
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "No. The button still works, so its 2.14:1 label must reach 4.5:1.",
+          "isCorrect": true
+        },
+        {
+          "text": "Yes. Controls that look inactive are exempt from contrast.",
+          "isCorrect": false
+        },
+        {
+          "text": "No, but it only needs 3:1, because it is a UI component rather than text.",
+          "isCorrect": false
+        },
+        {
+          "text": "Yes, as long as the button also has an `aria-label`.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "1.4.3 and 1.4.11 exempt components that are *not available for user interaction*, such as a disabled HTML control. Looking inactive doesn't count.\n\nThe tree tells the real story: `button \"Place order\" focusable`, with no disabled state. A screen reader user hears a normal button, a keyboard user can Tab to it, and clicking it does something. So the label is normal text and needs **4.5:1**. White on `#a3b3c7` is only 2.14:1.\n\nThe 3:1 non-text rule covers the button's shape and edges. The words on it follow the text rule. Adding an `aria-label` changes the name in the tree and leaves the pixels as they were.\n\nIf you truly disabled the button with the `disabled` attribute, the tree would show that state and the exemption would apply. But a disabled button can't tell anyone what's missing. That's why many teams keep it enabled, style it normally, and explain the problem when someone clicks it.",
+      "references": "[W3C: Understanding 1.4.3 Contrast (Minimum)](https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum.html) · [W3C: Understanding 1.4.11 Non-text Contrast](https://www.w3.org/WAI/WCAG22/Understanding/non-text-contrast.html)"
+    },
+    {
+      "id": "outline-none-focus-visible",
+      "title": "Which WCAG 2.2 success criterion does this page fail when someone uses a keyboard?",
+      "description": "The stylesheet contains `*:focus { outline: none; }` and no other focus styles. The user has just pressed Tab.",
+      "images": [
+        {
+          "src": "outline-none-screen.svg",
+          "alt": "A checkout form with a filled Email field and two buttons, Back and Pay now. No element on the screen shows a focus indicator.",
+          "width": 720,
+          "height": 300
+        },
+        {
+          "src": "outline-none-tree.svg",
+          "alt": "Accessibility tree: an Email textbox, a Back button, and a highlighted Pay now button marked focused: true.",
+          "placement": "explanation",
+          "width": 720,
+          "height": 294
+        }
+      ],
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "2.4.7 Focus Visible",
+          "isCorrect": true
+        },
+        {
+          "text": "2.4.3 Focus Order",
+          "isCorrect": false
+        },
+        {
+          "text": "2.1.1 Keyboard",
+          "isCorrect": false
+        },
+        {
+          "text": "None. Screen readers announce the focused button, so focus is perceivable.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Where is focus? You can't tell from the screen, and that's the failure. The tree puts it on `button \"Pay now\"`, marked `focused`. The browser knows where focus is, and so does assistive technology. Only the visible indicator is missing.\n\nSuccess criterion 2.4.7 Focus Visible (AA) says a keyboard-operable interface must have a mode where you can see the focus indicator. `outline: none` on every `:focus` removes the browser's default ring and puts nothing in its place.\n\nThe other options describe things that still work. The order Email → Back → Pay now matches both the DOM and the layout, so 2.4.3 passes. You can still operate everything from the keyboard, so 2.1.1 passes. The screen reader answer forgets who gets hurt: sighted keyboard users, like people with motor disabilities or anyone with a broken trackpad. They don't use a screen reader, so they press Enter without knowing whether they're about to go back or pay.",
+      "references": "[W3C: Understanding 2.4.7 Focus Visible](https://www.w3.org/WAI/WCAG22/Understanding/focus-visible.html) · [MDN: :focus-visible](https://developer.mozilla.org/en-US/docs/Web/CSS/:focus-visible)"
+    },
+    {
+      "id": "focus-visible-instead-of-focus",
+      "title": "The team wants to hide the ring after a mouse click but keep it for keyboard users. Which changes do that?",
+      "description": "Current CSS:\n\n```css\nbutton:focus { outline: 3px solid #2563eb; outline-offset: 2px; }\n```",
+      "images": [
+        {
+          "src": "focus-visible-screen.svg",
+          "alt": "Two browser panels side by side. Left, after a mouse click: a blue Save button with a blue focus ring. Right, after pressing Tab: the same button with the same ring.",
+          "width": 720,
+          "height": 270
+        },
+        {
+          "src": "focus-visible-tree.svg",
+          "alt": "Two identical accessibility trees, after a mouse click and after pressing Tab, each showing button Save focused.",
+          "placement": "explanation",
+          "width": 720,
+          "height": 256
+        }
+      ],
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "Change the selector to `button:focus-visible`",
+          "isCorrect": true
+        },
+        {
+          "text": "Keep the rule and add `button:focus:not(:focus-visible) { outline: none; }`",
+          "isCorrect": true
+        },
+        {
+          "text": "Change the selector to `button:focus-within`",
+          "isCorrect": false
+        },
+        {
+          "text": "Replace the rule with `button:focus { outline: none; }`",
+          "isCorrect": false
+        },
+        {
+          "text": "Change the selector to `button:hover`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`:focus-visible` matches when the browser decides the user needs to see where focus is: after keyboard navigation, or any time a text field gets focus. A mouse click on a button doesn't trigger it. So styling `:focus-visible` gives keyboard users the ring and leaves mouse users alone. The `:focus:not(:focus-visible)` rule reaches the same result from the other side: it removes the ring only in the cases `:focus-visible` skips.\n\nThe unwanted ring came from the team's own `:focus` rule, since `:focus` matches no matter how focus arrived. Modern browsers already draw their default ring through `:focus-visible`.\n\nThe tree can't help you here. Both panels give the same `button \"Save\" focused`. The tree records *that* the button has focus, but not *how* it got there.\n\nWhy the other options fail:\n\n- `:focus-within` matches an element that has focus or contains the focused element, so it still fires on click.\n- `outline: none` on `:focus` hides the ring from keyboard users too, which fails 2.4.7.\n- `:hover` follows the mouse pointer, so it shows nothing when a keyboard user tabs to the button.",
+      "references": "[MDN: :focus-visible](https://developer.mozilla.org/en-US/docs/Web/CSS/:focus-visible) · [W3C: Understanding 2.4.7 Focus Visible](https://www.w3.org/WAI/WCAG22/Understanding/focus-visible.html)"
+    },
+    {
+      "id": "box-shadow-ring-forced-colors",
+      "title": "A `box-shadow` focus ring disappears in Windows contrast themes. Which change brings the ring back and still respects the user's colors?",
+      "description": "```css\nbutton:focus-visible {\n  outline: none;\n  box-shadow: 0 0 0 3px #2563eb;\n}\n```\n\nWindows contrast themes turn on the browser's forced colors mode.",
+      "images": [
+        {
+          "src": "forced-colors-screen.svg",
+          "alt": "Two browser panels. Default colors: a blue Save button with a thick blue ring around it. Windows contrast theme: a black page with a white-outlined Save button and no ring.",
+          "width": 720,
+          "height": 270
+        },
+        {
+          "src": "forced-colors-tree.svg",
+          "alt": "Two identical accessibility trees, default colors and Windows contrast theme, each showing button Save focused.",
+          "placement": "explanation",
+          "width": 720,
+          "height": 256
+        }
+      ],
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Replace `outline: none` with `outline: 3px solid transparent`",
+          "isCorrect": true
+        },
+        {
+          "text": "Add `!important` to the `box-shadow` declaration",
+          "isCorrect": false
+        },
+        {
+          "text": "Change the button's `border-color` on focus instead of drawing a shadow",
+          "isCorrect": false
+        },
+        {
+          "text": "Add `forced-color-adjust: none` to the button",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "In forced colors mode, the browser sets `box-shadow` to `none` and swaps color properties, including `outline-color` and `border-color`, for the user's system colors. The shadow ring disappears, and the tree doesn't notice: both panels show the same `button \"Save\" focused`.\n\nA **transparent outline** is invisible in normal mode, so the design stays the same. In forced colors mode, the browser replaces the transparent color with a visible system color, so the outline shows up at exactly the moment the shadow is removed. The CSS Color Adjustment spec keeps transparency only for `background-color`, which is why this trick works for outlines.\n\nWhy the others fail:\n\n- `!important` can't beat forced colors. The mode itself removes the shadow, so there's no cascade conflict to win.\n- A focus-only `border-color` gets replaced by the same system color in both states, so focused and unfocused buttons look the same.\n- `forced-color-adjust: none` does bring back your blue shadow, but only by opting the button out of the user's theme. The ring returns in colors the user chose to override.",
+      "references": "[W3C: CSS Color Adjustment Module Level 1](https://www.w3.org/TR/css-color-adjust-1/) · [MDN: forced-colors](https://developer.mozilla.org/en-US/docs/Web/CSS/@media/forced-colors)"
+    },
+    {
+      "id": "focus-hidden-by-sticky-banner",
+      "title": "Keyboard focus moves to the **Pricing** link, which is completely hidden under a sticky cookie banner. What does WCAG 2.2 AA say?",
+      "images": [
+        {
+          "src": "sticky-banner-screen.svg",
+          "alt": "A page headed Product with links Features, Customers, and Docs. A dark cookie banner, We use cookies to improve this site, with an Accept button, is pinned across the bottom of the viewport.",
+          "width": 720,
+          "height": 344
+        },
+        {
+          "src": "sticky-banner-tree.svg",
+          "alt": "Accessibility tree: links Features, Customers, Docs, then a highlighted Pricing link marked focused: true, followed by a Cookie notice region with its text and an Accept button.",
+          "placement": "explanation",
+          "width": 720,
+          "height": 434
+        }
+      ],
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "It fails 2.4.11 Focus Not Obscured (Minimum), because author content entirely hides the focused link.",
+          "isCorrect": true
+        },
+        {
+          "text": "It passes, because the link still receives focus and appears in the accessibility tree.",
+          "isCorrect": false
+        },
+        {
+          "text": "It passes, because 2.4.7 Focus Visible only requires the link to have a focus style.",
+          "isCorrect": false
+        },
+        {
+          "text": "It would also fail AA if the banner covered only half of the link.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "WCAG 2.2 added 2.4.11 Focus Not Obscured (Minimum) at level AA. When a component gets keyboard focus, content the author added must not hide it **completely**. Sticky headers, footers, and cookie banners are the usual culprits.\n\nThe tree won't show the problem. It says `link \"Pricing\" focused`, which is true, and nothing in it mentions another element painted on top. Overlap only exists in the layout.\n\nA focus style doesn't save it either. The link may well have a ring, but the ring is under the banner too.\n\nA partly covered link passes at AA. The stricter 2.4.12 (AAA) doesn't allow any part of the focused component to be hidden. A common fix is `scroll-padding-bottom` on the scrolling container, set to the banner's height, so the browser scrolls focused elements above it. A way to close the banner helps too.",
+      "references": "[W3C: Understanding 2.4.11 Focus Not Obscured (Minimum)](https://www.w3.org/WAI/WCAG22/Understanding/focus-not-obscured-minimum.html)"
+    },
+    {
+      "id": "target-spacing-rows",
+      "title": "Which toolbars meet WCAG 2.2 AA 2.5.8 Target Size (Minimum)?",
+      "description": "Each row has three icon buttons. Sizes and gaps are in CSS pixels.\n\n- Row A: 24 × 24 buttons, no gap\n- Row B: 16 × 16 buttons, 4px gap\n- Row C: 16 × 16 buttons, 12px gap\n- Row D: 20 × 20 buttons, 2px gap",
+      "images": [
+        {
+          "src": "target-rows-screen.svg",
+          "alt": "Four rows of three square icon buttons at 2× scale, with dashed outlines showing each target. Row A: 24 by 24, no gap. Row B: 16 by 16, 4px gap. Row C: 16 by 16, 12px gap. Row D: 20 by 20, 2px gap.",
+          "width": 720,
+          "height": 452
+        },
+        {
+          "src": "target-rows-circles.svg",
+          "alt": "The same rows with a 24px circle centered on each undersized target. Row A needs no test. In Rows B and D neighboring circles overlap and are marked failing. In Row C the circles stay apart and are marked passing.",
+          "placement": "explanation",
+          "width": 720,
+          "height": 452
+        },
+        {
+          "src": "target-rows-tree.svg",
+          "alt": "Accessibility tree for Row B: a toolbar containing buttons Edit, Copy, and Delete, with no sizes or positions.",
+          "placement": "explanation",
+          "width": 720,
+          "height": 272
+        }
+      ],
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "Row A",
+          "isCorrect": true
+        },
+        {
+          "text": "Row B",
+          "isCorrect": false
+        },
+        {
+          "text": "Row C",
+          "isCorrect": true
+        },
+        {
+          "text": "Row D",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "2.5.8 has a basic rule and a spacing exception. Any target that is at least **24 × 24 CSS px** passes, whatever sits next to it. So Row A passes, even though its buttons touch.\n\nA smaller target can still pass if it has enough room around it. To check, center a 24px circle on each undersized target. The circle must not touch another target or another undersized target's circle.\n\n- **Row B:** centers are 16 + 4 = 20px apart. Two 24px circles need at least 24px between centers, so these overlap. Fail.\n- **Row C:** centers are 16 + 12 = 28px apart, so the circles don't touch. Each circle reaches 12px from its center, and the neighboring button's edge is 20px away. Pass, even though every button is only 16px.\n- **Row D:** centers are 20 + 2 = 22px apart, so the circles overlap. Fail, even though these buttons are bigger than Row C's.\n\nThe tree is the same for every row: three named buttons. Target size is a layout measurement, so check it with the box model in DevTools. The accessibility pane won't show it.",
+      "references": "[W3C: Understanding 2.5.8 Target Size (Minimum)](https://www.w3.org/WAI/WCAG22/Understanding/target-size-minimum.html)"
+    },
+    {
+      "id": "target-size-exceptions",
+      "title": "Every target below is smaller than 24 × 24. Which ones still meet WCAG 2.2 AA 2.5.8?",
+      "description": "- The × in the announcement bar (named \"Close\"). It does the same thing as the **Dismiss** button next to it.\n- The **privacy policy** link inside a sentence of 14px text.\n- The checkbox, left at the browser's default size with no author styling.\n- The 16 × 16 **?** (Help) button, 4px from a 16 × 16 **i** (Info) button. Nothing else on the page opens Help.",
+      "images": [
+        {
+          "src": "target-exceptions-screen.svg",
+          "alt": "A settings page. An announcement bar reads New: dark mode is here, with a Dismiss button and a small × beside it. Below: a sentence ending in an underlined privacy policy link, a small checkbox labeled Email me updates, and a Notifications heading followed by two tiny round icons, a question mark and an i.",
+          "width": 720,
+          "height": 356
+        },
+        {
+          "src": "target-exceptions-tree.svg",
+          "alt": "Accessibility tree: Dismiss and Close buttons, with Close marked same action as Dismiss; a privacy policy link marked inside a sentence; a checkbox marked browser-default size; and highlighted Help and Info buttons marked 16 by 16, 4px apart.",
+          "placement": "explanation",
+          "width": 720,
+          "height": 434
+        }
+      ],
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "The × Close button",
+          "isCorrect": true
+        },
+        {
+          "text": "The **privacy policy** link",
+          "isCorrect": true
+        },
+        {
+          "text": "The default-size checkbox",
+          "isCorrect": true
+        },
+        {
+          "text": "The **?** Help button",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "2.5.8 has a few exceptions, and three of these targets fit one:\n\n- **Equivalent.** Another control that meets the criterion does the same thing. **Dismiss** is 80 × 28 and does what the × does.\n- **Inline.** The target sits inside a sentence, or the line height of the surrounding text limits its size. You shouldn't have to stretch a line of text just to make a link bigger.\n- **User agent control.** The browser decides the size and the author leaves it alone. Once you restyle the checkbox, this exception no longer applies.\n\nThe Help button fits none of them. It's 16px, its only neighbor is 4px away so the 24px spacing circles overlap, and nothing else on the page opens Help.\n\nThe tree only hints at one exception: two buttons named \"Dismiss\" and \"Close\" suggest they do the same job. Everything else (whether a link sits in a sentence, how big a control is drawn, how far apart the icons are) comes from the layout.",
+      "references": "[W3C: Understanding 2.5.8 Target Size (Minimum)](https://www.w3.org/WAI/WCAG22/Understanding/target-size-minimum.html)"
+    },
+    {
+      "id": "icon-button-padding-target",
+      "title": "How wide is this notification button's pointer target, in CSS pixels?",
+      "description": "```html\n<button class=\"icon-button\" aria-label=\"Notifications\">\n  <svg width=\"20\" height=\"20\" aria-hidden=\"true\">…</svg>\n</button>\n```\n\n```css\n.icon-button {\n  display: inline-flex;\n  padding: 12px;\n  border: 0;\n  background: none;\n}\n```\n\nEnter a number.",
+      "images": [
+        {
+          "src": "icon-padding-screen.svg",
+          "alt": "A site header with the word Acme on the left and a small bell icon on the right. Nothing marks the edges of the button around the bell.",
+          "width": 720,
+          "height": 290
+        },
+        {
+          "src": "icon-padding-tree.svg",
+          "alt": "Accessibility tree: a banner with the text Acme and a highlighted button named Notifications. Beside it, a dashed box around the bell shows a 44px target made of 12px padding, the 20px icon, and 12px padding.",
+          "placement": "explanation",
+          "width": 720,
+          "height": 308
+        }
+      ],
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [
+          44
+        ]
+      },
+      "explanation": "The target is the button's whole box, including the padding around the icon. The width is 12px padding + 20px icon + 12px padding = **44px**, and the height works out the same. A click on the transparent padding still lands on the `<button>`, so the padding counts.\n\nSo this button passes both 2.5.8 at AA (24 × 24) and 2.5.5 at AAA (44 × 44), even though users only see a 20px bell. It can go the other way too: a big, bold icon in a button with no padding can still be a tiny target.\n\nThe `<svg>` is missing from the tree because of `aria-hidden=\"true\"`, and the button gets its name from `aria-label`. The tree gives you the name. For the size, you need the box model.",
+      "references": "[W3C: Understanding 2.5.8 Target Size (Minimum)](https://www.w3.org/WAI/WCAG22/Understanding/target-size-minimum.html) · [W3C: Understanding 2.5.5 Target Size (Enhanced)](https://www.w3.org/WAI/WCAG22/Understanding/target-size-enhanced.html)"
+    },
+    {
+      "id": "toolbar-32px-aa-vs-aaa",
+      "title": "These 32 × 32 toolbar buttons touch each other. What is the WCAG 2.2 verdict?",
+      "images": [
+        {
+          "src": "toolbar-screen.svg",
+          "alt": "A mobile editor toolbar at 2× scale with four square buttons, Bold, Italic, Underline, and Strikethrough, touching each other with no gap.",
+          "width": 720,
+          "height": 270
+        },
+        {
+          "src": "toolbar-tree.svg",
+          "alt": "Accessibility tree: a toolbar named Formatting containing Bold, Italic, Underline, and Strikethrough buttons, each pressed=false. Notes compare 32 by 32 with the 24 by 24 AA and 44 by 44 AAA sizes.",
+          "placement": "explanation",
+          "width": 720,
+          "height": 344
+        }
+      ],
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "It meets 2.5.8 at level AA but not 2.5.5 at level AAA.",
+          "isCorrect": true
+        },
+        {
+          "text": "It fails AA, because WCAG AA requires 44 × 44 touch targets.",
+          "isCorrect": false
+        },
+        {
+          "text": "It fails AA, because targets need at least 8px of space between them.",
+          "isCorrect": false
+        },
+        {
+          "text": "It meets both AA and AAA, because spacing doesn't matter above 24px.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "WCAG 2.2 has two target-size criteria:\n\n- **2.5.8 Target Size (Minimum), AA:** 24 × 24 CSS px. A 32px button passes on size alone. Spacing only matters for targets *smaller* than 24px, so it's fine for these buttons to touch.\n- **2.5.5 Target Size (Enhanced), AAA:** 44 × 44 CSS px, with no spacing exception. 32px falls short.\n\nWhen people say AA needs 44px, they're usually thinking of 2.5.5, or of platform guidelines such as Apple's 44 × 44 pt minimum. Those make good design goals, but AA doesn't require them. No WCAG criterion asks for a fixed 8px gap either.\n\nThe tree gives each button a name and a `pressed` state, which is all a screen reader needs. It has no idea the buttons are 32px wide.",
+      "references": "[W3C: Understanding 2.5.8 Target Size (Minimum)](https://www.w3.org/WAI/WCAG22/Understanding/target-size-minimum.html) · [W3C: Understanding 2.5.5 Target Size (Enhanced)](https://www.w3.org/WAI/WCAG22/Understanding/target-size-enhanced.html)"
+    },
+    {
+      "id": "placeholder-name-survives-typing",
+      "title": "The user has filled in both fields. What does a screen reader announce when focus goes back to the first one?",
+      "description": "```html\n<input type=\"email\" placeholder=\"Email\">\n<input type=\"password\" placeholder=\"Password\">\n```\n\nThere are no `<label>` elements and no ARIA attributes.",
+      "images": [
+        {
+          "src": "placeholder-typed-screen.svg",
+          "alt": "A form headed Create account with two unlabeled fields, one containing jane@example.com and one containing masked dots, and a Create account button.",
+          "width": 720,
+          "height": 320
+        },
+        {
+          "src": "placeholder-typed-tree.svg",
+          "alt": "Accessibility tree: a highlighted textbox named Email with value jane@example.com and a textbox named Password, both marked name from placeholder.",
+          "placement": "explanation",
+          "width": 720,
+          "height": 322
+        }
+      ],
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The name **Email** and the value `jane@example.com`",
+          "isCorrect": true
+        },
+        {
+          "text": "No name, because the placeholder disappeared when the user typed",
+          "isCorrect": false
+        },
+        {
+          "text": "The name `jane@example.com`, taken from the typed value",
+          "isCorrect": false
+        },
+        {
+          "text": "Nothing, because an input without a `<label>` is left out of the tree",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The HTML Accessibility API Mappings spec gives text inputs a list of fallbacks for their accessible name: `aria-labelledby` or `aria-label` first, then an associated `<label>`, then `title`, and finally `placeholder`. When nothing else is there, the placeholder becomes the name.\n\nThe browser computes that name from the **attribute**, not from what's drawn on screen, so it survives typing. The tree still says `textbox \"Email\"`, with the typed text as its value. Screen reader users are fine here.\n\nIt's the screen that broke. The gray \"Email\" disappeared at the first keystroke, and now sighted users see two boxes with no labels. Placeholder-only labels break what people see, while the tree stays intact.",
+      "references": "[W3C: HTML-AAM, accessible name computation](https://www.w3.org/TR/html-aam-1.0/#accname-computation) · [W3C WAI: Forms tutorial, Placeholder text](https://www.w3.org/WAI/tutorials/forms/instructions/)"
+    },
+    {
+      "id": "placeholder-autofill-who-is-hurt",
+      "title": "Autofill has filled every field, so no placeholders are showing. Who does this form make things harder for?",
+      "description": "Each field is an `<input>` whose only label is its placeholder: Full name, Email, Phone, and Company.",
+      "images": [
+        {
+          "src": "autofill-screen.svg",
+          "alt": "A Contact details form with four autofilled, pale-blue fields containing Jane Doe, jane@example.com, 0412 555 019, and Acme. No field has a visible label.",
+          "width": 720,
+          "height": 372
+        },
+        {
+          "src": "autofill-tree.svg",
+          "alt": "Accessibility tree: four highlighted textboxes named Full name, Email, Phone, and Company, each with its autofilled value.",
+          "placement": "explanation",
+          "width": 720,
+          "height": 322
+        }
+      ],
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "A sighted user checking the form before submitting, who can't tell which field is which",
+          "isCorrect": true
+        },
+        {
+          "text": "A user with memory or attention difficulties, who has to remember what each field was for",
+          "isCorrect": true
+        },
+        {
+          "text": "A screen magnifier user, who sees one field at a time with nothing nearby to say what it is",
+          "isCorrect": true
+        },
+        {
+          "text": "A screen reader user, who can no longer find out each field's name",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Autofill makes the problem obvious: every placeholder disappears at once, before anyone has read them. Is \"Acme\" the company, a team, or a street? A sighted user checking the form has to guess, or clear a field to see its hint again.\n\nThe tree tells a different story. Every field keeps its name, from `textbox \"Full name\"` to `textbox \"Company\"`, because the placeholder attribute is still there. Of everyone on this list, only the screen reader user can still tell the fields apart.\n\nThat's why the W3C forms tutorial says placeholder text can't replace a label. The label has to stay on screen, where the people who need it can read it. Also, when placeholder text is visible, 1.4.3 treats it as text, so pale placeholders must meet 4.5:1 too.",
+      "references": "[W3C WAI: Forms tutorial, Placeholder text](https://www.w3.org/WAI/tutorials/forms/instructions/) · [W3C: Understanding 1.4.3 Contrast (Minimum)](https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum.html)"
+    },
+    {
+      "id": "placeholder-example-becomes-name",
+      "title": "What accessible name does this email field get?",
+      "description": "```html\n<h2>Weekly digest</h2>\n<input type=\"email\" placeholder=\"jane@example.com\">\n<button>Subscribe</button>\n```",
+      "images": [
+        {
+          "src": "placeholder-example-screen.svg",
+          "alt": "A form headed Weekly digest with one unlabeled field showing the gray text jane@example.com, next to a Subscribe button.",
+          "width": 720,
+          "height": 290
+        },
+        {
+          "src": "placeholder-example-tree.svg",
+          "alt": "Accessibility tree: a Weekly digest heading, a highlighted textbox named jane@example.com marked name equals placeholder, and a Subscribe button.",
+          "placement": "explanation",
+          "width": 720,
+          "height": 266
+        }
+      ],
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`jane@example.com`",
+          "isCorrect": true
+        },
+        {
+          "text": "`Email`, inferred from `type=\"email\"`",
+          "isCorrect": false
+        },
+        {
+          "text": "`Weekly digest`, taken from the heading above it",
+          "isCorrect": false
+        },
+        {
+          "text": "None. The tree shows an unnamed textbox.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "With no label, `aria-label`, or `title`, the name falls back to the placeholder, so the field is named **jane@example.com**. Instead of hearing what the field is for, a screen reader user hears an email address, as if the field were already filled in.\n\nSighted users get confused the same way. Gray text that looks like a real address is easy to mistake for a saved value and skip.\n\n`type=\"email\"` sets the role, the validation, and the on-screen keyboard. It never sets the name. A heading nearby doesn't label a field either, unless the markup connects them, for example with `aria-labelledby`.\n\nThe fix is a visible `<label>Email</label>`. If the example helps, put it in hint text below the field and connect it with `aria-describedby`. Then it's announced as a description, and it stays put when the user types.",
+      "references": "[W3C: HTML-AAM, accessible name computation](https://www.w3.org/TR/html-aam-1.0/#accname-computation) · [MDN: aria-describedby](https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Attributes/aria-describedby)"
+    },
+    {
+      "id": "label-that-stays-visible",
+      "title": "Which changes give this field a label that stays visible after the user types?",
+      "description": "The field is currently `<input id=\"email\" type=\"email\" placeholder=\"Email\">`.",
+      "images": [
+        {
+          "src": "label-fixes-screen.svg",
+          "alt": "A single field containing jane@example.com, with no label anywhere near it.",
+          "width": 720,
+          "height": 260
+        },
+        {
+          "src": "label-fixes-tree.svg",
+          "alt": "Five candidate fixes listed with their trees: label for, floating label, aria-label, title, and visually hidden label. All five produce textbox Email. Only the first two are marked visible label.",
+          "placement": "explanation",
+          "width": 720,
+          "height": 328
+        }
+      ],
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "A visible `<label for=\"email\">Email</label>` above the field",
+          "isCorrect": true
+        },
+        {
+          "text": "A floating label: a real `<label>` that moves above the value once the field has content",
+          "isCorrect": true
+        },
+        {
+          "text": "`aria-label=\"Email\"` on the input",
+          "isCorrect": false
+        },
+        {
+          "text": "`title=\"Email\"` on the input",
+          "isCorrect": false
+        },
+        {
+          "text": "A visually hidden `<label>`, with the placeholder left as it is",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "All five produce the same tree: `textbox \"Email\"`. The tree already had that name from the placeholder, so none of these changes what a screen reader announces. The problem was on the screen all along.\n\nOnly the first two put text on screen that stays after typing:\n\n- A plain visible `<label>` is the most reliable choice, and clicking it focuses the field.\n- A floating label works if it's a real `<label>` element and still meets 4.5:1 contrast once it shrinks.\n\nThe other three fix the tree, which was never broken, and leave the screen as it was:\n\n- `aria-label` exists only in the tree.\n- `title` shows a tooltip on mouse hover, which touch and keyboard users never see.\n- A visually hidden label is hidden on purpose. After typing, the screen looks exactly the same as before.",
+      "references": "[W3C WAI: Forms tutorial, Labeling controls](https://www.w3.org/WAI/tutorials/forms/labels/) · [W3C: Understanding 3.3.2 Labels or Instructions](https://www.w3.org/WAI/WCAG22/Understanding/labels-or-instructions.html)"
+    },
+    {
+      "id": "row-reverse-tab-order",
+      "title": "Focus is at the start of the dialog, and the user presses Tab once. Which button gets focus?",
+      "description": "```html\n<div class=\"actions\">\n  <button class=\"danger\">Discard</button>\n  <button>Cancel</button>\n</div>\n```\n\n```css\n.actions { display: flex; flex-direction: row-reverse; }\n```",
+      "images": [
+        {
+          "src": "row-reverse-screen.svg",
+          "alt": "A dialog titled Discard changes? with the text Your edits will be lost. Below, an outlined Cancel button on the left and a red Discard button on the right.",
+          "width": 720,
+          "height": 300
+        },
+        {
+          "src": "row-reverse-tree.svg",
+          "alt": "Accessibility tree: a dialog with its heading and text, then a highlighted Discard button marked Tab stop 1, drawn on the right, followed by a Cancel button marked Tab stop 2, drawn on the left.",
+          "placement": "explanation",
+          "width": 720,
+          "height": 322
+        }
+      ],
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "**Discard**, the red button drawn on the right",
+          "isCorrect": true
+        },
+        {
+          "text": "**Cancel**, because `row-reverse` also reverses the Tab order",
+          "isCorrect": false
+        },
+        {
+          "text": "**Cancel**, because Tab follows visual order in flex layouts",
+          "isCorrect": false
+        },
+        {
+          "text": "Neither. `row-reverse` takes the buttons out of the Tab sequence.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Tab order and screen reader order both follow the **DOM**, and the tree matches it: `button \"Discard\"` first, then `button \"Cancel\"`. `flex-direction: row-reverse` only changes where the boxes are drawn. Your eyes read Cancel → Discard, but the keyboard goes Discard → Cancel.\n\nHere that mismatch is dangerous. A keyboard user expects the safe button first, presses Tab and then Enter, and their edits are gone. This fails 2.4.3 Focus Order, and also 1.3.2 Meaningful Sequence when the order carries meaning.\n\nTo fix it, write the buttons in the order you want them read, and push the group to the right with `justify-content: flex-end` instead of reversing it. The new CSS `reading-flow` property can make Tab follow a flex layout's visual order, but only Chromium-based browsers support it.",
+      "references": "[W3C: Understanding 2.4.3 Focus Order](https://www.w3.org/WAI/WCAG22/Understanding/focus-order.html) · [W3C: Understanding 1.3.2 Meaningful Sequence](https://www.w3.org/WAI/WCAG22/Understanding/meaningful-sequence.html)"
+    },
+    {
+      "id": "grid-placed-card-reading-order",
+      "title": "In what order does a screen reader read this card?",
+      "description": "```html\n<div class=\"card\">\n  <a class=\"buy\" href=\"/checkout/pro\">Buy now</a>\n  <p class=\"price\">$12 / month</p>\n  <h3 class=\"plan\">Pro</h3>\n</div>\n```\n\n```css\n.card  { display: grid; }\n.plan  { grid-row: 1; }\n.price { grid-row: 2; }\n.buy   { grid-row: 3; }\n```",
+      "images": [
+        {
+          "src": "grid-card-screen.svg",
+          "alt": "A pricing card showing, from top to bottom, the plan name Pro, the price $12 / month, and a blue Buy now button.",
+          "width": 720,
+          "height": 330
+        },
+        {
+          "src": "grid-card-tree.svg",
+          "alt": "Accessibility tree: a highlighted Buy now link marked read first, drawn last; a paragraph with $12 / month marked read second; a level 3 heading Pro marked read third, drawn first.",
+          "placement": "explanation",
+          "width": 720,
+          "height": 294
+        }
+      ],
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Buy now → $12 / month → Pro",
+          "isCorrect": true
+        },
+        {
+          "text": "Pro → $12 / month → Buy now",
+          "isCorrect": false
+        },
+        {
+          "text": "Pro → Buy now → $12 / month, because headings are read first",
+          "isCorrect": false
+        },
+        {
+          "text": "It depends on the screen reader's layout detection.",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Screen readers move through the accessibility tree, and the tree follows DOM order: `link \"Buy now\"`, then the price, then `heading \"Pro\"`. The `grid-row` values only move boxes on screen. So the user hears \"Buy now\" before learning what's for sale or what it costs.\n\nThis fails 1.3.2 Meaningful Sequence, because the order carries meaning here and the DOM order doesn't match what's on screen. Headings don't get read first, either. Heading navigation lets users *jump* between headings, but normal reading still follows the tree.\n\nWrite the HTML in reading order (heading, price, link) and remove the `grid-row` rules. Save CSS placement for layout changes that don't affect meaning, like moving a sidebar at a breakpoint.",
+      "references": "[W3C: Understanding 1.3.2 Meaningful Sequence](https://www.w3.org/WAI/WCAG22/Understanding/meaningful-sequence.html) · [MDN: Grid layout and accessibility](https://developer.mozilla.org/en-US/docs/Web/CSS/Guides/Grid_layout/Accessibility)"
+    },
+    {
+      "id": "fix-reordered-sale-badge",
+      "title": "Which fix makes keyboard and screen reader order match this tile's visual order in every current browser?",
+      "description": "```html\n<article class=\"tile\">\n  <h3>Trail Runner 2</h3>\n  <p>$89</p>\n  <button>Add to cart</button>\n  <span class=\"badge\">SALE −30%</span>\n</article>\n```\n\n```css\n.tile  { display: flex; flex-direction: column; }\n.badge { order: -1; }\n```",
+      "images": [
+        {
+          "src": "sale-badge-screen.svg",
+          "alt": "A product tile showing, top to bottom, a red SALE −30% badge, the title Trail Runner 2, the price $89, and an Add to cart button.",
+          "width": 720,
+          "height": 346
+        },
+        {
+          "src": "sale-badge-tree.svg",
+          "alt": "Accessibility tree: heading Trail Runner 2, text $89, button Add to cart, then a highlighted StaticText SALE −30% marked drawn first, read last.",
+          "placement": "explanation",
+          "width": 720,
+          "height": 294
+        }
+      ],
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Move the badge to the top of the HTML and remove `order: -1`",
+          "isCorrect": true
+        },
+        {
+          "text": "Add `reading-flow: flex-visual` to `.tile`",
+          "isCorrect": false
+        },
+        {
+          "text": "Add `tabindex=\"1\"` to the badge",
+          "isCorrect": false
+        },
+        {
+          "text": "Add `aria-flowto` on the button, pointing to the badge",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Right now the tree ends with `StaticText \"SALE −30%\"`. A screen reader user hears about the discount only after the Add to cart button, so they may decide based on the full price. Moving the badge in the HTML changes the DOM, and that fixes the tree, the reading order, and the Tab order together, in every browser.\n\nWhy the other options fall short:\n\n- `reading-flow: flex-visual` does make assistive technology and Tab follow the visual flex order, but only Chromium-based browsers support it (Chrome 137 and later). It's fine as a progressive enhancement, but it won't fix every browser.\n- `tabindex=\"1\"` makes the badge focusable, even though it isn't a control, and moves it ahead of *everything* on the page in the Tab order. The reading order stays the same.\n- `aria-flowto` has very little screen reader support, and it only adds an alternative path. The default order stays wrong.",
+      "references": "[Chrome for Developers: Use CSS reading-flow for logical sequential focus navigation](https://developer.chrome.com/blog/reading-flow) · [W3C: Understanding 1.3.2 Meaningful Sequence](https://www.w3.org/WAI/WCAG22/Understanding/meaningful-sequence.html)"
+    },
+    {
+      "id": "when-order-mismatch-fails",
+      "title": "In which layouts does the gap between DOM order and visual order fail WCAG 2.2 (1.3.2 or 2.4.3)?",
+      "description": "The badges in each panel show DOM order.\n\n- Gallery: unrelated photos, packed with `grid-auto-flow: dense`\n- Checkout steps: Cart → Shipping → Payment, rearranged with `order`\n- Sign-up form: a two-column grid where Email comes before Last name in the DOM\n- Welcome panel: a decorative image with `alt=\"\"`, last in the DOM but drawn at the top",
+      "images": [
+        {
+          "src": "order-layouts-screen.svg",
+          "alt": "Four panels with numbered badges showing DOM order. Gallery: six colored photos whose numbers run out of visual order. Checkout steps: Cart, Shipping, Payment numbered 2, 3, 1. Sign-up form: First name 1, Last name 3, Email 2 below them. Welcome panel: a heading, text, and Continue button numbered 1 to 3, with a decorative shape at the top numbered 4.",
+          "width": 720,
+          "height": 500
+        },
+        {
+          "src": "order-layouts-tree.svg",
+          "alt": "Four accessibility trees. Gallery: links Photo 1 to Photo 6, marked no inherent order. Checkout steps: listitems Payment, Cart, Shipping, marked sequence matters. Sign-up form: textboxes First name, Email, Last name, marked Tab jumps back. Welcome panel: heading, text, and button, marked image not in tree.",
+          "placement": "explanation",
+          "width": 720,
+          "height": 410
+        }
+      ],
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "Gallery",
+          "isCorrect": false
+        },
+        {
+          "text": "Checkout steps",
+          "isCorrect": true
+        },
+        {
+          "text": "Sign-up form",
+          "isCorrect": true
+        },
+        {
+          "text": "Welcome panel",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Neither criterion says DOM order must always match visual order. 1.3.2 applies when **the sequence affects meaning**, and 2.4.3 applies when focus order affects meaning or operation.\n\n- **Checkout steps** fail. Here the order *is* the information. The tree reads Payment, Cart, Shipping, which gives a screen reader user the wrong process.\n- **Sign-up form** fails 2.4.3. Tab goes First name → Email → Last name, jumping down and then back up. People lose their place and type into the wrong field.\n- **Gallery** passes. The photos are unrelated, so there's no \"correct\" order. Matching the visual order is still kinder to keyboard users who follow focus with their eyes.\n- **Welcome panel** passes. `alt=\"\"` marks the image as decorative, so it isn't in the tree and can't take focus. Its DOM position doesn't matter.\n\nWhen the DOM and the layout disagree, ask whether the order carries meaning. If it does, fix the order in the HTML.",
+      "references": "[W3C: Understanding 1.3.2 Meaningful Sequence](https://www.w3.org/WAI/WCAG22/Understanding/meaningful-sequence.html) · [W3C: Understanding 2.4.3 Focus Order](https://www.w3.org/WAI/WCAG22/Understanding/focus-order.html)"
+    }
+  ]
+}

@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="328" viewBox="0 0 720 328">
+  <!-- House convention exception: everything inside a browser viewport is the
+       specimen. Its colors are literal and never re-theme, because contrast is
+       the subject. Only the panel, tree, and notes follow prefers-color-scheme. -->
+  <style>
+    svg {
+      --panel: #f5f7fb; --title: #20242c; --muted: #526173; --edge: #64748b;
+      --tree: #ffffff; --role: #1d4ed8; --name: #20242c; --prop: #526173;
+      --hl-fill: #ffedd5; --hl: #c2410c; --good: #15803d; --bad: #b91c1c; --accent: #9a3412;
+    }
+    @media (prefers-color-scheme: dark) {
+      svg {
+        --panel: #1a1f27; --title: #e6eaf2; --muted: #9aa8bd; --edge: #8b9bb4;
+        --tree: #11151b; --role: #93c5fd; --name: #e6eaf2; --prop: #9aa8bd;
+        --hl-fill: #3a2416; --hl: #fb923c; --good: #4ade80; --bad: #f87171; --accent: #fdba74;
+      }
+    }
+    .panel { fill: var(--panel); }
+    .title { fill: var(--title); }
+    .muted { fill: var(--muted); }
+    .edge { stroke: var(--edge); }
+    .tree { fill: var(--tree); stroke: var(--edge); }
+    .role { fill: var(--role); }
+    .name { fill: var(--name); }
+    .prop { fill: var(--prop); }
+    .hl { fill: var(--hl-fill); stroke: var(--hl); }
+    .hl-line { stroke: var(--hl); }
+    .good { fill: var(--good); }
+    .bad { fill: var(--bad); }
+    .bad-stroke { stroke: var(--bad); }
+    .good-stroke { stroke: var(--good); }
+    .accent { fill: var(--accent); }
+  </style>
+
+  <rect class="panel" width="720" height="328" rx="20" fill="#f5f7fb" />
+  <text class="title" x="32" y="40" fill="#20242c" font-family="system-ui, sans-serif" font-size="19" font-weight="700">Accessibility tree</text>
+  <text class="muted" x="32" y="64" fill="#526173" font-family="system-ui, sans-serif" font-size="14">Five candidate fixes, and the tree each one produces.</text>
+  <rect class="tree" x="32" y="84" width="656" height="170" rx="10" fill="#ffffff" stroke="#64748b" stroke-width="1.5" />
+  <text class="prop" x="48" y="114" fill="#526173" font-family="ui-monospace, 'SF Mono', Consolas, monospace" font-size="14">&lt;label for=&quot;email&quot;&gt;</text>
+  <text x="290" y="114" font-family="ui-monospace, 'SF Mono', Consolas, monospace" font-size="14"><tspan class="role" fill="#1d4ed8">textbox</tspan><tspan class="name" fill="#20242c"> "Email"</tspan></text>
+  <text class="good" x="672" y="114" fill="#15803d" font-family="system-ui, sans-serif" font-size="13" font-weight="600" text-anchor="end">visible label ✓</text>
+  <text class="prop" x="48" y="144" fill="#526173" font-family="ui-monospace, 'SF Mono', Consolas, monospace" font-size="14">floating &lt;label&gt;</text>
+  <text x="290" y="144" font-family="ui-monospace, 'SF Mono', Consolas, monospace" font-size="14"><tspan class="role" fill="#1d4ed8">textbox</tspan><tspan class="name" fill="#20242c"> "Email"</tspan></text>
+  <text class="good" x="672" y="144" fill="#15803d" font-family="system-ui, sans-serif" font-size="13" font-weight="600" text-anchor="end">visible label ✓</text>
+  <text class="prop" x="48" y="174" fill="#526173" font-family="ui-monospace, 'SF Mono', Consolas, monospace" font-size="14">aria-label=&quot;Email&quot;</text>
+  <text x="290" y="174" font-family="ui-monospace, 'SF Mono', Consolas, monospace" font-size="14"><tspan class="role" fill="#1d4ed8">textbox</tspan><tspan class="name" fill="#20242c"> "Email"</tspan></text>
+  <text class="bad" x="672" y="174" fill="#b91c1c" font-family="system-ui, sans-serif" font-size="13" font-weight="600" text-anchor="end">nothing visible ✗</text>
+  <text class="prop" x="48" y="204" fill="#526173" font-family="ui-monospace, 'SF Mono', Consolas, monospace" font-size="14">title=&quot;Email&quot;</text>
+  <text x="290" y="204" font-family="ui-monospace, 'SF Mono', Consolas, monospace" font-size="14"><tspan class="role" fill="#1d4ed8">textbox</tspan><tspan class="name" fill="#20242c"> "Email"</tspan></text>
+  <text class="bad" x="672" y="204" fill="#b91c1c" font-family="system-ui, sans-serif" font-size="13" font-weight="600" text-anchor="end">hover tooltip only ✗</text>
+  <text class="prop" x="48" y="234" fill="#526173" font-family="ui-monospace, 'SF Mono', Consolas, monospace" font-size="14">visually hidden &lt;label&gt;</text>
+  <text x="290" y="234" font-family="ui-monospace, 'SF Mono', Consolas, monospace" font-size="14"><tspan class="role" fill="#1d4ed8">textbox</tspan><tspan class="name" fill="#20242c"> "Email"</tspan></text>
+  <text class="bad" x="672" y="234" fill="#b91c1c" font-family="system-ui, sans-serif" font-size="13" font-weight="600" text-anchor="end">nothing visible ✗</text>
+  <text class="accent" x="32" y="284" fill="#9a3412" font-family="system-ui, sans-serif" font-size="14">All five give the same tree, and the tree already had a name. Only text drawn</text>
+  <text class="accent" x="32" y="306" fill="#9a3412" font-family="system-ui, sans-serif" font-size="14">on screen is still there for the user after they type.</text>
+</svg>

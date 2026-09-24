@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "id": "sql-query-detective",
-  "title": "SQL Query Detective",
-  "description": "Work out what each query returns and find the bug when it returns the wrong result. The quiz covers joins, fan-out, NULL, aggregation, and misleading filters. Unless stated otherwise, assume standard SQL behavior. Without `ORDER BY`, row order does not matter.",
+  "title": "SQL query detective",
+  "description": "Read each query, predict what it returns, and spot the bug when the result is wrong. You'll work through joins, fan-out, NULL, aggregation, and filters that don't do what they seem to. Assume standard SQL unless a Question says otherwise. Without `ORDER BY`, row order doesn't matter.",
   "language": "en",
   "tags": ["sql", "joins", "null", "aggregation", "debugging"],
   "questions": [
@@ -15,18 +15,18 @@
         "mode": "numeric",
         "acceptedAnswers": [3]
       },
-      "explanation": "Ada matches orders 101 and 102. Sam matches order 103. Lin has no order, and order 104 has a NULL `customer_id`, so neither produces a row. The query returns 3 rows.",
+      "explanation": "Ada matches orders 101 and 102, and Sam matches 103. Lin has no orders, and order 104 has a NULL `customer_id`, so neither shows up. That's 3 rows.",
       "references": "[PostgreSQL documentation: Joined tables](https://www.postgresql.org/docs/current/queries-table-expressions.html#QUERIES-JOIN)"
     },
     {
       "id": "left-join-where-collapse",
-      "title": "Which customer names survive this query?",
-      "description": "Using the same `customers` and `orders` data, suppose orders also contain `status`: order 101 is `paid`, 102 is `pending`, 103 is `pending`, and 104 is `paid`.\n\n```sql\nSELECT c.name\nFROM customers AS c\nLEFT JOIN orders AS o ON o.customer_id = c.id\nWHERE o.status = 'paid';\n```",
+      "title": "Which customer names does this query return?",
+      "description": "Same `customers` and `orders` as before, but now each order has a `status`: 101 and 104 are `paid`, 102 and 103 are `pending`.\n\n```sql\nSELECT c.name\nFROM customers AS c\nLEFT JOIN orders AS o ON o.customer_id = c.id\nWHERE o.status = 'paid';\n```",
       "images": [
         {
           "src": "left-join-filters.svg",
-          "alt": "Two versions of the same LEFT JOIN over three customers where only Ada has a paid order. With WHERE o.status = 'paid', the join invents NULL rows for Lin and Sam and the WHERE test then discards them, leaving Ada only. With AND o.status = 'paid' inside the ON clause, the filter only decides what counts as a match, so unmatched left rows survive: (Ada, 101), (Lin, NULL), (Sam, NULL). Further cards note that a filter on the left table inside ON removes nothing, only preventing matches; that an inner join after a left join cannot match a NULL key, so authors without books vanish again; that counting only some children while keeping every parent means filtering in ON or pre-filtering the child in a subquery; and that LEFT JOIN with WHERE right.key IS NULL is a reliable anti-join only when that column is genuinely NOT NULL.",
-          "caption": "The left panel: the invented NULL row fails the `WHERE` test.",
+          "alt": "Two versions of the same LEFT JOIN over three customers where only Ada has a paid order. With WHERE o.status = 'paid', the join adds rows for Lin and Sam and the WHERE test then discards them, leaving Ada only. With AND o.status = 'paid' inside the ON clause, the filter only decides what counts as a match, so unmatched left rows survive: (Ada, 101), (Lin, NULL), (Sam, NULL). Further cards note that a filter on the left table inside ON removes nothing, only preventing matches; that an inner join after a left join cannot match a NULL key, so authors without books vanish again; that counting only some children while keeping every parent means filtering in ON or pre-filtering the child in a subquery; and that LEFT JOIN with WHERE right.key IS NULL is a reliable anti-join only when that column is genuinely NOT NULL.",
+          "caption": "Left panel: the NULL row the join adds fails the `WHERE` test.",
           "placement": "explanation",
           "width": 720,
           "height": 580
@@ -39,18 +39,18 @@
         { "text": "`Ada` and `Sam`", "isCorrect": false },
         { "text": "`Ada`, `Lin`, and `Sam`", "isCorrect": false }
       ],
-      "explanation": "The `LEFT JOIN` first keeps Lin and fills the order columns with NULL. The `WHERE` clause then removes that row because `NULL = 'paid'` is unknown, not true. Ada remains because order 101 is paid. Sam's only order is pending. For this filter, the query behaves like an inner join.",
+      "explanation": "The `LEFT JOIN` keeps Lin with NULL order columns. Then `WHERE` drops that row, because `NULL = 'paid'` is unknown and `WHERE` keeps only true. Sam's only order is pending, so Sam goes too. Only Ada, with paid order 101, is left. With this filter, the left join behaves like an inner join.",
       "references": "[PostgreSQL documentation: `ON` and `WHERE` with outer joins](https://www.postgresql.org/docs/current/queries-table-expressions.html#QUERIES-JOIN)"
     },
     {
       "id": "left-join-filter-in-on",
-      "title": "What rows does moving the paid filter into `ON` produce?",
-      "description": "The data is the same as in the previous Question.\n\n```sql\nSELECT c.name, o.id\nFROM customers AS c\nLEFT JOIN orders AS o\n  ON o.customer_id = c.id\n AND o.status = 'paid';\n```",
+      "title": "What does the query return with the paid filter moved into `ON`?",
+      "description": "Same data as the previous Question.\n\n```sql\nSELECT c.name, o.id\nFROM customers AS c\nLEFT JOIN orders AS o\n  ON o.customer_id = c.id\n AND o.status = 'paid';\n```",
       "images": [
         {
           "src": "left-join-filters.svg",
-          "alt": "Two versions of the same LEFT JOIN over three customers where only Ada has a paid order. With WHERE o.status = 'paid', the join invents NULL rows for Lin and Sam and the WHERE test then discards them, leaving Ada only. With AND o.status = 'paid' inside the ON clause, the filter only decides what counts as a match, so unmatched left rows survive: (Ada, 101), (Lin, NULL), (Sam, NULL). Further cards note that a filter on the left table inside ON removes nothing, only preventing matches; that an inner join after a left join cannot match a NULL key, so authors without books vanish again; that counting only some children while keeping every parent means filtering in ON or pre-filtering the child in a subquery; and that LEFT JOIN with WHERE right.key IS NULL is a reliable anti-join only when that column is genuinely NOT NULL.",
-          "caption": "The right panel: in `ON`, the filter decides matching, not survival.",
+          "alt": "Two versions of the same LEFT JOIN over three customers where only Ada has a paid order. With WHERE o.status = 'paid', the join adds rows for Lin and Sam and the WHERE test then discards them, leaving Ada only. With AND o.status = 'paid' inside the ON clause, the filter only decides what counts as a match, so unmatched left rows survive: (Ada, 101), (Lin, NULL), (Sam, NULL). Further cards note that a filter on the left table inside ON removes nothing, only preventing matches; that an inner join after a left join cannot match a NULL key, so authors without books vanish again; that counting only some children while keeping every parent means filtering in ON or pre-filtering the child in a subquery; and that LEFT JOIN with WHERE right.key IS NULL is a reliable anti-join only when that column is genuinely NOT NULL.",
+          "caption": "Right panel: inside `ON`, the filter only decides which orders match.",
           "placement": "explanation",
           "width": 720,
           "height": 580
@@ -63,13 +63,13 @@
         { "text": "`(Ada, 101)` and `(Sam, 103)`", "isCorrect": false },
         { "text": "`(Ada, 101)`, `(Lin, 104)`, and `(Sam, NULL)`", "isCorrect": false }
       ],
-      "explanation": "The `ON` clause limits which orders can match, but the left join still keeps every customer. Ada matches paid order 101. Lin and Sam have no paid order, so their order columns are NULL. Order 104 has no customer id and matches nobody.",
+      "explanation": "`ON` decides which orders count as a match, and a left join still keeps every customer. Ada matches paid order 101. Lin and Sam have no paid order, so their order columns are NULL. Order 104 has no customer, so it matches nobody.",
       "references": "[PostgreSQL documentation: `ON` and `WHERE` with outer joins](https://www.postgresql.org/docs/current/queries-table-expressions.html#QUERIES-JOIN)"
     },
     {
       "id": "count-star-versus-column",
-      "title": "What are the counts for customers with no orders?",
-      "description": "```sql\nSELECT c.name, COUNT(*) AS rows_seen, COUNT(o.id) AS orders_seen\nFROM customers AS c\nLEFT JOIN orders AS o ON o.customer_id = c.id\nGROUP BY c.id, c.name;\n```\n\nFocus on Lin, who has no matching order.",
+      "title": "What are the counts for a customer with no orders?",
+      "description": "```sql\nSELECT c.name, COUNT(*) AS rows_seen, COUNT(o.id) AS orders_seen\nFROM customers AS c\nLEFT JOIN orders AS o ON o.customer_id = c.id\nGROUP BY c.id, c.name;\n```\n\nLook at Lin, who has no orders.",
       "type": "single-choice",
       "options": [
         { "text": "`rows_seen = 1`, `orders_seen = 0`", "isCorrect": true },
@@ -77,18 +77,18 @@
         { "text": "`rows_seen = 1`, `orders_seen = 1`", "isCorrect": false },
         { "text": "Both counts are `NULL`", "isCorrect": false }
       ],
-      "explanation": "The left join keeps one row for Lin and fills its order columns with NULL. `COUNT(*)` counts the row, so `rows_seen` is 1. `COUNT(o.id)` ignores the NULL order id, so `orders_seen` is 0.",
+      "explanation": "The left join gives Lin one row with NULL order columns. `COUNT(*)` counts rows, so `rows_seen` is 1. `COUNT(o.id)` skips NULLs, so `orders_seen` is 0.",
       "references": "[PostgreSQL documentation: Aggregate functions](https://www.postgresql.org/docs/current/functions-aggregate.html)"
     },
     {
       "id": "fanout-two-child-tables",
-      "title": "What total does the query report after accidental fan-out?",
-      "description": "Order 10 has two items priced 30 and 20, plus three payments of 10 each.\n\n```sql\nSELECT SUM(i.price) AS item_total\nFROM orders AS o\nJOIN order_items AS i ON i.order_id = o.id\nJOIN payments AS p ON p.order_id = o.id\nWHERE o.id = 10;\n```\n\nEnter the reported `item_total`.",
+      "title": "What `item_total` does this query report?",
+      "description": "Order 10 has two items, priced 30 and 20, and three payments of 10 each.\n\n```sql\nSELECT SUM(i.price) AS item_total\nFROM orders AS o\nJOIN order_items AS i ON i.order_id = o.id\nJOIN payments AS p ON p.order_id = o.id\nWHERE o.id = 10;\n```\n\nEnter the `item_total` it reports.",
       "images": [
         {
           "src": "join-fan-out.svg",
-          "alt": "Order 10 in three tables: one orders row, two order_items priced 30 and 20 with a true total of 50, and three payments of 10 with a true total of 30. Joining both children to the same parent produces every pairing — 2 × 3 = 6 rows, listed as 30/10 three times then 20/10 three times — so SUM(i.price) reports 150, each price counted once per payment, and SUM(p.amount) reports 60, each payment counted once per item; a window function over those rows inflates the same way. A green card gives the repair: aggregate each child by order_id separately and join the results, or use one correlated scalar subquery per child, and not DISTINCT, which would collapse two items genuinely priced 20 into one. A final note says fan-out begins at the first join whose right side has more than one row per join key.",
-          "caption": "Six rows, and each price counted once per payment.",
+          "alt": "Order 10 in three tables: one orders row, two order_items priced 30 and 20 with a true total of 50, and three payments of 10 with a true total of 30. Joining both children to the same parent produces every pairing: 2 × 3 = 6 rows, listed as 30/10 three times, then 20/10 three times. SUM(i.price) reports 150, counting each price once per payment, and SUM(p.amount) reports 60, counting each payment once per item. A window function over those rows inflates the same way. A green card gives the repair: aggregate each child by order_id separately and join the results, or use one correlated scalar subquery per child. DISTINCT is not a fix, because it would collapse two items genuinely priced 20 into one. A final note says fan-out begins at the first join whose right side has more than one row per join key.",
+          "caption": "Six rows, with each price counted once per payment.",
           "placement": "explanation",
           "width": 720,
           "height": 558
@@ -99,18 +99,18 @@
         "mode": "numeric",
         "acceptedAnswers": [150]
       },
-      "explanation": "Each of the 2 items matches each of the 3 payments, so the joins create `2 × 3 = 6` rows. Each item price appears three times. The query calculates `(30 + 20) × 3 = 150`, although the real item total is 50.",
+      "explanation": "Each of the 2 items pairs with each of the 3 payments, so the joins produce `2 × 3 = 6` rows. Every item price shows up three times, and `SUM` returns `(30 + 20) × 3 = 150`. The real item total is 50.",
       "references": "[PostgreSQL documentation: Joined tables](https://www.postgresql.org/docs/current/queries-table-expressions.html#QUERIES-JOIN)"
     },
     {
       "id": "repair-two-child-fanout",
-      "title": "Which approaches safely compute both item and payment totals per order?",
-      "description": "Select every safe approach. Both child tables may contain equal amounts in different rows.",
+      "title": "Which approaches give correct item and payment totals per order?",
+      "description": "Select every approach that works. Either child table can have two rows with the same amount.",
       "images": [
         {
           "src": "join-fan-out.svg",
-          "alt": "Order 10 in three tables: one orders row, two order_items priced 30 and 20 with a true total of 50, and three payments of 10 with a true total of 30. Joining both children to the same parent produces every pairing — 2 × 3 = 6 rows, listed as 30/10 three times then 20/10 three times — so SUM(i.price) reports 150, each price counted once per payment, and SUM(p.amount) reports 60, each payment counted once per item; a window function over those rows inflates the same way. A green card gives the repair: aggregate each child by order_id separately and join the results, or use one correlated scalar subquery per child, and not DISTINCT, which would collapse two items genuinely priced 20 into one. A final note says fan-out begins at the first join whose right side has more than one row per join key.",
-          "caption": "Collapse each child to one row per order first.",
+          "alt": "Order 10 in three tables: one orders row, two order_items priced 30 and 20 with a true total of 50, and three payments of 10 with a true total of 30. Joining both children to the same parent produces every pairing: 2 × 3 = 6 rows, listed as 30/10 three times, then 20/10 three times. SUM(i.price) reports 150, counting each price once per payment, and SUM(p.amount) reports 60, counting each payment once per item. A window function over those rows inflates the same way. A green card gives the repair: aggregate each child by order_id separately and join the results, or use one correlated scalar subquery per child. DISTINCT is not a fix, because it would collapse two items genuinely priced 20 into one. A final note says fan-out begins at the first join whose right side has more than one row per join key.",
+          "caption": "Reduce each child table to one row per order first.",
           "placement": "explanation",
           "width": 720,
           "height": 558
@@ -118,12 +118,15 @@
       ],
       "type": "multiple-choice",
       "options": [
-        { "text": "Aggregate `order_items` and `payments` separately by `order_id`, then join those one-row-per-order results", "isCorrect": true },
-        { "text": "Use correlated scalar subqueries that aggregate each child table independently for the current order", "isCorrect": true },
+        {
+          "text": "Aggregate `order_items` and `payments` separately by `order_id`, then join the one-row-per-order results",
+          "isCorrect": true
+        },
+        { "text": "Use a correlated scalar subquery per child table that aggregates it for the current order", "isCorrect": true },
         { "text": "Replace both sums with `SUM(DISTINCT amount)`", "isCorrect": false },
-        { "text": "Add `DISTINCT` to the final `SELECT` while leaving both raw child joins intact", "isCorrect": false }
+        { "text": "Add `DISTINCT` to the final `SELECT` and keep both raw child joins", "isCorrect": false }
       ],
-      "explanation": "Aggregate each child table on its own before joining, or calculate each total in a separate correlated subquery. Both approaches keep the child tables from multiplying each other. `SUM(DISTINCT amount)` is wrong when two real rows have the same amount. A final `DISTINCT` runs too late: `SUM` has already counted the duplicated input rows.",
+      "explanation": "Aggregate each child table before joining, or compute each total in its own correlated subquery. Either way, the child tables can't multiply each other. `SUM(DISTINCT amount)` breaks when two real rows have the same amount. A final `DISTINCT` comes too late, because `SUM` has already counted the duplicated rows.",
       "references": "[PostgreSQL documentation: Aggregate expressions](https://www.postgresql.org/docs/current/sql-expressions.html#SYNTAX-AGGREGATES)"
     },
     {
@@ -146,17 +149,17 @@
         { "text": "False", "isCorrect": false },
         { "text": "A syntax error", "isCorrect": false }
       ],
-      "explanation": "The result is unknown. NULL means the value is unknown, so SQL cannot prove that two NULL values are equal. A `WHERE` clause keeps only rows where its condition is true.",
+      "explanation": "It's unknown. NULL means the value is unknown, so SQL can't tell whether two NULLs are equal. A `WHERE` clause keeps only rows where the condition is true.",
       "references": "[PostgreSQL documentation: NULL comparisons](https://www.postgresql.org/docs/current/functions-comparison.html)"
     },
     {
       "id": "null-safe-equality-standard",
-      "title": "Which standard SQL predicate considers two NULL values equal?",
+      "title": "Which standard SQL predicate treats two NULLs as equal?",
       "images": [
         {
           "src": "null-three-valued-logic.svg",
           "alt": "Cards on SQL's three-valued logic. NULL = NULL evaluates to UNKNOWN, so two NULL join keys never match, and rating <> 5 is UNKNOWN when rating is NULL, so that row is dropped too; IS NOT DISTINCT FROM is the standard null-safe comparison, true when both sides are NULL. With candidate holding 1, 2 and 3 and blocked holding 2 and NULL, id NOT IN (2, NULL) expands to id <> 2 AND id <> NULL, whose second half is UNKNOWN for every row, so no rows come back, while NOT EXISTS asks a yes-or-no question and returns 1 and 3. Over no qualifying rows SUM returns NULL and COUNT returns 0; over rows including a NULL, AVG of 10, 20 and NULL is 15 and COUNT(DISTINCT c) of A, A, B and NULL is 2. Grouping is the one place NULLs count as equal: GROUP BY collects every NULL into a single group.",
-          "caption": "The green card names the standard predicate.",
+          "caption": "The green card shows the standard predicate.",
           "placement": "explanation",
           "width": 720,
           "height": 606
@@ -169,18 +172,18 @@
         { "text": "`a == b`", "isCorrect": false },
         { "text": "`a IS b`", "isCorrect": false }
       ],
-      "explanation": "`a IS NOT DISTINCT FROM b` is true when `a` and `b` are equal or when both are NULL. It always returns true or false, never unknown. Ordinary equality does not work this way when either value is NULL. Some databases also have their own NULL-safe operators.",
+      "explanation": "`a IS NOT DISTINCT FROM b` is true when `a` and `b` are equal or both NULL, and it never returns unknown. Plain `=` returns unknown if either side is NULL. Some databases also have their own NULL-safe operators.",
       "references": "[PostgreSQL documentation: `IS NOT DISTINCT FROM`](https://www.postgresql.org/docs/current/functions-comparison.html)"
     },
     {
       "id": "not-in-null-poison",
       "title": "Which values does this `NOT IN` query return?",
-      "description": "Table `candidate(id)` contains `1`, `2`, and `3`. Table `blocked(id)` contains `2` and `NULL`.\n\n```sql\nSELECT id\nFROM candidate\nWHERE id NOT IN (SELECT id FROM blocked);\n```",
+      "description": "`candidate(id)` holds `1`, `2`, and `3`. `blocked(id)` holds `2` and `NULL`.\n\n```sql\nSELECT id\nFROM candidate\nWHERE id NOT IN (SELECT id FROM blocked);\n```",
       "images": [
         {
           "src": "null-three-valued-logic.svg",
           "alt": "Cards on SQL's three-valued logic. NULL = NULL evaluates to UNKNOWN, so two NULL join keys never match, and rating <> 5 is UNKNOWN when rating is NULL, so that row is dropped too; IS NOT DISTINCT FROM is the standard null-safe comparison, true when both sides are NULL. With candidate holding 1, 2 and 3 and blocked holding 2 and NULL, id NOT IN (2, NULL) expands to id <> 2 AND id <> NULL, whose second half is UNKNOWN for every row, so no rows come back, while NOT EXISTS asks a yes-or-no question and returns 1 and 3. Over no qualifying rows SUM returns NULL and COUNT returns 0; over rows including a NULL, AVG of 10, 20 and NULL is 15 and COUNT(DISTINCT c) of A, A, B and NULL is 2. Grouping is the one place NULLs count as equal: GROUP BY collects every NULL into a single group.",
-          "caption": "The expansion is what does it: one UNKNOWN poisons the `AND`.",
+          "caption": "Written out with `AND`, the NULL comparison means no row can pass.",
           "placement": "explanation",
           "width": 720,
           "height": 606
@@ -193,18 +196,18 @@
         { "text": "Only `2`", "isCorrect": false },
         { "text": "`1`, `2`, and `3`", "isCorrect": false }
       ],
-      "explanation": "For ids 1 and 3, the comparison with 2 is unequal, but the comparison with NULL is unknown. That makes `NOT IN` unknown rather than true. For id 2, `NOT IN` is false because 2 is present. `WHERE` keeps only true results, so the query returns no rows.",
+      "explanation": "`NOT IN` works like `id <> 2 AND id <> NULL`. For ids 1 and 3, the first part is true but the second is unknown, so the whole test is unknown. For id 2, the first part is false. `WHERE` keeps only true results, so the query returns no rows.",
       "references": "[PostgreSQL documentation: `NOT IN` subqueries](https://www.postgresql.org/docs/current/functions-subquery.html#FUNCTIONS-SUBQUERY-NOTIN)"
     },
     {
       "id": "not-exists-antijoin",
-      "title": "Which values does the `NOT EXISTS` anti-join return?",
-      "description": "Use the same `candidate` values `1`, `2`, `3` and `blocked` values `2`, `NULL`.\n\n```sql\nSELECT c.id\nFROM candidate AS c\nWHERE NOT EXISTS (\n  SELECT 1\n  FROM blocked AS b\n  WHERE b.id = c.id\n);\n```",
+      "title": "Which values does this `NOT EXISTS` query return?",
+      "description": "Same data: `candidate` holds `1`, `2`, `3`, and `blocked` holds `2`, `NULL`.\n\n```sql\nSELECT c.id\nFROM candidate AS c\nWHERE NOT EXISTS (\n  SELECT 1\n  FROM blocked AS b\n  WHERE b.id = c.id\n);\n```",
       "images": [
         {
           "src": "null-three-valued-logic.svg",
           "alt": "Cards on SQL's three-valued logic. NULL = NULL evaluates to UNKNOWN, so two NULL join keys never match, and rating <> 5 is UNKNOWN when rating is NULL, so that row is dropped too; IS NOT DISTINCT FROM is the standard null-safe comparison, true when both sides are NULL. With candidate holding 1, 2 and 3 and blocked holding 2 and NULL, id NOT IN (2, NULL) expands to id <> 2 AND id <> NULL, whose second half is UNKNOWN for every row, so no rows come back, while NOT EXISTS asks a yes-or-no question and returns 1 and 3. Over no qualifying rows SUM returns NULL and COUNT returns 0; over rows including a NULL, AVG of 10, 20 and NULL is 15 and COUNT(DISTINCT c) of A, A, B and NULL is 2. Grouping is the one place NULLs count as equal: GROUP BY collects every NULL into a single group.",
-          "caption": "Existence is a yes-or-no question, with no third answer.",
+          "caption": "`EXISTS` answers only yes or no, never unknown.",
           "placement": "explanation",
           "width": 720,
           "height": 606
@@ -217,7 +220,7 @@
         { "text": "Only `2`", "isCorrect": false },
         { "text": "`1`, `2`, and `3`", "isCorrect": false }
       ],
-      "explanation": "The subquery finds a matching blocked row only for id 2. The NULL in `blocked.id` does not equal any candidate id. It does not affect the other candidates, so ids 1 and 3 pass `NOT EXISTS`.",
+      "explanation": "The subquery finds a blocked row only for id 2. The NULL in `blocked.id` never equals a candidate id, so it doesn't affect anyone. Ids 1 and 3 pass `NOT EXISTS`.",
       "references": "[PostgreSQL documentation: `EXISTS` subqueries](https://www.postgresql.org/docs/current/functions-subquery.html#FUNCTIONS-SUBQUERY-EXISTS)"
     },
     {
@@ -239,7 +242,7 @@
         "mode": "numeric",
         "acceptedAnswers": [1]
       },
-      "explanation": "Only rating 4 makes `rating <> 5` true. Rating 5 makes it false, and NULL makes it unknown. To include missing ratings, write that rule explicitly: `rating <> 5 OR rating IS NULL`.",
+      "explanation": "Only 4 makes `rating <> 5` true. 5 makes it false, and NULL makes it unknown. To include missing ratings, say so explicitly: `rating <> 5 OR rating IS NULL`.",
       "references": "[PostgreSQL documentation: NULL comparisons](https://www.postgresql.org/docs/current/functions-comparison.html)"
     },
     {
@@ -253,7 +256,7 @@
         { "text": "Only the row with `NULL`", "isCorrect": false },
         { "text": "All three rows", "isCorrect": false }
       ],
-      "explanation": "`COALESCE` returns the first non-NULL argument. A stored 0 stays 0, while NULL becomes 0. Both rows pass the filter. Be careful: this expression treats 'no discount recorded' and 'a recorded discount of zero' as the same thing.",
+      "explanation": "`COALESCE` returns its first non-NULL argument. A stored 0 stays 0 and NULL becomes 0, so both rows pass. Watch out: this treats 'no discount recorded' and 'a discount of zero' as the same thing.",
       "references": "[PostgreSQL documentation: `COALESCE`](https://www.postgresql.org/docs/current/functions-conditional.html#FUNCTIONS-COALESCE-NVL-IFNULL)"
     },
     {
@@ -277,7 +280,7 @@
         { "text": "No result row", "isCorrect": false },
         { "text": "An error", "isCorrect": false }
       ],
-      "explanation": "The query still returns one row because it has no `GROUP BY`. `COUNT` returns 0 for an empty input, but `SUM` and most other aggregates return NULL. Use `COALESCE(SUM(amount), 0)` when zero is the right business value.",
+      "explanation": "Without `GROUP BY`, an aggregate query always returns one row. `COUNT` of no rows is 0, but `SUM` and most other aggregates return NULL. Use `COALESCE(SUM(amount), 0)` when you want zero.",
       "references": "[PostgreSQL documentation: Aggregate functions over no rows](https://www.postgresql.org/docs/current/functions-aggregate.html)"
     },
     {
@@ -287,7 +290,7 @@
         {
           "src": "null-three-valued-logic.svg",
           "alt": "Cards on SQL's three-valued logic. NULL = NULL evaluates to UNKNOWN, so two NULL join keys never match, and rating <> 5 is UNKNOWN when rating is NULL, so that row is dropped too; IS NOT DISTINCT FROM is the standard null-safe comparison, true when both sides are NULL. With candidate holding 1, 2 and 3 and blocked holding 2 and NULL, id NOT IN (2, NULL) expands to id <> 2 AND id <> NULL, whose second half is UNKNOWN for every row, so no rows come back, while NOT EXISTS asks a yes-or-no question and returns 1 and 3. Over no qualifying rows SUM returns NULL and COUNT returns 0; over rows including a NULL, AVG of 10, 20 and NULL is 15 and COUNT(DISTINCT c) of A, A, B and NULL is 2. Grouping is the one place NULLs count as equal: GROUP BY collects every NULL into a single group.",
-          "caption": "`COUNT` of nothing is zero — the one aggregate that never returns NULL.",
+          "caption": "`COUNT` of nothing is zero. It's the one aggregate that never returns NULL.",
           "placement": "explanation",
           "width": 720,
           "height": 606
@@ -300,7 +303,7 @@
         { "text": "No result row", "isCorrect": false },
         { "text": "An error", "isCorrect": false }
       ],
-      "explanation": "An aggregate query without `GROUP BY` still returns one row when its input is empty. `COUNT(amount)` counts non-NULL amounts. There are none, so it returns 0.",
+      "explanation": "Without `GROUP BY`, the query returns one row even when no rows qualify. `COUNT(amount)` counts non-NULL amounts, and there are none, so it returns 0.",
       "references": "[PostgreSQL documentation: `count`](https://www.postgresql.org/docs/current/functions-aggregate.html)"
     },
     {
@@ -310,7 +313,7 @@
         {
           "src": "null-three-valued-logic.svg",
           "alt": "Cards on SQL's three-valued logic. NULL = NULL evaluates to UNKNOWN, so two NULL join keys never match, and rating <> 5 is UNKNOWN when rating is NULL, so that row is dropped too; IS NOT DISTINCT FROM is the standard null-safe comparison, true when both sides are NULL. With candidate holding 1, 2 and 3 and blocked holding 2 and NULL, id NOT IN (2, NULL) expands to id <> 2 AND id <> NULL, whose second half is UNKNOWN for every row, so no rows come back, while NOT EXISTS asks a yes-or-no question and returns 1 and 3. Over no qualifying rows SUM returns NULL and COUNT returns 0; over rows including a NULL, AVG of 10, 20 and NULL is 15 and COUNT(DISTINCT c) of A, A, B and NULL is 2. Grouping is the one place NULLs count as equal: GROUP BY collects every NULL into a single group.",
-          "caption": "The NULL is skipped, in the numerator and the denominator alike.",
+          "caption": "The NULL is left out of both the sum and the count.",
           "placement": "explanation",
           "width": 720,
           "height": 606
@@ -321,7 +324,7 @@
         "mode": "numeric",
         "acceptedAnswers": [15]
       },
-      "explanation": "`AVG(score)` ignores NULL, so it calculates `(10 + 20) / 2 = 15`. If you replace the missing score with zero, the result becomes 10. That is a different rule and must be written explicitly, for example as `AVG(COALESCE(score, 0))`.",
+      "explanation": "`AVG` skips NULL, so it computes `(10 + 20) / 2 = 15`. If you count the missing score as zero, you get 10 instead. That's a different rule, and you have to write it out, for example as `AVG(COALESCE(score, 0))`.",
       "references": "[PostgreSQL documentation: `avg`](https://www.postgresql.org/docs/current/functions-aggregate.html)"
     },
     {
@@ -331,7 +334,7 @@
         {
           "src": "null-three-valued-logic.svg",
           "alt": "Cards on SQL's three-valued logic. NULL = NULL evaluates to UNKNOWN, so two NULL join keys never match, and rating <> 5 is UNKNOWN when rating is NULL, so that row is dropped too; IS NOT DISTINCT FROM is the standard null-safe comparison, true when both sides are NULL. With candidate holding 1, 2 and 3 and blocked holding 2 and NULL, id NOT IN (2, NULL) expands to id <> 2 AND id <> NULL, whose second half is UNKNOWN for every row, so no rows come back, while NOT EXISTS asks a yes-or-no question and returns 1 and 3. Over no qualifying rows SUM returns NULL and COUNT returns 0; over rows including a NULL, AVG of 10, 20 and NULL is 15 and COUNT(DISTINCT c) of A, A, B and NULL is 2. Grouping is the one place NULLs count as equal: GROUP BY collects every NULL into a single group.",
-          "caption": "NULL is not a distinct value here.",
+          "caption": "NULL doesn't count as a distinct value here.",
           "placement": "explanation",
           "width": 720,
           "height": 606
@@ -342,7 +345,7 @@
         "mode": "numeric",
         "acceptedAnswers": [2]
       },
-      "explanation": "The distinct non-NULL values are A and B. `COUNT(expression)` ignores NULL even when used with `DISTINCT`, so the result is 2.",
+      "explanation": "The distinct non-NULL values are A and B. `COUNT(expression)` skips NULL, with or without `DISTINCT`, so the answer is 2.",
       "references": "[PostgreSQL documentation: Aggregate functions](https://www.postgresql.org/docs/current/functions-aggregate.html)"
     },
     {
@@ -353,7 +356,7 @@
         {
           "src": "null-three-valued-logic.svg",
           "alt": "Cards on SQL's three-valued logic. NULL = NULL evaluates to UNKNOWN, so two NULL join keys never match, and rating <> 5 is UNKNOWN when rating is NULL, so that row is dropped too; IS NOT DISTINCT FROM is the standard null-safe comparison, true when both sides are NULL. With candidate holding 1, 2 and 3 and blocked holding 2 and NULL, id NOT IN (2, NULL) expands to id <> 2 AND id <> NULL, whose second half is UNKNOWN for every row, so no rows come back, while NOT EXISTS asks a yes-or-no question and returns 1 and 3. Over no qualifying rows SUM returns NULL and COUNT returns 0; over rows including a NULL, AVG of 10, 20 and NULL is 15 and COUNT(DISTINCT c) of A, A, B and NULL is 2. Grouping is the one place NULLs count as equal: GROUP BY collects every NULL into a single group.",
-          "caption": "Grouping is the exception: every NULL lands in one group.",
+          "caption": "Grouping is the exception: all NULLs land in one group.",
           "placement": "explanation",
           "width": 720,
           "height": 606
@@ -364,7 +367,7 @@
         "mode": "numeric",
         "acceptedAnswers": [2]
       },
-      "explanation": "`GROUP BY` puts the two NULL values in one group. The query therefore creates an `east` group and a NULL group. This differs from ordinary equality, where `NULL = NULL` is unknown.",
+      "explanation": "`GROUP BY` puts both NULLs in one group, so you get an `east` group and a NULL group. That's different from plain equality, where `NULL = NULL` is unknown.",
       "references": "[PostgreSQL documentation: `GROUP BY`](https://www.postgresql.org/docs/current/queries-table-expressions.html#QUERIES-GROUP)"
     },
     {
@@ -378,26 +381,26 @@
         { "text": "No customers, because a left join always makes `COUNT(*)` positive", "isCorrect": false },
         { "text": "Customers whose order ids are duplicated", "isCorrect": false }
       ],
-      "explanation": "A customer without orders still gets one row from the left join, but `o.id` is NULL. `COUNT(o.id)` ignores that NULL and returns 0, so `HAVING` keeps the customer. `COUNT(*)` would return 1 and would not work for this test.",
+      "explanation": "A customer with no orders still gets one row from the left join, with `o.id` set to NULL. `COUNT(o.id)` skips the NULL and returns 0, so `HAVING` keeps that customer. `COUNT(*)` would return 1, so it wouldn't work here.",
       "references": "[PostgreSQL documentation: `GROUP BY` and `HAVING`](https://www.postgresql.org/docs/current/queries-table-expressions.html#QUERIES-GROUP)"
     },
     {
       "id": "where-before-grouping",
-      "title": "Why does this query omit departments with no sales since 2026 began?",
+      "title": "Why does this query leave out departments with no sales since the start of 2026?",
       "description": "```sql\nSELECT d.id, SUM(s.amount)\nFROM departments AS d\nLEFT JOIN sales AS s ON s.department_id = d.id\nWHERE s.sold_at >= DATE '2026-01-01'\nGROUP BY d.id;\n```",
       "type": "single-choice",
       "options": [
-        { "text": "The `WHERE` predicate rejects NULL-extended rows before grouping", "isCorrect": true },
+        { "text": "The `WHERE` test rejects the NULL rows the left join added, before grouping", "isCorrect": true },
         { "text": "`SUM` automatically removes departments whose total is zero", "isCorrect": false },
         { "text": "`GROUP BY` cannot group rows produced by a left join", "isCorrect": false },
         { "text": "Date predicates are evaluated after aggregation", "isCorrect": false }
       ],
-      "explanation": "The join runs before `WHERE`. A department with no sale since January 1 gets a row where `s.sold_at` is NULL. The date test is then unknown, so `WHERE` removes the row. Put the date condition in `ON` to keep every department.",
+      "explanation": "The join runs before `WHERE`. A department with no sales since January 1 gets one row with `s.sold_at` set to NULL. The date test on that row is unknown, so `WHERE` drops it. Move the date condition into `ON` to keep every department.",
       "references": "[PostgreSQL documentation: Table-expression processing](https://www.postgresql.org/docs/current/queries-table-expressions.html)"
     },
     {
       "id": "where-versus-having",
-      "title": "Which clause should filter groups whose total sales exceed 1,000?",
+      "title": "Which clause keeps only groups with total sales over 1,000?",
       "type": "single-choice",
       "options": [
         { "text": "`HAVING SUM(amount) > 1000`", "isCorrect": true },
@@ -405,27 +408,27 @@
         { "text": "`ON SUM(amount) > 1000`", "isCorrect": false },
         { "text": "`ORDER BY SUM(amount) > 1000`", "isCorrect": false }
       ],
-      "explanation": "`WHERE` filters rows before SQL forms the groups. `HAVING` filters the completed groups, so `HAVING SUM(amount) > 1000` is the correct condition.",
+      "explanation": "`WHERE` filters rows before the groups exist. `HAVING` filters the finished groups, so `HAVING SUM(amount) > 1000` is the right choice.",
       "references": "[PostgreSQL documentation: `WHERE`, `GROUP BY`, and `HAVING`](https://www.postgresql.org/docs/current/queries-table-expressions.html)"
     },
     {
       "id": "missing-composite-join-key",
-      "title": "What defect causes the duplicated matches?",
-      "description": "Prices are unique only by `(sku, region)`. Product `X` has one price row for `US` and one for `EU`. An order line for `(X, US)` is queried with:\n\n```sql\nSELECT l.sku, p.amount\nFROM order_lines AS l\nJOIN prices AS p ON p.sku = l.sku;\n```",
+      "title": "What causes the duplicate matches?",
+      "description": "A price is unique only by `(sku, region)`. Product `X` has one price for `US` and one for `EU`. You query an order line for `(X, US)` with:\n\n```sql\nSELECT l.sku, p.amount\nFROM order_lines AS l\nJOIN prices AS p ON p.sku = l.sku;\n```",
       "type": "single-choice",
       "options": [
-        { "text": "The join omits `p.region = l.region` from the composite key", "isCorrect": true },
+        { "text": "The join is missing `p.region = l.region`, which is part of the composite key", "isCorrect": true },
         { "text": "The join should use `CROSS JOIN`", "isCorrect": false },
         { "text": "The price table needs a NULL row", "isCorrect": false },
         { "text": "The query needs `ORDER BY region`", "isCorrect": false }
       ],
-      "explanation": "The US order line matches both price rows because the join checks only `sku`. The full key is `(sku, region)`, so the join must also include `p.region = l.region`. Sorting the result would not fix the extra match.",
+      "explanation": "The join checks only `sku`, so the US order line matches both price rows. The full key is `(sku, region)`, so the join also needs `p.region = l.region`. Sorting the result won't remove the extra match.",
       "references": "[PostgreSQL documentation: Join conditions](https://www.postgresql.org/docs/current/queries-table-expressions.html#QUERIES-JOIN)"
     },
     {
       "id": "self-join-unique-pairs",
       "title": "Which predicate produces each unordered employee pair exactly once?",
-      "description": "```sql\nSELECT a.id, b.id\nFROM employees AS a\nJOIN employees AS b ON /* predicate */;\n```\n\nAssume employee ids are unique and non-NULL. No employee should pair with themself.",
+      "description": "```sql\nSELECT a.id, b.id\nFROM employees AS a\nJOIN employees AS b ON /* predicate */;\n```\n\nEmployee ids are unique and non-NULL. Nobody should pair with themselves.",
       "type": "single-choice",
       "options": [
         { "text": "`a.id < b.id`", "isCorrect": true },
@@ -433,30 +436,30 @@
         { "text": "`a.id = b.id`", "isCorrect": false },
         { "text": "`a.id <= b.id`", "isCorrect": false }
       ],
-      "explanation": "`a.id < b.id` removes self-pairs and keeps one ordering of each pair. With `a.id <> b.id`, both `(a, b)` and `(b, a)` appear. With `a.id <= b.id`, every employee also pairs with themself.",
+      "explanation": "`a.id < b.id` rules out self-pairs and keeps one ordering of each pair. `a.id <> b.id` gives you both `(a, b)` and `(b, a)`. `a.id <= b.id` also pairs every employee with themselves.",
       "references": "[PostgreSQL documentation: Self-joins and aliases](https://www.postgresql.org/docs/current/queries-table-expressions.html#QUERIES-TABLE-ALIASES)"
     },
     {
       "id": "many-to-many-bridge-count",
-      "title": "How many rows result from joining students through enrollments?",
-      "description": "Student 1 has 2 enrollment rows, student 2 has 3, and student 3 has none. Every enrollment references one existing course.\n\n```sql\nSELECT s.id, c.id\nFROM students AS s\nJOIN enrollments AS e ON e.student_id = s.id\nJOIN courses AS c ON c.id = e.course_id;\n```\n\nEnter the result row count.",
+      "title": "How many rows does joining students through enrollments return?",
+      "description": "Student 1 has 2 enrollments, student 2 has 3, and student 3 has none. Each enrollment points to one existing course.\n\n```sql\nSELECT s.id, c.id\nFROM students AS s\nJOIN enrollments AS e ON e.student_id = s.id\nJOIN courses AS c ON c.id = e.course_id;\n```\n\nEnter the row count.",
       "type": "input",
       "validation": {
         "mode": "numeric",
         "acceptedAnswers": [5]
       },
-      "explanation": "Each enrollment links one student to one course, so each enrollment becomes one result row. Students 1 and 2 contribute `2 + 3 = 5` rows. Student 3 has no enrollment and disappears in the inner join. Five rows is correct here because the query asks for student-course pairs.",
+      "explanation": "Each enrollment links one student to one course, so each enrollment becomes one row: `2 + 3 = 5`. Student 3 has no enrollments and drops out of the inner join. Here 5 rows is correct, because the query asks for student-course pairs.",
       "references": "[PostgreSQL documentation: Inner joins](https://www.postgresql.org/docs/current/queries-table-expressions.html#QUERIES-JOIN)"
     },
     {
       "id": "duplicate-dimension-key",
-      "title": "What should you check when a many-to-one join doubles some sales?",
-      "description": "A sales fact table joins to `stores` on `store_code`. Each sale should match one store, but some sales appear twice.",
+      "title": "A many-to-one join doubles some sales. What should you check?",
+      "description": "A sales fact table joins `stores` on `store_code`. Each sale should match one store, but some sales show up twice.",
       "images": [
         {
           "src": "join-fan-out.svg",
-          "alt": "Order 10 in three tables: one orders row, two order_items priced 30 and 20 with a true total of 50, and three payments of 10 with a true total of 30. Joining both children to the same parent produces every pairing — 2 × 3 = 6 rows, listed as 30/10 three times then 20/10 three times — so SUM(i.price) reports 150, each price counted once per payment, and SUM(p.amount) reports 60, each payment counted once per item; a window function over those rows inflates the same way. A green card gives the repair: aggregate each child by order_id separately and join the results, or use one correlated scalar subquery per child, and not DISTINCT, which would collapse two items genuinely priced 20 into one. A final note says fan-out begins at the first join whose right side has more than one row per join key.",
-          "caption": "A many-to-one join is only many-to-one if the right side really is unique.",
+          "alt": "Order 10 in three tables: one orders row, two order_items priced 30 and 20 with a true total of 50, and three payments of 10 with a true total of 30. Joining both children to the same parent produces every pairing: 2 × 3 = 6 rows, listed as 30/10 three times, then 20/10 three times. SUM(i.price) reports 150, counting each price once per payment, and SUM(p.amount) reports 60, counting each payment once per item. A window function over those rows inflates the same way. A green card gives the repair: aggregate each child by order_id separately and join the results, or use one correlated scalar subquery per child. DISTINCT is not a fix, because it would collapse two items genuinely priced 20 into one. A final note says fan-out begins at the first join whose right side has more than one row per join key.",
+          "caption": "A many-to-one join is many-to-one only if the right side is actually unique.",
           "placement": "explanation",
           "width": 720,
           "height": 558
@@ -464,22 +467,22 @@
       ],
       "type": "multiple-choice",
       "options": [
-        { "text": "Whether `stores.store_code` actually contains duplicate rows", "isCorrect": true },
-        { "text": "Whether the join predicate omits part of the store's real key", "isCorrect": true },
-        { "text": "Whether temporal dimension versions require an effective-date predicate", "isCorrect": true },
-        { "text": "Whether adding final `DISTINCT` makes the model correct", "isCorrect": false }
+        { "text": "Whether `stores.store_code` has duplicate values", "isCorrect": true },
+        { "text": "Whether the join leaves out part of the store's real key", "isCorrect": true },
+        { "text": "Whether historical store versions need an effective-date condition", "isCorrect": true },
+        { "text": "Whether a final `DISTINCT` makes the model correct", "isCorrect": false }
       ],
-      "explanation": "The join is not many-to-one in practice if a sale matches two store rows. Check for duplicate `store_code` values, a missing part of the real key, or historical rows that need an effective-date condition. `DISTINCT` can hide some repeated output rows, but it does not fix the relationship or a wrong total.",
+      "explanation": "If a sale matches two store rows, the join isn't many-to-one in practice. Look for duplicate `store_code` values, a missing part of the real key, or historical rows that need an effective-date condition. `DISTINCT` can hide some repeated rows, but it doesn't fix the relationship or a wrong total.",
       "references": "[PostgreSQL documentation: Join conditions](https://www.postgresql.org/docs/current/queries-table-expressions.html#QUERIES-JOIN)"
     },
     {
       "id": "distinct-masks-join-bug",
-      "title": "Why is `SELECT DISTINCT` a risky repair for an unexpectedly duplicating join?",
+      "title": "Why is `SELECT DISTINCT` a risky fix for a join that duplicates rows?",
       "images": [
         {
           "src": "join-fan-out.svg",
-          "alt": "Order 10 in three tables: one orders row, two order_items priced 30 and 20 with a true total of 50, and three payments of 10 with a true total of 30. Joining both children to the same parent produces every pairing — 2 × 3 = 6 rows, listed as 30/10 three times then 20/10 three times — so SUM(i.price) reports 150, each price counted once per payment, and SUM(p.amount) reports 60, each payment counted once per item; a window function over those rows inflates the same way. A green card gives the repair: aggregate each child by order_id separately and join the results, or use one correlated scalar subquery per child, and not DISTINCT, which would collapse two items genuinely priced 20 into one. A final note says fan-out begins at the first join whose right side has more than one row per join key.",
-          "caption": "`DISTINCT` cannot tell a duplicate from two items priced the same.",
+          "alt": "Order 10 in three tables: one orders row, two order_items priced 30 and 20 with a true total of 50, and three payments of 10 with a true total of 30. Joining both children to the same parent produces every pairing: 2 × 3 = 6 rows, listed as 30/10 three times, then 20/10 three times. SUM(i.price) reports 150, counting each price once per payment, and SUM(p.amount) reports 60, counting each payment once per item. A window function over those rows inflates the same way. A green card gives the repair: aggregate each child by order_id separately and join the results, or use one correlated scalar subquery per child. DISTINCT is not a fix, because it would collapse two items genuinely priced 20 into one. A final note says fan-out begins at the first join whose right side has more than one row per join key.",
+          "caption": "`DISTINCT` can't tell a duplicate from two items that cost the same.",
           "placement": "explanation",
           "width": 720,
           "height": 558
@@ -487,12 +490,12 @@
       ],
       "type": "multiple-choice",
       "options": [
-        { "text": "It can hide a wrong join cardinality instead of fixing the relationship", "isCorrect": true },
-        { "text": "It removes rows based only on projected columns, which may collapse legitimate records", "isCorrect": true },
-        { "text": "It cannot undo inflation already used inside an aggregate expression", "isCorrect": true },
+        { "text": "It can hide the wrong join cardinality instead of fixing the join", "isCorrect": true },
+        { "text": "It compares only the selected columns, so it can merge real records that look alike", "isCorrect": true },
+        { "text": "It can't undo duplicates that an aggregate has already counted", "isCorrect": true },
         { "text": "It guarantees one output row per left-table key", "isCorrect": false }
       ],
-      "explanation": "`DISTINCT` compares the columns in the final result. Two real records can look identical after projection and be collapsed, while bad join matches that differ in one column remain. It also cannot fix `SUM(...)`: the aggregate has already read the duplicated rows before final deduplication.",
+      "explanation": "`DISTINCT` compares only the columns in the final result. Two real records can look identical there and get merged, while bad matches that differ in one column stay. It also can't fix `SUM(...)`, because the aggregate has already read the duplicated rows.",
       "references": "[PostgreSQL documentation: `DISTINCT`](https://www.postgresql.org/docs/current/queries-select-lists.html#QUERIES-DISTINCT)"
     },
     {
@@ -506,25 +509,25 @@
         { "text": "Signup events match only when `e.user_id = u.id`", "isCorrect": false },
         { "text": "No rows, because `AND` and `OR` cannot appear together in `ON`", "isCorrect": false }
       ],
-      "explanation": "`AND` is evaluated before `OR`. SQL reads the condition as `(e.user_id = u.id AND e.kind = 'purchase') OR e.kind = 'signup'`. A signup event therefore matches every user. Parentheses fix it: `e.user_id = u.id AND (e.kind = 'purchase' OR e.kind = 'signup')`.",
+      "explanation": "`AND` binds tighter than `OR`, so SQL reads the condition as `(e.user_id = u.id AND e.kind = 'purchase') OR e.kind = 'signup'`. Every signup event then matches every user. Parentheses fix it: `e.user_id = u.id AND (e.kind = 'purchase' OR e.kind = 'signup')`.",
       "references": "[PostgreSQL documentation: Operator precedence](https://www.postgresql.org/docs/current/sql-syntax-lexical.html#SQL-PRECEDENCE)"
     },
     {
       "id": "full-outer-join-cardinality",
       "title": "How many rows does the full outer join return?",
-      "description": "Table `a(k)` contains `1`, `2`, `2`; table `b(k)` contains `2`, `2`, `3`.\n\n```sql\nSELECT a.k, b.k\nFROM a\nFULL OUTER JOIN b ON b.k = a.k;\n```\n\nEnter the row count.",
+      "description": "`a(k)` holds `1`, `2`, `2`. `b(k)` holds `2`, `2`, `3`.\n\n```sql\nSELECT a.k, b.k\nFROM a\nFULL OUTER JOIN b ON b.k = a.k;\n```\n\nEnter the row count.",
       "type": "input",
       "validation": {
         "mode": "numeric",
         "acceptedAnswers": [6]
       },
-      "explanation": "Each of the two rows where `a.k = 2` matches both rows where `b.k = 2`. That produces `2 × 2 = 4` rows. The unmatched value 1 from `a` adds one row, and the unmatched value 3 from `b` adds another. The total is 6.",
+      "explanation": "Both `a` rows with 2 match both `b` rows with 2, giving `2 × 2 = 4` rows. The unmatched 1 from `a` adds one row, and the unmatched 3 from `b` adds another. That's 6.",
       "references": "[PostgreSQL documentation: Full outer joins](https://www.postgresql.org/docs/current/queries-table-expressions.html#QUERIES-JOIN)"
     },
     {
       "id": "union-all-versus-union",
       "title": "How many rows do `UNION ALL` and `UNION` return?",
-      "description": "Query X yields values `1, 1, 2`; query Y yields `2, 3`. Consider `X UNION ALL Y` and `X UNION Y`.",
+      "description": "Query X returns `1, 1, 2`, and query Y returns `2, 3`. Compare `X UNION ALL Y` with `X UNION Y`.",
       "type": "single-choice",
       "options": [
         { "text": "`UNION ALL` returns 5 rows; `UNION` returns 3 rows", "isCorrect": true },
@@ -532,7 +535,7 @@
         { "text": "`UNION ALL` returns 3 rows; `UNION` returns 5 rows", "isCorrect": false },
         { "text": "Both return 3 rows", "isCorrect": false }
       ],
-      "explanation": "`UNION ALL` keeps every row: three from X and two from Y, for 5 rows. `UNION` removes duplicate result rows, leaving 1, 2, and 3, for 3 rows.",
+      "explanation": "`UNION ALL` keeps every row: 3 from X plus 2 from Y makes 5. `UNION` removes duplicates, leaving 1, 2, and 3.",
       "references": "[PostgreSQL documentation: `UNION` and `UNION ALL`](https://www.postgresql.org/docs/current/queries-union.html)"
     },
     {
@@ -544,7 +547,7 @@
         "mode": "numeric",
         "acceptedAnswers": [24]
       },
-      "explanation": "A cross join pairs every size with every color. The result has `4 × 6 = 24` rows. That is useful when you want every combination and a bug when you do not.",
+      "explanation": "A cross join pairs every size with every color: `4 × 6 = 24` rows. That's what you want when you need every combination, and a bug when you don't.",
       "references": "[PostgreSQL documentation: Cross joins](https://www.postgresql.org/docs/current/queries-table-expressions.html#QUERIES-JOIN)"
     },
     {
@@ -554,8 +557,8 @@
       "images": [
         {
           "src": "left-join-filters.svg",
-          "alt": "Two versions of the same LEFT JOIN over three customers where only Ada has a paid order. With WHERE o.status = 'paid', the join invents NULL rows for Lin and Sam and the WHERE test then discards them, leaving Ada only. With AND o.status = 'paid' inside the ON clause, the filter only decides what counts as a match, so unmatched left rows survive: (Ada, 101), (Lin, NULL), (Sam, NULL). Further cards note that a filter on the left table inside ON removes nothing, only preventing matches; that an inner join after a left join cannot match a NULL key, so authors without books vanish again; that counting only some children while keeping every parent means filtering in ON or pre-filtering the child in a subquery; and that LEFT JOIN with WHERE right.key IS NULL is a reliable anti-join only when that column is genuinely NOT NULL.",
-          "caption": "The inner join afterwards has nothing to match a NULL key against.",
+          "alt": "Two versions of the same LEFT JOIN over three customers where only Ada has a paid order. With WHERE o.status = 'paid', the join adds rows for Lin and Sam and the WHERE test then discards them, leaving Ada only. With AND o.status = 'paid' inside the ON clause, the filter only decides what counts as a match, so unmatched left rows survive: (Ada, 101), (Lin, NULL), (Sam, NULL). Further cards note that a filter on the left table inside ON removes nothing, only preventing matches; that an inner join after a left join cannot match a NULL key, so authors without books vanish again; that counting only some children while keeping every parent means filtering in ON or pre-filtering the child in a subquery; and that LEFT JOIN with WHERE right.key IS NULL is a reliable anti-join only when that column is genuinely NOT NULL.",
+          "caption": "The inner join that follows can't match a NULL key.",
           "placement": "explanation",
           "width": 720,
           "height": 580
@@ -568,12 +571,12 @@
         { "text": "The database evaluates the publisher join before the author join", "isCorrect": false },
         { "text": "Authors without books are grouped away", "isCorrect": false }
       ],
-      "explanation": "The left join keeps an author without books and fills the `b` columns with NULL. The inner join then tests `p.id = b.publisher_id`. No publisher matches the NULL value, so the author disappears. Use another left join for `publishers` if authors without books must remain.",
+      "explanation": "The left join keeps an author with no books and sets the `b` columns to NULL. The inner join then checks `p.id = b.publisher_id`. No publisher matches NULL, so the author drops out. To keep authors without books, make the `publishers` join a left join too.",
       "references": "[PostgreSQL documentation: Chained joins](https://www.postgresql.org/docs/current/queries-table-expressions.html#QUERIES-JOIN)"
     },
     {
       "id": "nullable-foreign-key-join",
-      "title": "Does a NULL join value match another NULL join value?",
+      "title": "Does a NULL join key match another NULL?",
       "description": "Assume the join uses ordinary equality: `left.value = right.value`.",
       "images": [
         {
@@ -592,18 +595,18 @@
         { "text": "Yes, but only in an inner join", "isCorrect": false },
         { "text": "It depends on row order", "isCorrect": false }
       ],
-      "explanation": "Join conditions use the same NULL rules as other SQL conditions. `NULL = NULL` is unknown, not true, so the two rows do not match under ordinary equality.",
+      "explanation": "Join conditions follow the same NULL rules as any other condition. `NULL = NULL` is unknown, so the two rows don't match.",
       "references": "[PostgreSQL documentation: NULL comparisons](https://www.postgresql.org/docs/current/functions-comparison.html)"
     },
     {
       "id": "window-after-fanout",
-      "title": "Why does a window total repeat an inflated value after a join?",
+      "title": "Why does this window total show an inflated value?",
       "description": "```sql\nSELECT o.id,\n       SUM(i.price) OVER (PARTITION BY o.id) AS item_total\nFROM orders AS o\nJOIN order_items AS i ON i.order_id = o.id\nJOIN shipments AS s ON s.order_id = o.id;\n```\n\nOne order has 2 items and 3 shipments.",
       "images": [
         {
           "src": "join-fan-out.svg",
-          "alt": "Order 10 in three tables: one orders row, two order_items priced 30 and 20 with a true total of 50, and three payments of 10 with a true total of 30. Joining both children to the same parent produces every pairing — 2 × 3 = 6 rows, listed as 30/10 three times then 20/10 three times — so SUM(i.price) reports 150, each price counted once per payment, and SUM(p.amount) reports 60, each payment counted once per item; a window function over those rows inflates the same way. A green card gives the repair: aggregate each child by order_id separately and join the results, or use one correlated scalar subquery per child, and not DISTINCT, which would collapse two items genuinely priced 20 into one. A final note says fan-out begins at the first join whose right side has more than one row per join key.",
-          "caption": "The window sees the six duplicated rows, not the two real ones.",
+          "alt": "Order 10 in three tables: one orders row, two order_items priced 30 and 20 with a true total of 50, and three payments of 10 with a true total of 30. Joining both children to the same parent produces every pairing: 2 × 3 = 6 rows, listed as 30/10 three times, then 20/10 three times. SUM(i.price) reports 150, counting each price once per payment, and SUM(p.amount) reports 60, counting each payment once per item. A window function over those rows inflates the same way. A green card gives the repair: aggregate each child by order_id separately and join the results, or use one correlated scalar subquery per child. DISTINCT is not a fix, because it would collapse two items genuinely priced 20 into one. A final note says fan-out begins at the first join whose right side has more than one row per join key.",
+          "caption": "The window sees the six duplicated rows instead of the two real ones.",
           "placement": "explanation",
           "width": 720,
           "height": 558
@@ -611,17 +614,17 @@
       ],
       "type": "single-choice",
       "options": [
-        { "text": "Window functions operate on the six joined rows, after fan-out has occurred", "isCorrect": true },
+        { "text": "The window function runs on the six joined rows, after the fan-out", "isCorrect": true },
         { "text": "Window functions always multiply sums by the number of tables", "isCorrect": false },
         { "text": "`PARTITION BY` performs a distinct aggregation first", "isCorrect": false },
         { "text": "The window frame excludes item rows", "isCorrect": false }
       ],
-      "explanation": "The joins create `2 × 3 = 6` rows before the window function runs. Each item price now appears three times, once per shipment. The window sum reads all six rows and repeats the inflated total on each one. A window function keeps the input rows; it does not undo fan-out.",
+      "explanation": "The joins make `2 × 3 = 6` rows before the window function runs, so each item price appears three times, once per shipment. The window sum adds up all six rows and shows that inflated total on each one. Window functions keep every input row, so they can't undo fan-out.",
       "references": "[PostgreSQL documentation: Window functions](https://www.postgresql.org/docs/current/tutorial-window.html)"
     },
     {
       "id": "limit-without-order",
-      "title": "What is guaranteed by `SELECT id FROM tasks LIMIT 1` without `ORDER BY`?",
+      "title": "What does `SELECT id FROM tasks LIMIT 1` guarantee without `ORDER BY`?",
       "type": "single-choice",
       "options": [
         { "text": "At most one qualifying row, but not which row", "isCorrect": true },
@@ -629,12 +632,12 @@
         { "text": "The earliest inserted row", "isCorrect": false },
         { "text": "The row most recently updated", "isCorrect": false }
       ],
-      "explanation": "`LIMIT 1` guarantees no more than one row. It does not choose which row. Without `ORDER BY`, the database may return any qualifying row, and a different query plan may choose another one.",
+      "explanation": "`LIMIT 1` guarantees at most one row, but not which one. Without `ORDER BY`, the database can return any matching row, and a different query plan may pick a different one.",
       "references": "[PostgreSQL documentation: `LIMIT` and unpredictable row order](https://www.postgresql.org/docs/current/queries-limit.html)"
     },
     {
       "id": "inclusive-between-timestamp",
-      "title": "Which 2026 rows can an inclusive `BETWEEN` filter accidentally omit?",
+      "title": "Which 2026 rows can this inclusive `BETWEEN` filter miss?",
       "description": "```sql\nWHERE created_at BETWEEN TIMESTAMP '2026-01-01 00:00:00'\n                     AND TIMESTAMP '2026-12-31 00:00:00'\n```",
       "type": "single-choice",
       "options": [
@@ -643,7 +646,7 @@
         { "text": "Rows exactly at midnight on December 31, 2026", "isCorrect": false },
         { "text": "All rows, because `BETWEEN` ignores timestamps", "isCorrect": false }
       ],
-      "explanation": "`BETWEEN` includes both endpoints, but the upper endpoint is midnight at the start of December 31. Every later time that day is greater and gets excluded. Use a half-open range instead: `created_at >= TIMESTAMP '2026-01-01 00:00:00' AND created_at < TIMESTAMP '2027-01-01 00:00:00'`.",
+      "explanation": "`BETWEEN` includes both ends, but the upper end is midnight at the start of December 31. Anything later that day is excluded. Use a half-open range instead: `created_at >= TIMESTAMP '2026-01-01 00:00:00' AND created_at < TIMESTAMP '2027-01-01 00:00:00'`.",
       "references": "[PostgreSQL documentation: `BETWEEN`](https://www.postgresql.org/docs/current/functions-comparison.html)"
     },
     {
@@ -657,7 +660,7 @@
         { "text": "`CASE` cannot be used inside an aggregate", "isCorrect": false },
         { "text": "Zero is equivalent to NULL in SQL", "isCorrect": false }
       ],
-      "explanation": "`COUNT(expression)` counts every non-NULL result. This `CASE` returns either 1 or 0, so it never returns NULL and every row is counted. Remove `ELSE 0` so non-paid rows return NULL, or use `SUM(CASE WHEN status = 'paid' THEN 1 ELSE 0 END)`.",
+      "explanation": "`COUNT(expression)` counts every non-NULL value. This `CASE` returns 1 or 0, never NULL, so every row counts. Drop `ELSE 0` so other rows return NULL, or use `SUM(CASE WHEN status = 'paid' THEN 1 ELSE 0 END)`.",
       "references": "[PostgreSQL documentation: Aggregate functions](https://www.postgresql.org/docs/current/functions-aggregate.html) and [conditional expressions](https://www.postgresql.org/docs/current/functions-conditional.html)"
     },
     {
@@ -670,7 +673,7 @@
         { "text": "The sum of all amounts", "isCorrect": false },
         { "text": "A syntax error because `ELSE` is mandatory", "isCorrect": false }
       ],
-      "explanation": "Without `ELSE`, the `CASE` returns NULL for every non-paid row. If no row is paid, `SUM` receives only NULL values and returns NULL. Add `ELSE 0` or wrap the sum in `COALESCE` when you need zero.",
+      "explanation": "Without `ELSE`, the `CASE` returns NULL for every unpaid row. If no row is paid, `SUM` sees only NULLs and returns NULL. Add `ELSE 0`, or wrap the sum in `COALESCE`, when you need zero.",
       "references": "[PostgreSQL documentation: Aggregate functions](https://www.postgresql.org/docs/current/functions-aggregate.html) and [conditional expressions](https://www.postgresql.org/docs/current/functions-conditional.html)"
     },
     {
@@ -679,8 +682,8 @@
       "images": [
         {
           "src": "left-join-filters.svg",
-          "alt": "Two versions of the same LEFT JOIN over three customers where only Ada has a paid order. With WHERE o.status = 'paid', the join invents NULL rows for Lin and Sam and the WHERE test then discards them, leaving Ada only. With AND o.status = 'paid' inside the ON clause, the filter only decides what counts as a match, so unmatched left rows survive: (Ada, 101), (Lin, NULL), (Sam, NULL). Further cards note that a filter on the left table inside ON removes nothing, only preventing matches; that an inner join after a left join cannot match a NULL key, so authors without books vanish again; that counting only some children while keeping every parent means filtering in ON or pre-filtering the child in a subquery; and that LEFT JOIN with WHERE right.key IS NULL is a reliable anti-join only when that column is genuinely NOT NULL.",
-          "caption": "Reliable only when that column cannot itself be NULL.",
+          "alt": "Two versions of the same LEFT JOIN over three customers where only Ada has a paid order. With WHERE o.status = 'paid', the join adds rows for Lin and Sam and the WHERE test then discards them, leaving Ada only. With AND o.status = 'paid' inside the ON clause, the filter only decides what counts as a match, so unmatched left rows survive: (Ada, 101), (Lin, NULL), (Sam, NULL). Further cards note that a filter on the left table inside ON removes nothing, only preventing matches; that an inner join after a left join cannot match a NULL key, so authors without books vanish again; that counting only some children while keeping every parent means filtering in ON or pre-filtering the child in a subquery; and that LEFT JOIN with WHERE right.key IS NULL is a reliable anti-join only when that column is genuinely NOT NULL.",
+          "caption": "Reliable only when that column can't be NULL on its own.",
           "placement": "explanation",
           "width": 720,
           "height": 580
@@ -688,23 +691,23 @@
       ],
       "type": "single-choice",
       "options": [
-        { "text": "When the tested right-side column is guaranteed non-NULL on every genuine match", "isCorrect": true },
+        { "text": "When the tested right-side column is never NULL on a real match", "isCorrect": true },
         { "text": "Whenever any nullable right-side column is tested", "isCorrect": false },
         { "text": "Only when the left table has no primary key", "isCorrect": false },
         { "text": "Only when both tables are empty", "isCorrect": false }
       ],
-      "explanation": "An unmatched left row gets NULL in every right-side column. Test a right-side column that can never be NULL on a real match, such as a non-NULL key. If you test a nullable column, a real match with NULL in that column can look like an unmatched row.",
+      "explanation": "An unmatched left row gets NULL in every right-side column. So test a column that's never NULL on a real match, such as a non-NULL key. If the column you test can be NULL, a real match can look unmatched.",
       "references": "[PostgreSQL documentation: Left outer joins](https://www.postgresql.org/docs/current/queries-table-expressions.html#QUERIES-JOIN)"
     },
     {
       "id": "predicate-on-left-side-of-left-join",
-      "title": "What happens when a left-table filter is placed inside the `ON` clause?",
+      "title": "What happens when you put a left-table filter in `ON`?",
       "description": "```sql\nSELECT c.id, o.id\nFROM customers AS c\nLEFT JOIN orders AS o\n  ON o.customer_id = c.id\n AND c.active = TRUE;\n```\n\nSome customers are inactive.",
       "images": [
         {
           "src": "left-join-filters.svg",
-          "alt": "Two versions of the same LEFT JOIN over three customers where only Ada has a paid order. With WHERE o.status = 'paid', the join invents NULL rows for Lin and Sam and the WHERE test then discards them, leaving Ada only. With AND o.status = 'paid' inside the ON clause, the filter only decides what counts as a match, so unmatched left rows survive: (Ada, 101), (Lin, NULL), (Sam, NULL). Further cards note that a filter on the left table inside ON removes nothing, only preventing matches; that an inner join after a left join cannot match a NULL key, so authors without books vanish again; that counting only some children while keeping every parent means filtering in ON or pre-filtering the child in a subquery; and that LEFT JOIN with WHERE right.key IS NULL is a reliable anti-join only when that column is genuinely NOT NULL.",
-          "caption": "It stops the match, not the row.",
+          "alt": "Two versions of the same LEFT JOIN over three customers where only Ada has a paid order. With WHERE o.status = 'paid', the join adds rows for Lin and Sam and the WHERE test then discards them, leaving Ada only. With AND o.status = 'paid' inside the ON clause, the filter only decides what counts as a match, so unmatched left rows survive: (Ada, 101), (Lin, NULL), (Sam, NULL). Further cards note that a filter on the left table inside ON removes nothing, only preventing matches; that an inner join after a left join cannot match a NULL key, so authors without books vanish again; that counting only some children while keeping every parent means filtering in ON or pre-filtering the child in a subquery; and that LEFT JOIN with WHERE right.key IS NULL is a reliable anti-join only when that column is genuinely NOT NULL.",
+          "caption": "It blocks the match but keeps the row.",
           "placement": "explanation",
           "width": 720,
           "height": 580
@@ -717,21 +720,21 @@
         { "text": "Inactive customers match every order", "isCorrect": false },
         { "text": "The query is invalid because `ON` cannot reference the left table", "isCorrect": false }
       ],
-      "explanation": "In a left join, `ON` decides whether a right row matches. It does not remove rows from the left table. An inactive customer fails the match condition but still appears with NULL order columns. Put `c.active = TRUE` in `WHERE` if inactive customers should disappear.",
+      "explanation": "In a left join, `ON` decides which right rows match. It never removes left rows. An inactive customer fails the match but still shows up with NULL order columns. Put `c.active = TRUE` in `WHERE` to drop inactive customers.",
       "references": "[PostgreSQL documentation: Outer-join conditions](https://www.postgresql.org/docs/current/queries-table-expressions.html#QUERIES-JOIN)"
     },
     {
       "id": "aggregate-grain-mismatch",
-      "title": "What is wrong with grouping by both customer and order when one row per customer is required?",
+      "title": "What's wrong with this query if you need one row per customer?",
       "description": "```sql\nSELECT c.id, o.id, SUM(i.amount)\nFROM customers AS c\nJOIN orders AS o ON o.customer_id = c.id\nJOIN order_items AS i ON i.order_id = o.id\nGROUP BY c.id, o.id;\n```",
       "type": "single-choice",
       "options": [
-        { "text": "The query's grain is one row per customer-order pair, not one row per customer", "isCorrect": true },
+        { "text": "It returns one row per customer-order pair instead of one per customer", "isCorrect": true },
         { "text": "`SUM` cannot be used with two grouping columns", "isCorrect": false },
         { "text": "Grouping by an order id combines all customers", "isCorrect": false },
         { "text": "The joins must be cross joins for aggregation", "isCorrect": false }
       ],
-      "explanation": "The grouping columns define the level of each result row. Because `o.id` is included, the query returns one row per customer and order, not one row per customer. Remove the order id from both `SELECT` and `GROUP BY` to calculate a customer-level total.",
+      "explanation": "The `GROUP BY` columns set what each result row stands for. With `o.id` in there, you get one row per customer and order. Remove `o.id` from `SELECT` and `GROUP BY` to get one total per customer.",
       "references": "[PostgreSQL documentation: `GROUP BY`](https://www.postgresql.org/docs/current/queries-table-expressions.html#QUERIES-GROUP)"
     },
     {
@@ -744,7 +747,7 @@
         { "text": "Yes; NULL is greater than every number", "isCorrect": false },
         { "text": "The aggregate query always throws an error", "isCorrect": false }
       ],
-      "explanation": "`AVG` ignores NULL values. With no non-NULL scores, the average itself is NULL. `NULL >= 0` is unknown, and `HAVING` keeps only groups where the condition is true, so this group is removed.",
+      "explanation": "`AVG` skips NULLs, and with no non-NULL scores the average is NULL. `NULL >= 0` is unknown, and `HAVING` keeps only groups where the condition is true, so this group is dropped.",
       "references": "[PostgreSQL documentation: Aggregate functions](https://www.postgresql.org/docs/current/functions-aggregate.html)"
     },
     {
@@ -753,8 +756,8 @@
       "images": [
         {
           "src": "join-fan-out.svg",
-          "alt": "Order 10 in three tables: one orders row, two order_items priced 30 and 20 with a true total of 50, and three payments of 10 with a true total of 30. Joining both children to the same parent produces every pairing — 2 × 3 = 6 rows, listed as 30/10 three times then 20/10 three times — so SUM(i.price) reports 150, each price counted once per payment, and SUM(p.amount) reports 60, each payment counted once per item; a window function over those rows inflates the same way. A green card gives the repair: aggregate each child by order_id separately and join the results, or use one correlated scalar subquery per child, and not DISTINCT, which would collapse two items genuinely priced 20 into one. A final note says fan-out begins at the first join whose right side has more than one row per join key.",
-          "caption": "Count rows after each join, and find the first one that multiplies.",
+          "alt": "Order 10 in three tables: one orders row, two order_items priced 30 and 20 with a true total of 50, and three payments of 10 with a true total of 30. Joining both children to the same parent produces every pairing: 2 × 3 = 6 rows, listed as 30/10 three times, then 20/10 three times. SUM(i.price) reports 150, counting each price once per payment, and SUM(p.amount) reports 60, counting each payment once per item. A window function over those rows inflates the same way. A green card gives the repair: aggregate each child by order_id separately and join the results, or use one correlated scalar subquery per child. DISTINCT is not a fix, because it would collapse two items genuinely priced 20 into one. A final note says fan-out begins at the first join whose right side has more than one row per join key.",
+          "caption": "Count rows after each join and find the first one that multiplies them.",
           "placement": "explanation",
           "width": 720,
           "height": 558
@@ -767,18 +770,18 @@
         { "text": "Temporarily select the join keys and duplicated entity ids for a small failing case", "isCorrect": true },
         { "text": "Add `ORDER BY` and assume adjacent duplicates prove the rows are identical", "isCorrect": false }
       ],
-      "explanation": "Check the row count and the number of distinct business keys after each join. Then look for duplicate values in the right-side join key. A small failing example shows exactly which rows matched. Sorting may make duplicates easier to see, but it does not prove that two rows mean the same thing.",
+      "explanation": "After each join, check the row count and the number of distinct business keys. Then look for duplicate values in the right-side join key. A small failing example shows exactly which rows matched. Sorting can make duplicates easier to spot, but it doesn't prove two rows mean the same thing.",
       "references": "[PostgreSQL documentation: Joined tables](https://www.postgresql.org/docs/current/queries-table-expressions.html#QUERIES-JOIN)"
     },
     {
       "id": "join-then-filter-versus-filter-then-join",
-      "title": "Which rewrite preserves all accounts while counting only successful logins?",
-      "description": "The result must include accounts with zero successful logins. Assume `logins.id` is non-NULL.",
+      "title": "Which query keeps every account but counts only successful logins?",
+      "description": "Accounts with zero successful logins must still appear. Assume `logins.id` is never NULL.",
       "images": [
         {
           "src": "left-join-filters.svg",
-          "alt": "Two versions of the same LEFT JOIN over three customers where only Ada has a paid order. With WHERE o.status = 'paid', the join invents NULL rows for Lin and Sam and the WHERE test then discards them, leaving Ada only. With AND o.status = 'paid' inside the ON clause, the filter only decides what counts as a match, so unmatched left rows survive: (Ada, 101), (Lin, NULL), (Sam, NULL). Further cards note that a filter on the left table inside ON removes nothing, only preventing matches; that an inner join after a left join cannot match a NULL key, so authors without books vanish again; that counting only some children while keeping every parent means filtering in ON or pre-filtering the child in a subquery; and that LEFT JOIN with WHERE right.key IS NULL is a reliable anti-join only when that column is genuinely NOT NULL.",
-          "caption": "Filter in `ON`, or pre-filter the child — never afterwards.",
+          "alt": "Two versions of the same LEFT JOIN over three customers where only Ada has a paid order. With WHERE o.status = 'paid', the join adds rows for Lin and Sam and the WHERE test then discards them, leaving Ada only. With AND o.status = 'paid' inside the ON clause, the filter only decides what counts as a match, so unmatched left rows survive: (Ada, 101), (Lin, NULL), (Sam, NULL). Further cards note that a filter on the left table inside ON removes nothing, only preventing matches; that an inner join after a left join cannot match a NULL key, so authors without books vanish again; that counting only some children while keeping every parent means filtering in ON or pre-filtering the child in a subquery; and that LEFT JOIN with WHERE right.key IS NULL is a reliable anti-join only when that column is genuinely NOT NULL.",
+          "caption": "Filter in `ON` or pre-filter the child table. Filtering afterwards drops parents.",
           "placement": "explanation",
           "width": 720,
           "height": 580
@@ -786,24 +789,12 @@
       ],
       "type": "single-choice",
       "options": [
-        {
-          "text": "`LEFT JOIN logins l ON l.account_id = a.id AND l.success = TRUE`, then `COUNT(l.id)`",
-          "isCorrect": true
-        },
-        {
-          "text": "`LEFT JOIN logins l ON l.account_id = a.id`, then `WHERE l.success = TRUE` and `COUNT(*)`",
-          "isCorrect": false
-        },
-        {
-          "text": "`INNER JOIN logins l ON l.account_id = a.id`, then `COUNT(l.id)`",
-          "isCorrect": false
-        },
-        {
-          "text": "`CROSS JOIN logins l`, then `COUNT(DISTINCT a.id)`",
-          "isCorrect": false
-        }
+        { "text": "`LEFT JOIN logins l ON l.account_id = a.id AND l.success = TRUE`, then `COUNT(l.id)`", "isCorrect": true },
+        { "text": "`LEFT JOIN logins l ON l.account_id = a.id`, then `WHERE l.success = TRUE` and `COUNT(*)`", "isCorrect": false },
+        { "text": "`INNER JOIN logins l ON l.account_id = a.id`, then `COUNT(l.id)`", "isCorrect": false },
+        { "text": "`CROSS JOIN logins l`, then `COUNT(DISTINCT a.id)`", "isCorrect": false }
       ],
-      "explanation": "The condition in `ON` allows only successful logins to match, while the left join keeps every account. For an account with no successful login, `l.id` is NULL and `COUNT(l.id)` returns 0. Putting `l.success = TRUE` in `WHERE`, or using an inner join, would remove that account.",
+      "explanation": "The `ON` condition lets only successful logins match, and the left join keeps every account. An account with no successful login gets `l.id = NULL`, so `COUNT(l.id)` returns 0. Moving `l.success = TRUE` into `WHERE`, or using an inner join, would drop that account.",
       "references": "[PostgreSQL documentation: `ON` and `WHERE` with outer joins](https://www.postgresql.org/docs/current/queries-table-expressions.html#QUERIES-JOIN)"
     }
   ]

@@ -1,15 +1,15 @@
 {
   "schemaVersion": 1,
   "id": "docker-what-actually-happens",
-  "title": "Docker: What Actually Happens?",
-  "description": "Test what Docker does with build contexts, caching, image layers, multi-stage builds, Unix signals, networking, storage, and Linux isolation. Each Question asks you to reason through a concrete situation.",
+  "title": "Docker in practice: build cache, image layers, stop signals & container storage",
+  "description": "Each Question puts you in a concrete Docker situation. You decide what reaches the builder, when the build cache hits, what ends up in the image, how containers stop, how ports and networks connect, where data survives, and how isolated a container is.",
   "language": "en",
   "tags": ["docker", "containers", "devops", "linux", "networking"],
   "questions": [
     {
       "id": "copy-outside-build-context",
       "title": "Can `COPY` reach a sibling directory outside the build context?",
-      "description": "The project is `/work/app`, a secret is `/work/private-key`, and the build runs as `docker build /work/app`. The Dockerfile contains `COPY ../private-key /run/private-key`.",
+      "description": "Your project is in `/work/app`, and a private key is at `/work/private-key`. You run `docker build /work/app`, and the Dockerfile has `COPY ../private-key /run/private-key`.",
       "type": "single-choice",
       "options": [
         {
@@ -29,7 +29,7 @@
           "isCorrect": false
         }
       ],
-      "explanation": "`docker build /work/app` makes `/work/app` the default context. Docker cannot read `/work/private-key` from there. BuildKit strips leading `../` segments instead of letting `COPY` escape the context. To use another directory, pass it as a named context.",
+      "explanation": "`docker build /work/app` makes `/work/app` the build context, so the builder never sees `/work/private-key`. BuildKit drops leading `../` segments, so `COPY` can't reach outside the context. To use files from another directory, pass that directory as a named context.",
       "references": "[Docker Docs: Build context](https://docs.docker.com/build/concepts/context/)\n\n[Docker Docs: `docker image build`: accessing paths outside the context](https://docs.docker.com/reference/cli/docker/image/build/#accessing-paths-outside-the-build-context)"
     },
     {
@@ -39,29 +39,29 @@
       "type": "single-choice",
       "options": [
         {
-          "text": "The file is sent to the builder but omitted from the final image",
+          "text": "Docker sends the file to the builder but leaves it out of the final image",
           "isCorrect": false
         },
         {
-          "text": "The file is replaced with an empty file so the build can continue",
+          "text": "Docker replaces the file with an empty one so the build can continue",
           "isCorrect": false
         },
         {
-          "text": "The file is removed from the context before transfer, so `COPY` fails because the source is missing",
+          "text": "Docker drops the file from the context before sending it, so `COPY` fails with a missing source",
           "isCorrect": true
         },
         {
-          "text": "The ignore rule affects `ADD` but not `COPY`",
+          "text": "The ignore rule applies to `ADD` but not `COPY`",
           "isCorrect": false
         }
       ],
-      "explanation": "Docker removes ignored files before sending the context to the builder. `secrets.env` never arrives, so `COPY` cannot find it and the build fails. `.dockerignore` can keep a secret out of the context, but an ignored file cannot also be copied.",
+      "explanation": "Docker drops ignored files before it sends the context to the builder. `secrets.env` never arrives, so `COPY` can't find it and the build fails. You can keep a file out of the context or copy it into the image, but not both.",
       "references": "[Docker Docs: `.dockerignore` files](https://docs.docker.com/build/concepts/context/#dockerignore-files)\n\n[Docker Docs: CopyIgnoredFile check](https://docs.docker.com/reference/build-checks/copy-ignored-file/)"
     },
     {
       "id": "dockerfile-specific-ignore-precedence",
-      "title": "Which ignore file controls a build when both applicable files exist?",
-      "description": "The context root has `.dockerignore`. A build using `docker/build.Dockerfile` also has `docker/build.Dockerfile.dockerignore` beside that Dockerfile.",
+      "title": "Which ignore file wins when a build has two?",
+      "description": "The context root has a `.dockerignore`. The build uses `docker/build.Dockerfile`, and `docker/build.Dockerfile.dockerignore` is next to it.",
       "type": "single-choice",
       "options": [
         {
@@ -69,11 +69,11 @@
           "isCorrect": false
         },
         {
-          "text": "The Dockerfile-specific `build.Dockerfile.dockerignore` takes precedence",
+          "text": "The Dockerfile-specific `build.Dockerfile.dockerignore` wins",
           "isCorrect": true
         },
         {
-          "text": "Only the root `.dockerignore` is recognized",
+          "text": "Docker reads only the root `.dockerignore`",
           "isCorrect": false
         },
         {
@@ -81,44 +81,44 @@
           "isCorrect": false
         }
       ],
-      "explanation": "Docker can use an ignore file named after a specific Dockerfile and placed beside it. If that file exists, it takes precedence over the root `.dockerignore`. This lets different builds use different ignore rules.",
+      "explanation": "You can name an ignore file after a Dockerfile and put it next to that Dockerfile. When it exists, Docker uses it instead of the root `.dockerignore`. That way, each Dockerfile in a repository can have its own ignore rules.",
       "references": "[Docker Docs: Dockerfile-specific ignore files](https://docs.docker.com/build/concepts/context/#filename-and-location)"
     },
     {
       "id": "empty-build-context-copy",
-      "title": "Why does `COPY main.c /src/` fail when the Dockerfile is piped as the build context?",
-      "description": "The command is `docker build - < Dockerfile`, and `main.c` exists in the current client directory.",
+      "title": "Why does `COPY main.c /src/` fail when you pipe in the Dockerfile?",
+      "description": "You run `docker build - < Dockerfile` from a directory that contains `main.c`.",
       "type": "single-choice",
       "options": [
         {
-          "text": "A text-file context has no filesystem context, so local files such as `main.c` are unavailable",
+          "text": "The build gets only the Dockerfile text and no files, so `main.c` isn't available",
           "isCorrect": true
         },
         {
-          "text": "Standard input builds prohibit every `COPY`, including `--from` copies",
+          "text": "Builds from standard input reject every `COPY`, even `COPY --from`",
           "isCorrect": false
         },
         {
-          "text": "The `-` argument selects the root directory `/` as context",
+          "text": "`-` makes the root directory `/` the context",
           "isCorrect": false
         },
         {
-          "text": "Docker requires the source file to be executable when using standard input",
+          "text": "With standard input, Docker requires source files to be executable",
           "isCorrect": false
         }
       ],
-      "explanation": "Here, `-` supplies a text-file context, not the current directory. Docker reads the text as a Dockerfile and provides no filesystem context. The builder therefore cannot see `main.c`, even though the file exists on the client.",
+      "explanation": "With `-`, Docker reads standard input as the Dockerfile and sends no files with it. The current directory isn't the context, so the builder can't see `main.c`, even though it's on your machine.",
       "references": "[Docker Docs: Empty build context](https://docs.docker.com/build/concepts/context/#empty-context)"
     },
     {
       "id": "mtime-only-cache-key",
       "title": "Does touching a copied file invalidate its build cache?",
-      "description": "`app.js` has identical content, permissions, ownership, and size, but its modification time changes before rebuilding `COPY app.js /app/app.js`.",
+      "description": "Before a rebuild, only the modification time of `app.js` changes. Its content, permissions, ownership, and size stay the same. The Dockerfile has `COPY app.js /app/app.js`.",
       "images": [
         {
           "src": "build-cache-and-ordering.svg",
-          "alt": "Two Dockerfiles side by side. Source first — FROM, COPY . /app, RUN npm ci — invalidates the COPY layer on any file edit and every layer above it, so the install reruns on every build. Dependencies first — FROM, COPY package*.json, RUN npm ci, then COPY . /app — confines a source edit to the last layer and keeps the install cached until a manifest changes. Four cards follow: a COPY's cache key is the file's content plus metadata such as mode and ownership, so changing only its modification time invalidates nothing; a RUN's cache key is the command string alone, so a lone apt-get update matches last week's and reuses a stale index; --mount=type=secret keeps the value out of both the image and the cache key, which also means rotating a secret does not invalidate that step; and --mount=type=cache needs BuildKit and never becomes part of the image.",
-          "caption": "Content and metadata — not the modification time on its own.",
+          "alt": "Two Dockerfiles side by side. The first copies source before installing: FROM, COPY . /app, RUN npm ci. Any file edit invalidates the COPY layer and every layer after it, so the install reruns on every build. The second copies dependencies first: FROM, COPY package*.json, RUN npm ci, then COPY . /app. A source edit invalidates only the last layer, and the install stays cached until a manifest changes. Four cards follow. A COPY's cache key is the file's content plus metadata such as mode and ownership, so changing only its modification time invalidates nothing. A RUN's cache key is the command string alone, so a lone apt-get update matches last week's and reuses a stale index. --mount=type=secret keeps the value out of both the image and the cache key, so rotating a secret does not invalidate that step. --mount=type=cache needs BuildKit and never becomes part of the image.",
+          "caption": "Content and metadata count. A new modification time alone doesn't.",
           "placement": "explanation",
           "width": 720,
           "height": 510
@@ -143,7 +143,7 @@
           "isCorrect": false
         }
       ],
-      "explanation": "For `ADD`, `COPY`, and `RUN` bind mounts, Docker builds a checksum from file metadata. It leaves out `mtime`. If only the modification time changed, the cache entry remains valid. A content change or other relevant metadata change can still invalidate it.",
+      "explanation": "For `ADD`, `COPY`, and `RUN` bind mounts, Docker checksums each file's content and metadata but skips `mtime`. Touching the file changes nothing Docker checks, so the cache still hits. Editing the content or changing other metadata, such as permissions, would invalidate it.",
       "references": "[Docker Docs: Build cache invalidation: general rules](https://docs.docker.com/build/cache/invalidation/#general-rules)"
     },
     {
@@ -153,8 +153,8 @@
       "images": [
         {
           "src": "build-cache-and-ordering.svg",
-          "alt": "Two Dockerfiles side by side. Source first — FROM, COPY . /app, RUN npm ci — invalidates the COPY layer on any file edit and every layer above it, so the install reruns on every build. Dependencies first — FROM, COPY package*.json, RUN npm ci, then COPY . /app — confines a source edit to the last layer and keeps the install cached until a manifest changes. Four cards follow: a COPY's cache key is the file's content plus metadata such as mode and ownership, so changing only its modification time invalidates nothing; a RUN's cache key is the command string alone, so a lone apt-get update matches last week's and reuses a stale index; --mount=type=secret keeps the value out of both the image and the cache key, which also means rotating a secret does not invalidate that step; and --mount=type=cache needs BuildKit and never becomes part of the image.",
-          "caption": "The `COPY` card lists exactly what counts.",
+          "alt": "Two Dockerfiles side by side. The first copies source before installing: FROM, COPY . /app, RUN npm ci. Any file edit invalidates the COPY layer and every layer after it, so the install reruns on every build. The second copies dependencies first: FROM, COPY package*.json, RUN npm ci, then COPY . /app. A source edit invalidates only the last layer, and the install stays cached until a manifest changes. Four cards follow. A COPY's cache key is the file's content plus metadata such as mode and ownership, so changing only its modification time invalidates nothing. A RUN's cache key is the command string alone, so a lone apt-get update matches last week's and reuses a stale index. --mount=type=secret keeps the value out of both the image and the cache key, so rotating a secret does not invalidate that step. --mount=type=cache needs BuildKit and never becomes part of the image.",
+          "caption": "The `COPY` card lists what counts.",
           "placement": "explanation",
           "width": 720,
           "height": 510
@@ -167,7 +167,7 @@
           "isCorrect": true
         },
         {
-          "text": "Changing relevant file metadata such as its permissions",
+          "text": "Changing its metadata, such as permissions",
           "isCorrect": true
         },
         {
@@ -175,11 +175,11 @@
           "isCorrect": false
         },
         {
-          "text": "Changing a file excluded by `.dockerignore` and not used by the instruction",
+          "text": "Changing an unrelated file that `.dockerignore` excludes",
           "isCorrect": false
         }
       ],
-      "explanation": "Docker checks the files used by `COPY`. Changes to content or metadata such as permissions can change the checksum, but a modification-time change alone cannot. An ignored, unrelated file has no effect because the builder never receives it.",
+      "explanation": "Docker checksums only the files that `COPY` uses. Changing their content or metadata, such as permissions, changes the checksum. Changing only the modification time doesn't. An ignored file has no effect because the builder never receives it.",
       "references": "[Docker Docs: Build cache invalidation](https://docs.docker.com/build/cache/invalidation/)\n\n[Docker Docs: Using the build cache](https://docs.docker.com/get-started/docker-concepts/building-images/using-the-build-cache/)"
     },
     {
@@ -188,8 +188,8 @@
       "images": [
         {
           "src": "build-cache-and-ordering.svg",
-          "alt": "Two Dockerfiles side by side. Source first — FROM, COPY . /app, RUN npm ci — invalidates the COPY layer on any file edit and every layer above it, so the install reruns on every build. Dependencies first — FROM, COPY package*.json, RUN npm ci, then COPY . /app — confines a source edit to the last layer and keeps the install cached until a manifest changes. Four cards follow: a COPY's cache key is the file's content plus metadata such as mode and ownership, so changing only its modification time invalidates nothing; a RUN's cache key is the command string alone, so a lone apt-get update matches last week's and reuses a stale index; --mount=type=secret keeps the value out of both the image and the cache key, which also means rotating a secret does not invalidate that step; and --mount=type=cache needs BuildKit and never becomes part of the image.",
-          "caption": "The command string is the whole key, so the same string hits.",
+          "alt": "Two Dockerfiles side by side. The first copies source before installing: FROM, COPY . /app, RUN npm ci. Any file edit invalidates the COPY layer and every layer after it, so the install reruns on every build. The second copies dependencies first: FROM, COPY package*.json, RUN npm ci, then COPY . /app. A source edit invalidates only the last layer, and the install stays cached until a manifest changes. Four cards follow. A COPY's cache key is the file's content plus metadata such as mode and ownership, so changing only its modification time invalidates nothing. A RUN's cache key is the command string alone, so a lone apt-get update matches last week's and reuses a stale index. --mount=type=secret keeps the value out of both the image and the cache key, so rotating a secret does not invalidate that step. --mount=type=cache needs BuildKit and never becomes part of the image.",
+          "caption": "The cache key is the command string, so an unchanged command reuses the old result.",
           "placement": "explanation",
           "width": 720,
           "height": 510
@@ -210,22 +210,22 @@
           "isCorrect": false
         },
         {
-          "text": "Package managers automatically restore their index to the image creation date",
+          "text": "Package managers roll their index back to the image's creation date",
           "isCorrect": false
         }
       ],
-      "explanation": "Docker does not contact the package repository while checking this cache entry. If the command and earlier layers still match, Docker can reuse the old result. Use `--no-cache`, `--no-cache-filter`, or a changed earlier layer when the step must run again.",
+      "explanation": "Docker never contacts the package repository when it checks the cache. If the command and the layers before it still match, Docker reuses last week's result. To make the step run again, use `--no-cache` or `--no-cache-filter`, or change an earlier layer.",
       "references": "[Docker Docs: Cache invalidation for `RUN`](https://docs.docker.com/build/cache/invalidation/#run-instructions)"
     },
     {
       "id": "dependency-layer-ordering",
-      "title": "Which Dockerfile order keeps the dependency cache when application source changes?",
-      "description": "Assume a Node project whose dependencies are determined by `package.json` and `package-lock.json`.",
+      "title": "Which Dockerfile order keeps dependencies cached when you edit source code?",
+      "description": "It's a Node project, and `package.json` and `package-lock.json` define its dependencies.",
       "images": [
         {
           "src": "build-cache-and-ordering.svg",
-          "alt": "Two Dockerfiles side by side. Source first — FROM, COPY . /app, RUN npm ci — invalidates the COPY layer on any file edit and every layer above it, so the install reruns on every build. Dependencies first — FROM, COPY package*.json, RUN npm ci, then COPY . /app — confines a source edit to the last layer and keeps the install cached until a manifest changes. Four cards follow: a COPY's cache key is the file's content plus metadata such as mode and ownership, so changing only its modification time invalidates nothing; a RUN's cache key is the command string alone, so a lone apt-get update matches last week's and reuses a stale index; --mount=type=secret keeps the value out of both the image and the cache key, which also means rotating a secret does not invalidate that step; and --mount=type=cache needs BuildKit and never becomes part of the image.",
-          "caption": "The green Dockerfile: manifests before source.",
+          "alt": "Two Dockerfiles side by side. The first copies source before installing: FROM, COPY . /app, RUN npm ci. Any file edit invalidates the COPY layer and every layer after it, so the install reruns on every build. The second copies dependencies first: FROM, COPY package*.json, RUN npm ci, then COPY . /app. A source edit invalidates only the last layer, and the install stays cached until a manifest changes. Four cards follow. A COPY's cache key is the file's content plus metadata such as mode and ownership, so changing only its modification time invalidates nothing. A RUN's cache key is the command string alone, so a lone apt-get update matches last week's and reuses a stale index. --mount=type=secret keeps the value out of both the image and the cache key, so rotating a secret does not invalidate that step. --mount=type=cache needs BuildKit and never becomes part of the image.",
+          "caption": "The green Dockerfile copies the manifests before the source.",
           "placement": "explanation",
           "width": 720,
           "height": 510
@@ -238,7 +238,7 @@
           "isCorrect": false
         },
         {
-          "text": "Copy the manifests, install dependencies, then copy the frequently changing source",
+          "text": "Copy the manifests, install dependencies, then copy the rest of the source",
           "isCorrect": true
         },
         {
@@ -246,22 +246,22 @@
           "isCorrect": false
         },
         {
-          "text": "Copy source and manifests in separate instructions after dependency installation",
+          "text": "Install dependencies, then copy the manifests and source in separate steps",
           "isCorrect": false
         }
       ],
-      "explanation": "Once a layer changes, later cache entries are invalid. Copy the package files and install dependencies before copying the source. A source edit then rebuilds only the later layers, while a dependency change still reruns the install step.",
+      "explanation": "When a layer changes, Docker rebuilds every layer after it. Copy the package files and install dependencies first, then copy the source. A source edit rebuilds only the layers after the install, and a dependency change still reruns the install.",
       "references": "[Docker Docs: Optimize cache usage: order your layers](https://docs.docker.com/build/cache/optimize/#order-your-layers)"
     },
     {
       "id": "cache-mount-semantics",
       "title": "What must be true of a build that uses `RUN --mount=type=cache`?",
-      "description": "A package manager uses a cache mount to retain downloaded packages between builds.",
+      "description": "A package manager uses a cache mount to keep downloaded packages between builds.",
       "images": [
         {
           "src": "build-cache-and-ordering.svg",
-          "alt": "Two Dockerfiles side by side. Source first — FROM, COPY . /app, RUN npm ci — invalidates the COPY layer on any file edit and every layer above it, so the install reruns on every build. Dependencies first — FROM, COPY package*.json, RUN npm ci, then COPY . /app — confines a source edit to the last layer and keeps the install cached until a manifest changes. Four cards follow: a COPY's cache key is the file's content plus metadata such as mode and ownership, so changing only its modification time invalidates nothing; a RUN's cache key is the command string alone, so a lone apt-get update matches last week's and reuses a stale index; --mount=type=secret keeps the value out of both the image and the cache key, which also means rotating a secret does not invalidate that step; and --mount=type=cache needs BuildKit and never becomes part of the image.",
-          "caption": "BuildKit only, and never part of the image.",
+          "alt": "Two Dockerfiles side by side. The first copies source before installing: FROM, COPY . /app, RUN npm ci. Any file edit invalidates the COPY layer and every layer after it, so the install reruns on every build. The second copies dependencies first: FROM, COPY package*.json, RUN npm ci, then COPY . /app. A source edit invalidates only the last layer, and the install stays cached until a manifest changes. Four cards follow. A COPY's cache key is the file's content plus metadata such as mode and ownership, so changing only its modification time invalidates nothing. A RUN's cache key is the command string alone, so a lone apt-get update matches last week's and reuses a stale index. --mount=type=secret keeps the value out of both the image and the cache key, so rotating a secret does not invalidate that step. --mount=type=cache needs BuildKit and never becomes part of the image.",
+          "caption": "It needs BuildKit and never becomes part of the image.",
           "placement": "explanation",
           "width": 720,
           "height": 510
@@ -270,7 +270,7 @@
       "type": "single-choice",
       "options": [
         {
-          "text": "The final image will contain the cache directory exactly as the build saw it",
+          "text": "The final image contains the cache directory as the build saw it",
           "isCorrect": false
         },
         {
@@ -278,15 +278,15 @@
           "isCorrect": true
         },
         {
-          "text": "Every build receives an immutable snapshot of the cache",
+          "text": "Every build gets an immutable snapshot of the cache",
           "isCorrect": false
         },
         {
-          "text": "A cache mount can be read only by the build that created it",
+          "text": "Only the build that created a cache mount can read it",
           "isCorrect": false
         }
       ],
-      "explanation": "A cache mount saves reusable downloads between builds, but Docker may overwrite or garbage-collect its contents. The build must work with an empty or unexpected cache. Files in the cache mount do not become normal output of the `RUN` layer.",
+      "explanation": "A cache mount keeps downloads between builds, but Docker may overwrite or garbage-collect its contents. Write the step so it works with an empty or unexpected cache. Files in the cache mount don't end up in the `RUN` layer.",
       "references": "[Docker Docs: Optimize cache usage: cache mounts](https://docs.docker.com/build/cache/optimize/#use-cache-mounts)\n\n[Docker Docs: Dockerfile reference: `RUN --mount=type=cache`](https://docs.docker.com/reference/dockerfile/#run---mounttypecache)"
     },
     {
@@ -295,8 +295,8 @@
       "images": [
         {
           "src": "build-cache-and-ordering.svg",
-          "alt": "Two Dockerfiles side by side. Source first — FROM, COPY . /app, RUN npm ci — invalidates the COPY layer on any file edit and every layer above it, so the install reruns on every build. Dependencies first — FROM, COPY package*.json, RUN npm ci, then COPY . /app — confines a source edit to the last layer and keeps the install cached until a manifest changes. Four cards follow: a COPY's cache key is the file's content plus metadata such as mode and ownership, so changing only its modification time invalidates nothing; a RUN's cache key is the command string alone, so a lone apt-get update matches last week's and reuses a stale index; --mount=type=secret keeps the value out of both the image and the cache key, which also means rotating a secret does not invalidate that step; and --mount=type=cache needs BuildKit and never becomes part of the image.",
-          "caption": "The secret mount is the one that leaves nothing behind.",
+          "alt": "Two Dockerfiles side by side. The first copies source before installing: FROM, COPY . /app, RUN npm ci. Any file edit invalidates the COPY layer and every layer after it, so the install reruns on every build. The second copies dependencies first: FROM, COPY package*.json, RUN npm ci, then COPY . /app. A source edit invalidates only the last layer, and the install stays cached until a manifest changes. Four cards follow. A COPY's cache key is the file's content plus metadata such as mode and ownership, so changing only its modification time invalidates nothing. A RUN's cache key is the command string alone, so a lone apt-get update matches last week's and reuses a stale index. --mount=type=secret keeps the value out of both the image and the cache key, so rotating a secret does not invalidate that step. --mount=type=cache needs BuildKit and never becomes part of the image.",
+          "caption": "Only the secret mount leaves nothing in the image.",
           "placement": "explanation",
           "width": 720,
           "height": 510
@@ -321,17 +321,17 @@
           "isCorrect": false
         }
       ],
-      "explanation": "`ARG` and `ENV` can leave a secret in the final image, its metadata, or its history. A secret mount exposes the token only while that `RUN` step executes. The normal image layer does not contain the mounted secret.",
+      "explanation": "`ARG` and `ENV` can leave the token in the final image, its metadata, or its history. A secret mount makes the token available only while that one `RUN` step runs, and Docker never writes it to the image layer.",
       "references": "[Docker Docs: Build secrets](https://docs.docker.com/build/building/secrets/)"
     },
     {
       "id": "secret-value-cache-invalidation",
-      "title": "Does rotating a build secret automatically invalidate the consuming `RUN` cache?",
+      "title": "Does rotating a build secret invalidate the cache for the `RUN` step that uses it?",
       "images": [
         {
           "src": "build-cache-and-ordering.svg",
-          "alt": "Two Dockerfiles side by side. Source first — FROM, COPY . /app, RUN npm ci — invalidates the COPY layer on any file edit and every layer above it, so the install reruns on every build. Dependencies first — FROM, COPY package*.json, RUN npm ci, then COPY . /app — confines a source edit to the last layer and keeps the install cached until a manifest changes. Four cards follow: a COPY's cache key is the file's content plus metadata such as mode and ownership, so changing only its modification time invalidates nothing; a RUN's cache key is the command string alone, so a lone apt-get update matches last week's and reuses a stale index; --mount=type=secret keeps the value out of both the image and the cache key, which also means rotating a secret does not invalidate that step; and --mount=type=cache needs BuildKit and never becomes part of the image.",
-          "caption": "Outside the image, and outside the cache key too.",
+          "alt": "Two Dockerfiles side by side. The first copies source before installing: FROM, COPY . /app, RUN npm ci. Any file edit invalidates the COPY layer and every layer after it, so the install reruns on every build. The second copies dependencies first: FROM, COPY package*.json, RUN npm ci, then COPY . /app. A source edit invalidates only the last layer, and the install stays cached until a manifest changes. Four cards follow. A COPY's cache key is the file's content plus metadata such as mode and ownership, so changing only its modification time invalidates nothing. A RUN's cache key is the command string alone, so a lone apt-get update matches last week's and reuses a stale index. --mount=type=secret keeps the value out of both the image and the cache key, so rotating a secret does not invalidate that step. --mount=type=cache needs BuildKit and never becomes part of the image.",
+          "caption": "The secret value stays out of the image and out of the cache key.",
           "placement": "explanation",
           "width": 720,
           "height": 510
@@ -352,17 +352,17 @@
           "isCorrect": false
         },
         {
-          "text": "No. Neither the secret value nor its mount settings can ever affect caching",
+          "text": "No. Neither the secret value nor its mount settings affect caching",
           "isCorrect": false
         }
       ],
-      "explanation": "Docker does not include a secret's value in the cache checksum, so rotating the value alone can still produce a cache hit. The secret ID and mount path do affect the checksum. If rotation must rerun the step, change a separate build argument as a cache buster.",
+      "explanation": "Docker leaves the secret's value out of the cache checksum, so a new value alone can still hit the cache. The secret ID and mount path are part of the checksum. If the step must rerun after a rotation, change a build argument that acts as a cache buster.",
       "references": "[Docker Docs: Build cache invalidation: build secrets](https://docs.docker.com/build/cache/invalidation/#build-secrets)"
     },
     {
       "id": "multi-stage-runtime-contents",
       "title": "Which build-stage files end up in the final image?",
-      "description": "A `build` stage contains a compiler, source tree, package cache, and `/out/server`. A fresh runtime stage contains `COPY --from=build /out/server /server`.",
+      "description": "A `build` stage has a compiler, the source tree, a package cache, and `/out/server`. A separate runtime stage runs `COPY --from=build /out/server /server`.",
       "type": "single-choice",
       "options": [
         {
@@ -370,7 +370,7 @@
           "isCorrect": false
         },
         {
-          "text": "Only the runtime stage's base and files added to that stage, such as `/server`",
+          "text": "Only the runtime stage's base image and what that stage adds, such as `/server`",
           "isCorrect": true
         },
         {
@@ -382,7 +382,7 @@
           "isCorrect": false
         }
       ],
-      "explanation": "Each `FROM` starts a new stage. The runtime stage receives only what its own instructions add, including `/server` from `COPY --from=build`. The compiler, source tree, and package cache stay in the build stage.",
+      "explanation": "Each `FROM` starts a new stage. The runtime stage gets only its base image and what its own instructions add, including `/server` from `COPY --from=build`. The compiler, source tree, and package cache stay behind in the build stage.",
       "references": "[Docker Docs: Multi-stage builds](https://docs.docker.com/build/building/multi-stage/)"
     },
     {
@@ -391,7 +391,7 @@
       "type": "single-choice",
       "options": [
         {
-          "text": "An image from the named `test` stage instead of continuing to the Dockerfile's final stage",
+          "text": "An image of the `test` stage, without going on to the final stage",
           "isCorrect": true
         },
         {
@@ -407,18 +407,18 @@
           "isCorrect": false
         }
       ],
-      "explanation": "`--target test` makes the named `test` stage the output. BuildKit builds that stage and its dependencies, but it can skip unrelated earlier stages. This lets one Dockerfile provide separate test, debug, and runtime images.",
+      "explanation": "`--target test` stops the build at the `test` stage and outputs that image. BuildKit builds the stage and the stages it depends on, and can skip unrelated ones. One Dockerfile can then produce separate test, debug, and runtime images.",
       "references": "[Docker Docs: Stop at a specific build stage](https://docs.docker.com/build/building/multi-stage/#stop-at-a-specific-build-stage)\n\n[Docker Docs: BuildKit stage dependency differences](https://docs.docker.com/build/building/multi-stage/#differences-between-legacy-builder-and-buildkit)"
     },
     {
       "id": "delete-in-later-layer-size",
-      "title": "Why can deleting a 200 MB archive in a later `RUN` leave the image roughly 200 MB larger?",
-      "description": "The Dockerfile downloads `/tmp/sdk.tar` in one `RUN` instruction and deletes it in a later `RUN` instruction.",
+      "title": "Why does deleting a 200 MB archive in a later `RUN` still leave the image about 200 MB bigger?",
+      "description": "One `RUN` downloads `/tmp/sdk.tar`, and a later `RUN` deletes it.",
       "images": [
         {
           "src": "layers-and-copy-on-write.svg",
-          "alt": "A stack of read-only image layers — FROM node:22-slim, COPY package.json, RUN npm ci, COPY . /app — with one thin read-write container layer on top, unique to that container. Notes explain that writing a file that came from the image copies it up into the top layer first while the layer beneath is untouched; that changing one byte of a huge file makes OverlayFS copy the whole file up before the write; that deleting something in a later RUN leaves the earlier layer carrying the bytes and only records a whiteout; and that removing the container removes the writable layer with it. Three cards then cover what survives instead: a named volume, which outlives its container and is seeded from the image directory when empty; a bind mount, where the host path hides whatever the image had there and is read-write by default; and a tmpfs mount, which lives in host memory and vanishes when the container stops.",
-          "caption": "A whiteout hides the bytes; it does not remove them.",
+          "alt": "A stack of four read-only image layers: FROM node:22-slim, COPY package.json, RUN npm ci, and COPY . /app. On top is one thin read-write layer that belongs to a single container. Notes explain that writing to a file from the image first copies it up into the top layer and leaves the layer beneath unchanged; that changing one byte of a huge file makes OverlayFS copy the whole file up; that deleting something in a later RUN only records a whiteout while the earlier layer keeps the bytes; and that removing the container removes its writable layer. Three cards cover the other storage options. A named volume outlives its container and, when empty, is filled from the image directory. A bind mount hides whatever the image had at that path and is read-write by default. A tmpfs mount is kept in host memory and disappears when the container stops.",
+          "caption": "A whiteout hides the file, and its bytes stay in the earlier layer.",
           "placement": "explanation",
           "width": 720,
           "height": 510
@@ -427,7 +427,7 @@
       "type": "single-choice",
       "options": [
         {
-          "text": "The delete changes the visible filesystem, but the archive's bytes remain in the earlier immutable layer",
+          "text": "The delete hides the file, but its bytes stay in the earlier, immutable layer",
           "isCorrect": true
         },
         {
@@ -443,18 +443,18 @@
           "isCorrect": false
         }
       ],
-      "explanation": "Image layers are immutable. The later deletion hides the archive in the combined filesystem, but its bytes remain in the earlier layer and still count toward image size. Create and remove temporary data in one layer, or keep the work in a build stage that the final image does not use.",
+      "explanation": "Image layers never change once built. The later `RUN` only hides the archive in the merged filesystem. Its bytes stay in the earlier layer and still count toward the image size. Download and delete temporary files in the same `RUN`, or do the work in a build stage that the final image doesn't use.",
       "references": "[Docker Docs: Storage drivers: images and layers](https://docs.docker.com/engine/storage/drivers/#images-and-layers)"
     },
     {
       "id": "container-writable-layer",
-      "title": "Where does a running container write `/etc/app.conf` when the file came from its image?",
+      "title": "Where does a container's write to `/etc/app.conf` go when the file came from the image?",
       "description": "Assume no mount covers `/etc/app.conf`.",
       "images": [
         {
           "src": "layers-and-copy-on-write.svg",
-          "alt": "A stack of read-only image layers — FROM node:22-slim, COPY package.json, RUN npm ci, COPY . /app — with one thin read-write container layer on top, unique to that container. Notes explain that writing a file that came from the image copies it up into the top layer first while the layer beneath is untouched; that changing one byte of a huge file makes OverlayFS copy the whole file up before the write; that deleting something in a later RUN leaves the earlier layer carrying the bytes and only records a whiteout; and that removing the container removes the writable layer with it. Three cards then cover what survives instead: a named volume, which outlives its container and is seeded from the image directory when empty; a bind mount, where the host path hides whatever the image had there and is read-write by default; and a tmpfs mount, which lives in host memory and vanishes when the container stops.",
-          "caption": "Copied up into the top layer; the image layer is untouched.",
+          "alt": "A stack of four read-only image layers: FROM node:22-slim, COPY package.json, RUN npm ci, and COPY . /app. On top is one thin read-write layer that belongs to a single container. Notes explain that writing to a file from the image first copies it up into the top layer and leaves the layer beneath unchanged; that changing one byte of a huge file makes OverlayFS copy the whole file up; that deleting something in a later RUN only records a whiteout while the earlier layer keeps the bytes; and that removing the container removes its writable layer. Three cards cover the other storage options. A named volume outlives its container and, when empty, is filled from the image directory. A bind mount hides whatever the image had at that path and is read-write by default. A tmpfs mount is kept in host memory and disappears when the container stops.",
+          "caption": "The file is copied up into the container's layer. The image layer doesn't change.",
           "placement": "explanation",
           "width": 720,
           "height": 510
@@ -475,21 +475,21 @@
           "isCorrect": false
         },
         {
-          "text": "Into a Docker volume that is created automatically for every path",
+          "text": "Into a volume that Docker creates automatically for every path",
           "isCorrect": false
         }
       ],
-      "explanation": "Docker puts a writable layer on top of the image for each container. The change goes into that layer, so other containers still see the image's original file. Docker removes the writable layer when it removes the container.",
+      "explanation": "Each container gets its own writable layer on top of the image. The change goes into that layer, so other containers still see the original file. When Docker removes the container, it removes the writable layer too.",
       "references": "[Docker Docs: Understanding image layers](https://docs.docker.com/get-started/docker-concepts/building-images/understanding-image-layers/)\n\n[Docker Docs: Storage drivers: containers and layers](https://docs.docker.com/engine/storage/drivers/#container-and-layers)"
     },
     {
       "id": "overlay-copy-up-cost",
-      "title": "What can happen when an OverlayFS-backed container changes one byte in a large image file for the first time?",
+      "title": "What happens the first time a container on OverlayFS changes one byte of a large image file?",
       "images": [
         {
           "src": "layers-and-copy-on-write.svg",
-          "alt": "A stack of read-only image layers — FROM node:22-slim, COPY package.json, RUN npm ci, COPY . /app — with one thin read-write container layer on top, unique to that container. Notes explain that writing a file that came from the image copies it up into the top layer first while the layer beneath is untouched; that changing one byte of a huge file makes OverlayFS copy the whole file up before the write; that deleting something in a later RUN leaves the earlier layer carrying the bytes and only records a whiteout; and that removing the container removes the writable layer with it. Three cards then cover what survives instead: a named volume, which outlives its container and is seeded from the image directory when empty; a bind mount, where the host path hides whatever the image had there and is read-write by default; and a tmpfs mount, which lives in host memory and vanishes when the container stops.",
-          "caption": "Copy-up is per file, not per byte.",
+          "alt": "A stack of four read-only image layers: FROM node:22-slim, COPY package.json, RUN npm ci, and COPY . /app. On top is one thin read-write layer that belongs to a single container. Notes explain that writing to a file from the image first copies it up into the top layer and leaves the layer beneath unchanged; that changing one byte of a huge file makes OverlayFS copy the whole file up; that deleting something in a later RUN only records a whiteout while the earlier layer keeps the bytes; and that removing the container removes its writable layer. Three cards cover the other storage options. A named volume outlives its container and, when empty, is filled from the image directory. A bind mount hides whatever the image had at that path and is read-write by default. A tmpfs mount is kept in host memory and disappears when the container stops.",
+          "caption": "Copy-up copies whole files.",
           "placement": "explanation",
           "width": 720,
           "height": 510
@@ -510,16 +510,16 @@
           "isCorrect": false
         },
         {
-          "text": "The change is rejected unless the file is on a named volume",
+          "text": "OverlayFS rejects the change unless the file is on a named volume",
           "isCorrect": false
         }
       ],
-      "explanation": "With the `overlay2` storage driver, the first write triggers `copy_up`. OverlayFS copies the whole file into the writable layer and changes that copy. It works at file level, so a one-byte edit can copy a large file. Later writes use the copied file.",
+      "explanation": "With the `overlay2` storage driver, the first write to an image file triggers `copy_up`. OverlayFS copies the whole file into the writable layer, then edits the copy. Because copy-up works on whole files, a one-byte edit can mean copying a large file. Later writes go to the copy.",
       "references": "[Docker Docs: OverlayFS: writing to a file for the first time](https://docs.docker.com/engine/storage/drivers/overlayfs-driver/#writing-to-a-file-for-the-first-time)"
     },
     {
       "id": "digest-versus-tag",
-      "title": "Which image reference guarantees the same published image content on later pulls?",
+      "title": "Which image reference pulls the same image every time?",
       "type": "single-choice",
       "options": [
         {
@@ -539,7 +539,7 @@
           "isCorrect": false
         }
       ],
-      "explanation": "A publisher can move a tag to a newer image. A digest identifies exact content, so pulling by digest gives you the same published image each time. You must update the digest yourself to receive a newer image or security fixes.",
+      "explanation": "A publisher can move any tag, including a version tag like `24.04`, to a newer image. A digest identifies exact content, so pulling by digest gets the same image every time. The catch is that you get a newer image or security fixes only when you update the digest yourself.",
       "references": "[Docker Docs: Pull an image by digest](https://docs.docker.com/reference/cli/docker/image/pull/#pull-an-image-by-digest-immutable-identifier)"
     },
     {
@@ -548,7 +548,7 @@
       "type": "single-choice",
       "options": [
         {
-          "text": "Shell form runs through `/bin/sh -c`, so the shell can remain PID 1 instead of replacing itself with Node",
+          "text": "Shell form runs through `/bin/sh -c`, so the shell can stay PID 1 with Node as its child",
           "isCorrect": true
         },
         {
@@ -564,7 +564,7 @@
           "isCorrect": false
         }
       ],
-      "explanation": "Shell form runs through `/bin/sh -c`, so the shell can become PID 1 while Node runs as its child. The shell may not forward Docker's signal. Exec form, `ENTRYPOINT [\"node\", \"server.js\"]`, starts Node as the main process. A wrapper script must forward signals and use `exec` when it hands control to the application.",
+      "explanation": "In shell form, Docker starts `/bin/sh -c`, so the shell can be PID 1 with Node running as its child. The shell may not pass Docker's stop signal on to Node. Exec form, `ENTRYPOINT [\"node\", \"server.js\"]`, makes Node the main process. If you use a wrapper script, it must forward signals, and it should start the application with `exec`.",
       "references": "[Docker Docs: Dockerfile `ENTRYPOINT`](https://docs.docker.com/reference/dockerfile/#entrypoint)"
     },
     {
@@ -577,7 +577,7 @@
           "isCorrect": false
         },
         {
-          "text": "It sends the configured stop signal (normally `SIGTERM`), waits, then forcibly sends `SIGKILL`",
+          "text": "It sends the stop signal, `SIGTERM` by default, waits, then sends `SIGKILL`",
           "isCorrect": true
         },
         {
@@ -589,19 +589,19 @@
           "isCorrect": false
         }
       ],
-      "explanation": "Docker sends the configured stop signal to the main process. The default is `SIGTERM`. If the process is still running after the timeout, Docker sends `SIGKILL`, which the process cannot catch for cleanup. `STOPSIGNAL`, `--stop-signal`, and timeout settings can change the graceful phase.",
+      "explanation": "Docker sends the stop signal, `SIGTERM` by default, to the main process. If the process is still running when the timeout ends, Docker sends `SIGKILL`, which the process can't catch to clean up. You can change the signal with `STOPSIGNAL` or `--stop-signal`, and the wait with a timeout setting.",
       "references": "[Docker Docs: `docker container stop`](https://docs.docker.com/reference/cli/docker/container/stop/)"
     },
     {
       "id": "default-linux-stop-timeout",
       "title": "By default, how many seconds does Docker wait before killing an unresponsive Linux container?",
-      "description": "Assume neither the container nor the command configures a different stop timeout. Enter the number of seconds.",
+      "description": "Neither the container nor the command sets a stop timeout. Enter the number of seconds.",
       "type": "input",
       "validation": {
         "mode": "numeric",
         "acceptedAnswers": [10]
       },
-      "explanation": "Docker waits 10 seconds by default for a Linux container and 30 seconds for a Windows container. It then sends `SIGKILL` if the process is still running. A timeout of `-1` tells Docker to wait without a deadline.",
+      "explanation": "By default, Docker waits 10 seconds for a Linux container and 30 seconds for a Windows container, then sends `SIGKILL` if the process is still running. A timeout of `-1` makes Docker wait with no deadline.",
       "references": "[Docker Docs: Stop container with timeout](https://docs.docker.com/reference/cli/docker/container/stop/#stop-container-with-timeout--t---timeout)"
     },
     {
@@ -618,7 +618,7 @@
           "isCorrect": false
         },
         {
-          "text": "It grants the container a private kernel",
+          "text": "It gives the container a private kernel",
           "isCorrect": false
         },
         {
@@ -626,7 +626,7 @@
           "isCorrect": false
         }
       ],
-      "explanation": "PID 1 has special process-management duties on Linux. `--init` inserts a small init process, backed by `tini` in Docker's default installation, that reaps zombie processes. Docker's Compose documentation also states that the init process forwards signals.",
+      "explanation": "On Linux, PID 1 has special duties, such as reaping zombie processes. `--init` runs a small init process as PID 1 to handle them, and a default Docker install uses `tini` for it. Docker's Compose docs note that this init process also forwards signals.",
       "references": "[Docker Docs: `docker run --init`](https://docs.docker.com/reference/cli/docker/container/run/#specify-an-init-process)\n\n[Docker Docs: Compose `init`](https://docs.docker.com/reference/compose-file/services/#init)"
     },
     {
@@ -651,7 +651,7 @@
           "isCorrect": false
         }
       ],
-      "explanation": "`EXPOSE` records the port that the image expects the application to use. It does not start a listener or create a host mapping. Use `-p` for a chosen mapping, or `-P` to publish every exposed port to an ephemeral host port.",
+      "explanation": "`EXPOSE` records which port the application is expected to use. It doesn't start a listener or map a host port. To publish, use `-p` for a mapping you choose, or `-P` to map every exposed port to a random high host port.",
       "references": "[Docker Docs: Dockerfile `EXPOSE`](https://docs.docker.com/reference/dockerfile/#expose)"
     },
     {
@@ -676,20 +676,20 @@
           "isCorrect": false
         }
       ],
-      "explanation": "The syntax is `HOST_PORT:CONTAINER_PORT`. Docker forwards connections from host port 8080 to TCP port 80 in the container. An explicit `-p` mapping works even if the Dockerfile has no matching `EXPOSE` instruction.",
+      "explanation": "The format is `HOST_PORT:CONTAINER_PORT`, so Docker forwards connections from host port 8080 to TCP port 80 in the container. An explicit `-p` mapping works even when the Dockerfile has no matching `EXPOSE`.",
       "references": "[Docker Docs: Port publishing and mapping](https://docs.docker.com/engine/network/port-publishing/)"
     },
     {
       "id": "published-port-bind-address",
-      "title": "Who can potentially reach `-p 8080:80` when no host IP is specified?",
+      "title": "Who can reach a port published with `-p 8080:80` and no host IP?",
       "type": "single-choice",
       "options": [
         {
-          "text": "Only processes inside the Docker host",
+          "text": "Only processes on the Docker host",
           "isCorrect": false
         },
         {
-          "text": "Anyone who can reach a host network interface, subject to firewall and routing",
+          "text": "Anyone who can reach one of the host's network interfaces, if firewalls and routing allow it",
           "isCorrect": true
         },
         {
@@ -701,7 +701,7 @@
           "isCorrect": false
         }
       ],
-      "explanation": "Docker publishes on all host addresses when you omit the host IP, so another machine may be able to reach the port. Bind to loopback, such as `-p 127.0.0.1:8080:80`, when only the Docker host should connect. Add the equivalent IPv6 loopback mapping if needed.",
+      "explanation": "Without a host IP, Docker publishes the port on every host address, so other machines may be able to reach it. If only the Docker host should connect, bind to loopback with `-p 127.0.0.1:8080:80`. Add the matching IPv6 loopback mapping if you need it.",
       "references": "[Docker Docs: Publishing ports](https://docs.docker.com/engine/network/port-publishing/#publishing-ports)"
     },
     {
@@ -726,7 +726,7 @@
           "isCorrect": false
         }
       ],
-      "explanation": "A user-defined bridge provides DNS by container name or alias. `web` can connect to `db` at the database's container port without publishing that port on the host. Unlike a hard-coded IP address, the name still works after Docker recreates the container with a new address.",
+      "explanation": "A user-defined bridge has built-in DNS for container names and aliases. `web` can connect to `db` on the database's container port, and you don't need to publish that port on the host. A hard-coded IP breaks when Docker recreates `db` with a new address. The name keeps working.",
       "references": "[Docker Docs: User-defined bridge networks](https://docs.docker.com/engine/network/drivers/bridge/#differences-between-user-defined-bridges-and-the-default-bridge)"
     },
     {
@@ -752,12 +752,12 @@
           "isCorrect": false
         }
       ],
-      "explanation": "Each container has its own network stack and loopback interface. Inside `web`, `localhost` points back to `web`, not to `db` or the Docker host. Use the hostname `db` to reach the database on this network.",
+      "explanation": "Each container has its own network stack with its own loopback interface. Inside `web`, `localhost` is `web` itself. To reach the database, use the hostname `db`.",
       "references": "[Docker Docs: Networking overview](https://docs.docker.com/engine/network/)\n\n[Docker Docs: Bridge network driver](https://docs.docker.com/engine/network/drivers/bridge/)"
     },
     {
       "id": "same-bridge-unpublished-ports",
-      "title": "Must a database port be published for a peer on the same user-defined bridge to reach it?",
+      "title": "Do you need to publish a database port so another container on the same user-defined bridge can reach it?",
       "description": "Assume the database listens on its container network interface.",
       "type": "single-choice",
       "options": [
@@ -774,11 +774,11 @@
           "isCorrect": false
         },
         {
-          "text": "No, but only ports named by `EXPOSE` are reachable between peers",
+          "text": "No, but peers can reach only the ports listed in `EXPOSE`",
           "isCorrect": false
         }
       ],
-      "explanation": "Containers on the same user-defined bridge can connect directly to one another's ports. Publishing makes a port available through the host or, under the default bridge rules, to other networks. It is not needed for peers on the same network. `EXPOSE` does not filter this traffic.",
+      "explanation": "Containers on the same user-defined bridge can connect to each other's ports directly. Publishing is for traffic that comes through the host or, under the default bridge rules, from other networks. Peers on the same network don't need it, and `EXPOSE` doesn't filter their traffic.",
       "references": "[Docker Docs: Bridge network driver](https://docs.docker.com/engine/network/drivers/bridge/)\n\n[Docker Docs: Dockerfile `EXPOSE`](https://docs.docker.com/reference/dockerfile/#expose)"
     },
     {
@@ -787,8 +787,8 @@
       "images": [
         {
           "src": "layers-and-copy-on-write.svg",
-          "alt": "A stack of read-only image layers — FROM node:22-slim, COPY package.json, RUN npm ci, COPY . /app — with one thin read-write container layer on top, unique to that container. Notes explain that writing a file that came from the image copies it up into the top layer first while the layer beneath is untouched; that changing one byte of a huge file makes OverlayFS copy the whole file up before the write; that deleting something in a later RUN leaves the earlier layer carrying the bytes and only records a whiteout; and that removing the container removes the writable layer with it. Three cards then cover what survives instead: a named volume, which outlives its container and is seeded from the image directory when empty; a bind mount, where the host path hides whatever the image had there and is read-write by default; and a tmpfs mount, which lives in host memory and vanishes when the container stops.",
-          "caption": "The left-hand card: the volume outlives its container.",
+          "alt": "A stack of four read-only image layers: FROM node:22-slim, COPY package.json, RUN npm ci, and COPY . /app. On top is one thin read-write layer that belongs to a single container. Notes explain that writing to a file from the image first copies it up into the top layer and leaves the layer beneath unchanged; that changing one byte of a huge file makes OverlayFS copy the whole file up; that deleting something in a later RUN only records a whiteout while the earlier layer keeps the bytes; and that removing the container removes its writable layer. Three cards cover the other storage options. A named volume outlives its container and, when empty, is filled from the image directory. A bind mount hides whatever the image had at that path and is read-write by default. A tmpfs mount is kept in host memory and disappears when the container stops.",
+          "caption": "The left-hand card shows that a volume outlives its container.",
           "placement": "explanation",
           "width": 720,
           "height": 510
@@ -813,18 +813,18 @@
           "isCorrect": false
         }
       ],
-      "explanation": "A volume has its own lifecycle. Removing a container does not remove a named volume, even if the removal command also cleans up attached anonymous volumes. A replacement container can mount the same named volume and read its data.",
+      "explanation": "A volume has its own lifecycle. Removing a container doesn't remove a named volume, even when `docker rm --volumes` cleans up the container's anonymous volumes. A new container can mount the same named volume and read its data.",
       "references": "[Docker Docs: Volumes](https://docs.docker.com/engine/storage/volumes/)\n\n[Docker Docs: `docker container rm --volumes`](https://docs.docker.com/reference/cli/docker/container/rm/#remove-a-container-and-its-volumes--v---volumes)"
     },
     {
       "id": "empty-volume-population",
-      "title": "What initially appears in a new empty volume mounted over a non-empty image directory?",
-      "description": "The image contains `/app/defaults/config.ini`. A newly created empty volume is mounted at `/app/defaults` with default volume behavior.",
+      "title": "What's in a new, empty volume when you mount it over an image directory that has files?",
+      "description": "The image contains `/app/defaults/config.ini`. You mount a new, empty volume at `/app/defaults` with default options.",
       "images": [
         {
           "src": "layers-and-copy-on-write.svg",
-          "alt": "A stack of read-only image layers — FROM node:22-slim, COPY package.json, RUN npm ci, COPY . /app — with one thin read-write container layer on top, unique to that container. Notes explain that writing a file that came from the image copies it up into the top layer first while the layer beneath is untouched; that changing one byte of a huge file makes OverlayFS copy the whole file up before the write; that deleting something in a later RUN leaves the earlier layer carrying the bytes and only records a whiteout; and that removing the container removes the writable layer with it. Three cards then cover what survives instead: a named volume, which outlives its container and is seeded from the image directory when empty; a bind mount, where the host path hides whatever the image had there and is read-write by default; and a tmpfs mount, which lives in host memory and vanishes when the container stops.",
-          "caption": "An empty volume is seeded from the directory it covers.",
+          "alt": "A stack of four read-only image layers: FROM node:22-slim, COPY package.json, RUN npm ci, and COPY . /app. On top is one thin read-write layer that belongs to a single container. Notes explain that writing to a file from the image first copies it up into the top layer and leaves the layer beneath unchanged; that changing one byte of a huge file makes OverlayFS copy the whole file up; that deleting something in a later RUN only records a whiteout while the earlier layer keeps the bytes; and that removing the container removes its writable layer. Three cards cover the other storage options. A named volume outlives its container and, when empty, is filled from the image directory. A bind mount hides whatever the image had at that path and is read-write by default. A tmpfs mount is kept in host memory and disappears when the container stops.",
+          "caption": "Docker fills an empty volume from the directory it covers.",
           "placement": "explanation",
           "width": 720,
           "height": 510
@@ -833,11 +833,11 @@
       "type": "single-choice",
       "options": [
         {
-          "text": "The image's existing files are copied into the empty volume, so `config.ini` appears there",
+          "text": "Docker copies the image's files into the volume, so `config.ini` is there",
           "isCorrect": true
         },
         {
-          "text": "The directory is always empty because every mount discards image content",
+          "text": "The directory is empty because mounts always discard image content",
           "isCorrect": false
         },
         {
@@ -845,22 +845,22 @@
           "isCorrect": false
         },
         {
-          "text": "Container creation fails because the target directory is non-empty",
+          "text": "Container creation fails because the target directory isn't empty",
           "isCorrect": false
         }
       ],
-      "explanation": "By default, Docker copies files already at the mount target into a new empty volume. In this case, the volume receives `config.ini`. Use `volume-nocopy` when the volume should remain empty.",
+      "explanation": "By default, Docker copies the files already at the mount target into a new, empty volume, so the volume gets `config.ini`. Add `volume-nocopy` if you want the volume to stay empty.",
       "references": "[Docker Docs: Mounting a volume over existing data](https://docs.docker.com/engine/storage/volumes/#mounting-a-volume-over-existing-data)"
     },
     {
       "id": "bind-mount-effects",
       "title": "What does a default read-write bind mount over `/app` do?",
-      "description": "The image already has files in `/app`, and the host directory `/work/source` is mounted there. Select every correct statement.",
+      "description": "The image already has files in `/app`, and you bind-mount the host directory `/work/source` there. Select every correct statement.",
       "images": [
         {
           "src": "layers-and-copy-on-write.svg",
-          "alt": "A stack of read-only image layers — FROM node:22-slim, COPY package.json, RUN npm ci, COPY . /app — with one thin read-write container layer on top, unique to that container. Notes explain that writing a file that came from the image copies it up into the top layer first while the layer beneath is untouched; that changing one byte of a huge file makes OverlayFS copy the whole file up before the write; that deleting something in a later RUN leaves the earlier layer carrying the bytes and only records a whiteout; and that removing the container removes the writable layer with it. Three cards then cover what survives instead: a named volume, which outlives its container and is seeded from the image directory when empty; a bind mount, where the host path hides whatever the image had there and is read-write by default; and a tmpfs mount, which lives in host memory and vanishes when the container stops.",
-          "caption": "The host path wins for as long as it is mounted.",
+          "alt": "A stack of four read-only image layers: FROM node:22-slim, COPY package.json, RUN npm ci, and COPY . /app. On top is one thin read-write layer that belongs to a single container. Notes explain that writing to a file from the image first copies it up into the top layer and leaves the layer beneath unchanged; that changing one byte of a huge file makes OverlayFS copy the whole file up; that deleting something in a later RUN only records a whiteout while the earlier layer keeps the bytes; and that removing the container removes its writable layer. Three cards cover the other storage options. A named volume outlives its container and, when empty, is filled from the image directory. A bind mount hides whatever the image had at that path and is read-write by default. A tmpfs mount is kept in host memory and disappears when the container stops.",
+          "caption": "The host directory hides the image's files while it's mounted.",
           "placement": "explanation",
           "width": 720,
           "height": 510
@@ -869,7 +869,7 @@
       "type": "multiple-choice",
       "options": [
         {
-          "text": "The image's pre-existing `/app` files are obscured while the mount is present",
+          "text": "The mount hides the image's original `/app` files while it's in place",
           "isCorrect": true
         },
         {
@@ -877,7 +877,7 @@
           "isCorrect": true
         },
         {
-          "text": "The image's hidden `/app` files are permanently deleted from its layers",
+          "text": "Docker permanently deletes the hidden `/app` files from the image's layers",
           "isCorrect": false
         },
         {
@@ -885,7 +885,7 @@
           "isCorrect": false
         }
       ],
-      "explanation": "The bind mount covers the image's `/app` files while the mount exists, but it does not delete them from the image. Bind mounts are writable by default, so the container can change files in `/work/source` on the host. Use `readonly` or `ro` when the container needs only read access.",
+      "explanation": "The bind mount hides the image's `/app` files while it's mounted, and they're still in the image afterward. Bind mounts are writable by default, so the container can change files in `/work/source` on your host. Add `readonly` or `ro` when the container only needs to read.",
       "references": "[Docker Docs: Bind mounts](https://docs.docker.com/engine/storage/bind-mounts/)"
     },
     {
@@ -894,8 +894,8 @@
       "images": [
         {
           "src": "layers-and-copy-on-write.svg",
-          "alt": "A stack of read-only image layers — FROM node:22-slim, COPY package.json, RUN npm ci, COPY . /app — with one thin read-write container layer on top, unique to that container. Notes explain that writing a file that came from the image copies it up into the top layer first while the layer beneath is untouched; that changing one byte of a huge file makes OverlayFS copy the whole file up before the write; that deleting something in a later RUN leaves the earlier layer carrying the bytes and only records a whiteout; and that removing the container removes the writable layer with it. Three cards then cover what survives instead: a named volume, which outlives its container and is seeded from the image directory when empty; a bind mount, where the host path hides whatever the image had there and is read-write by default; and a tmpfs mount, which lives in host memory and vanishes when the container stops.",
-          "caption": "Memory only, and gone on stop.",
+          "alt": "A stack of four read-only image layers: FROM node:22-slim, COPY package.json, RUN npm ci, and COPY . /app. On top is one thin read-write layer that belongs to a single container. Notes explain that writing to a file from the image first copies it up into the top layer and leaves the layer beneath unchanged; that changing one byte of a huge file makes OverlayFS copy the whole file up; that deleting something in a later RUN only records a whiteout while the earlier layer keeps the bytes; and that removing the container removes its writable layer. Three cards cover the other storage options. A named volume outlives its container and, when empty, is filled from the image directory. A bind mount hides whatever the image had at that path and is read-write by default. A tmpfs mount is kept in host memory and disappears when the container stops.",
+          "caption": "The data is in memory and disappears when the container stops.",
           "placement": "explanation",
           "width": 720,
           "height": 510
@@ -904,11 +904,11 @@
       "type": "single-choice",
       "options": [
         {
-          "text": "They are committed into a new image layer",
+          "text": "Docker commits them into a new image layer",
           "isCorrect": false
         },
         {
-          "text": "They are removed with the temporary mount and do not persist as container storage",
+          "text": "They disappear with the mount and don't persist",
           "isCorrect": true
         },
         {
@@ -916,21 +916,21 @@
           "isCorrect": false
         },
         {
-          "text": "They remain in host RAM until Docker is uninstalled",
+          "text": "They stay in host RAM until Docker is uninstalled",
           "isCorrect": false
         }
       ],
-      "explanation": "Docker removes a `tmpfs` mount when the container stops, so its files do not persist as container storage. The data normally lives in host memory instead of the container's writable layer. Linux may still write tmpfs pages to swap, so `tmpfs` is not a guarantee that bytes never touch disk.",
+      "explanation": "Docker removes a `tmpfs` mount when the container stops, and its files go with it. While the container runs, the data is in host memory, outside the container's writable layer. Linux can still swap tmpfs pages to disk, so don't count on `tmpfs` to keep data off disk.",
       "references": "[Docker Docs: tmpfs mounts](https://docs.docker.com/engine/storage/tmpfs/)"
     },
     {
       "id": "writable-layer-lifecycle",
-      "title": "What happens to database files written only into a container's writable layer after that container is deleted?",
+      "title": "What happens to database files in a container's writable layer when you delete the container?",
       "images": [
         {
           "src": "layers-and-copy-on-write.svg",
-          "alt": "A stack of read-only image layers — FROM node:22-slim, COPY package.json, RUN npm ci, COPY . /app — with one thin read-write container layer on top, unique to that container. Notes explain that writing a file that came from the image copies it up into the top layer first while the layer beneath is untouched; that changing one byte of a huge file makes OverlayFS copy the whole file up before the write; that deleting something in a later RUN leaves the earlier layer carrying the bytes and only records a whiteout; and that removing the container removes the writable layer with it. Three cards then cover what survives instead: a named volume, which outlives its container and is seeded from the image directory when empty; a bind mount, where the host path hides whatever the image had there and is read-write by default; and a tmpfs mount, which lives in host memory and vanishes when the container stops.",
-          "caption": "The top layer dies with the container.",
+          "alt": "A stack of four read-only image layers: FROM node:22-slim, COPY package.json, RUN npm ci, and COPY . /app. On top is one thin read-write layer that belongs to a single container. Notes explain that writing to a file from the image first copies it up into the top layer and leaves the layer beneath unchanged; that changing one byte of a huge file makes OverlayFS copy the whole file up; that deleting something in a later RUN only records a whiteout while the earlier layer keeps the bytes; and that removing the container removes its writable layer. Three cards cover the other storage options. A named volume outlives its container and, when empty, is filled from the image directory. A bind mount hides whatever the image had at that path and is read-write by default. A tmpfs mount is kept in host memory and disappears when the container stops.",
+          "caption": "Deleting the container deletes its top layer.",
           "placement": "explanation",
           "width": 720,
           "height": 510
@@ -939,41 +939,41 @@
       "type": "single-choice",
       "options": [
         {
-          "text": "They are available to the next container using the same image tag",
+          "text": "The next container from the same image tag can use them",
           "isCorrect": false
         },
         {
-          "text": "They are lost with the deleted container's writable layer",
+          "text": "They're gone, along with the container's writable layer",
           "isCorrect": true
         },
         {
-          "text": "They are pushed to the registry with the image",
+          "text": "Docker pushes them to the registry with the image",
           "isCorrect": false
         },
         {
-          "text": "They become an anonymous volume automatically",
+          "text": "Docker turns them into an anonymous volume",
           "isCorrect": false
         }
       ],
-      "explanation": "The writable layer belongs to one container. Stopping the container keeps that layer, but deleting the container removes it. Put durable or write-heavy data in a volume or another storage system.",
+      "explanation": "Each container has its own writable layer. Stopping the container keeps the layer, and deleting the container removes it. Keep data that must survive, or that gets written a lot, in a volume or another storage system.",
       "references": "[Docker Docs: Storage: container layer basics](https://docs.docker.com/engine/storage/#container-layer-basics)\n\n[Docker Docs: Storage drivers versus volumes](https://docs.docker.com/engine/storage/drivers/#storage-drivers-versus-docker-volumes)"
     },
     {
       "id": "container-isolation-model",
-      "title": "Which statements accurately describe default Linux container isolation?",
-      "description": "Select every correct statement for ordinary Docker Engine containers, not Docker Desktop's additional VM boundary.",
+      "title": "Which statements about default Linux container isolation are true?",
+      "description": "Select every true statement about ordinary Docker Engine containers. Ignore the extra VM that Docker Desktop adds.",
       "type": "multiple-choice",
       "options": [
         {
-          "text": "Namespaces separate views of resources such as processes and networks",
+          "text": "Namespaces give each container its own view of resources such as processes and networks",
           "isCorrect": true
         },
         {
-          "text": "Containers share the host's Linux kernel rather than booting a private kernel per container",
+          "text": "Containers share the host's Linux kernel instead of booting their own",
           "isCorrect": true
         },
         {
-          "text": "A container is automatically safe to treat as a hardware virtual machine boundary",
+          "text": "A container is as strong a boundary as a hardware virtual machine",
           "isCorrect": false
         },
         {
@@ -981,7 +981,7 @@
           "isCorrect": false
         }
       ],
-      "explanation": "Namespaces give a container separate views of resources such as processes and networks. Cgroups account for and limit resources. Containers still use the host kernel, while capabilities and seccomp reduce what their processes may do. The strength of the boundary depends on the container configuration and the host kernel; it is not the same as a VM with its own kernel.",
+      "explanation": "Namespaces give a container its own view of processes, networks, and other resources, and cgroups track and limit what it uses. Every container still runs on the host kernel. Capabilities and seccomp limit what container processes can do. How strong the boundary is depends on the container's configuration and the host kernel, so treat it differently from a VM with its own kernel.",
       "references": "[Docker Docs: Docker Engine security](https://docs.docker.com/engine/security/)\n\n[Docker Docs: Isolation layers: containers share the host kernel](https://docs.docker.com/ai/sandboxes/security/isolation/)"
     },
     {
@@ -998,15 +998,15 @@
           "isCorrect": true
         },
         {
-          "text": "An equal hard partition of the host for each running container",
+          "text": "An equal, fixed share of the host for each running container",
           "isCorrect": false
         },
         {
-          "text": "No CPU until `--cpus` and no memory until `--memory` are supplied",
+          "text": "None until you set `--cpus` and `--memory`",
           "isCorrect": false
         }
       ],
-      "explanation": "Docker does not set a hard CPU or memory limit by default. A container can use as much as the host kernel allows, which can starve other workloads or trigger out-of-memory handling. Use flags such as `--cpus` and `--memory` to set cgroup limits.",
+      "explanation": "By default, Docker sets no hard CPU or memory limit. A container can use as much as the host kernel allows, which can starve other workloads or make the kernel start killing processes when memory runs out. Set cgroup limits with flags such as `--cpus` and `--memory`.",
       "references": "[Docker Docs: Resource constraints](https://docs.docker.com/engine/containers/resource_constraints/)"
     },
     {
@@ -1018,7 +1018,7 @@
         "mode": "numeric",
         "acceptedAnswers": [300]
       },
-      "explanation": "`--memory-swap` sets the combined RAM and swap allowance. Subtract the 300 MB RAM limit from the 600 MB combined limit: `600 - 300 = 300`. The container may use 300 MB of swap.",
+      "explanation": "`--memory-swap` is the total of memory plus swap, not swap alone. Subtract the 300 MB memory limit from the 600 MB total: `600 - 300 = 300`. The container can use 300 MB of swap.",
       "references": "[Docker Docs: `--memory-swap` details](https://docs.docker.com/engine/containers/resource_constraints/#--memory-swap-details)"
     },
     {
@@ -1027,7 +1027,7 @@
       "type": "single-choice",
       "options": [
         {
-          "text": "It filters selected system calls to reduce the kernel attack surface while allowing common workloads",
+          "text": "It blocks selected system calls to shrink the kernel's attack surface, while common workloads still run",
           "isCorrect": true
         },
         {
@@ -1043,7 +1043,7 @@
           "isCorrect": false
         }
       ],
-      "explanation": "Seccomp is a Linux kernel feature that restricts system calls. Docker uses a default profile when the host supports it, unless you override that profile. Seccomp works alongside namespaces, capabilities, cgroups, and other controls; it does not give the container a private kernel.",
+      "explanation": "Seccomp is a Linux kernel feature that restricts which system calls a process can make. Docker applies its default profile whenever the host supports seccomp, unless you pass a different profile. It works alongside namespaces, capabilities, and cgroups, and the container still shares the host kernel.",
       "references": "[Docker Docs: Seccomp security profiles](https://docs.docker.com/engine/security/seccomp/)"
     }
   ]

@@ -509,7 +509,7 @@ Canonical example:
 {
   "schemaVersion": 1,
   "id": "javascript-falsy-single-choice-example",
-  "title": "JavaScript Falsy Value Example",
+  "title": "JavaScript falsy value example",
   "description": "A minimal public quiz example that shows the simplest single-choice contribution path with explanation-first feedback.",
   "language": "en",
   "tags": ["javascript", "basics", "types"],

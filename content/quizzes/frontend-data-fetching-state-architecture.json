@@ -1,41 +1,41 @@
 {
   "schemaVersion": 1,
   "id": "frontend-data-fetching-state-architecture",
-  "title": "Where Data Lives: Frontend Data-Fetching & State Architecture",
-  "description": "The biggest architectural decisions in a modern frontend are about *where data lives* and *when it's fetched*. Start by separating **server state** (an async cache of data you don't own) from **client state**, then reason through normalized vs. document caches, request deduplication, optimistic updates and rollback, request waterfalls vs. parallel fetching, prefetch, `staleTime` tuning, and how Suspense reshapes component design. Aimed at the React/TanStack Query stack where these are daily decisions.",
+  "title": "How TanStack Query caches, deduplicates, prefetches, and rolls back",
+  "description": "Many of the big decisions in a React frontend come down to *where data lives* and *when you fetch it*. This quiz starts with the split between **server state** (a cached copy of data you don't own) and **client state**. Then it covers document vs. normalized caches, request deduplication, optimistic updates and rollback, request waterfalls, prefetching, `staleTime`, and how Suspense changes component design. The examples use React and TanStack Query.",
   "language": "en",
   "tags": ["react", "frontend", "system-design"],
   "questions": [
     {
       "id": "server-vs-client-state",
-      "title": "What really separates server state from client state?",
-      "description": "Teams keep reaching for a library like TanStack Query or SWR for API data, but plain `useState`/Zustand/Redux for things like the open/closed sidebar.",
+      "title": "What separates server state from client state?",
+      "description": "Teams often use TanStack Query or SWR for API data, but plain `useState`, Zustand, or Redux for things like whether the sidebar is open.",
       "type": "single-choice",
       "options": [
         {
-          "text": "Server state is an **asynchronous cache of data owned elsewhere** that can go stale without the client knowing — so it needs caching, staleness, background refetch, and dedup. Client state is owned by the app and changed synchronously, so it just needs to be stored and read.",
+          "text": "Server state is an **asynchronous cache of data someone else owns**, and it can go stale without the client knowing. So it needs caching, staleness rules, background refetching, and deduplication. Client state belongs to the app and changes synchronously, so you only need to store and read it.",
           "isCorrect": true
         },
         {
-          "text": "Server state is any data that physically lives in a database; client state is any data held in JavaScript variables.",
+          "text": "Server state is any data stored in a database, and client state is any data held in JavaScript variables.",
           "isCorrect": false
         },
         {
-          "text": "Server state must be global and client state must be local to a component — the split is purely about scope.",
+          "text": "Server state must be global and client state must be local to a component. The split is only about scope.",
           "isCorrect": false
         },
         {
-          "text": "Server state is read-only and client state is writable; that's why they need different tools.",
+          "text": "Server state is read-only and client state is writable, so they need different tools.",
           "isCorrect": false
         }
       ],
-      "explanation": "The useful mental model (popularized by TanStack Query's author and TkDodo) is that **server state is a cache of data you don't own**. You only ever hold a *copy*; the source of truth is a remote server that other clients can change at any moment, and your copy can silently become stale. That single property is what forces an entire feature set: caching, a freshness/`staleTime` policy, background revalidation, request deduplication, retries, and garbage collection.\n\n**Client state** — theme, which modal is open, an unsaved form draft — is owned entirely by the app, changes synchronously, and has exactly one source of truth (the app itself). It needs none of that machinery, so a reducer or a `useState` is enough.\n\nThe distractors latch onto incidental traits. *Where bytes physically live* is irrelevant — client state can be persisted to a DB and server state can sit in memory. *Scope* is orthogonal: client state is often global (theme), and server data is often consumed locally. And server state is very much **writable** (that's what mutations are for); the point is that you write *through* it to a source you don't control.",
+      "explanation": "The TanStack Query docs and its maintainer TkDodo describe **server state as a cache of data you don't own**. You only hold a copy. The source of truth is a remote server, other clients can change it at any time, and your copy can go stale without you noticing. That one property is why server state needs caching, a freshness policy (`staleTime`), background revalidation, request deduplication, retries, and garbage collection.\n\nClient state, like the theme, which modal is open, or an unsaved form draft, belongs to the app. It changes synchronously and has one source of truth, the app itself. A reducer or `useState` is enough.\n\nThe wrong answers focus on side details. Where the bytes live doesn't matter, since you can persist client state to a database and server state sits in memory. Scope is a separate question. Client state is often global (the theme), and server data is often used in a single component. And you can write server state with mutations. You just write through it to a source you don't control.",
       "references": "[TanStack Query: Does TanStack Query replace client state?](https://tanstack.com/query/latest/docs/framework/react/guides/does-this-replace-client-state)"
     },
     {
       "id": "which-is-client-state",
       "title": "Which of these are client state?",
-      "description": "You're deciding what belongs in a server-cache library (TanStack Query) versus ordinary client state (`useState`/a store). Select **all** that apply.",
+      "description": "You're deciding what goes into a server cache library (TanStack Query) and what stays in ordinary client state (`useState` or a store). Select **all** that apply.",
       "type": "multiple-choice",
       "options": [
         {
@@ -55,81 +55,81 @@
           "isCorrect": false
         }
       ],
-      "explanation": "Apply the ownership test: *who is the source of truth, and can it change behind your back?*\n\n- **Theme** — the app owns it; no server can change it underneath you. Client state.\n- **Modal open/closed** — pure ephemeral UI; client state.\n- **Unsubmitted search text** — a draft that exists only in the browser until the user acts on it; client state. (Once submitted, the *results* it fetches are server state.)\n- **`GET /api/orders`** — a copy of data owned by the backend that other clients can mutate. This is the textbook case for a server-cache library: cache it, mark it stale after `staleTime`, dedup concurrent reads, refetch in the background.\n\nA common anti-pattern is dumping fetched API data into Redux/Zustand and then hand-writing loading flags, refetch logic, and cache invalidation — effectively re-implementing a query cache by hand. Keep server state in the cache library and reserve your store for genuine client state.",
+      "explanation": "Ask two questions about each item. Who owns the source of truth, and can it change without you knowing?\n\n- **Theme.** The app owns it, and no server changes it. Client state.\n- **Modal open or closed.** Temporary UI. Client state.\n- **Unsubmitted search text.** A draft that exists only in the browser until the user submits it. Client state. The results it fetches after submit are server state.\n- **`GET /api/orders`.** A copy of data the backend owns, which other clients can change. This is the classic case for a server cache library. Cache it, mark it stale after `staleTime`, dedupe concurrent reads, and refetch in the background.\n\nA common mistake is putting fetched API data in Redux or Zustand and then writing loading flags, refetch logic, and cache invalidation by hand. That rebuilds a query cache from scratch. Keep server state in the cache library and use your store for real client state.",
       "references": "[TkDodo: React Query as a State Manager](https://tkdodo.eu/blog/react-query-as-a-state-manager)"
     },
     {
       "id": "normalized-vs-document-cache",
-      "title": "With default TanStack Query, why does the roster still show the old name?",
-      "description": "Two queries hold the same user. The profile screen reads `['user', 7]`; a team roster reads `['team', 'roster']`, whose array embeds user 7's name. A mutation renames user 7 and writes the new name into `['user', 7]` with `setQueryData`. The profile updates instantly — but the roster still shows the **old** name until it refetches.",
+      "title": "Why does the roster still show the old name?",
+      "description": "You're using TanStack Query with default settings, and two queries hold the same user. The profile screen reads `['user', 7]`. A team roster reads `['team', 'roster']`, and each roster entry includes the user's name. A mutation renames user 7 and writes the new name into `['user', 7]` with `setQueryData`. The profile updates right away, but the roster keeps the **old** name until it refetches.",
       "type": "single-choice",
       "options": [
         {
-          "text": "TanStack Query is a **document cache keyed by query key**, not a normalized entity cache. Each query keeps its own independent copy of user 7, so writing to `['user', 7]` leaves the copy embedded in `['team', 'roster']` untouched until that query is invalidated or refetched.",
+          "text": "TanStack Query is a **document cache keyed by query key**, not a normalized entity cache. Each query keeps its own copy of user 7, so writing to `['user', 7]` doesn't touch the copy inside `['team', 'roster']`. That copy stays old until you invalidate or refetch the roster.",
           "isCorrect": true
         },
         {
-          "text": "`['team', 'roster']` has too high a `staleTime`, so it ignored the update.",
+          "text": "`['team', 'roster']` has a `staleTime` that's too high, so it ignored the update.",
           "isCorrect": false
         },
         {
-          "text": "React's reconciler skipped the roster because the surrounding array reference didn't change.",
+          "text": "React's reconciler skipped the roster because the array reference didn't change.",
           "isCorrect": false
         },
         {
-          "text": "Apollo Client would behave identically — no client cache propagates an entity update across separate queries.",
+          "text": "Apollo Client would behave the same way. No client cache can push an entity update across separate queries.",
           "isCorrect": false
         }
       ],
-      "explanation": "TanStack Query deliberately stores **whole query results as opaque documents**, addressed by their query key. It does not parse your data into entities, so it has no idea that `['user', 7]` and a user object *inside* `['team', 'roster']` are 'the same' user. Updating one document can't propagate to the other.\n\nA **normalized cache** (Apollo Client, RTK Query with an entity adapter) flattens responses into a single store keyed by entity identity (e.g. `User:7`). Every query then references that one record, so a single write updates everywhere at once. That's the precise capability the \"Apollo Client would behave identically\" distractor denies — normalized caches *do* propagate, which is exactly their selling point.\n\nWith TanStack Query you reconcile cross-query consistency yourself, usually by **invalidation**:\n\n```ts\n// after the rename mutation succeeds\nqueryClient.invalidateQueries({ queryKey: ['team', 'roster'] });\n```\n\n`staleTime` is a red herring: it controls *when a query refetches*, not whether one query's write leaks into another. And React did re-render the profile fine; the roster simply still holds old bytes.",
+      "explanation": "TanStack Query stores each query result as a whole document under its query key. It doesn't split your data into entities, so it can't tell that `['user', 7]` and the user object inside `['team', 'roster']` are the same user. Updating one document leaves the other unchanged.\n\nA **normalized cache**, like Apollo Client's, splits responses into one store keyed by entity identity (for example `User:7`). Every query points at that one record, so a single write shows up everywhere. That's why the Apollo option is wrong. Sharing updates across queries is the main selling point of a normalized cache.\n\nWith TanStack Query you keep queries consistent yourself, usually by **invalidating** the other query:\n\n```ts\n// after the rename mutation succeeds\nqueryClient.invalidateQueries({ queryKey: ['team', 'roster'] });\n```\n\n`staleTime` has nothing to do with it. It controls when a query refetches, not whether one query's write reaches another. React also re-rendered correctly. The roster simply still holds the old data.",
       "references": "[Apollo Client: Caching overview (normalization)](https://www.apollographql.com/docs/react/caching/overview)"
     },
     {
       "id": "dedup-request-count",
-      "title": "How many network requests does TanStack Query fire?",
-      "description": "Three separate components mount in the **same render** and each calls `useQuery({ queryKey: ['user', 7], queryFn: fetchUser })` with default options. The cache is empty.",
+      "title": "How many network requests go out?",
+      "description": "Three components mount in the **same render**. Each one calls `useQuery({ queryKey: ['user', 7], queryFn: fetchUser })` with default options, and the cache is empty.",
       "type": "input",
       "validation": {
         "mode": "numeric",
         "acceptedAnswers": [1]
       },
-      "explanation": "Exactly **1**. TanStack Query *deduplicates by query key*: the first observer to need data starts a fetch, and any other observer that subscribes to the same key while that request is in flight attaches to the **same promise** instead of starting its own. All three components share one request and one cache entry, then re-render together when it resolves.\n\nThis in-flight sharing is why you can call `useQuery` for the same resource in many components without coordinating them — the cache is the coordination layer. Note the boundary: dedup is keyed, so three *different* keys would fire three requests, and a request that has already resolved isn't 'in flight' (a later mount may trigger a background refetch if the data is stale, governed by `staleTime`).",
+      "explanation": "**One.** TanStack Query deduplicates requests by query key. The first component that needs the data starts a fetch. Any other component that subscribes to the same key while that request is in flight shares the **same promise** instead of starting its own. All three components use one request and one cache entry, and they re-render together when it resolves.\n\nThat's why you can call `useQuery` for the same data in many components without coordinating them. The cache does the coordinating. Deduplication has limits, though. Three different keys fire three requests. And once a request resolves, it's no longer in flight, so a later mount may trigger a background refetch if the data is stale (see `staleTime`).",
       "references": "[TanStack Query: Important Defaults](https://tanstack.com/query/latest/docs/framework/react/guides/important-defaults)"
     },
     {
       "id": "optimistic-cancel-queries",
       "title": "Why cancel queries before an optimistic write?",
-      "description": "The canonical optimistic-update recipe calls `await queryClient.cancelQueries({ queryKey })` at the very top of `onMutate`, *before* it snapshots and writes the optimistic value.",
+      "description": "The standard optimistic update recipe calls `await queryClient.cancelQueries({ queryKey })` at the top of `onMutate`, *before* it saves a snapshot and writes the optimistic value.",
       "type": "single-choice",
       "options": [
         {
-          "text": "An already-in-flight background refetch for that key could resolve **after** your optimistic `setQueryData` and overwrite it with server data that doesn't yet include your change. Cancelling outstanding fetches stops that race.",
+          "text": "A background refetch for that key may already be running. If it resolves **after** your optimistic `setQueryData`, it overwrites your value with server data that doesn't include your change yet. Cancelling in-flight fetches prevents that race.",
           "isCorrect": true
         },
         {
-          "text": "It stops the mutation itself from being sent twice to the server.",
+          "text": "It stops the mutation itself from being sent to the server twice.",
           "isCorrect": false
         },
         {
-          "text": "It clears the cache entry so your optimistic value starts from a clean slate.",
+          "text": "It clears the cache entry so your optimistic value starts from scratch.",
           "isCorrect": false
         },
         {
-          "text": "It is required to obtain the `context` object that `onError` later uses for rollback.",
+          "text": "You need it to get the `context` object that `onError` uses for rollback.",
           "isCorrect": false
         }
       ],
-      "explanation": "Optimistic updates are a race against the network. The danger: a `refetch` for `['todos']` was already running when the user clicked. You then `setQueryData` to the optimistic value — but moments later that older refetch resolves and writes its (pre-mutation) result on top, visibly reverting your optimistic change. `cancelQueries` aborts any outstanding fetches for the key so nothing clobbers your write:\n\n```ts\nonMutate: async (newTodo) => {\n  await queryClient.cancelQueries({ queryKey: ['todos'] }); // stop in-flight refetches\n  const previousTodos = queryClient.getQueryData(['todos']); // snapshot for rollback\n  queryClient.setQueryData(['todos'], (old) => [...old, newTodo]); // optimistic write\n  return { previousTodos }; // becomes `context` in onError / onSettled\n}\n```\n\nThe distractors miss the target: deduping the *mutation* isn't what this does; you don't clear the cache (you *snapshot* it so you can roll back); and the rollback `context` comes from what you **return** from `onMutate`, not from `cancelQueries`.",
+      "explanation": "An optimistic update races the network. Say a refetch for `['todos']` was already running when the user clicked. You call `setQueryData` with the optimistic value, and a moment later the older refetch resolves and writes its pre-mutation result on top. The user sees their change disappear. `cancelQueries` aborts in-flight fetches for the key, so nothing overwrites your write:\n\n```ts\nonMutate: async (newTodo) => {\n  await queryClient.cancelQueries({ queryKey: ['todos'] }); // stop in-flight refetches\n  const previousTodos = queryClient.getQueryData(['todos']); // snapshot for rollback\n  queryClient.setQueryData(['todos'], (old) => [...old, newTodo]); // optimistic write\n  return { previousTodos }; // becomes `context` in onError / onSettled\n}\n```\n\n`cancelQueries` doesn't deduplicate the mutation. It doesn't clear the cache either. You *snapshot* the cache so you can roll back. And the rollback `context` is whatever you **return** from `onMutate`, not something `cancelQueries` gives you.",
       "references": "[TanStack Query: Optimistic Updates](https://tanstack.com/query/latest/docs/framework/react/guides/optimistic-updates)"
     },
     {
       "id": "optimistic-rollback-truths",
-      "title": "Which statements correctly describe the cache-driven optimistic-update pattern in `useMutation`?",
+      "title": "Which statements about optimistic updates in `useMutation` are true?",
       "description": "Select **all** that apply.",
       "type": "multiple-choice",
       "options": [
         {
-          "text": "The value returned from `onMutate` becomes the `context` argument passed to `onError` and `onSettled` — that's where you stash the pre-mutation snapshot for rollback.",
+          "text": "The value you return from `onMutate` becomes the `context` argument of `onError` and `onSettled`. That's where you keep the snapshot for rollback.",
           "isCorrect": true
         },
         {
@@ -137,29 +137,29 @@
           "isCorrect": true
         },
         {
-          "text": "`onSettled` typically calls `invalidateQueries` so the cache reconciles with the server after the mutation finishes, whether it succeeded or failed.",
+          "text": "`onSettled` usually calls `invalidateQueries`, so the cache matches the server after the mutation finishes, whether it succeeded or failed.",
           "isCorrect": true
         },
         {
-          "text": "Optimistic updates require a normalized cache and are impossible with TanStack Query's document cache.",
+          "text": "Optimistic updates need a normalized cache, so they don't work with TanStack Query's document cache.",
           "isCorrect": false
         }
       ],
-      "explanation": "The four callbacks form a closed loop around the cache:\n\n- **`onMutate(variables)`** runs before the request. Cancel in-flight queries, snapshot the current data, apply the optimistic write, and **return** the snapshot — TanStack Query threads that return value through as `context`.\n- **`onError(err, variables, context)`** fires if the mutation rejects. You restore `context.previous` with `setQueryData`, undoing the optimistic change.\n- **`onSettled`** runs after success *or* error; invalidating the key triggers a refetch so the cache ends up matching the server's real result either way.\n\nThe false option inverts reality: optimistic updates are *easiest* on a document cache, because you simply write the predicted result straight into the query's data. A normalized cache is a different (and also valid) strategy, not a prerequisite.",
+      "explanation": "The callbacks work together around the cache:\n\n- **`onMutate(variables)`** runs before the request. It cancels in-flight queries, snapshots the current data, applies the optimistic write, and **returns** the snapshot. TanStack Query passes that return value on as `context`.\n- **`onError(err, variables, context)`** runs if the mutation fails. You restore `context.previous` with `setQueryData`, which undoes the optimistic change.\n- **`onSettled`** runs after success *or* failure. Invalidating the key triggers a refetch, so the cache ends up matching the server either way.\n\nThe false option has it backwards. Optimistic updates are *easiest* with a document cache, because you write the predicted result straight into the query's data. A normalized cache is another valid approach, but you don't need one.",
       "references": "[TanStack Query: Optimistic Updates](https://tanstack.com/query/latest/docs/framework/react/guides/optimistic-updates)"
     },
     {
       "id": "spot-the-waterfall",
       "title": "What makes this loader slow, and how do you fix it?",
-      "description": "Each fetch takes ~200 ms.\n\n```js\nasync function loadDashboard(userId) {\n  const user = await fetchUser(userId);  // ~200 ms\n  const config = await fetchConfig();    // ~200 ms, does NOT depend on `user`\n  return { user, config };\n}\n```",
+      "description": "Each fetch takes about 200 ms.\n\n```js\nasync function loadDashboard(userId) {\n  const user = await fetchUser(userId);  // ~200 ms\n  const config = await fetchConfig();    // ~200 ms, does NOT depend on `user`\n  return { user, config };\n}\n```",
       "type": "single-choice",
       "options": [
         {
-          "text": "It's a needless **request waterfall**: `fetchConfig` doesn't depend on `user`, yet `await` makes it wait until `fetchUser` resolves — ~400 ms total. Start both first and `await Promise.all([...])` to run them concurrently (~200 ms).",
+          "text": "It's an unnecessary **request waterfall**. `fetchConfig` doesn't depend on `user`, but `await` makes it wait until `fetchUser` resolves, so the total is about 400 ms. Start both requests first and `await Promise.all([...])` to run them at the same time (about 200 ms).",
           "isCorrect": true
         },
         {
-          "text": "Nothing is wrong — sequential `await`s already run concurrently in JavaScript.",
+          "text": "Nothing is wrong. Sequential `await`s already run concurrently in JavaScript.",
           "isCorrect": false
         },
         {
@@ -171,77 +171,77 @@
           "isCorrect": false
         }
       ],
-      "explanation": "`await` *pauses* the function until the awaited promise settles. Because `fetchConfig()` isn't even **called** until `fetchUser` resolves, the two independent requests run back-to-back: ~200 ms + ~200 ms ≈ **400 ms**. That serialization of independent requests is a *request waterfall* — the most common avoidable source of slow screens.\n\nThe fix is to launch both *before* awaiting, so they overlap on the wire:\n\n```js\nasync function loadDashboard(userId) {\n  const [user, config] = await Promise.all([\n    fetchUser(userId),\n    fetchConfig(),\n  ]);\n  return { user, config }; // ~200 ms\n}\n```\n\nThe distractors are myths or non-fixes: sequential `await`s are *not* parallel; `useMemo` caches a computed value across renders but does nothing for the timing of two awaits in one call; and `staleTime` only helps on a *later* read of already-cached data — it can't parallelize a cold first load.",
+      "explanation": "`await` pauses the function until the promise settles. `fetchConfig()` isn't even **called** until `fetchUser` resolves, so the two independent requests run one after the other, about 200 ms + 200 ms = **400 ms**. Running independent requests in sequence like this is a *request waterfall*, one of the most common avoidable causes of slow screens.\n\nTo fix it, start both requests before you await, so they run at the same time:\n\n```js\nasync function loadDashboard(userId) {\n  const [user, config] = await Promise.all([\n    fetchUser(userId),\n    fetchConfig(),\n  ]);\n  return { user, config }; // ~200 ms\n}\n```\n\nThe other options don't help. Sequential `await`s don't run in parallel. `useMemo` caches a computed value across renders but doesn't change the timing of two awaits in one call. And `staleTime` only helps when you read data that's already cached, so it can't speed up a cold first load.",
       "references": "[TanStack Query: Performance & Request Waterfalls](https://tanstack.com/query/latest/docs/framework/react/guides/request-waterfalls)"
     },
     {
       "id": "avoid-waterfalls",
-      "title": "Which techniques genuinely help eliminate request waterfalls?",
+      "title": "Which techniques help remove request waterfalls?",
       "description": "Select **all** that apply.",
       "type": "multiple-choice",
       "options": [
         {
-          "text": "Kick off independent requests together and `await Promise.all([...])` instead of awaiting them one after another.",
+          "text": "Start independent requests together and `await Promise.all([...])` instead of awaiting them one by one.",
           "isCorrect": true
         },
         {
-          "text": "Hoist fetching to the route/loader so it starts before components render (render-as-you-fetch), rather than each component fetching only after it mounts (fetch-on-render).",
+          "text": "Move fetching up to the route or loader so it starts before components render (render-as-you-fetch), instead of having each component fetch after it mounts (fetch-on-render).",
           "isCorrect": true
         },
         {
-          "text": "Use `useQueries` to fire a dynamic list of queries in parallel instead of relying on nested components that each fetch.",
+          "text": "Use `useQueries` to run a dynamic list of queries in parallel instead of nesting components that each fetch.",
           "isCorrect": true
         },
         {
-          "text": "Raise `staleTime` — TanStack Query then runs independent first-load requests in parallel automatically.",
+          "text": "Raise `staleTime`, and TanStack Query will run independent first-load requests in parallel automatically.",
           "isCorrect": false
         }
       ],
-      "explanation": "Waterfalls come from **serialized starts** — a request that can't *begin* until something earlier finishes. The fixes all attack the *start time*:\n\n- **`Promise.all`** overlaps requests that have no data dependency.\n- **Render-as-you-fetch** moves the fetch *out* of the component tree (into a route loader or an event handler) so it begins immediately, instead of the classic component waterfall where a parent renders → child mounts → child fetches → grandchild mounts → fetches…\n- **`useQueries`** runs N queries concurrently from a single hook call, avoiding a chain of nested fetching components.\n\n`staleTime` is the odd one out: it tunes *freshness* (whether an already-cached query refetches), not *parallelism*. On a cold first load there's nothing cached, so raising `staleTime` changes nothing about how the independent requests are scheduled.",
+      "explanation": "A waterfall happens when a request can't *start* until an earlier one finishes. Every fix changes when requests start:\n\n- **`Promise.all`** runs requests that don't depend on each other at the same time.\n- **Render-as-you-fetch** moves the fetch out of the component tree, into a route loader or an event handler, so it starts right away. With fetch-on-render, the parent renders, the child mounts and fetches, then the grandchild mounts and fetches, and so on.\n- **`useQueries`** runs N queries at once from a single hook call, so you don't need a chain of nested components that each fetch.\n\n`staleTime` is the wrong answer. It controls freshness (whether a cached query refetches), not parallelism. On a cold first load nothing is cached, so raising `staleTime` doesn't change how the requests are scheduled.",
       "references": "[TanStack Query: Performance & Request Waterfalls](https://tanstack.com/query/latest/docs/framework/react/guides/request-waterfalls)"
     },
     {
       "id": "prefetch-on-hover",
-      "title": "What does this `prefetchQuery` on hover accomplish?",
-      "description": "A list links to detail pages. On `mouseenter` of a row you call:\n\n```ts\nqueryClient.prefetchQuery({\n  queryKey: ['post', id],\n  queryFn: () => fetchPost(id),\n});\n```",
+      "title": "What does `prefetchQuery` on hover do?",
+      "description": "A list links to detail pages. When the pointer enters a row (`mouseenter`), you call:\n\n```ts\nqueryClient.prefetchQuery({\n  queryKey: ['post', id],\n  queryFn: () => fetchPost(id),\n});\n```",
       "type": "single-choice",
       "options": [
         {
-          "text": "It fetches the post and stores it in the cache ahead of navigation, so when the detail page's `useQuery(['post', id])` mounts it finds the data already cached and renders without a loading spinner.",
+          "text": "It fetches the post and stores it in the cache before navigation. When the detail page's `useQuery({ queryKey: ['post', id] })` mounts, the data is already there, so the page renders without a loading spinner.",
           "isCorrect": true
         },
         {
-          "text": "It pre-renders the detail React component in a hidden offscreen tree, ready to swap in.",
+          "text": "It renders the detail component ahead of time in a hidden offscreen tree, ready to swap in.",
           "isCorrect": false
         },
         {
-          "text": "It opens a subscription that streams live updates for that post until you navigate away.",
+          "text": "It opens a subscription that streams live updates for the post until you navigate away.",
           "isCorrect": false
         },
         {
-          "text": "It does nothing unless the post is already in the cache; prefetch can only refresh existing entries.",
+          "text": "It does nothing unless the post is already cached. Prefetching can only refresh existing entries.",
           "isCorrect": false
         }
       ],
-      "explanation": "`prefetchQuery` runs the same fetch a `useQuery` would, but **imperatively and ahead of time**, writing the result into the cache and returning a promise that resolves to nothing (you don't read its value directly). The payoff is latency hiding: the few hundred milliseconds a user spends moving toward and clicking a link are spent fetching, so the destination paints instantly from cache.\n\nIt does **not** render any component (that's React's job once you navigate), and it doesn't open a stream. It also works on a *cold* cache — that's the whole point of warming an entry that doesn't exist yet. One nuance worth knowing: `prefetchQuery` respects `staleTime`, so if a fresh copy is already cached it skips the network and returns immediately, making repeated hovers cheap.",
+      "explanation": "`prefetchQuery` runs the same fetch `useQuery` would, but you call it yourself, ahead of time. It writes the result into the cache and returns a promise that resolves to nothing, so you don't read its value. The user spends a few hundred milliseconds moving to the link and clicking, and the fetch happens during that time. The next page then renders instantly from the cache.\n\nIt doesn't render any component (React does that after navigation), and it doesn't open a stream. It also works on an empty cache, which is the whole point: it fills an entry that doesn't exist yet. Also note that `prefetchQuery` respects `staleTime`. If a fresh copy is already cached, it skips the network, so repeated hovers cost nothing.",
       "references": "[TanStack Query: Prefetching & Router Integration](https://tanstack.com/query/latest/docs/framework/react/guides/prefetching)"
     },
     {
       "id": "staletime-tuning-knob",
-      "title": "What's the idiomatic fix for refetching data that never changes?",
-      "description": "A `useQuery(['currencies'], fetchCurrencies)` loads a list of currency codes that **never** change during a session. With default options, navigating back to the page fires the request *every time*.",
+      "title": "How do you stop refetching data that never changes?",
+      "description": "`useQuery({ queryKey: ['currencies'], queryFn: fetchCurrencies })` loads a list of currency codes that **never** change during a session. With default options, the request fires *every time* you navigate back to the page.",
       "type": "single-choice",
       "options": [
         {
-          "text": "Set a high `staleTime` (e.g. `staleTime: Infinity`) so the query is treated as fresh and no background refetch fires on mount, focus, or reconnect.",
+          "text": "Set a high `staleTime`, for example `staleTime: Infinity`. The query then counts as fresh, and no background refetch runs on mount, window focus, or reconnect.",
           "isCorrect": true
         },
         {
-          "text": "Increase `gcTime` so the cached entry survives longer between visits.",
+          "text": "Increase `gcTime` so the cache entry lasts longer between visits.",
           "isCorrect": false
         },
         {
-          "text": "Wrap `fetchCurrencies` in `useCallback` so its identity is stable across renders.",
+          "text": "Wrap `fetchCurrencies` in `useCallback` so its identity stays stable across renders.",
           "isCorrect": false
         },
         {
@@ -249,45 +249,45 @@
           "isCorrect": false
         }
       ],
-      "explanation": "The refetch happens because the **default `staleTime` is `0`**: data is stale the instant it arrives, so each re-mount (and each window focus / reconnect) sees a stale query and revalidates it in the background. For data that's effectively immutable within a session, declare it fresh forever with `staleTime: Infinity` — TanStack Query then serves the cache and never auto-refetches it.\n\nWhy the distractors fail:\n\n- **`gcTime`** governs how long an *inactive* (unused) query stays in memory before garbage collection. The entry was present here — it was *stale*, not evicted — so a longer `gcTime` changes nothing about the refetch.\n- **`useCallback`** stabilizes the function reference but has no effect on the cache's freshness policy; the query key, not the `queryFn` identity, drives refetching.\n- **`networkMode`** controls behavior around connectivity (e.g. pausing when offline), not whether fresh-enough cached data is reused.",
+      "explanation": "The refetch happens because the **default `staleTime` is `0`**. Data goes stale as soon as it arrives, so every remount, window focus, and reconnect finds a stale query and refetches it in the background. For data that doesn't change during a session, set `staleTime: Infinity`. TanStack Query then serves the cached data and never refetches it automatically.\n\nWhy the other options don't work:\n\n- **`gcTime`** sets how long an *inactive* query stays in memory before it's garbage collected. Here the entry was still in the cache. It was *stale*, not removed, so a longer `gcTime` doesn't stop the refetch.\n- **`useCallback`** keeps the function reference stable, but the cache ignores it. The query key drives refetching, not the identity of `queryFn`.\n- **`networkMode`** controls what happens around connectivity, like pausing while offline. It doesn't decide whether to reuse cached data that's fresh enough.",
       "references": "[TanStack Query: Caching & staleTime](https://tanstack.com/query/latest/docs/framework/react/guides/caching)"
     },
     {
       "id": "suspense-component-design",
-      "title": "How does switching to `useSuspenseQuery` change the component's design?",
-      "description": "You switch a component from `useQuery` to `useSuspenseQuery(['post', id], fetchPost)`.",
+      "title": "How does `useSuspenseQuery` change your component?",
+      "description": "You switch a component from `useQuery` to `useSuspenseQuery({ queryKey: ['post', id], queryFn: () => fetchPost(id) })`.",
       "type": "single-choice",
       "options": [
         {
-          "text": "`data` is guaranteed defined inside the component — there's no `isPending`/`undefined` branch to handle. The nearest `<Suspense>` boundary shows the fallback while loading, and an `<ErrorBoundary>` catches fetch errors.",
+          "text": "`data` is always defined inside the component, so there's no `isPending` or `undefined` branch to handle. The nearest `<Suspense>` boundary shows its fallback while the data loads, and an `<ErrorBoundary>` catches fetch errors.",
           "isCorrect": true
         },
         {
-          "text": "`data` can still be `undefined` on the first render, so you keep the same loading guard you had with `useQuery`.",
+          "text": "`data` can still be `undefined` on the first render, so you keep the same loading check you had with `useQuery`.",
           "isCorrect": false
         },
         {
-          "text": "It disables caching for that query and refetches on every render.",
+          "text": "It turns off caching for that query and refetches on every render.",
           "isCorrect": false
         },
         {
-          "text": "It only works inside React Server Components and can't run on the client.",
+          "text": "It only works in React Server Components and can't run on the client.",
           "isCorrect": false
         }
       ],
-      "explanation": "Suspense **inverts where loading and error states live**. `useSuspenseQuery` suspends rendering until data exists, so by the time your component body runs, `data` is non-nullable — TypeScript types it as `TData`, not `TData | undefined`, and the `if (isPending) return <Spinner/>` ladder disappears. Loading UI moves *up* to the nearest `<Suspense fallback={...}>`, and thrown fetch errors are caught by an `<ErrorBoundary>`:\n\n```tsx\n<ErrorBoundary fallback={<Failed />}>\n  <Suspense fallback={<Spinner />}>\n    <Post id={id} /> {/* uses useSuspenseQuery; renders only with data */}\n  </Suspense>\n</ErrorBoundary>\n```\n\nThe caching layer is unchanged — same query keys, same `staleTime`, same dedup; only the *consumption API* differs, so it absolutely runs on the client and needs no RSC. One sharp edge to remember: two `useSuspenseQuery` calls in the *same* component run sequentially (the first suspends before the second starts), recreating a waterfall — use `useSuspenseQueries` to fetch them in parallel.",
+      "explanation": "With Suspense, loading and error states move out of the component. `useSuspenseQuery` suspends rendering until the data exists, so when your component body runs, `data` is always there. TypeScript types it as `TData`, not `TData | undefined`, and the `if (isPending) return <Spinner/>` checks go away. The loading UI moves up to the nearest `<Suspense fallback={...}>`, and an `<ErrorBoundary>` catches fetch errors:\n\n```tsx\n<ErrorBoundary fallback={<Failed />}>\n  <Suspense fallback={<Spinner />}>\n    <Post id={id} /> {/* uses useSuspenseQuery; renders only with data */}\n  </Suspense>\n</ErrorBoundary>\n```\n\nThe cache works the same way, with the same query keys, `staleTime`, and deduplication. Only the way you read the data changes. It runs on the client and doesn't need Server Components.\n\nWatch out for two `useSuspenseQuery` calls in the *same* component. They run one after the other, because the first one suspends before the second starts, and that's a waterfall again. Use `useSuspenseQueries` to fetch them in parallel.",
       "references": "[TanStack Query: Suspense](https://tanstack.com/query/latest/docs/framework/react/guides/suspense)"
     },
     {
       "id": "onmutate-callback-name",
-      "title": "Which `useMutation` lifecycle callback runs *before* the mutation function?",
-      "description": "That's where you cancel in-flight queries, snapshot the current cache value, apply the optimistic update, and return a context object for rollback.",
+      "title": "Which `useMutation` callback runs *before* the mutation function?",
+      "description": "In this callback you cancel in-flight queries, snapshot the current cache value, apply the optimistic update, and return a context object for rollback.",
       "type": "input",
       "validation": {
         "mode": "text",
         "acceptedAnswers": ["onMutate"]
       },
-      "explanation": "It's **`onMutate`**. It fires synchronously before `mutationFn`, receives the same `variables` you passed to `mutate(...)`, and its return value is handed back to you as `context` in `onError` and `onSettled` — which is how the rollback snapshot survives long enough to be restored if the request fails. The full ordering is `onMutate` → `mutationFn` → (`onError` | `onSuccess`) → `onSettled`. Because the optimistic write and its rollback snapshot both originate in `onMutate`, it's the heart of the optimistic-update recipe.",
+      "explanation": "It's **`onMutate`**. It runs before `mutationFn` and receives the same `variables` you passed to `mutate(...)`. Whatever it returns comes back to you as `context` in `onError` and `onSettled`, which is how the rollback snapshot is still around if the request fails. The full order is `onMutate`, then `mutationFn`, then `onError` or `onSuccess`, then `onSettled`. The optimistic write and the rollback snapshot both start in `onMutate`, so it's the main step in the optimistic update recipe.",
       "references": "[TanStack Query: useMutation reference](https://tanstack.com/query/latest/docs/framework/react/reference/useMutation)"
     }
   ]

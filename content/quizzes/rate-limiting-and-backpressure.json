@@ -1,20 +1,20 @@
 {
   "schemaVersion": 1,
   "id": "rate-limiting-and-backpressure",
-  "title": "Rate Limiting & Backpressure",
-  "description": "When demand outruns capacity, a system either sheds load gracefully or collapses. This quiz walks the full path: the algorithms (token vs. leaky bucket, fixed vs. sliding window), where to enforce a limit (per-IP vs. per-user, client-side debounce/throttle), how to communicate it (`429`, `Retry-After`, backoff with jitter), and how backpressure propagates through Node.js streams so a slow consumer doesn't exhaust memory. Every answer is computed, executed, or cited against the relevant spec.",
+  "title": "When demand outruns capacity: rate limits, retries, and backpressure",
+  "description": "When requests arrive faster than a system can handle them, it either sheds the extra load or falls over. This quiz covers the limiter algorithms (token and leaky buckets, fixed and sliding windows), where to apply a limit (per IP, per user, or in the browser with debounce and throttle), how to tell clients to slow down (`429`, `Retry-After`, backoff with jitter), and how Node.js streams push back on a fast producer so a slow consumer doesn't run out of memory.",
   "language": "en",
   "tags": ["system-design", "nodejs", "networking"],
   "questions": [
     {
       "id": "token-bucket-vs-leaky-bucket",
-      "title": "Token bucket vs. leaky bucket: which one lets traffic burst?",
-      "description": "Both algorithms cap the long-run average rate, but they shape short-term traffic differently.",
+      "title": "Token bucket or leaky bucket: which one lets traffic burst?",
+      "description": "Both algorithms cap the long-run average rate. They treat short bursts differently.",
       "images": [
         {
           "src": "bucket-algorithms.svg",
-          "alt": "Two buckets side by side. The token bucket holds twenty tokens, refills at five per second, and spends one token per request; a full bucket admits twenty requests at once, after which the five-per-second refill is the cap. The leaky bucket takes a bursty input into a queue with a steady drain, absorbing bursts rather than passing them on and dropping overflow past capacity. A closing note: the token bucket meters what may enter, the leaky bucket meters what may leave.",
-          "caption": "Bursts allowed on the left; a constant drain on the right.",
+          "alt": "Two buckets side by side. The token bucket holds twenty tokens, refills at five per second, and spends one token per request. A full bucket admits twenty requests at once, and after that the five-per-second refill is the cap. The leaky bucket takes bursty input into a queue with a steady drain, so it absorbs bursts instead of passing them on, and drops overflow past its capacity. A closing note says the token bucket meters what may enter and the leaky bucket meters what may leave.",
+          "caption": "Bursts pass on the left. A steady drain on the right.",
           "placement": "explanation",
           "width": 720,
           "height": 426
@@ -23,15 +23,15 @@
       "type": "single-choice",
       "options": [
         {
-          "text": "**Token bucket** lets traffic burst up to the bucket's capacity, then settles to the refill rate; **leaky bucket** drains at a fixed rate, smoothing bursts away",
+          "text": "The **token bucket** lets traffic burst up to its capacity, then settles to the refill rate. The **leaky bucket** drains at a fixed rate and smooths bursts away",
           "isCorrect": true
         },
         {
-          "text": "**Leaky bucket** lets traffic burst up to its capacity; **token bucket** forces a perfectly constant output rate",
+          "text": "The **leaky bucket** lets traffic burst up to its capacity. The **token bucket** forces a perfectly constant output rate",
           "isCorrect": false
         },
         {
-          "text": "Both shape output into a perfectly constant rate and forbid any burst",
+          "text": "Both shape output into a perfectly constant rate and allow no bursts",
           "isCorrect": false
         },
         {
@@ -39,17 +39,17 @@
           "isCorrect": false
         }
       ],
-      "explanation": "A **token bucket** accumulates tokens at a fixed refill rate up to a maximum (its *capacity*). A request spends one token and passes immediately if a token is available. After an idle stretch the bucket is full, so a client can fire a burst as large as the capacity all at once — and only *then* is it throttled down to the refill rate. Mnemonic: *save up, spend in a burst.*\n\nA **leaky bucket** models a bucket with a hole: requests pour in (overflowing if it's full) but *leave* at a constant rate, so the output is smooth no matter how bursty the input. Mnemonic: *constant trickle.*\n\nSo token bucket tolerates bursts; leaky bucket erases them. The reversed and \"both identical\" options are the classic confusions. (Note: some texts describe a *leaky-bucket-as-a-meter* variant that behaves like a token bucket; the burst-vs-smooth contrast here uses the well-known *leaky-bucket-as-a-queue* model.)",
+      "explanation": "A **token bucket** gains tokens at a fixed refill rate, up to a maximum called its *capacity*. Each request spends one token and goes through right away if a token is available. After an idle stretch the bucket is full, so a client can send a burst as large as the capacity. Only then does the limiter hold it to the refill rate. Think of it as saving up and then spending in one go.\n\nA **leaky bucket** is a bucket with a hole in it. Requests pour in, and overflow when it's full, but they leave at a constant rate. The output stays smooth however bursty the input is.\n\nSo the token bucket tolerates bursts and the leaky bucket removes them. The other options either swap the two or claim they behave the same, which are the usual mix-ups. Some texts describe a *leaky bucket as a meter* that behaves like a token bucket. This question uses the more common *leaky bucket as a queue*.",
       "references": "[Stripe: Scaling your API with rate limiters](https://stripe.com/blog/rate-limiters) · [Wikipedia: Token bucket](https://en.wikipedia.org/wiki/Token_bucket)"
     },
     {
       "id": "token-bucket-max-burst",
-      "title": "How many requests succeed in that first instantaneous burst?",
-      "description": "A token bucket holds at most **20** tokens and refills at **5** tokens per second; each request costs 1 token. After the bucket has sat idle long enough to fill completely, a client suddenly fires many requests at once.",
+      "title": "How many requests get through in the first instant of the burst?",
+      "description": "A token bucket holds at most **20** tokens and refills at **5** tokens per second. Each request costs 1 token. The bucket has been idle long enough to fill up, and then a client sends many requests at once.",
       "images": [
         {
           "src": "bucket-algorithms.svg",
-          "alt": "Two buckets side by side. The token bucket holds twenty tokens, refills at five per second, and spends one token per request; a full bucket admits twenty requests at once, after which the five-per-second refill is the cap. The leaky bucket takes a bursty input into a queue with a steady drain, absorbing bursts rather than passing them on and dropping overflow past capacity. A closing note: the token bucket meters what may enter, the leaky bucket meters what may leave.",
+          "alt": "Two buckets side by side. The token bucket holds twenty tokens, refills at five per second, and spends one token per request. A full bucket admits twenty requests at once, and after that the five-per-second refill is the cap. The leaky bucket takes bursty input into a queue with a steady drain, so it absorbs bursts instead of passing them on, and drops overflow past its capacity. A closing note says the token bucket meters what may enter and the leaky bucket meters what may leave.",
           "caption": "Twenty tokens in the bucket, one spent per request.",
           "placement": "explanation",
           "width": 720,
@@ -61,17 +61,17 @@
         "mode": "numeric",
         "acceptedAnswers": [20]
       },
-      "explanation": "The bucket's **capacity is the burst ceiling**. While idle, tokens accrue at 5/s but are capped at 20, so a full bucket holds exactly 20 tokens. An *instantaneous* burst means no time passes, so the refill adds nothing — the client can spend all 20 tokens at once, and **20** requests pass immediately.\n\nThe 21st request must wait for a refill. From there the client is throttled to the sustained rate: 5 tokens/sec = one request every 200 ms. This is the entire design intent — *capacity* sets how big a burst you tolerate, *refill rate* sets the sustained throughput. (A leaky-bucket limiter with the same 5/s average would not allow this burst; it would release requests at a steady 5 per second.)"
+      "explanation": "The bucket's capacity is the largest burst it allows. While idle, it gains 5 tokens a second but stops at 20. An instantaneous burst takes no time, so the refill adds nothing, and the client can spend all 20 tokens at once. **20** requests go through.\n\nThe 21st request has to wait for a new token. From then on the client gets the sustained rate of 5 tokens a second, or one request every 200 ms. That's the whole design: capacity sets the burst size, and the refill rate sets the steady throughput. A leaky bucket with the same 5/s average would not allow this burst. It would release 5 requests a second from the start."
     },
     {
       "id": "fixed-window-boundary-burst",
       "title": "What does the fixed-window limiter do with these 200 requests?",
-      "description": "A fixed-window limiter allows **100 requests per minute**, counted against wall-clock minutes (the counter resets at `:00`). A client sends 100 requests at `12:00:59.9` and another 100 at `12:01:00.1`.",
+      "description": "A fixed-window limiter allows **100 requests per minute**, counted per clock minute (the counter resets at `:00`). A client sends 100 requests at `12:00:59.9` and another 100 at `12:01:00.1`.",
       "images": [
         {
           "src": "window-counters.svg",
-          "alt": "Two window schemes at a limit of 100 requests per minute. Under a fixed window, one batch of 100 sits at the end of the 12:00 window and another at the start of the 12:01 window, so about 200 requests are admitted in about a second. Under a sliding-window counter, a previous window of 80 requests and a current window of 20 are read through a trailing-60-second frame drawn 15 seconds into the current window, giving estimate = 20 + 80 × (60 − 15) / 60 = 80. Two cards contrast the log, one timestamp per request and exact at O(n) per key, with the counter, two integers per key and approximate at O(1).",
-          "caption": "Two legal batches, one second apart, across the reset.",
+          "alt": "Two window schemes at a limit of 100 requests per minute. Under a fixed window, one batch of 100 sits at the end of the 12:00 window and another at the start of the 12:01 window, so about 200 requests are admitted in about a second. Under a sliding-window counter, a previous window of 80 requests and a current window of 20 are read through a trailing 60-second frame drawn 15 seconds into the current window, giving estimate = 20 + 80 × (60 − 15) / 60 = 80. Two cards compare the log, which stores one timestamp per request and is exact at O(n) per key, with the counter, which stores two integers per key and is approximate at O(1).",
+          "caption": "Two legal batches, a fraction of a second apart, on either side of the reset.",
           "placement": "explanation",
           "width": 720,
           "height": 532
@@ -80,11 +80,11 @@
       "type": "single-choice",
       "options": [
         {
-          "text": "About 200 requests are admitted within roughly one second — the limiter is briefly fooled into allowing ~2× the intended rate near the window edge",
+          "text": "All 200 get through within about a second, roughly twice the intended rate, because the batches land on either side of the window edge",
           "isCorrect": true
         },
         {
-          "text": "All 200 are rejected, because the limiter sums them to 200 over the minute",
+          "text": "All 200 are rejected, because the limiter adds them up to 200 for the minute",
           "isCorrect": false
         },
         {
@@ -92,22 +92,22 @@
           "isCorrect": false
         },
         {
-          "text": "Only 100 total are admitted; fixed windows track a rolling 60-second total",
+          "text": "Only 100 get through in total, because fixed windows track a rolling 60-second total",
           "isCorrect": false
         }
       ],
-      "explanation": "The fixed window counts against the *clock*, not against each request. At `12:00:59.9` the `12:00` window still has room, so 100 requests pass. Just 0.2 s later the clock ticks to `12:01`, the counter **resets to 0**, and 100 more pass. Net result: ~200 requests in ~1 second — double the intended ceiling — even though each one-minute window individually counted only 100.\n\nThis \"boundary burst\" is the headline weakness of fixed windows, and it's exactly what sliding-window algorithms fix by measuring a window that moves *with the current request* instead of snapping to the clock. The distractors describe sliding-window or queueing behavior, not fixed windows.",
+      "explanation": "A fixed window counts against the clock. At `12:00:59.9` the `12:00` window still has room, so the first 100 requests pass. A fifth of a second later the clock reaches `12:01`, the counter **resets to 0**, and the next 100 pass too. That's about 200 requests in one second, double the limit, even though each minute on its own counted only 100.\n\nThis boundary burst is the main weakness of fixed windows. Sliding-window algorithms fix it by measuring a window that ends at the current request instead of snapping to the clock. The wrong options describe sliding windows or queueing, which a fixed window doesn't do.",
       "references": "[Cloudflare: How we built rate limiting capable of scaling to millions of domains](https://blog.cloudflare.com/counting-things-a-lot-of-different-things/)"
     },
     {
       "id": "sliding-window-counter-estimate",
-      "title": "What is the estimated request count for the trailing 60 seconds?",
-      "description": "A sliding-window-*counter* limiter uses 60-second windows. Right now you are **15 seconds** into the current window. The **previous** window saw **80** requests; the **current** window has logged **20** so far.\n\nUse the standard weighted estimate `estimate = current + previous × (window − elapsed) / window`; round to the nearest whole request.",
+      "title": "What is the estimated request count for the last 60 seconds?",
+      "description": "A sliding-window *counter* uses 60-second windows. You are **15 seconds** into the current window. The **previous** window saw **80** requests, and the **current** window has **20** so far.\n\nUse the standard weighted estimate `estimate = current + previous × (window − elapsed) / window` and round to the nearest whole request.",
       "images": [
         {
           "src": "window-counters.svg",
-          "alt": "Two window schemes at a limit of 100 requests per minute. Under a fixed window, one batch of 100 sits at the end of the 12:00 window and another at the start of the 12:01 window, so about 200 requests are admitted in about a second. Under a sliding-window counter, a previous window of 80 requests and a current window of 20 are read through a trailing-60-second frame drawn 15 seconds into the current window, giving estimate = 20 + 80 × (60 − 15) / 60 = 80. Two cards contrast the log, one timestamp per request and exact at O(n) per key, with the counter, two integers per key and approximate at O(1).",
-          "caption": "The trailing frame covers 45 s of the previous window and 15 s of this one.",
+          "alt": "Two window schemes at a limit of 100 requests per minute. Under a fixed window, one batch of 100 sits at the end of the 12:00 window and another at the start of the 12:01 window, so about 200 requests are admitted in about a second. Under a sliding-window counter, a previous window of 80 requests and a current window of 20 are read through a trailing 60-second frame drawn 15 seconds into the current window, giving estimate = 20 + 80 × (60 − 15) / 60 = 80. Two cards compare the log, which stores one timestamp per request and is exact at O(n) per key, with the counter, which stores two integers per key and is approximate at O(1).",
+          "caption": "The last 60 seconds cover 45 s of the previous window and 15 s of this one.",
           "placement": "explanation",
           "width": 720,
           "height": 532
@@ -118,17 +118,17 @@
         "mode": "numeric",
         "acceptedAnswers": [80]
       },
-      "explanation": "Plug in the numbers. The weight on the previous window is `(60 − 15) / 60 = 45 / 60 = 0.75`, so:\n\n`estimate = 20 + 80 × 0.75 = 20 + 60 = `**`80`**`.\n\nThe intuition: a *true* sliding window would count every request in the trailing 60 s, which needs a timestamp per request. The counter approximates by assuming the previous window's requests were spread evenly, so it keeps only the fraction still inside the trailing 60 s — here 45 of its 60 seconds, i.e. 75% — and adds everything in the current window. Against a limit of 100, this request is admitted (80 < 100). Had the previous window held 110, the estimate would be `20 + 110 × 0.75 = 102.5` → blocked, even though the current window alone is far under 100. The payoff is **O(1) memory per key** (two integers) instead of the exact log's O(n).",
+      "explanation": "The weight on the previous window is `(60 − 15) / 60 = 0.75`, so the estimate is `20 + 80 × 0.75 = 20 + 60 =` **80**.\n\nAn exact sliding window would count every request in the last 60 seconds, which needs a timestamp for each one. The counter assumes the previous window's requests were spread evenly. It keeps the share that still falls inside the last 60 seconds (45 of 60 seconds, or 75%) and adds everything from the current window. With a limit of 100, this request is allowed because 80 < 100. If the previous window had held 110, the estimate would be `20 + 110 × 0.75 = 102.5`, and the request would be blocked even though the current window alone is well under 100. In exchange for the approximation, the counter needs only **O(1) memory per key** (two integers) instead of the exact log's O(n).",
       "references": "[Cloudflare: How we built rate limiting capable of scaling to millions of domains](https://blog.cloudflare.com/counting-things-a-lot-of-different-things/)"
     },
     {
       "id": "sliding-window-log-vs-counter",
-      "title": "What's the difference between a sliding-window log and counter?",
-      "description": "You must hold per-key limiter state for tens of millions of API keys in Redis, and you're choosing between two sliding-window implementations.",
+      "title": "How does a sliding-window log differ from a sliding-window counter?",
+      "description": "You need to keep limiter state for tens of millions of API keys in Redis, and you're choosing between two sliding-window implementations.",
       "images": [
         {
           "src": "window-counters.svg",
-          "alt": "Two window schemes at a limit of 100 requests per minute. Under a fixed window, one batch of 100 sits at the end of the 12:00 window and another at the start of the 12:01 window, so about 200 requests are admitted in about a second. Under a sliding-window counter, a previous window of 80 requests and a current window of 20 are read through a trailing-60-second frame drawn 15 seconds into the current window, giving estimate = 20 + 80 × (60 − 15) / 60 = 80. Two cards contrast the log, one timestamp per request and exact at O(n) per key, with the counter, two integers per key and approximate at O(1).",
+          "alt": "Two window schemes at a limit of 100 requests per minute. Under a fixed window, one batch of 100 sits at the end of the 12:00 window and another at the start of the 12:01 window, so about 200 requests are admitted in about a second. Under a sliding-window counter, a previous window of 80 requests and a current window of 20 are read through a trailing 60-second frame drawn 15 seconds into the current window, giving estimate = 20 + 80 × (60 − 15) / 60 = 80. Two cards compare the log, which stores one timestamp per request and is exact at O(n) per key, with the counter, which stores two integers per key and is approximate at O(1).",
           "caption": "One timestamp per request, or two integers per key.",
           "placement": "explanation",
           "width": 720,
@@ -138,59 +138,59 @@
       "type": "single-choice",
       "options": [
         {
-          "text": "The **log** stores a timestamp per request (exact, but O(n) memory per key); the **counter** keeps two integers per key (O(1) memory, but an approximation)",
+          "text": "The **log** stores a timestamp for every request, so it's exact but uses O(n) memory per key. The **counter** keeps two integers per key, so it uses O(1) memory but only approximates",
           "isCorrect": true
         },
         {
-          "text": "The **counter** is exact; the **log** is only an approximation that drifts over time",
+          "text": "The **counter** is exact, and the **log** is an approximation that drifts over time",
           "isCorrect": false
         },
         {
-          "text": "Both store one timestamp per request and differ only in their eviction policy",
+          "text": "Both store one timestamp per request and differ only in how they evict old entries",
           "isCorrect": false
         },
         {
-          "text": "The **log** uses constant memory; the **counter** grows with the request rate",
+          "text": "The **log** uses constant memory, and the **counter** grows with the request rate",
           "isCorrect": false
         }
       ],
-      "explanation": "A sliding-window **log** keeps the timestamp of every request (e.g. a Redis sorted set), counts the entries newer than `now − window`, and trims the rest. It is perfectly accurate — but its memory and trim cost grow with the number of requests in the window, **O(n) per key**, which is punishing across tens of millions of keys.\n\nA sliding-window **counter** keeps only the current and previous fixed-window totals — two integers — and blends them with the weighted estimate from the previous question. That's **O(1) memory** and one arithmetic step, at the cost of being an approximation (it assumes the previous window's load was uniform). At scale the counter's memory win dominates; reserve the log for cases that truly need exactness. The distractors simply invert which structure is exact and which is constant-memory.",
+      "explanation": "A sliding-window **log** keeps a timestamp for every request, for example in a Redis sorted set. It counts the entries newer than `now − window` and trims the rest. The count is exact, but memory and trimming cost grow with the number of requests in the window. That's **O(n) per key**, which adds up fast across tens of millions of keys.\n\nA sliding-window **counter** keeps only the totals for the current and previous fixed windows, two integers, and combines them with the weighted estimate from the previous question. It needs **O(1) memory** and one calculation, but it's an approximation because it assumes the previous window's traffic was even. At this scale the memory savings win. Use the log only when you need an exact count. The wrong options swap which structure is exact and which uses constant memory.",
       "references": "[Cloudflare: How we built rate limiting capable of scaling to millions of domains](https://blog.cloudflare.com/counting-things-a-lot-of-different-things/)"
     },
     {
       "id": "per-ip-vs-per-user-limiting",
-      "title": "What's the real trade-off between per-IP and per-user rate limiting?",
-      "description": "You're deciding what to key a limiter on: the source IP, or the authenticated user / API key.",
+      "title": "What's the trade-off between per-IP and per-user rate limiting?",
+      "description": "You're deciding what to key a limiter on: the source IP, or the signed-in user or API key.",
       "type": "single-choice",
       "options": [
         {
-          "text": "Per-IP can collectively throttle many distinct users sharing one address (corporate NAT, carrier-grade NAT, a VPN exit); per-user keying is fairer but needs to identify the caller, so it can't gate fully anonymous traffic",
+          "text": "A per-IP limit can throttle many different users who share one address (an office NAT, carrier-grade NAT, a VPN exit). A per-user limit is fairer but has to know who the caller is, so it can't cover anonymous traffic",
           "isCorrect": true
         },
         {
-          "text": "Per-IP is strictly fairer, because every user is guaranteed a unique IP address",
+          "text": "Per-IP is always fairer, because every user has their own IP address",
           "isCorrect": false
         },
         {
-          "text": "Per-user limiting needs no authentication and behaves identically for anonymous and signed-in callers",
+          "text": "Per-user limiting needs no authentication and works the same for anonymous and signed-in callers",
           "isCorrect": false
         },
         {
-          "text": "Per-IP fully stops abuse, because an attacker cannot change their source IP",
+          "text": "Per-IP limiting stops abuse completely, because attackers can't change their source IP",
           "isCorrect": false
         }
       ],
-      "explanation": "The key decides *who shares a bucket*. Per-IP is cheap and works for anonymous traffic, but many unrelated users routinely share one public IP — office and campus NATs, carrier-grade NAT on mobile networks, shared VPN/proxy exits — so one heavy user (or one abuser) can drain the limit for everyone behind that address.\n\nPer-user / per-API-key keying gives each account its own budget regardless of network: fairer and more precise, but it presupposes you can *identify* the caller, so it doesn't help before login. And neither is a silver bullet against abuse — attackers rotate through botnets and proxy pools, so per-IP limits alone don't \"stop\" them. Production systems usually **layer both**: a coarse per-IP limit for anonymous/edge protection plus a per-key limit for authenticated quotas.",
+      "explanation": "The key decides who shares a bucket. Per-IP limits are cheap and work for anonymous traffic. But many unrelated people often share one public IP: everyone behind an office or campus NAT, mobile users behind carrier-grade NAT, or everyone on the same VPN exit. One heavy user, or one abuser, can use up the limit for all of them.\n\nKeying on the user or API key gives each account its own budget wherever it connects from. That's fairer and more precise, but you have to know who the caller is, so it doesn't help before sign-in. Neither approach stops abuse on its own, since attackers rotate through botnets and proxy pools. Most production systems **use both**: a coarse per-IP limit at the edge for anonymous traffic, and a per-key limit for signed-in quotas.",
       "references": "[Cloudflare: What is rate limiting?](https://www.cloudflare.com/learning/bots/what-is-rate-limiting/)"
     },
     {
       "id": "429-vs-503-overload",
-      "title": "429 vs. 503: which says \"it's you,\" which says \"it's me\"?",
-      "description": "A gateway must reject traffic in two different situations: (a) one client blew past its own per-key quota, and (b) the whole upstream is overloaded and shedding load for everyone.",
+      "title": "429 or 503: which one says \"it's you\" and which says \"it's me\"?",
+      "description": "A gateway has to reject traffic in two situations: (a) one client went over its own per-key quota, and (b) the whole upstream is overloaded and shedding load for everyone.",
       "images": [
         {
           "src": "backoff-and-jitter.svg",
-          "alt": "Five backoff steps for base 100 ms with no jitter: attempt 0 at 100 ms, then 200, 400, 800, and attempt 4 highlighted at 1600 ms. Below, two lanes: without jitter every client's retry falls on a single instant, marked thundering herd; with jitter the same marks spread across the interval. Two cards separate 429 Too Many Requests, meaning this client is over its own quota, from 503 Service Unavailable, meaning the upstream is shedding load for everyone, and a note says Retry-After takes only delay-seconds or an HTTP-date.",
+          "alt": "Five backoff steps for a base of 100 ms with no jitter: attempt 0 at 100 ms, then 200, 400, 800, and attempt 4 highlighted at 1600 ms. Below are two lanes. Without jitter, every client's retry lands on the same instant, labeled thundering herd. With jitter, the same retries spread across the interval. Two cards separate 429 Too Many Requests, meaning this client is over its own quota, from 503 Service Unavailable, meaning the upstream is shedding load for everyone. A note says Retry-After accepts only delay-seconds or an HTTP-date.",
           "caption": "It's you, or it's me.",
           "placement": "explanation",
           "width": 720,
@@ -200,15 +200,15 @@
       "type": "single-choice",
       "options": [
         {
-          "text": "(a) → `429 Too Many Requests` (this client is over its limit); (b) → `503 Service Unavailable` (the server can't cope right now). Both may carry `Retry-After`",
+          "text": "(a) gets `429 Too Many Requests` because this client is over its limit, and (b) gets `503 Service Unavailable` because the server can't cope right now. Both can include `Retry-After`",
           "isCorrect": true
         },
         {
-          "text": "(a) → `503 Service Unavailable`; (b) → `429 Too Many Requests` — the codes map to server vs. client load in that order",
+          "text": "(a) gets `503 Service Unavailable` and (b) gets `429 Too Many Requests`",
           "isCorrect": false
         },
         {
-          "text": "Both situations should return `403 Forbidden`, since the request is being refused",
+          "text": "Both should return `403 Forbidden`, since the request is refused either way",
           "isCorrect": false
         },
         {
@@ -216,17 +216,17 @@
           "isCorrect": false
         }
       ],
-      "explanation": "`429 Too Many Requests` (RFC 6585 §4) means *this client* sent too many requests in a given time — the fault is attributable to the caller's rate. `503 Service Unavailable` (RFC 9110 §15.6.4) means *the server* is temporarily unable to handle the request — overloaded, deploying, or shedding load for everyone. Both are designed to carry **`Retry-After`** to tell the client when to come back.\n\nWhy the distractors fail: `403 Forbidden` is an authorization verdict (\"you may never do this\"), not \"slow down\" — retrying a 403 unchanged is pointless. And tunneling failures through `200 OK` is the anti-pattern that blinds every proxy, cache, retry library, and dashboard that branches on the status code. Use the status line to say *what kind* of failure this is; use `Retry-After` to say *when* to retry.",
+      "explanation": "`429 Too Many Requests` (RFC 6585 §4) means *this client* sent too many requests in a given time, so the caller is at fault. `503 Service Unavailable` (RFC 9110 §15.6.4) means *the server* can't handle the request right now, because it's overloaded, deploying, or shedding load for everyone. Both can carry **`Retry-After`** to tell the client when to try again.\n\n`403 Forbidden` is an authorization decision. It means \"you can't do this,\" not \"slow down,\" so retrying the same request is pointless. Returning errors as `200 OK` hides the failure from every proxy, cache, retry library, and dashboard that looks at the status code. Let the status code say what kind of failure it is, and let `Retry-After` say when to retry.",
       "references": "[RFC 6585 §4: 429 Too Many Requests](https://www.rfc-editor.org/rfc/rfc6585#section-4) · [RFC 9110 §15.6.4: 503 Service Unavailable](https://www.rfc-editor.org/rfc/rfc9110.html#section-15.6.4)"
     },
     {
       "id": "retry-after-valid-values",
       "title": "Which are valid `Retry-After` values?",
-      "description": "Per RFC 9110 §10.2.3, `Retry-After`'s value is **either** an HTTP-date **or** a non-negative number of seconds. Select **all** that a spec-compliant server may send.",
+      "description": "RFC 9110 §10.2.3 says the value of `Retry-After` is **either** an HTTP-date **or** a non-negative number of seconds. Select **all** the values a server that follows the spec may send.",
       "images": [
         {
           "src": "backoff-and-jitter.svg",
-          "alt": "Five backoff steps for base 100 ms with no jitter: attempt 0 at 100 ms, then 200, 400, 800, and attempt 4 highlighted at 1600 ms. Below, two lanes: without jitter every client's retry falls on a single instant, marked thundering herd; with jitter the same marks spread across the interval. Two cards separate 429 Too Many Requests, meaning this client is over its own quota, from 503 Service Unavailable, meaning the upstream is shedding load for everyone, and a note says Retry-After takes only delay-seconds or an HTTP-date.",
+          "alt": "Five backoff steps for a base of 100 ms with no jitter: attempt 0 at 100 ms, then 200, 400, 800, and attempt 4 highlighted at 1600 ms. Below are two lanes. Without jitter, every client's retry lands on the same instant, labeled thundering herd. With jitter, the same retries spread across the interval. Two cards separate 429 Too Many Requests, meaning this client is over its own quota, from 503 Service Unavailable, meaning the upstream is shedding load for everyone. A note says Retry-After accepts only delay-seconds or an HTTP-date.",
           "caption": "Two forms, and only two.",
           "placement": "explanation",
           "width": 720,
@@ -236,34 +236,34 @@
       "type": "multiple-choice",
       "options": [
         {
-          "text": "`Retry-After: 120` — wait 120 seconds (delay-seconds)",
+          "text": "`Retry-After: 120`, meaning wait 120 seconds (delay-seconds)",
           "isCorrect": true
         },
         {
-          "text": "`Retry-After: Wed, 21 Oct 2015 07:28:00 GMT` — an absolute HTTP-date",
+          "text": "`Retry-After: Wed, 21 Oct 2015 07:28:00 GMT`, an absolute HTTP-date",
           "isCorrect": true
         },
         {
-          "text": "`Retry-After: 2m0s` — a Go-style duration string",
+          "text": "`Retry-After: 2m0s`, a Go-style duration string",
           "isCorrect": false
         },
         {
-          "text": "`Retry-After: now+30` — a relative expression",
+          "text": "`Retry-After: now+30`, a relative expression",
           "isCorrect": false
         }
       ],
-      "explanation": "RFC 9110 defines `Retry-After = HTTP-date / delay-seconds`. So a bare non-negative integer (`120`, meaning \"wait 120 seconds\") is valid, and an absolute IMF-fixdate such as `Wed, 21 Oct 2015 07:28:00 GMT` is valid.\n\nWhat's **not** valid: programming-language or ad-hoc duration syntaxes. `2m0s` is Go's `time.Duration` format and `now+30` is invented — HTTP defines neither, so a conforming client isn't required to parse them and will typically ignore the header, falling back to its own backoff. When you emit `Retry-After`, send integer seconds *or* a correctly formatted HTTP-date — nothing else.",
+      "explanation": "RFC 9110 defines `Retry-After = HTTP-date / delay-seconds`. A plain non-negative integer such as `120` (wait 120 seconds) is valid, and so is a date in IMF-fixdate format such as `Wed, 21 Oct 2015 07:28:00 GMT`.\n\nDuration formats from programming languages, or made-up ones, are not valid. `2m0s` is Go's `time.Duration` format, and `now+30` isn't defined anywhere. HTTP defines neither, so clients don't have to parse them and will usually ignore the header and fall back to their own backoff. When you send `Retry-After`, use whole seconds or a correctly formatted HTTP-date.",
       "references": "[RFC 9110 §10.2.3: Retry-After](https://www.rfc-editor.org/rfc/rfc9110.html#section-10.2.3) · [MDN: Retry-After](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Retry-After)"
     },
     {
       "id": "exponential-backoff-delay",
-      "title": "What is the delay, in milliseconds, before the retry at `attempt = 4`?",
-      "description": "A client retries on `429` with exponential backoff and **no** jitter: `delay = base × 2^attempt`, where `base = 100` ms and `attempt` starts at `0` for the first retry. The server keeps returning `429`.",
+      "title": "How many milliseconds does the client wait before the retry at `attempt = 4`?",
+      "description": "A client retries on `429` with exponential backoff and **no** jitter: `delay = base × 2^attempt`, with `base = 100` ms. `attempt` is `0` for the first retry. The server keeps returning `429`.",
       "images": [
         {
           "src": "backoff-and-jitter.svg",
-          "alt": "Five backoff steps for base 100 ms with no jitter: attempt 0 at 100 ms, then 200, 400, 800, and attempt 4 highlighted at 1600 ms. Below, two lanes: without jitter every client's retry falls on a single instant, marked thundering herd; with jitter the same marks spread across the interval. Two cards separate 429 Too Many Requests, meaning this client is over its own quota, from 503 Service Unavailable, meaning the upstream is shedding load for everyone, and a note says Retry-After takes only delay-seconds or an HTTP-date.",
-          "caption": "The fifth chip: `100 × 2⁴`.",
+          "alt": "Five backoff steps for a base of 100 ms with no jitter: attempt 0 at 100 ms, then 200, 400, 800, and attempt 4 highlighted at 1600 ms. Below are two lanes. Without jitter, every client's retry lands on the same instant, labeled thundering herd. With jitter, the same retries spread across the interval. Two cards separate 429 Too Many Requests, meaning this client is over its own quota, from 503 Service Unavailable, meaning the upstream is shedding load for everyone. A note says Retry-After accepts only delay-seconds or an HTTP-date.",
+          "caption": "The fifth step: `100 × 2⁴`.",
           "placement": "explanation",
           "width": 720,
           "height": 490
@@ -274,18 +274,18 @@
         "mode": "numeric",
         "acceptedAnswers": [1600]
       },
-      "explanation": "Substitute: `delay = 100 × 2^4 = 100 × 16 = `**`1600`**` ms`.\n\nThe per-attempt sequence is `100, 200, 400, 800, 1600` ms for attempts 0–4 — each retry waits twice as long as the last, so the client backs off quickly while failures persist. Two refinements you'd add in production:\n\n- a **cap**, `min(cap, base × 2^attempt)`, so the delay can't grow without bound, and\n- **jitter**, randomizing within `[0, delay]`, so many clients don't retry in lockstep.\n\nAWS's \"full jitter\" recipe folds both together: `sleep = random(0, min(cap, base × 2^attempt))`.",
+      "explanation": "`delay = 100 × 2^4 = 100 × 16 =` **1600** ms.\n\nAttempts 0 through 4 wait `100, 200, 400, 800, 1600` ms. Each retry waits twice as long as the one before, so the client backs off quickly while the failures continue. In production you'd add two things:\n\n- a **cap**, `min(cap, base × 2^attempt)`, so the delay can't grow forever\n- **jitter**, a random delay within `[0, delay]`, so clients don't all retry at the same moment\n\nAWS's \"full jitter\" formula combines both: `sleep = random(0, min(cap, base × 2^attempt))`.",
       "references": "[AWS Architecture Blog: Exponential Backoff And Jitter](https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/)"
     },
     {
       "id": "why-jitter-in-backoff",
-      "title": "Which statements about adding jitter to backoff are correct?",
-      "description": "After a spike of `429`/`503` responses, thousands of clients all retry with exponential backoff. Adding *jitter* randomizes each client's delay. Select **all** that apply.",
+      "title": "Which statements about adding jitter to backoff are true?",
+      "description": "After a spike of `429` and `503` responses, thousands of clients retry with exponential backoff. Adding *jitter* makes each client's delay random. Select **all** that apply.",
       "images": [
         {
           "src": "backoff-and-jitter.svg",
-          "alt": "Five backoff steps for base 100 ms with no jitter: attempt 0 at 100 ms, then 200, 400, 800, and attempt 4 highlighted at 1600 ms. Below, two lanes: without jitter every client's retry falls on a single instant, marked thundering herd; with jitter the same marks spread across the interval. Two cards separate 429 Too Many Requests, meaning this client is over its own quota, from 503 Service Unavailable, meaning the upstream is shedding load for everyone, and a note says Retry-After takes only delay-seconds or an HTTP-date.",
-          "caption": "The two lanes carry the same load; only its shape differs.",
+          "alt": "Five backoff steps for a base of 100 ms with no jitter: attempt 0 at 100 ms, then 200, 400, 800, and attempt 4 highlighted at 1600 ms. Below are two lanes. Without jitter, every client's retry lands on the same instant, labeled thundering herd. With jitter, the same retries spread across the interval. Two cards separate 429 Too Many Requests, meaning this client is over its own quota, from 503 Service Unavailable, meaning the upstream is shedding load for everyone. A note says Retry-After accepts only delay-seconds or an HTTP-date.",
+          "caption": "Both lanes carry the same number of retries, spread differently.",
           "placement": "explanation",
           "width": 720,
           "height": 490
@@ -294,33 +294,33 @@
       "type": "multiple-choice",
       "options": [
         {
-          "text": "It de-synchronizes retries so clients don't all fire at the same instant, avoiding a self-inflicted \"thundering herd\" that re-overloads the recovering server",
+          "text": "Clients stop retrying at the same instant, so they don't overload the recovering server all over again (the \"thundering herd\")",
           "isCorrect": true
         },
         {
-          "text": "It spreads the retry load across an interval, smoothing the spike the server has to absorb",
+          "text": "The retries spread out over an interval, so the server faces a smaller spike",
           "isCorrect": true
         },
         {
-          "text": "It guarantees every individual client a shorter wait than plain exponential backoff",
+          "text": "Every client is guaranteed a shorter wait than with plain exponential backoff",
           "isCorrect": false
         },
         {
-          "text": "It makes each client's retry schedule deterministic and identical, which is easier to reason about",
+          "text": "Every client follows the same predictable retry schedule, which is easier to reason about",
           "isCorrect": false
         }
       ],
-      "explanation": "Without jitter, clients that failed at the same moment compute the *same* backoff (2 s, then 4 s, then 8 s…) and retry in synchronized waves, each wave hammering the server just as it tries to recover. Jitter breaks the synchronization by randomizing each delay (e.g. AWS \"full jitter\": `sleep = random(0, min(cap, base × 2^attempt))`), so retries arrive spread across the interval instead of all at once — fewer collisions, lower peak load.\n\nThe two false options invert what jitter does: it does **not** shorten any individual client's wait (on a given roll a client may wait *longer*), and it deliberately *introduces* randomness, so schedules become non-deterministic — that's the mechanism, not a drawback. The goal is lower contention and peak load, not lower per-client latency.",
+      "explanation": "Without jitter, clients that failed at the same moment compute the same backoff (2 s, then 4 s, then 8 s) and retry in waves. Each wave hits the server just as it's trying to recover. Jitter makes each delay random, for example with AWS's \"full jitter\": `sleep = random(0, min(cap, base × 2^attempt))`. The retries then arrive spread across the interval, with fewer collisions and a lower peak.\n\nJitter doesn't shorten any single client's wait. On a given roll, a client may wait longer. It also makes schedules random on purpose, since that randomness is what spreads the retries out. The goal is a lower peak load on the server, not lower latency for each client.",
       "references": "[AWS Architecture Blog: Exponential Backoff And Jitter](https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/)"
     },
     {
       "id": "thundering-herd-term",
-      "title": "What is the common two-word name for this synchronized-retry problem?",
-      "description": "Many clients fail at the same moment, all wait the *same* fixed backoff, then retry in a single synchronized wave that knocks the server over again just as it recovers — repeating the cycle. Adding jitter is the standard cure.",
+      "title": "What's the two-word name for this retry problem?",
+      "description": "Many clients fail at the same moment, all wait the *same* fixed backoff, and then retry together. The wave knocks the server over again just as it recovers, and the cycle repeats. Jitter is the usual fix.",
       "images": [
         {
           "src": "backoff-and-jitter.svg",
-          "alt": "Five backoff steps for base 100 ms with no jitter: attempt 0 at 100 ms, then 200, 400, 800, and attempt 4 highlighted at 1600 ms. Below, two lanes: without jitter every client's retry falls on a single instant, marked thundering herd; with jitter the same marks spread across the interval. Two cards separate 429 Too Many Requests, meaning this client is over its own quota, from 503 Service Unavailable, meaning the upstream is shedding load for everyone, and a note says Retry-After takes only delay-seconds or an HTTP-date.",
+          "alt": "Five backoff steps for a base of 100 ms with no jitter: attempt 0 at 100 ms, then 200, 400, 800, and attempt 4 highlighted at 1600 ms. Below are two lanes. Without jitter, every client's retry lands on the same instant, labeled thundering herd. With jitter, the same retries spread across the interval. Two cards separate 429 Too Many Requests, meaning this client is over its own quota, from 503 Service Unavailable, meaning the upstream is shedding load for everyone. A note says Retry-After accepts only delay-seconds or an HTTP-date.",
           "caption": "The spike in the top lane is the herd.",
           "placement": "explanation",
           "width": 720,
@@ -332,17 +332,17 @@
         "mode": "text",
         "acceptedAnswers": ["thundering herd", "thundering herd problem", "the thundering herd"]
       },
-      "explanation": "This is the **thundering herd** problem: a large group of clients (or processes, or threads) all wake or retry at the same instant and stampede a shared resource together, so the recovering server is toppled again before it can stabilize. Fixed-delay retries cause it because everyone computes the identical next-attempt time.\n\nThe cure is to spread the herd out: add **jitter** (randomize each backoff within `[0, delay]`) on top of exponential backoff and a retry cap. The same term appears in OS scheduling (many threads woken by one event contend for a lock) and in caching, where a popular key expires and every request misses to the origin at once — a *cache stampede*, a sibling of the same idea."
+      "explanation": "It's the **thundering herd** problem. A large group of clients, processes, or threads all wake up or retry at the same moment and hit a shared resource together, so the server falls over again before it can recover. Fixed-delay retries cause it because every client calculates the same retry time.\n\nThe fix is to spread the herd out with **jitter** (a random backoff within `[0, delay]`), on top of exponential backoff and a cap. The term also shows up in operating systems, when one event wakes many threads that then fight over a lock. Caching has a close relative called a *cache stampede*: a popular key expires and every request goes to the origin at once."
     },
     {
       "id": "writable-write-returns-false",
-      "title": "What does a `false` return from `writable.write()` mean?",
+      "title": "What does it mean when `writable.write()` returns `false`?",
       "description": "You're piping a fast source into a slower Node.js writable by hand:\n\n```js\nfor (const chunk of source) {\n  const ok = writable.write(chunk);\n  if (!ok) {\n    // ...?\n  }\n}\n```",
       "images": [
         {
           "src": "pipe-backpressure.svg",
-          "alt": "A pipe from a Readable created by createReadStream to a slow Writable HTTP response, with the writable's internal queue drawn between them as a fill bar against a dashed highWaterMark line. Two panels follow. When the queue is at or above the mark, write(chunk) returns false — the chunk is still accepted and queued — and pipe() calls readable.pause(). When the queue drains below the mark, the 'drain' event fires and pipe() calls readable.resume(). A closing note says ignoring the false only queues more chunks in memory until RSS kills the process, so backpressure guards memory rather than the socket or the disk, and that objectMode counts objects, making the default mark 16 objects instead of 16 KB.",
-          "caption": "`false` means the queue is above the mark — the chunk was still accepted.",
+          "alt": "A pipe from a Readable created by createReadStream to a slow Writable HTTP response, with the writable's internal queue drawn between them as a fill bar against a dashed highWaterMark line. Two panels follow. When the queue is at or above the mark, write(chunk) returns false, the chunk is still accepted and queued, and pipe() calls readable.pause(). When the queue drains below the mark, the 'drain' event fires and pipe() calls readable.resume(). A closing note says that ignoring the false only queues more chunks in memory until RSS kills the process, so backpressure protects memory rather than the socket or the disk. It also says objectMode counts objects, so the default mark is 16 objects instead of 16 KB.",
+          "caption": "`false` means the queue is above the mark. The chunk was still accepted.",
           "placement": "explanation",
           "width": 720,
           "height": 528
@@ -351,34 +351,34 @@
       "type": "single-choice",
       "options": [
         {
-          "text": "The internal buffer has reached `highWaterMark`. The chunk was still accepted and queued, but you should pause and wait for the `'drain'` event before writing more",
+          "text": "The internal buffer has reached `highWaterMark`. The chunk was still accepted and queued, but you should wait for the `'drain'` event before writing more",
           "isCorrect": true
         },
         {
-          "text": "The write failed; the chunk was dropped and you must send it again",
+          "text": "The write failed, the chunk was dropped, and you have to send it again",
           "isCorrect": false
         },
         {
-          "text": "The chunk exceeded `highWaterMark` and was rejected; split it into smaller pieces",
+          "text": "The chunk was bigger than `highWaterMark` and was rejected, so you should split it into smaller pieces",
           "isCorrect": false
         },
         {
-          "text": "The stream has already ended, so no further writes are possible",
+          "text": "The stream has already ended, so you can't write to it anymore",
           "isCorrect": false
         }
       ],
-      "explanation": "`writable.write()` returns a boolean **flow-control signal**, not a success flag. It returns `false` once the buffered data reaches the stream's `highWaterMark` — Node's way of saying \"I accepted this, but I'm falling behind; please stop.\" The chunk is **not** lost or rejected: it's queued and will be written.\n\nThe correct response is to stop calling `write()` and wait for the `'drain'` event, which fires once the buffer has emptied enough to resume:\n\n```js\nimport { once } from 'node:events';\n\nif (!writable.write(chunk)) {\n  await once(writable, 'drain');\n}\n```\n\n`highWaterMark` is a *threshold* that flips this signal, not a hard cap — which is why \"rejected\" / \"split it\" is wrong. Ignoring the return value and writing anyway is the classic backpressure bug. The idiomatic fix is to let `stream.pipeline()` or `readable.pipe()` manage this handshake for you.",
+      "explanation": "The boolean from `writable.write()` is a signal to slow down, not a success flag. It returns `false` once the buffered data reaches the stream's `highWaterMark`. Node is saying \"I took this chunk, but I'm falling behind, so please stop for now.\" The chunk isn't lost or rejected. It's queued and will be written.\n\nStop calling `write()` and wait for the `'drain'` event, which fires once the buffer has emptied enough to continue:\n\n```js\nimport { once } from 'node:events';\n\nif (!writable.write(chunk)) {\n  await once(writable, 'drain');\n}\n```\n\n`highWaterMark` is the threshold that flips the signal, not a hard size limit, so the \"rejected, split it\" option is wrong. Ignoring the return value and writing anyway is the classic backpressure bug. The simplest fix is to let `stream.pipeline()` or `readable.pipe()` handle this for you.",
       "references": "[Node.js docs: writable.write()](https://nodejs.org/api/stream.html#writablewritechunk-encoding-callback) · [Node.js: Backpressuring in Streams](https://nodejs.org/en/learn/modules/backpressuring-in-streams)"
     },
     {
       "id": "ignoring-backpressure-oom",
-      "title": "What happens when the source far outpaces the slow socket?",
-      "description": "A service reads a huge file (or a fast upstream) and writes every chunk to a slow destination — a throttled socket — never checking the return value:\n\n```js\nfor await (const chunk of fastSource) {\n  slowSocket.write(chunk); // return value ignored\n}\n```",
+      "title": "What happens when the source is much faster than the slow socket?",
+      "description": "A service reads a huge file (or a fast upstream) and writes every chunk to a slow, throttled socket without checking the return value:\n\n```js\nfor await (const chunk of fastSource) {\n  slowSocket.write(chunk); // return value ignored\n}\n```",
       "images": [
         {
           "src": "pipe-backpressure.svg",
-          "alt": "A pipe from a Readable created by createReadStream to a slow Writable HTTP response, with the writable's internal queue drawn between them as a fill bar against a dashed highWaterMark line. Two panels follow. When the queue is at or above the mark, write(chunk) returns false — the chunk is still accepted and queued — and pipe() calls readable.pause(). When the queue drains below the mark, the 'drain' event fires and pipe() calls readable.resume(). A closing note says ignoring the false only queues more chunks in memory until RSS kills the process, so backpressure guards memory rather than the socket or the disk, and that objectMode counts objects, making the default mark 16 objects instead of 16 KB.",
-          "caption": "With nothing pausing the source, the queue in the middle is the only thing that grows.",
+          "alt": "A pipe from a Readable created by createReadStream to a slow Writable HTTP response, with the writable's internal queue drawn between them as a fill bar against a dashed highWaterMark line. Two panels follow. When the queue is at or above the mark, write(chunk) returns false, the chunk is still accepted and queued, and pipe() calls readable.pause(). When the queue drains below the mark, the 'drain' event fires and pipe() calls readable.resume(). A closing note says that ignoring the false only queues more chunks in memory until RSS kills the process, so backpressure protects memory rather than the socket or the disk. It also says objectMode counts objects, so the default mark is 16 objects instead of 16 KB.",
+          "caption": "Nothing pauses the source, so the queue in the middle keeps growing.",
           "placement": "explanation",
           "width": 720,
           "height": 528
@@ -387,33 +387,33 @@
       "type": "single-choice",
       "options": [
         {
-          "text": "Node keeps accepting and buffering the unflushed chunks in memory; the writable's buffer grows without bound until memory is exhausted and the process crashes",
+          "text": "Node keeps accepting chunks and buffering the ones it hasn't sent yet. The buffer grows until the process runs out of memory and crashes",
           "isCorrect": true
         },
         {
-          "text": "`write()` blocks the event loop until each chunk is flushed, so memory stays flat but throughput collapses",
+          "text": "`write()` blocks the event loop until each chunk is sent, so memory stays flat but throughput drops",
           "isCorrect": false
         },
         {
-          "text": "Node detects the imbalance and automatically pauses the source for you",
+          "text": "Node notices the imbalance and pauses the source for you",
           "isCorrect": false
         },
         {
-          "text": "The excess chunks are silently discarded once the buffer passes `highWaterMark`, so memory is safe",
+          "text": "Chunks past `highWaterMark` are quietly thrown away, so memory stays safe",
           "isCorrect": false
         }
       ],
-      "explanation": "`highWaterMark` is advisory, not a hard limit. When you ignore the `false` return from `write()` and keep pushing, Node neither blocks nor drops data — it queues every chunk in the writable's internal buffer, which grows unbounded because the producer outpaces the consumer. Memory climbs until the process is OOM-killed — the exact failure backpressure exists to prevent.\n\nThe distractors are three tempting myths: `write()` is **non-blocking** (it returns immediately, so it can't throttle by stalling the loop); Node does **not** auto-pause a *manually* driven source — only `pipe()` / `pipeline()` wire up that handshake; and chunks past the watermark are **buffered, never silently dropped**. The fix is to honor the `'drain'` signal yourself or, better, hand the whole transfer to `stream.pipeline(fastSource, slowSocket, cb)`, which propagates backpressure, errors, and cleanup end to end.",
+      "explanation": "`highWaterMark` is a hint, not a hard limit. If you ignore `false` from `write()` and keep writing, Node doesn't block and doesn't drop data. It queues every chunk in the writable's internal buffer, and the buffer keeps growing because the producer is faster than the consumer. Memory climbs until the process is killed for running out of it, which is exactly what backpressure is meant to prevent.\n\nThe other options are common myths. `write()` doesn't block: it returns right away, so it can't slow anything down by stalling the event loop. Node doesn't pause a source you drive by hand. Only `pipe()` and `pipeline()` do that. And chunks past the mark are buffered, never dropped. Wait for `'drain'` yourself, or better, use `stream.pipeline(fastSource, slowSocket, cb)`, which handles backpressure, errors, and cleanup for the whole chain.",
       "references": "[Node.js: Backpressuring in Streams](https://nodejs.org/en/learn/modules/backpressuring-in-streams) · [Node.js docs: stream.pipeline()](https://nodejs.org/api/stream.html#streampipelinesource-transforms-destination-callback)"
     },
     {
       "id": "load-shedding-bounded-queue",
-      "title": "Why does a bounded queue beat an unbounded one under overload?",
-      "description": "A service receives work faster than it can process it for a sustained period. One design buffers everything in an **unbounded** in-memory queue; another keeps a **bounded** queue and rejects (sheds) work once it's full.",
+      "title": "Why is a bounded queue better than an unbounded one under overload?",
+      "description": "A service gets work faster than it can process it, for a long stretch. One design puts everything in an **unbounded** in-memory queue. The other uses a **bounded** queue and rejects (sheds) new work once it's full.",
       "type": "single-choice",
       "options": [
         {
-          "text": "The unbounded queue turns sustained overload into ever-growing latency and memory until the process OOMs — and by the time old items run, callers have often timed out. A bounded queue + load shedding fails fast (e.g. `429`/`503`), keeping the system responsive",
+          "text": "With an unbounded queue, latency and memory keep growing until the process runs out of memory, and callers often time out before their old items run. A bounded queue with load shedding rejects quickly (for example with `429` or `503`) and keeps the system responsive",
           "isCorrect": true
         },
         {
@@ -421,29 +421,29 @@
           "isCorrect": false
         },
         {
-          "text": "The bounded queue is worse: rejecting requests always lowers total goodput compared with eventually serving them all",
+          "text": "The bounded queue is worse, because rejecting requests always lowers goodput compared with serving them all eventually",
           "isCorrect": false
         },
         {
-          "text": "Queue length has no effect on latency as long as the average arrival rate equals the average service rate",
+          "text": "Queue length doesn't affect latency as long as the average arrival rate equals the average service rate",
           "isCorrect": false
         }
       ],
-      "explanation": "Throughput is capped by the **service rate** μ, not by how big the queue is — a bigger buffer adds no processing power. If arrivals λ exceed μ for any sustained period, the backlog grows at roughly `(λ − μ)` per second without bound. **Little's Law** (`L = λ × W`) captures the consequence: the more items are in the system (L), the longer each one waits (W). So an unbounded queue converts overload into *unbounded latency* — requests sit so long that clients time out, and you burn capacity computing responses nobody is waiting for (negative goodput) — and *unbounded memory*, until the process is OOM-killed.\n\n**Load shedding** is the deliberate fix: cap the queue and reject the overflow immediately with a fast `429`/`503` + `Retry-After`, so accepted work stays fresh and the server protects its own stability — *fail fast* beats *queue forever*. The claim that queue length stops mattering once λ equals μ hides a subtlety: even when λ ≈ μ on average, bursts make the queue and latency fluctuate, and as utilization approaches 100% the queueing delay grows sharply.",
+      "explanation": "The **service rate** μ limits throughput, and a bigger queue doesn't add any processing power. If arrivals λ stay above μ, the backlog grows by about `(λ − μ)` items a second with no end. **Little's Law** (`L = λ × W`) shows what that means: the more items waiting (L), the longer each one waits (W). An unbounded queue turns overload into ever-growing latency. Requests wait so long that clients time out, and the server spends its capacity on responses nobody is waiting for. Memory grows too, until the process is killed.\n\n**Load shedding** fixes this. Cap the queue and reject the overflow right away with a `429` or `503` and `Retry-After`. The work you accept stays fresh, and the server stays up. The last option skips a detail: even when λ matches μ on average, bursts make the queue and latency swing, and queueing delay rises sharply as utilization gets close to 100%.",
       "references": "[Google SRE Book: Handling Overload](https://sre.google/sre-book/handling-overload/)"
     },
     {
       "id": "debounce-vs-throttle",
-      "title": "Which of these two behaviors is debounce, and which is throttle?",
-      "description": "Two client-side rate-control techniques for noisy event streams (keystrokes, scroll, resize): one fires a single time *after* activity settles; the other fires at most once per fixed interval *during* activity.",
+      "title": "Which behavior is debounce, and which is throttle?",
+      "description": "Two browser techniques for noisy events like keystrokes, scroll, and resize. One fires once *after* the activity stops. The other fires at most once per interval *while* the activity continues.",
       "type": "single-choice",
       "options": [
         {
-          "text": "**Debounce** waits for a quiet gap and then fires once (ideal for search-as-you-type, where you only query after the user pauses); **throttle** fires at most once per interval during continuous events (ideal for scroll/resize handlers)",
+          "text": "**Debounce** waits for a pause and then fires once, which suits search-as-you-type. **Throttle** fires at most once per interval during continuous events, which suits scroll and resize handlers",
           "isCorrect": true
         },
         {
-          "text": "**Throttle** fires once after activity stops; **debounce** fires at a steady cadence during activity",
+          "text": "**Throttle** fires once after the activity stops, and **debounce** fires at a steady pace during it",
           "isCorrect": false
         },
         {
@@ -451,11 +451,11 @@
           "isCorrect": false
         },
         {
-          "text": "They are interchangeable names for the same timer-based technique",
+          "text": "They're two names for the same timer technique",
           "isCorrect": false
         }
       ],
-      "explanation": "Both collapse a flood of events into fewer calls, but with different timing. **Debounce** resets a timer on every event and only fires when events *stop* for the chosen interval — so a burst of 50 keystrokes triggers exactly one call, after the user pauses. Perfect for search-as-you-type or \"resize finished\" work.\n\n**Throttle** instead enforces a steady ceiling: at most one call per interval *while events keep coming* — so a scroll firing hundreds of events per second is reduced to, say, one handler call every 100 ms. Rule of thumb: *debounce* when you only care about the final state after activity ends; *throttle* when you want regular updates during activity but capped in frequency. They're the client-side cousins of server rate limiting — same goal (protect a resource from too-frequent calls), applied in the browser before a request is even sent.",
+      "explanation": "Both turn a flood of events into fewer calls, with different timing. **Debounce** restarts a timer on every event and fires only when the events stop for the chosen interval. Fifty keystrokes in a row trigger one call, after the user pauses. Use it for search-as-you-type or for work that should run once a resize is finished.\n\n**Throttle** sets a steady ceiling of one call per interval while events keep coming. A scroll that fires hundreds of events a second becomes, say, one handler call every 100 ms. Debounce when you only care about the final state. Throttle when you want regular updates during the activity, just not too many. They're the browser-side version of server rate limiting: both protect something from being called too often, and these do it before a request is even sent.",
       "references": "[CSS-Tricks: Debouncing and Throttling Explained Through Examples](https://css-tricks.com/debouncing-throttling-explained-examples/)"
     }
   ]

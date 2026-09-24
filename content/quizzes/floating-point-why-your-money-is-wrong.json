@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "id": "floating-point-why-your-money-is-wrong",
-  "title": "Floating Point: Why Your Money Is Wrong",
-  "description": "Every answer here is decidable by IEEE 754 and ECMA-262. No opinions, no engine trivia. Binary fractions, the lies `toFixed` tells, negative zero, the gaps above `Number.MAX_SAFE_INTEGER`, and why summing the same million numbers in a different order gives you a different total.",
+  "title": "Floating point in JavaScript: binary fractions, rounding, and precision limits",
+  "description": "Why `0.1 + 0.2` isn't `0.3`, why `toFixed` sometimes rounds the wrong way, where negative zero comes from, what happens above `Number.MAX_SAFE_INTEGER`, and why adding the same numbers in a different order can change the total. Every answer follows from IEEE 754 and ECMA-262.",
   "language": "en",
   "tags": [
     "javascript",
@@ -16,7 +16,7 @@
     {
       "id": "point-one-plus-point-two",
       "title": "What does `0.1 + 0.2` evaluate to in JavaScript?",
-      "description": "Type the value the engine actually prints, every digit of it.\n\n```js\nconsole.log(0.1 + 0.2);\n// ?\n```",
+      "description": "Type the exact value the engine prints, every digit.\n\n```js\nconsole.log(0.1 + 0.2);\n// ?\n```",
       "images": [
         {
           "src": "tenths-in-binary.svg",
@@ -34,7 +34,7 @@
           0.30000000000000004
         ]
       },
-      "explanation": "`0.1 + 0.2` is `0.30000000000000004`.\n\nNeither input is exact. Stored as doubles, `0.1` is really `0.1000000000000000055511151231257827021181583404541015625` and `0.2` is really `0.200000000000000011102230246251565404236316680908203125`.\n\nBoth got rounded up when the parser read them, so their sum leans high. The nearest double to that sum is `0.3000000000000000444089209850062616169452667236328125`, which prints as `0.30000000000000004`. Meanwhile the literal `0.3` parses to a different double, `0.299999999999999988897769753748434595763683319091796875`. Two different bit patterns, so `===` says no.\n\nAsk for the digits the printer normally hides and the whole story shows up:\n\n```js\n(0.1).toFixed(20);       // \"0.10000000000000000555\"  rounded up\n(0.2).toFixed(20);       // \"0.20000000000000001110\"  rounded up\n(0.1 + 0.2).toFixed(20); // \"0.30000000000000004441\"\n(0.3).toFixed(20);       // \"0.29999999999999998890\"  rounded down\n```\n\nFloats are not fuzzy or unpredictable. They are perfectly deterministic, and you were rounding at a different moment than you thought.",
+      "explanation": "`0.1 + 0.2` is `0.30000000000000004`.\n\nNeither input is exact. As doubles, `0.1` is really `0.1000000000000000055511151231257827021181583404541015625` and `0.2` is really `0.200000000000000011102230246251565404236316680908203125`.\n\nBoth round up when the parser reads them, so their sum comes out a little high. The nearest double to that sum is `0.3000000000000000444089209850062616169452667236328125`, which prints as `0.30000000000000004`. The literal `0.3` parses to a different double, `0.299999999999999988897769753748434595763683319091796875`. The bit patterns differ, so `===` returns `false`.\n\n`toFixed(20)` shows the digits that printing normally hides:\n\n```js\n(0.1).toFixed(20);       // \"0.10000000000000000555\"  rounded up\n(0.2).toFixed(20);       // \"0.20000000000000001110\"  rounded up\n(0.1 + 0.2).toFixed(20); // \"0.30000000000000004441\"\n(0.3).toFixed(20);       // \"0.29999999999999998890\"  rounded down\n```\n\nFloats aren't random. The same inputs always give the same result. The rounding just happens earlier than most people expect, when the literal is parsed.",
       "references": "- [0.30000000000000004.com, the same result in 100+ languages](https://0.30000000000000004.com/)\n- [Wikipedia: Double-precision floating-point format](https://en.wikipedia.org/wiki/Double-precision_floating-point_format)\n- [float.exposed, the bits of `0.1` laid out](https://float.exposed/0x3fb999999999999a)"
     },
     {
@@ -44,7 +44,7 @@
         {
           "src": "double-bit-layout.svg",
           "alt": "The 64 bits of a double laid out as a bit grid: 1 sign bit, an 11-bit biased exponent, and a 52-bit mantissa, with the formula value equals minus one to the sign times 1.mantissa times 2 to the exponent minus 1023.",
-          "caption": "The exponent shifts the binary point; the mantissa bits are the finite budget `1/10` can't fit into.",
+          "caption": "The exponent moves the binary point. The mantissa has a fixed number of bits, and `1/10` doesn't fit in them.",
           "placement": "explanation",
           "width": 720,
           "height": 360
@@ -77,13 +77,13 @@
           "isCorrect": false
         }
       ],
-      "explanation": "A double is `sign × significand × 2^exponent`, a binary fraction. A number is exactly representable only when its denominator, in lowest terms, is a power of two.\n\n`0.5 = 1/2`, `0.25 = 1/4`, and `0.75 = 3/4` all qualify. `0.1 = 1/10 = 1/(2 × 5)` does not, because that factor of 5 has nowhere to go. In binary it comes out as `0.0001100110011…`, repeating forever, exactly the way `1/3` repeats forever in decimal. The significand gets cut off at 53 bits and rounded.\n\nYou can see the split directly:\n\n```js\n(0.5).toFixed(20);  // \"0.50000000000000000000\"  exact\n(0.25).toFixed(20); // \"0.25000000000000000000\"  exact\n(0.75).toFixed(20); // \"0.75000000000000000000\"  exact\n(0.1).toFixed(20);  // \"0.10000000000000000555\"  not exact\n```\n\nNothing is broken here. `0.1` is stored as faithfully as a finite binary number can manage, to within about 5.5 × 10⁻¹⁸.\n\nThe decimal-digit count is a red herring. `0.1` is one digit and impossible, while `0.5`, `0.0625`, and `1048576.5` are all longer and all exact.",
+      "explanation": "A double stores `sign × significand × 2^exponent`, which is a binary fraction. A number fits exactly only if its denominator, in lowest terms, is a power of two.\n\n`0.5 = 1/2`, `0.25 = 1/4`, and `0.75 = 3/4` all fit. `0.1 = 1/10 = 1/(2 × 5)` doesn't, because of the factor of 5. In binary it's `0.0001100110011…`, repeating forever, just like `1/3` in decimal. The engine keeps 53 bits of significand and rounds the rest.\n\n`toFixed(20)` shows the difference:\n\n```js\n(0.5).toFixed(20);  // \"0.50000000000000000000\"  exact\n(0.25).toFixed(20); // \"0.25000000000000000000\"  exact\n(0.75).toFixed(20); // \"0.75000000000000000000\"  exact\n(0.1).toFixed(20);  // \"0.10000000000000000555\"  not exact\n```\n\nThe stored `0.1` is as close as a double can get, within about 5.5 × 10⁻¹⁸.\n\nThe number of decimal digits doesn't matter. `0.1` has one digit and can't be stored exactly, while `0.5`, `0.0625`, and `1048576.5` are longer and exact.",
       "references": "- [David Goldberg: *What Every Computer Scientist Should Know About Floating-Point Arithmetic*](https://docs.oracle.com/cd/E19957-01/806-3568/ncg_goldberg.html)\n- [Wikipedia: Double-precision floating-point format](https://en.wikipedia.org/wiki/Double-precision_floating-point_format)"
     },
     {
       "id": "which-tenths-sum-exactly",
       "title": "Which of these strict comparisons evaluates to `true`?",
-      "description": "All four add two one-decimal literals and compare against the one-decimal literal you would expect.\n\n```js\n0.1 + 0.2 === 0.3;\n0.1 + 0.3 === 0.4;\n0.1 + 0.7 === 0.8;\n0.2 + 0.4 === 0.6;\n```",
+      "description": "Each line adds two one-decimal literals and compares the sum with the literal you'd expect.\n\n```js\n0.1 + 0.2 === 0.3;\n0.1 + 0.3 === 0.4;\n0.1 + 0.7 === 0.8;\n0.2 + 0.4 === 0.6;\n```",
       "type": "single-choice",
       "options": [
         {
@@ -103,7 +103,7 @@
           "isCorrect": false
         }
       ],
-      "explanation": "Only `0.1 + 0.3 === 0.4` holds. Here is what each one actually produces:\n\n```js\n0.1 + 0.2; // 0.30000000000000004\n0.1 + 0.3; // 0.4                 <- exact\n0.1 + 0.7; // 0.7999999999999999\n0.2 + 0.4; // 0.6000000000000001\n```\n\nThis is the part people mis-remember. `0.1 + 0.7 === 0.8` gets repeated constantly as an example of a tenths pair that works, and it is false.\n\nSome tenths do add cleanly. `0.1 + 0.6`, `0.3 + 0.4`, and `0.4 + 0.5` all land exactly on their literal. There is no memorable pattern for which ones, because the outcome depends on which way three separate roundings went: the two operands when the parser read them, the sum when the hardware rounded it, and the literal on the right-hand side when the parser read that.\n\nSo do not try to learn which pairs are safe. Stop using `===` on computed floats. Once your correctness argument depends on which side of a tie a rounding fell, you have written a bug that is waiting for a different input.",
+      "explanation": "Only `0.1 + 0.3 === 0.4` is true. Here's what each sum actually gives:\n\n```js\n0.1 + 0.2; // 0.30000000000000004\n0.1 + 0.3; // 0.4                 <- exact\n0.1 + 0.7; // 0.7999999999999999\n0.2 + 0.4; // 0.6000000000000001\n```\n\nPeople often remember `0.1 + 0.7 === 0.8` as a pair that works. It's false.\n\nSome tenths do add exactly. `0.1 + 0.6`, `0.3 + 0.4`, and `0.4 + 0.5` all match their literal. There's no easy pattern, because the result depends on three separate roundings: the two operands when parsed, the sum after the addition, and the literal on the right when parsed.\n\nSo don't try to memorize the safe pairs. Just don't use `===` on computed floats. If your code is correct only because a rounding happened to go one way, a different input will break it.",
       "references": "- [MDN: Equality comparisons and sameness](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Equality_comparisons_and_sameness)\n- [0.30000000000000004.com](https://0.30000000000000004.com/)"
     },
     {
@@ -113,7 +113,7 @@
         {
           "src": "number-line-gaps.svg",
           "alt": "Four number-line panels showing the gap between representable doubles widening with magnitude: near 0.3 the ULP is about 5.6 times 10 to the minus 17, near 2 to the 52 the ULP is 1, at 2 to the 53 the ULP becomes 2 and 2 to the 53 plus 1 collides with 2 to the 53, and by 2 to the 60 the ULP is 256.",
-          "caption": "Near 0.3 the gap between doubles is about 5.6 × 10⁻¹⁷ — `0.1 + 0.2` lands exactly one slot over.",
+          "caption": "Near 0.3, doubles are about 5.6 × 10⁻¹⁷ apart. `0.1 + 0.2` lands one step above `0.3`.",
           "placement": "explanation",
           "width": 720,
           "height": 540
@@ -138,13 +138,13 @@
           "isCorrect": false
         }
       ],
-      "explanation": "Reinterpret the eight bytes of each double as a 64-bit integer and the bit patterns turn out to be consecutive:\n\n```js\n0.3       -> 0x3fd3333333333333\n0.1 + 0.2 -> 0x3fd3333333333334\n```\n\nOne ULP apart, short for unit in the last place. The gap itself is 2⁻⁵⁴ ≈ 5.551 × 10⁻¹⁷, which is why `0.1 + 0.2 - 0.3` gives `5.551115123125783e-17`. That number is the size of a single step at this magnitude, not a pile of accumulated error.\n\nSo the addition was as accurate as double arithmetic can be. It just landed one notch over. This is the smallest possible way for two doubles to disagree, and it is still enough to break `===`.\n\nOne ULP is not `Number.EPSILON`. `Number.EPSILON` is the ULP at magnitude 1, which is 2⁻⁵², four times larger than the ULP near 0.3 and wildly different from the ULP near 10⁷.",
+      "explanation": "Read the 8 bytes of each double as a 64-bit integer, and the two bit patterns are consecutive:\n\n```js\n0.3       -> 0x3fd3333333333333\n0.1 + 0.2 -> 0x3fd3333333333334\n```\n\nThey're one ULP (unit in the last place) apart. At this size one ULP is 2⁻⁵⁴ ≈ 5.551 × 10⁻¹⁷, which is why `0.1 + 0.2 - 0.3` gives `5.551115123125783e-17`. That's a single step, not a buildup of error.\n\nSo the addition was as accurate as a double allows. It landed one step away, the smallest possible difference between two doubles, and that's still enough to make `===` fail.\n\nOne ULP isn't the same as `Number.EPSILON`. `Number.EPSILON` is the ULP at 1, which is 2⁻⁵². That's four times the ULP near 0.3, and far smaller than the ULP near 10⁷.",
       "references": "- [Wikipedia: Unit in the last place](https://en.wikipedia.org/wiki/Unit_in_the_last_place)\n- [float.exposed, inspect these bit patterns yourself](https://float.exposed/0x3fd3333333333333)"
     },
     {
       "id": "shortest-round-trip-printing",
       "title": "Why does `String(0.1)` print `\"0.1\"` while `String(0.1 + 0.2)` prints all 17 digits?",
-      "description": "Both values are inexact, yet only one of them looks it.\n\n```js\nString(0.1);       // \"0.1\"\nString(0.1 + 0.2); // \"0.30000000000000004\"\n```",
+      "description": "Both values are inexact, but only one of them looks that way.\n\n```js\nString(0.1);       // \"0.1\"\nString(0.1 + 0.2); // \"0.30000000000000004\"\n```",
       "type": "single-choice",
       "options": [
         {
@@ -164,7 +164,7 @@
           "isCorrect": false
         }
       ],
-      "explanation": "Both values are inexact. The difference lives entirely in the printer.\n\nECMA-262's Number-to-String algorithm asks for the shortest decimal literal that parses back to exactly this double. You can watch it decide:\n\n```js\nNumber(\"0.1\") === 0.1;                       // true  -> 1 digit is enough\nNumber(\"0.3\") === 0.1 + 0.2;                 // false -> not enough\nNumber(\"0.30000000000000004\") === 0.1 + 0.2; // true  -> 17 digits needed\n```\n\n`0.1` is the shortest string that lands on its double, so that is what you see, even though the stored value is `0.1000000000000000055511…`. The sum sits one ULP away from `0.3`, so any short spelling would round to `0.3` instead, and the printer gets pushed all the way out to 17 significant digits to disambiguate.\n\nHere is the consequence that bites. `console.log` hides the error by design. Two values that both print as `0.1` can still be different doubles. When you need the truth, use `toFixed(20)` or look at the bit pattern.",
+      "explanation": "Both values are inexact. The difference comes from how numbers are printed.\n\nECMA-262 converts a number to a string by finding the shortest decimal that parses back to the same double. You can check the candidates yourself:\n\n```js\nNumber(\"0.1\") === 0.1;                       // true  -> 1 digit is enough\nNumber(\"0.3\") === 0.1 + 0.2;                 // false -> not enough\nNumber(\"0.30000000000000004\") === 0.1 + 0.2; // true  -> 17 digits needed\n```\n\n`\"0.1\"` is the shortest string that parses back to the stored double, so that's what you see, even though the stored value is `0.1000000000000000055511…`. The sum is one ULP away from `0.3`, so any shorter string would parse as `0.3`. The printer needs 17 significant digits to tell them apart.\n\nThis means `console.log` hides small errors by design. A value that prints as `0.1` isn't exactly one tenth. To see the real value, use `toFixed(20)` or look at the bits.",
       "references": "- [ECMA-262: Number::toString](https://tc39.es/ecma262/#sec-numeric-types-number-tostring)\n- [MDN: Number.prototype.toString()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/toString)"
     },
     {
@@ -174,7 +174,7 @@
         {
           "src": "tenths-in-binary.svg",
           "alt": "0.1 written out in binary as a chip sequence: 0001, then 1001 repeating forever, with a dashed cut line marking where the double's 52 mantissa bits stop and the value rounds up to 0.1000000000000000055511151231257827021181583404541015625.",
-          "caption": "The double nearest `0.1` terminates, because every double is a finite binary fraction — it just takes 53 bits to say.",
+          "caption": "Every double is a finite binary fraction, so the double nearest `0.1` does end. It just needs 53 bits.",
           "placement": "explanation",
           "width": 720,
           "height": 360
@@ -199,7 +199,7 @@
           "isCorrect": false
         }
       ],
-      "explanation": "Ask for more digits than the shortest round-trip needs and the printer stops protecting you.\n\n```js\n(0.1).toFixed(20); // \"0.10000000000000000555\"\n```\n\nThe full exact value of the double nearest `0.1` is\n\n```text\n0.1000000000000000055511151231257827021181583404541015625\n```\n\nand it terminates. Every double is a finite binary fraction, so it has a finite decimal expansion, however long. `toFixed(20)` just shows you the first 20 places of it. Modern engines accept 0 through 100 digits, so `(0.1).toFixed(100)` will show you the whole thing.\n\nNote the direction. The stored value sits above one tenth, not below, which is why `0.1 + 0.2` overshoots rather than falling short.",
+      "explanation": "Ask for more digits than the shortest round-trip string, and you see the stored value:\n\n```js\n(0.1).toFixed(20); // \"0.10000000000000000555\"\n```\n\nThe exact value of the double nearest `0.1` is\n\n```text\n0.1000000000000000055511151231257827021181583404541015625\n```\n\nand it ends. Every double is a finite binary fraction, so its decimal expansion is finite too, though it can be long. `toFixed(20)` shows the first 20 decimal places. Modern engines accept 0 to 100 digits, so `(0.1).toFixed(100)` shows all of it.\n\nNotice the direction. The stored value is slightly above one tenth, which is why `0.1 + 0.2` overshoots `0.3` instead of falling short.",
       "references": "- [MDN: Number.prototype.toFixed()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/toFixed)\n- [ECMA-262: Number.prototype.toFixed](https://tc39.es/ecma262/#sec-number.prototype.tofixed)"
     },
     {
@@ -215,13 +215,13 @@
           "'1.00'"
         ]
       },
-      "explanation": "`\"1.00\"`, not `\"1.01\"`.\n\nEvery bug report about this calls it a rounding bug. It is a storage bug. The literal `1.005` never existed as a double in the first place:\n\n```js\n(1.005).toFixed(20); // \"1.00499999999999989342\"\n```\n\nThe exact stored value is `1.00499999999999989341858963598497211933135986328125`, which sits genuinely below the halfway point. There is no tie to break. `toFixed` rounded correctly. Somebody handed it a number slightly smaller than the one you typed.\n\nThe same trap catches `(2.675).toFixed(2)`, which gives `\"2.67\"`, and `(1.045).toFixed(2)`, which gives `\"1.04\"`. Do not read that as a systematic downward bias, though. `(1.235).toFixed(2)` gives `\"1.24\"`, because that literal happens to land above its halfway point. Which way any given price rounds is a coin flip decided by the parser.",
+      "explanation": "It's `\"1.00\"`, not `\"1.01\"`.\n\nThis gets reported as a rounding bug, but the problem is storage. `1.005` can't be stored as a double:\n\n```js\n(1.005).toFixed(20); // \"1.00499999999999989342\"\n```\n\nThe exact stored value is `1.00499999999999989341858963598497211933135986328125`, just below the halfway point. There's no tie to break, and `toFixed` rounds correctly. It simply got a slightly smaller number than the one you typed.\n\n`(2.675).toFixed(2)` gives `\"2.67\"` and `(1.045).toFixed(2)` gives `\"1.04\"` for the same reason. That doesn't mean it always rounds down. `(1.235).toFixed(2)` gives `\"1.24\"`, because that literal is stored slightly above its halfway point. Which way a given price rounds depends on how the parser happened to store it.",
       "references": "- [MDN: Number.prototype.toFixed()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/toFixed)\n- [ECMA-262: Number.prototype.toFixed](https://tc39.es/ecma262/#sec-number.prototype.tofixed)"
     },
     {
       "id": "tofixed-is-not-bankers-rounding",
-      "title": "Which observation proves `toFixed` is not using banker's rounding when `(1.005).toFixed(2)` yields `\"1.00\"`?",
-      "description": "Banker's rounding, which rounds halves to even, would also turn a true tie at `1.005` into `1.00`, since `0` is even. That single result cannot tell the two explanations apart.",
+      "title": "Which result shows that `toFixed` doesn't use banker's rounding, given that `(1.005).toFixed(2)` returns `\"1.00\"`?",
+      "description": "Banker's rounding (round half to even) would also turn a true tie at `1.005` into `1.00`, because `0` is even. So that result alone can't tell you which rule `toFixed` uses.",
       "type": "single-choice",
       "options": [
         {
@@ -241,7 +241,7 @@
           "isCorrect": false
         }
       ],
-      "explanation": "You need a case that is a genuine tie, and halves are binary-exact, so `0.5` and `2.5` are stored perfectly. That lets you observe the tie-breaking rule directly:\n\n```js\n(0.5).toFixed(0); // \"1\"   banker's would give \"0\"\n(2.5).toFixed(0); // \"3\"   banker's would give \"2\"\n(1.5).toFixed(0); // \"2\"\n```\n\nECMA-262 spells it out. Pick the integer *n* that minimises `|n / 10^f − x|`, and if two such *n* exist, pick the larger one. That is round-half-up on the magnitude, or half-away-from-zero, the opposite of round-half-to-even.\n\nSo `(1.005).toFixed(2)` returning `\"1.00\"` cannot be a tie-breaking decision at all, because the value is not a tie. Why does the distinction matter? The two diagnoses point at opposite fixes. A tie-breaking problem is solved by choosing a rounding mode. A storage problem is only solved by not storing the value in binary.\n\nOne wrinkle on signs: `toFixed` strips the sign first and rounds the magnitude, so `(-0.5).toFixed(0)` is `\"-1\"`. `Math.round` rounds ties toward positive infinity instead, so `Math.round(-0.5)` gives `-0`.",
+      "explanation": "You need a real tie. Halves are exact in binary, so `0.5` and `2.5` are stored exactly, and you can see the tie rule directly:\n\n```js\n(0.5).toFixed(0); // \"1\"   banker's would give \"0\"\n(2.5).toFixed(0); // \"3\"   banker's would give \"2\"\n(1.5).toFixed(0); // \"2\"\n```\n\nECMA-262 defines it this way: pick the integer *n* that minimizes `|n / 10^f − x|`, and if there are two, pick the larger one. That's round half up on the magnitude (half away from zero), the opposite of round half to even.\n\nSo `(1.005).toFixed(2)` returning `\"1.00\"` isn't a tie-breaking decision, because the stored value isn't a tie. The difference matters because the two causes need different fixes. You fix a tie-breaking problem by choosing a rounding mode. You fix a storage problem only by not storing the value in binary.\n\nNegative numbers work a little differently. `toFixed` removes the sign first and rounds the magnitude, so `(-0.5).toFixed(0)` is `\"-1\"`. `Math.round` rounds ties toward positive infinity, so `Math.round(-0.5)` is `-0`.",
       "references": "- [ECMA-262: Number.prototype.toFixed](https://tc39.es/ecma262/#sec-number.prototype.tofixed)\n- [MDN: Math.round()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math/round)"
     },
     {
@@ -267,13 +267,13 @@
           "isCorrect": false
         }
       ],
-      "explanation": "They disagree, and they disagree in every major engine. This reproduces in both V8, which powers Node and Chrome, and JavaScriptCore, which powers Bun and Safari.\n\n```js\n(1.005).toFixed(2); // \"1.00\"\nfmt.format(1.005);  // \"1.01\"\nfmt.format(2.675);  // \"2.68\"   (toFixed gives \"2.67\")\n```\n\nThe two APIs round from different reference values. `toFixed` is defined against the exact binary value `1.00499999999999989…`, which is below halfway. The `Intl` formatters, which are built on ICU in practice, first convert the double to its shortest round-tripping decimal, giving the string `\"1.005\"`, and then round that. At that point it is a clean tie, and it goes up.\n\nI would not spend much energy deciding which one is right. What matters is that your runtime ships two functions both described as rounding to two decimals, and they return different money. Pick one and use it everywhere. A total computed with `toFixed` and displayed with `Intl` will eventually be off by a cent, and the thing that catches it will be a reconciliation report.",
+      "explanation": "They disagree in every major engine, including V8 (Node, Chrome) and JavaScriptCore (Bun, Safari):\n\n```js\n(1.005).toFixed(2); // \"1.00\"\nfmt.format(1.005);  // \"1.01\"\nfmt.format(2.675);  // \"2.68\"   (toFixed gives \"2.67\")\n```\n\nThe two APIs round different values. `toFixed` is defined on the exact binary value `1.00499999999999989…`, which is below halfway. `Intl` formatters, which use ICU in practice, first convert the double to its shortest round-trip decimal, the string `\"1.005\"`, and round that. That's an exact tie, so it rounds up.\n\nWhich one is \"right\" matters less than the fact that they differ. Both claim to round to two decimals, and they return different amounts of money. Pick one and use it everywhere. If you compute a total with `toFixed` and display it with `Intl`, sooner or later you'll be a cent off, and you'll find out from a reconciliation report.",
       "references": "- [MDN: Intl.NumberFormat](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl/NumberFormat)\n- [ECMA-402: Internationalization API Specification](https://tc39.es/ecma402/)"
     },
     {
       "id": "multiply-by-hundred-does-not-help",
       "title": "What does `Math.round(1.005 * 100) / 100` evaluate to?",
-      "description": "The most-upvoted fix on the internet for `toFixed` rounding the wrong way. Scale up, round, scale back down.\n\n```js\nMath.round(1.005 * 100) / 100;\n// ?\n```",
+      "description": "This is the most upvoted fix online for `toFixed` rounding the wrong way: scale up, round, and scale back down.\n\n```js\nMath.round(1.005 * 100) / 100;\n// ?\n```",
       "type": "single-choice",
       "options": [
         {
@@ -293,7 +293,7 @@
           "isCorrect": false
         }
       ],
-      "explanation": "It returns `1`, which prints as `\"1\"`. Arguably worse than the `\"1.00\"` you were trying to fix.\n\nWatch each step:\n\n```js\n1.005 * 100;                    // 100.49999999999999\nMath.round(100.49999999999999); // 100\n100 / 100;                      // 1\n```\n\nMultiplying by 100 does not undo the storage error. `1.005` was already the wrong number, and `100` is no magic exact-arithmetic multiplier either, so the product gets rounded to the nearest double and lands just under `100.5`.\n\nThe pattern misfires all over the place. `0.07 * 100` is `7.000000000000001`, `1.13 * 100` is `112.99999999999999`, and `4.35 * 100` is `434.99999999999994`. Those three survive `Math.round` intact, which is exactly what makes the technique dangerous. It passes your test cases and fails in production.\n\nThe only real fix is to stop the value from becoming a binary float at all. Parse `\"1.005\"` into integer minor units, or into a decimal type, right at the boundary.",
+      "explanation": "It returns `1`, which prints as `\"1\"`. That's arguably worse than the `\"1.00\"` you were trying to fix.\n\nStep by step:\n\n```js\n1.005 * 100;                    // 100.49999999999999\nMath.round(100.49999999999999); // 100\n100 / 100;                      // 1\n```\n\nMultiplying by 100 doesn't undo the storage error. `1.005` was already slightly too small, and the multiplication rounds again, so the product lands just under `100.5`.\n\nThis happens with lots of values. `0.07 * 100` is `7.000000000000001`, `1.13 * 100` is `112.99999999999999`, and `4.35 * 100` is `434.99999999999994`. `Math.round` fixes those three, which is what makes the trick risky: it passes your tests and fails on other inputs.\n\nThe real fix is to never turn the value into a binary float. Parse `\"1.005\"` into integer minor units (like cents) or a decimal type as soon as it enters your code.",
       "references": "- [MDN: Math.round()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math/round)\n- [David Goldberg: *What Every Computer Scientist Should Know About Floating-Point Arithmetic*](https://docs.oracle.com/cd/E19957-01/806-3568/ncg_goldberg.html)"
     },
     {
@@ -327,13 +327,13 @@
           "isCorrect": true
         }
       ],
-      "explanation": "JavaScript has three different sameness algorithms, and `-0` is precisely where they split.\n\n```js\n-0 === 0;              // true\nObject.is(-0, 0);      // false\n[0].includes(-0);      // true\nnew Set([0, -0]).size; // 1\n1 / -0 === 1 / 0;      // false\nJSON.stringify(-0);    // \"0\"\n```\n\n| Algorithm | Used by | `+0` vs `-0` | `NaN` vs `NaN` |\n|---|---|---|---|\n| Strict Equality | `===`, `!==` | same | different |\n| SameValueZero | `includes`, `Set`, `Map` keys | same | same |\n| SameValue | `Object.is` | different | same |\n\nThat table explains four of the six results. `-0 === 0` is `true`, `Object.is(-0, 0)` is `false`, and the collection methods side with `===` on zeros while siding with `Object.is` on `NaN`.\n\n`1 / -0 === 1 / 0` is `false` because it reduces to `-Infinity === Infinity`. Division is where the sign bit stops hiding and starts carrying weight.\n\n`JSON.stringify(-0)` is `\"0\"`, so the sign vanishes and `-0` does not survive a serialization round trip. The reverse direction preserves it, oddly enough: `Object.is(JSON.parse(\"-0\"), -0)` is `true`.\n\nOne place this shows up in ordinary work: React's `useState` uses `Object.is` for its bail-out check, so setting state from `0` to `-0` triggers a re-render even though `===` calls them equal.",
+      "explanation": "JavaScript has three ways to compare values, and `-0` is where they disagree.\n\n```js\n-0 === 0;              // true\nObject.is(-0, 0);      // false\n[0].includes(-0);      // true\nnew Set([0, -0]).size; // 1\n1 / -0 === 1 / 0;      // false\nJSON.stringify(-0);    // \"0\"\n```\n\n| Algorithm | Used by | `+0` vs `-0` | `NaN` vs `NaN` |\n|---|---|---|---|\n| Strict Equality | `===`, `!==` | same | different |\n| SameValueZero | `includes`, `Set`, `Map` keys | same | same |\n| SameValue | `Object.is` | different | same |\n\nThe table covers four of the six. `-0 === 0` is `true` and `Object.is(-0, 0)` is `false`. The collection methods treat the two zeros as equal, like `===`, but treat `NaN` as equal to itself, like `Object.is`.\n\n`1 / -0 === 1 / 0` is `false` because it becomes `-Infinity === Infinity`. Division is where the sign of a zero starts to matter.\n\n`JSON.stringify(-0)` is `\"0\"`, so serializing loses the sign. Parsing keeps it, though: `Object.is(JSON.parse(\"-0\"), -0)` is `true`.\n\nYou can run into this in React. `useState` uses `Object.is` to decide whether to skip a render, so changing state from `0` to `-0` causes a re-render even though `===` says they're equal.",
       "references": "- [MDN: Equality comparisons and sameness](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Equality_comparisons_and_sameness)\n- [MDN: Object.is()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/is)\n- [ECMA-262: SameValueZero](https://tc39.es/ecma262/#sec-samevaluezero)"
     },
     {
       "id": "which-expression-yields-negative-zero",
       "title": "Which of these expressions produces `-0`?",
-      "description": "Each one starts from a negative or a zero. Only one carries the sign bit through to the result.",
+      "description": "Each one starts with a negative number or a zero. Only one keeps the minus sign in the result.",
       "type": "single-choice",
       "options": [
         {
@@ -353,12 +353,12 @@
           "isCorrect": false
         }
       ],
-      "explanation": "`Math.round(-0.2)` is `-0`. Check it with `Object.is(Math.round(-0.2), -0)`, which returns `true`.\n\nIEEE 754 requires rounding to preserve the sign of the operand when the result is zero. Any small negative that rounds to zero therefore hands you a negative zero:\n\n```js\nMath.round(-0.2);  // -0\nMath.round(-0.5);  // -0   ties round toward +Infinity\nMath.ceil(-0.5);   // -0\nMath.trunc(-0.5);  // -0\nMath.sign(-0);     // -0\n-1 % 1;            // -0\n0 * -1;            // -0\nNumber(\"-0\");      // -0\n```\n\nThe other three give `+0`. `Math.abs` clears the sign bit by definition. `Math.max(-0, 0)` is specified to return `+0`, and its mirror image `Math.min(0, -0)` returns `-0`. `0 - 0` is `+0` under round-to-nearest.\n\nSo `-0` is not some exotic constant you have to type on purpose. It arrives on its own, out of ordinary rounding of ordinary negative numbers, and then travels invisibly because `String(-0)` is `\"0\"`.",
+      "explanation": "`Math.round(-0.2)` is `-0`. You can check with `Object.is(Math.round(-0.2), -0)`, which returns `true`.\n\nIEEE 754 says that when rounding gives zero, the result keeps the operand's sign. So any small negative number that rounds to zero gives you `-0`:\n\n```js\nMath.round(-0.2);  // -0\nMath.round(-0.5);  // -0   ties round toward +Infinity\nMath.ceil(-0.5);   // -0\nMath.trunc(-0.5);  // -0\nMath.sign(-0);     // -0\n-1 % 1;            // -0\n0 * -1;            // -0\nNumber(\"-0\");      // -0\n```\n\nThe other three give `+0`. `Math.abs` always clears the sign. `Math.max(-0, 0)` is defined to return `+0` (and `Math.min(0, -0)` returns `-0`). `0 - 0` is `+0` in the default rounding mode.\n\nSo you don't have to type `-0` to get it. Ordinary rounding of small negative numbers produces it, and you won't notice, because `String(-0)` is `\"0\"`.",
       "references": "- [MDN: Math.round()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math/round)\n- [MDN: Object.is()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/is)"
     },
     {
       "id": "negative-zero-leaks-through-division",
-      "title": "Why does this trend indicator report a falling trend for a metric that barely moved?",
+      "title": "Why does this trend indicator say \"falling\" for a metric that barely moved?",
       "description": "```js\nfunction trend(delta) {\n  const slope = 1 / Math.round(delta);\n  return slope < 0 ? \"falling\" : \"rising\";\n}\n\ntrend(-0.2); // \"falling\", but -0.2 rounds to zero, so why not \"rising\"?\n```",
       "type": "single-choice",
       "options": [
@@ -379,13 +379,13 @@
           "isCorrect": false
         }
       ],
-      "explanation": "`Math.round(-0.2)` is `-0`, and then:\n\n```js\n1 / -0;         // -Infinity\n-Infinity < 0;  // true  -> \"falling\"\n```\n\nDivision is the classic leak, because it amplifies the sign bit from an invisible flag on a zero into a value with a very visible sign. Everything upstream conspires to hide it. `-0 === 0` is `true`, `-0 < 0` is `false`, `String(-0)` is `\"0\"`, and a debugger will usually just show you `0`.\n\nBoth of the other numeric distractors fail on a checkable fact. `Math.round(-0.2)` is not `-1`, since rounding goes to nearest and `-0.2` is nearer zero. And `1 / 0` is `Infinity`, not `NaN`. Only `0 / 0` gives you `NaN`.\n\nFix it by testing the quantity you actually care about, which is `delta < 0`, instead of routing a sign through a division. When you genuinely need to detect negative zero, `Object.is(x, -0)` is the only reliable check.",
+      "explanation": "`Math.round(-0.2)` is `-0`, and then:\n\n```js\n1 / -0;         // -Infinity\n-Infinity < 0;  // true  -> \"falling\"\n```\n\nDivision is the usual place `-0` escapes. It turns the hidden sign of a zero into an infinity with a visible sign. Everything before that point hides it: `-0 === 0` is `true`, `-0 < 0` is `false`, `String(-0)` is `\"0\"`, and debuggers usually show `0`.\n\nThe other two numeric options are simply wrong. `Math.round(-0.2)` isn't `-1`, because `-0.2` is closer to zero. And `1 / 0` is `Infinity`, not `NaN`. Only `0 / 0` gives `NaN`.\n\nTo fix it, test what you actually care about, `delta < 0`, instead of getting the sign through a division. If you really need to detect negative zero, `Object.is(x, -0)` is the only reliable check.",
       "references": "- [MDN: Object.is()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/is)\n- [MDN: Math.round()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math/round)"
     },
     {
       "id": "where-minus-zero-point-zero-comes-from",
       "title": "What do `(-0).toFixed(1)` and `(-0.04).toFixed(1)` return?",
-      "description": "Dashboards render `-0.0%` all the time. Exactly one of these two calls is responsible.\n\n```js\n(-0).toFixed(1);    // ?\n(-0.04).toFixed(1); // ?\n```",
+      "description": "Dashboards often show `-0.0%`. Only one of these two calls produces it.\n\n```js\n(-0).toFixed(1);    // ?\n(-0.04).toFixed(1); // ?\n```",
       "type": "single-choice",
       "options": [
         {
@@ -405,7 +405,7 @@
           "isCorrect": false
         }
       ],
-      "explanation": "A satisfying inversion of the usual story. That ugly `-0.0%` on your dashboard is not caused by `-0` at all.\n\n`toFixed` starts by asking whether `x < 0`, and if so it emits `\"-\"` and continues with `-x`. But `-0 < 0` is `false`, because strict comparison treats the two zeros as equal. Negative zero never gets a sign, and `(-0).toFixed(1)` is `\"0.0\"`.\n\n`-0.04` genuinely is less than zero, so it does get the sign. The magnitude then rounds to `0.0`, and you get `\"-0.0\"`. Same story for `(-0.4).toFixed(0)`, which gives `\"-0\"`.\n\nThe culprit is a small negative that passes the sign check and then rounds away to nothing. Guard on the rendered value rather than the input:\n\n```js\nconst s = value.toFixed(1);\nconst display = Number(s) === 0 ? (0).toFixed(1) : s;\n```",
+      "explanation": "Surprisingly, the `-0.0%` on your dashboard doesn't come from `-0`.\n\n`toFixed` first checks `x < 0`. If that's true, it writes `\"-\"` and continues with `-x`. But `-0 < 0` is `false`, since comparison treats the two zeros as equal. So `-0` never gets a minus sign, and `(-0).toFixed(1)` is `\"0.0\"`.\n\n`-0.04` really is less than zero, so it gets the sign. Then the magnitude rounds to `0.0`, and you get `\"-0.0\"`. The same happens with `(-0.4).toFixed(0)`, which gives `\"-0\"`.\n\nThe cause is a small negative number that passes the sign check and then rounds to zero. Check the formatted value, not the input:\n\n```js\nconst s = value.toFixed(1);\nconst display = Number(s) === 0 ? (0).toFixed(1) : s;\n```",
       "references": "- [ECMA-262: Number.prototype.toFixed](https://tc39.es/ecma262/#sec-number.prototype.tofixed)\n- [MDN: Number.prototype.toFixed()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/toFixed)"
     },
     {
@@ -416,7 +416,7 @@
         {
           "src": "double-bit-layout.svg",
           "alt": "The 64 bits of a double laid out as a bit grid: 1 sign bit, an 11-bit biased exponent, and a 52-bit mantissa, with the formula value equals minus one to the sign times 1.mantissa times 2 to the exponent minus 1023.",
-          "caption": "52 stored mantissa bits plus 1 implicit leading bit is 53 bits of precision — enough to number every integer 0…2⁵³.",
+          "caption": "52 stored mantissa bits plus 1 implicit leading bit give 53 bits of precision, enough to count every integer from 0 to 2⁵³.",
           "placement": "explanation",
           "width": 720,
           "height": 360
@@ -429,7 +429,7 @@
           9007199254740991
         ]
       },
-      "explanation": "`9007199254740991`, which is 2⁵³ − 1.\n\nA double devotes 52 bits to the stored significand plus one implicit leading bit, giving 53 bits of precision. That is exactly enough to number every integer from 0 up to 2⁵³ individually.\n\n```js\nNumber.MAX_SAFE_INTEGER === 2 ** 53 - 1; // true\nNumber.isSafeInteger(2 ** 53 - 1);       // true\nNumber.isSafeInteger(2 ** 53);           // false\n``` Past that the values still exist. They are just spaced further apart than 1.\n\nIt helps to know where the boundary actually bites. `Date.now()` in milliseconds stays safe until roughly the year 285,000, so timestamps are fine and you can stop worrying about them. Database `BIGINT` primary keys, Twitter and Discord snowflake IDs, and anything counting nanoseconds are not fine.",
+      "explanation": "It's `9007199254740991`, or 2⁵³ − 1.\n\nA double stores 52 bits of significand plus one implicit leading bit, so it has 53 bits of precision. That's enough to represent every integer from 0 to 2⁵³ exactly.\n\n```js\nNumber.MAX_SAFE_INTEGER === 2 ** 53 - 1; // true\nNumber.isSafeInteger(2 ** 53 - 1);       // true\nNumber.isSafeInteger(2 ** 53);           // false\n```\n\nLarger integers still exist as doubles, but they're more than 1 apart.\n\nSo where does the limit matter? `Date.now()` in milliseconds stays safe until about the year 285,000, so timestamps are fine. Database `BIGINT` primary keys, Twitter and Discord snowflake IDs, and nanosecond counters are not.",
       "references": "- [MDN: Number.MAX_SAFE_INTEGER](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/MAX_SAFE_INTEGER)\n- [Wikipedia: Double-precision floating-point format](https://en.wikipedia.org/wiki/Double-precision_floating-point_format)"
     },
     {
@@ -439,7 +439,7 @@
         {
           "src": "double-bit-layout.svg",
           "alt": "The 64 bits of a double laid out as a bit grid: 1 sign bit, an 11-bit biased exponent, and a 52-bit mantissa, with the formula value equals minus one to the sign times 1.mantissa times 2 to the exponent minus 1023.",
-          "caption": "52 stored bits plus 1 implicit leading bit is 53 bits of precision — the 52-bit claim is off by that leading bit.",
+          "caption": "52 stored bits plus 1 implicit leading bit give 53 bits of precision. The \"only 52 bits\" answer forgets the leading bit.",
           "placement": "explanation",
           "width": 720,
           "height": 360
@@ -447,7 +447,7 @@
         {
           "src": "number-line-gaps.svg",
           "alt": "Four number-line panels showing the gap between representable doubles widening with magnitude: near 0.3 the ULP is about 5.6 times 10 to the minus 17, near 2 to the 52 the ULP is 1, at 2 to the 53 the ULP becomes 2 and 2 to the 53 plus 1 collides with 2 to the 53, and by 2 to the 60 the ULP is 256.",
-          "caption": "At `2 ** 53` the spacing between neighbouring doubles becomes 2 — `2 ** 53 + 1` collapses onto `2 ** 53`.",
+          "caption": "At `2 ** 53`, neighbouring doubles are 2 apart, so `2 ** 53 + 1` rounds onto `2 ** 53`.",
           "placement": "explanation",
           "width": 720,
           "height": 540
@@ -456,7 +456,7 @@
       "type": "single-choice",
       "options": [
         {
-          "text": "Because `2 ** 53 + 1` rounds back down onto `2 ** 53`, so that double no longer identifies exactly one integer.",
+          "text": "Because `2 ** 53 + 1` rounds down to `2 ** 53`, so that double no longer stands for exactly one integer.",
           "isCorrect": true
         },
         {
@@ -472,18 +472,18 @@
           "isCorrect": false
         }
       ],
-      "explanation": "Safe is a stronger property than representable. ECMA-262 defines a safe integer as one that is exactly representable and that no other integer rounds to. `2 ** 53` passes the first test and fails the second:\n\n```js\n2 ** 53 === 2 ** 53 + 1;           // true  <- two integers, one double\nNumber.isInteger(2 ** 53);         // true\nNumber.isSafeInteger(2 ** 53);     // false\nNumber.isSafeInteger(2 ** 53 - 1); // true\n```\n\nAt 2⁵³ the spacing between neighbouring doubles becomes 2, so 2⁵³ and 2⁵³ + 1 collapse onto the same bits. The odd value sits exactly halfway, and round-half-to-even sends it to the even neighbour.\n\nThe double is still exact for 2⁵³ itself. The problem is that once you find that value in a variable you can no longer tell which integer put it there, and `x + 1 === x` becomes true, which quietly breaks loops, counters, and uniqueness checks.\n\nThe 52-bit claim is off by the implicit leading 1 bit. 52 stored plus 1 implicit gives 53 bits of precision, which is why 2⁵³ fits comfortably.",
+      "explanation": "\"Safe\" means more than \"representable\". ECMA-262 defines a safe integer as one that's exactly representable and that no other integer rounds to. `2 ** 53` passes the first test and fails the second:\n\n```js\n2 ** 53 === 2 ** 53 + 1;           // true  <- two integers, one double\nNumber.isInteger(2 ** 53);         // true\nNumber.isSafeInteger(2 ** 53);     // false\nNumber.isSafeInteger(2 ** 53 - 1); // true\n```\n\nAt 2⁵³ the gap between neighbouring doubles becomes 2, so 2⁵³ and 2⁵³ + 1 end up with the same bits. The odd value is exactly halfway, and round half to even sends it to the even neighbour.\n\n2⁵³ itself is still exact. The problem is that when you see that value, you can't tell which integer produced it. And `x + 1 === x` becomes true, which breaks loops, counters, and uniqueness checks.\n\nThe \"only 52 bits\" answer forgets the implicit leading 1. 52 stored bits plus 1 implicit bit is 53 bits of precision, which is why 2⁵³ fits.",
       "references": "- [MDN: Number.isSafeInteger()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/isSafeInteger)\n- [MDN: Number.MAX_SAFE_INTEGER](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/MAX_SAFE_INTEGER)"
     },
     {
       "id": "gaps-not-size",
       "title": "Which statements about doubles above `Number.MAX_SAFE_INTEGER` are true?",
-      "description": "The constant says something about spacing, not about a ceiling.",
+      "description": "`Number.MAX_SAFE_INTEGER` is about the spacing between doubles, not the largest number.",
       "images": [
         {
           "src": "number-line-gaps.svg",
           "alt": "Four number-line panels showing the gap between representable doubles widening with magnitude: near 0.3 the ULP is about 5.6 times 10 to the minus 17, near 2 to the 52 the ULP is 1, at 2 to the 53 the ULP becomes 2 and 2 to the 53 plus 1 collides with 2 to the 53, and by 2 to the 60 the ULP is 256.",
-          "caption": "By `2 ** 60` neighbouring doubles sit 256 apart — exact values, just far fewer of them.",
+          "caption": "By `2 ** 60`, neighbouring doubles are 256 apart. Each one is exact, but there are far fewer of them.",
           "placement": "explanation",
           "width": 720,
           "height": 540
@@ -512,13 +512,13 @@
           "isCorrect": false
         }
       ],
-      "explanation": "Doubles reach to about 1.8 × 10³⁰⁸. 2⁵³ is where resolution runs out, not range.\n\n```js\n2 ** 60 === Number(2n ** 60n);  // true   exact, no error\n(2 ** 60 + 256) - 2 ** 60;      // 256    the gap up there\n(2 ** 53 + 2) - 2 ** 53;        // 2      the gap here\nNumber.isSafeInteger(2 ** 60);  // false  exact, but not alone\n```\n\nEvery power of two is exact at any magnitude, because it is one bit set. What changes is the ULP. Below 2⁵³ the spacing is at most 1, so every integer gets its own slot. At 2⁵³ the spacing becomes 2, at 2⁵⁴ it becomes 4, and by 2⁶⁰ neighbouring doubles sit 256 apart. So 2⁶⁰ is perfect and 2⁶⁰ + 1 does not exist at all.\n\n`Number.isInteger(2 ** 53 + 1)` is `true` precisely because of that collapse. The expression evaluates to `2 ** 53`, which is an integer. That is the trap in `Number.isInteger`. It tells you the value you are holding is a whole number. It never tells you it is the whole number you meant. Reach for `Number.isSafeInteger` when the identity matters.",
+      "explanation": "Doubles go up to about 1.8 × 10³⁰⁸. 2⁵³ is where you run out of precision, not range.\n\n```js\n2 ** 60 === Number(2n ** 60n);  // true   exact, no error\n(2 ** 60 + 256) - 2 ** 60;      // 256    the gap up there\n(2 ** 53 + 2) - 2 ** 53;        // 2      the gap here\nNumber.isSafeInteger(2 ** 60);  // false  exact, but not alone\n```\n\nEvery power of two is exact at any size, because it's a single bit. What changes is the ULP. Below 2⁵³ the gap is at most 1, so every integer has its own double. At 2⁵³ the gap is 2, at 2⁵⁴ it's 4, and by 2⁶⁰ it's 256. So 2⁶⁰ is exact, and 2⁶⁰ + 1 has no double at all.\n\n`Number.isInteger(2 ** 53 + 1)` is `true` because of that rounding. The expression evaluates to `2 ** 53`, which is an integer. That's the catch with `Number.isInteger`: it tells you the value is a whole number, not that it's the number you meant. Use `Number.isSafeInteger` when that matters.",
       "references": "- [MDN: Number.isInteger()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/isInteger)\n- [MDN: Number.isSafeInteger()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/isSafeInteger)"
     },
     {
       "id": "snowflake-ids-through-json-parse",
       "title": "What does `JSON.parse('{\"id\": 1234567890123456789}').id` return?",
-      "description": "A Twitter-style snowflake ID is a 64-bit integer, and it arrives over the wire as a bare JSON number.\n\n```js\nJSON.parse('{\"id\": 1234567890123456789}').id;\n// ?\n```",
+      "description": "A Twitter-style snowflake ID is a 64-bit integer. Here it arrives as a plain JSON number.\n\n```js\nJSON.parse('{\"id\": 1234567890123456789}').id;\n// ?\n```",
       "type": "single-choice",
       "options": [
         {
@@ -538,7 +538,7 @@
           "isCorrect": false
         }
       ],
-      "explanation": "You get `1234567890123456800`. The last three digits are gone, silently. No error, no warning, no clamping to `MAX_SAFE_INTEGER`. `JSON.parse` produces a double, and the nearest double to that integer is 11 away.\n\nThis is the bug that made Twitter add `id_str` alongside `id` in its API payloads. The numeric field was unusable from JavaScript, so every ID had to ship a second time as a string. Snowflake IDs pack a millisecond timestamp, a machine ID, and a sequence counter into 64 bits, and the low bits are exactly the ones that make two IDs from the same millisecond distinct. Those are the first thing a double throws away.\n\nWhat makes the failure so nasty is that it is a near miss. The ID still looks like an ID, still round-trips through your code, still gets sent back to the server, and simply refers to a different row, or to none.\n\nRanked fixes: have the API send strings, or parse with a `BigInt`-aware reviver, or never let the value become a `Number`.\n\n```js\n// The value is intact in the source text. It only dies on conversion.\nJSON.parse(text, (k, v, ctx) => (k === \"id\" ? BigInt(ctx.source) : v));\n```",
+      "explanation": "You get `1234567890123456800`. The last three digits changed with no error, no warning, and no clamping to `MAX_SAFE_INTEGER`. `JSON.parse` produces a double, and the nearest double to that integer is 11 away.\n\nThis is why Twitter added `id_str` next to `id` in its API. The numeric field was unusable from JavaScript, so every ID was also sent as a string. A snowflake ID packs a millisecond timestamp, a machine ID, and a sequence counter into 64 bits. The low bits tell apart IDs created in the same millisecond, and those are the first bits a double drops.\n\nThe bug is hard to spot because the result still looks like a valid ID. Your code passes it around and sends it back to the server, where it points to a different row or to nothing.\n\nFixes, best first: have the API send IDs as strings, parse with a `BigInt`-aware reviver, or otherwise never let the value become a `Number`.\n\n```js\n// The value is intact in the source text. It only dies on conversion.\nJSON.parse(text, (k, v, ctx) => (k === \"id\" ? BigInt(ctx.source) : v));\n```",
       "references": "- [Wikipedia: Snowflake ID](https://en.wikipedia.org/wiki/Snowflake_ID)\n- [twitter-archive/snowflake, the original ID generator](https://github.com/twitter-archive/snowflake)\n- [MDN: Number.MAX_SAFE_INTEGER](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/MAX_SAFE_INTEGER)"
     },
     {
@@ -564,13 +564,13 @@
           "isCorrect": false
         }
       ],
-      "explanation": "Forwards you lose all million ones. Backwards you keep them. The two runs disagree by 1,000,000, which is not an epsilon by anyone's definition.\n\nForwards, the accumulator starts at `1e16`, where the gap between neighbouring doubles is 2. Adding `1` lands exactly halfway between two representable values, and round-half-to-even sends it straight back to `1e16`:\n\n```js\n1e16 + 1 === 1e16; // true\n```\n\nThat happens a million times in a row, and the accumulator never moves.\n\nBackwards, the ones accumulate among themselves. All small, all exact. They reach `1000000` before the big value gets added once, and at that point `10000000001000000` is representable, because it is even, so everything survives.\n\nThis is what people mean when they say floating-point addition is not associative. Here is the same law in miniature:\n\n```js\n(0.1 + 0.2) + 0.3; // 0.6000000000000001\n0.1 + (0.2 + 0.3); // 0.6\n```\n\nIt also explains why a parallel or vectorized sum can return a different total from the serial one on identical input. The reduction tree changes the grouping, and grouping is the whole ballgame.",
+      "explanation": "Forwards, all million ones are lost. Backwards, they're kept. The totals differ by 1,000,000, far more than any rounding error.\n\nForwards, the running total starts at `1e16`, where doubles are 2 apart. Adding `1` lands exactly halfway between two doubles, and round half to even sends it back to `1e16`:\n\n```js\n1e16 + 1 === 1e16; // true\n```\n\nThat happens a million times, and the total never changes.\n\nBackwards, the ones add up first. They're small and exact, so they reach `1000000` before `1e16` is added. `10000000001000000` is even, so it's representable, and nothing is lost.\n\nThis is what people mean when they say floating-point addition isn't associative. Here's a smaller example:\n\n```js\n(0.1 + 0.2) + 0.3; // 0.6000000000000001\n0.1 + (0.2 + 0.3); // 0.6\n```\n\nIt's also why a parallel or vectorized sum can differ from a serial one on the same input. The reduction changes the grouping, and the grouping decides the result.",
       "references": "- [Wikipedia: Kahan summation algorithm](https://en.wikipedia.org/wiki/Kahan_summation_algorithm)\n- [David Goldberg: *What Every Computer Scientist Should Know About Floating-Point Arithmetic*](https://docs.oracle.com/cd/E19957-01/806-3568/ncg_goldberg.html)"
     },
     {
       "id": "name-the-compensated-summation",
       "title": "Which summation algorithm carries a running compensation term to recover the low-order bits lost at each addition?",
-      "description": "Named after the numerical analyst who published it in 1965, and also known as compensated summation.",
+      "description": "It's named after the numerical analyst who published it in 1965. It's also called compensated summation.",
       "type": "input",
       "validation": {
         "mode": "text",
@@ -585,7 +585,7 @@
           "Neumaier"
         ]
       },
-      "explanation": "Kahan summation, published by William Kahan in 1965. He went on to become the principal architect of IEEE 754, so he had opinions about rounding. It also goes by compensated summation.\n\nEach addition throws away the bits that did not fit. Kahan's insight is that those bits are recoverable. Subtract the new total from itself to find out what actually got absorbed, then carry the remainder into the next step.\n\n```js\nfunction kahanSum(xs) {\n  let sum = 0;\n  let c = 0; // running compensation\n  for (const x of xs) {\n    const y = x - c;   // apply what was lost last time\n    const t = sum + y; // this addition rounds\n    c = (t - sum) - y; // and this recovers exactly what it lost\n    sum = t;\n  }\n  return sum;\n}\n```\n\nRun it on the forward-order array from the previous question and it returns `10000000001000000`, the exact answer, where the naive loop returns `1e16`. Sum `0.1` a million times and the naive loop lands on `100000.00000133288` while Kahan returns exactly `100000`.\n\nYou pay about four flops per element instead of one. Neumaier's variant patches Kahan's remaining weak spot, which shows up when the incoming value is larger than the running total. Other languages solve this at the library level: Python's `math.fsum` uses Shewchuk's exact algorithm, and NumPy's `sum` uses pairwise summation to keep the error growth low.",
+      "explanation": "Kahan summation, published by William Kahan in 1965. Kahan later became the main architect of IEEE 754, so he knew a thing or two about rounding. The algorithm is also called compensated summation.\n\nEach addition drops the bits that don't fit. Kahan's idea is that you can get them back: subtract the old total from the new one to see how much was actually added, and carry the difference into the next step.\n\n```js\nfunction kahanSum(xs) {\n  let sum = 0;\n  let c = 0; // running compensation\n  for (const x of xs) {\n    const y = x - c;   // apply what was lost last time\n    const t = sum + y; // this addition rounds\n    c = (t - sum) - y; // and this recovers exactly what it lost\n    sum = t;\n  }\n  return sum;\n}\n```\n\nOn the forward-order array from the previous question, it returns `10000000001000000`, the exact answer, while the plain loop returns `1e16`. Add `0.1` a million times and the plain loop gives `100000.00000133288`, while Kahan gives exactly `100000`.\n\nIt costs about four floating-point operations per element instead of one. Neumaier's variant fixes a remaining weak spot, when the new value is larger than the running total. Other languages solve this in their libraries. Python's `math.fsum` uses Shewchuk's exact algorithm, and NumPy's `sum` uses pairwise summation to keep error growth low.",
       "references": "- [Wikipedia: Kahan summation algorithm](https://en.wikipedia.org/wiki/Kahan_summation_algorithm)\n- [Wikipedia: William Kahan](https://en.wikipedia.org/wiki/William_Kahan)"
     },
     {
@@ -595,7 +595,7 @@
       "type": "single-choice",
       "options": [
         {
-          "text": "The part of `y` that did not survive being added to `sum`, meaning the bits that fell off the end.",
+          "text": "The part of `y` that was lost when it was added to `sum`, meaning the bits that fell off the end.",
           "isCorrect": true
         },
         {
@@ -611,12 +611,12 @@
           "isCorrect": false
         }
       ],
-      "explanation": "`(t - sum)` recovers how much of `y` actually made it in, meaning the part of the increment that the rounded result `t` really reflects. Subtract the `y` you intended to add and what remains is the shortfall, the low-order bits discarded when `sum + y` got rounded.\n\nWalk it through with the pathological case. Start with `sum = 1e16` and `y = 1`. Then `t = 1e16 + 1` rounds to `1e16`, so `t - sum` is `0` and nothing got in. That makes `c = 0 - 1 = -1`, and a full unit is now on the books.\n\nNext iteration, `y = x - c = 1 - (-1) = 2`. Two is representable at that magnitude, so it lands. The compensation converts a stream of individually invisible increments into occasional visible ones.\n\nThe parenthesisation is load-bearing, not stylistic. An optimizing compiler that simplifies `(t - sum) - y` to zero using real-number algebra destroys the algorithm, which is why C compilers must not do that outside `-ffast-math` and why the expression is written in this deliberately redundant order. JavaScript is safe here. ECMA-262 mandates IEEE 754 semantics with no re-association and no extended-precision intermediates.",
+      "explanation": "`(t - sum)` is how much of `y` actually made it into the total. Subtract the `y` you meant to add, and what's left is the shortfall, the low bits dropped when `sum + y` was rounded.\n\nWalk through the extreme case. Start with `sum = 1e16` and `y = 1`. `t = 1e16 + 1` rounds to `1e16`, so `t - sum` is `0` and nothing was added. That makes `c = 0 - 1 = -1`, so the lost unit is recorded.\n\nOn the next step, `y = x - c = 1 - (-1) = 2`. At that size, 2 is representable, so it gets added. The compensation turns increments that are each too small to register into occasional ones that do.\n\nThe parentheses matter. In real-number algebra, `(t - sum) - y` simplifies to zero, and a compiler that did that would break the algorithm. That's why C compilers must not rearrange it unless you enable `-ffast-math`. JavaScript is safe: ECMA-262 requires IEEE 754 semantics, with no reordering and no extra-precision intermediates.",
       "references": "- [Wikipedia: Kahan summation algorithm](https://en.wikipedia.org/wiki/Kahan_summation_algorithm)\n- [David Goldberg: *What Every Computer Scientist Should Know About Floating-Point Arithmetic*](https://docs.oracle.com/cd/E19957-01/806-3568/ncg_goldberg.html)"
     },
     {
       "id": "why-databases-use-numeric",
-      "title": "Which of these are real reasons to store money in `NUMERIC`/`DECIMAL` rather than `DOUBLE PRECISION`?",
+      "title": "Which of these are real reasons to store money as `NUMERIC`/`DECIMAL` instead of `DOUBLE PRECISION`?",
       "type": "multiple-choice",
       "options": [
         {
@@ -640,7 +640,7 @@
           "isCorrect": false
         }
       ],
-      "explanation": "PostgreSQL's own documentation is blunt about it. It recommends `numeric` for quantities where exactness matters, money above all, and warns that the floating-point types are inexact.\n\nThe order-dependence point is the one people miss, and it follows directly from the non-associativity in the summation question. `SUM()` has no defined row order. Add a parallel plan, a different worker count, or a new index that changes the scan order, and the same query over the same unchanged rows can return a total that differs in the last digits. Your reconciliation job now fails intermittently, on Tuesdays, in production only.\n\n`NUMERIC` sidesteps both problems by storing base-10 digits and doing exact decimal arithmetic. The trade-off is real and worth naming. It runs in software rather than as a hardware instruction, so it is meaningfully slower and uses more space. Fine for a ledger, wrong for the inner loop of a physics simulation.\n\nThe two false options are the usual over-corrections. Doubles handle huge magnitudes without difficulty, which was never the failure mode, and they impose no decimal scale at all.",
+      "explanation": "PostgreSQL's documentation says it plainly: use `numeric` where exactness matters, especially for money, because the floating-point types are inexact.\n\nPeople often miss the ordering problem, which follows from the non-associativity in the summation question. `SUM()` doesn't add rows in a fixed order. A parallel plan, a different number of workers, or a new index can change the scan order, and the same query over the same rows can return a total that differs in the last digits. Then your reconciliation job fails now and then, and only in production.\n\n`NUMERIC` avoids both problems by storing base-10 digits and doing exact decimal arithmetic. That has a real cost. It runs in software instead of as a hardware instruction, so it's noticeably slower and takes more space. That's fine for a ledger and wrong for the inner loop of a physics simulation.\n\nThe two false options overcorrect. Doubles handle huge values fine, which was never the problem, and they don't round to any fixed number of decimal places.",
       "references": "- [PostgreSQL: Numeric Types](https://www.postgresql.org/docs/current/datatype-numeric.html)\n- [Wikipedia: Kahan summation algorithm](https://en.wikipedia.org/wiki/Kahan_summation_algorithm)"
     },
     {
@@ -665,13 +665,13 @@
           "isCorrect": false
         }
       ],
-      "explanation": "`Number.EPSILON` is the ULP at magnitude 1, and nothing more than that.\n\n```js\nNumber.EPSILON === 2 ** -52;   // true\nNumber.EPSILON;                // 2.220446049250313e-16\n1 + Number.EPSILON === 1;      // false, it is the next double up\n1 + Number.EPSILON / 2 === 1;  // true, half a step rounds back\n```\n\nEach wrong answer names a different real quantity, which is what makes them tempting. The smallest positive double is `Number.MIN_VALUE`, or 2⁻¹⁰⁷⁴. The worst-case relative rounding error is half a ULP, so `Number.EPSILON / 2` in relative terms. And the smallest distinguishable difference between two doubles depends entirely on their magnitude. Near `1e300`, two doubles can differ by 10²⁸⁴ and still be neighbours.\n\nThat last point is what makes `Number.EPSILON` so widely misused, which the next question digs into.",
+      "explanation": "`Number.EPSILON` is the ULP at 1, and that's all it is.\n\n```js\nNumber.EPSILON === 2 ** -52;   // true\nNumber.EPSILON;                // 2.220446049250313e-16\n1 + Number.EPSILON === 1;      // false, it is the next double up\n1 + Number.EPSILON / 2 === 1;  // true, half a step rounds back\n```\n\nEach wrong option describes a real quantity, which is why they're tempting. The smallest positive double is `Number.MIN_VALUE`, or 2⁻¹⁰⁷⁴. The largest relative rounding error is half a ULP, or `Number.EPSILON / 2`. And the smallest difference between two doubles depends on their size. Near `1e300`, two neighbouring doubles can differ by 10²⁸⁴.\n\nThat last point is why `Number.EPSILON` is so often misused, as the next question shows.",
       "references": "- [MDN: Number.EPSILON](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/EPSILON)\n- [Wikipedia: Machine epsilon](https://en.wikipedia.org/wiki/Machine_epsilon)"
     },
     {
       "id": "epsilon-comparison-breaks-at-scale",
-      "title": "Why does `Math.abs(a - b) < Number.EPSILON` accept the tenths case but reject the millions case?",
-      "description": "Both pairs are off by exactly one ULP, the smallest possible disagreement between two doubles.\n\n```js\nMath.abs(0.1 + 0.2 - 0.3) < Number.EPSILON;\n// true\n\nMath.abs(1234567.89 + 9876543.21 - 11111111.1) < Number.EPSILON;\n// false  (the difference is 1.862645149230957e-9)\n```",
+      "title": "Why does `Math.abs(a - b) < Number.EPSILON` pass for the tenths but fail for the millions?",
+      "description": "Both pairs are off by exactly one ULP, the smallest possible difference between two doubles.\n\n```js\nMath.abs(0.1 + 0.2 - 0.3) < Number.EPSILON;\n// true\n\nMath.abs(1234567.89 + 9876543.21 - 11111111.1) < Number.EPSILON;\n// false  (the difference is 1.862645149230957e-9)\n```",
       "type": "single-choice",
       "options": [
         {
@@ -691,7 +691,7 @@
           "isCorrect": false
         }
       ],
-      "explanation": "The two cases are numerically identical in quality. Each result sits one representable step away from the expected value. Yet a fixed absolute threshold passes one and fails the other, which is the whole indictment of the technique.\n\nOne ULP near 0.3 is 2⁻⁵⁴ ≈ 5.6 × 10⁻¹⁷, comfortably under `Number.EPSILON`. One ULP near 1.1 × 10⁷ is 2⁻²⁹ ≈ 1.86 × 10⁻⁹, about 8,388,608 times bigger than `Number.EPSILON`. The tolerance did not get stricter. The numbers got bigger, and the grid underneath them got coarser.\n\nA tolerance has to scale with the magnitude being compared:\n\n```js\nfunction closeEnough(a, b, ulps = 4) {\n  const scale = Math.max(Math.abs(a), Math.abs(b));\n  return Math.abs(a - b) <= ulps * Number.EPSILON * scale;\n}\n```\n\nEven that needs an absolute floor near zero, where relative error stops meaning anything and every value is infinitely far from `0` in relative terms.\n\nFor money the honest answer is that no tolerance is correct. A comparison that has to be approximately right is a comparison that should not be happening on floats.",
+      "explanation": "Both results are equally accurate: each is one step away from the expected value. A fixed threshold still passes one and fails the other, which is exactly why the technique doesn't work.\n\nOne ULP near 0.3 is 2⁻⁵⁴ ≈ 5.6 × 10⁻¹⁷, well under `Number.EPSILON`. One ULP near 1.1 × 10⁷ is 2⁻²⁹ ≈ 1.86 × 10⁻⁹, 8,388,608 times bigger than `Number.EPSILON`. The threshold stayed the same. The numbers got bigger, so the gaps between doubles got bigger too.\n\nA tolerance has to scale with the size of the values:\n\n```js\nfunction closeEnough(a, b, ulps = 4) {\n  const scale = Math.max(Math.abs(a), Math.abs(b));\n  return Math.abs(a - b) <= ulps * Number.EPSILON * scale;\n}\n```\n\nEven this needs an absolute minimum near zero, where relative error stops making sense.\n\nFor money, no tolerance is correct. If a comparison only has to be approximately right, it shouldn't be done on floats.",
       "references": "- [MDN: Number.EPSILON](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/EPSILON)\n- [Wikipedia: Unit in the last place](https://en.wikipedia.org/wiki/Unit_in_the_last_place)"
     },
     {
@@ -716,13 +716,13 @@
           "isCorrect": false
         }
       ],
-      "explanation": "It is the smallest positive subnormal, 2⁻¹⁰⁷⁴ ≈ 5 × 10⁻³²⁴, and it sits comfortably above zero.\n\n```js\nNumber.MIN_VALUE;      // 5e-324\nNumber.MIN_VALUE > 0;  // true\n```\n\nThe name is a genuine trap, inherited from a convention where MIN and MAX bracket the magnitude range rather than the number line. If you want the most negative double, that is `-Number.MAX_VALUE`, or about −1.797 × 10³⁰⁸.\n\nInitialising a running minimum with `Number.MIN_VALUE` is the classic bug this causes. It starts you at a tiny positive number, so every negative input in your data gets silently ignored. Seed with `Infinity` instead, which is also what `Math.min()` returns when you call it with no arguments. `Math.max()` returns `-Infinity` for the same reason.\n\nValues that small are subnormal. Below 2⁻¹⁰²², the implicit leading 1 bit gets dropped and the significand loses bits as the value shrinks. That buys graceful underflow toward zero, at the cost of precision and, on some hardware, a serious performance penalty.",
+      "explanation": "It's the smallest positive subnormal, 2⁻¹⁰⁷⁴ ≈ 5 × 10⁻³²⁴, which is greater than zero.\n\n```js\nNumber.MIN_VALUE;      // 5e-324\nNumber.MIN_VALUE > 0;  // true\n```\n\nThe name is misleading. It follows a convention where MIN and MAX describe the range of magnitudes, not the ends of the number line. The most negative double is `-Number.MAX_VALUE`, about −1.797 × 10³⁰⁸.\n\nStarting a running minimum at `Number.MIN_VALUE` is a classic bug. That's a tiny positive number, so every negative value in your data gets ignored. Start with `Infinity` instead. That's also what `Math.min()` returns with no arguments, and for the same reason `Math.max()` returns `-Infinity`.\n\nValues this small are subnormal. Below 2⁻¹⁰²² the implicit leading 1 is dropped, and the significand loses bits as the value gets smaller. That lets values shrink gradually toward zero, at the cost of precision and, on some hardware, a big slowdown.",
       "references": "- [MDN: Number.MIN_VALUE](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/MIN_VALUE)\n- [Wikipedia: Subnormal number](https://en.wikipedia.org/wiki/Subnormal_number)"
     },
     {
       "id": "float32-gets-it-right",
       "title": "In 32-bit floats, does `0.1 + 0.2` equal `0.3`?",
-      "description": "`Math.fround` rounds a double to the nearest 32-bit float, which lets you reproduce single-precision arithmetic in JavaScript.\n\n```js\nconst f = Math.fround;\nf(f(0.1) + f(0.2)) === f(0.3);\n// ?\n```",
+      "description": "`Math.fround` rounds a double to the nearest 32-bit float, so you can reproduce single-precision arithmetic in JavaScript.\n\n```js\nconst f = Math.fround;\nf(f(0.1) + f(0.2)) === f(0.3);\n// ?\n```",
       "type": "single-choice",
       "options": [
         {
@@ -742,7 +742,7 @@
           "isCorrect": false
         }
       ],
-      "explanation": "It is `true`. In single precision, `0.1 + 0.2` and `0.3` are the same float. Widen either back to a double and you get `0.30000001192092896`.\n\nThis is the most useful thing to know about the whole `0.1 + 0.2` genre. The discrepancy is an accident of where the rounding boundaries fall at 53 bits, not a law of binary arithmetic. Move to 24 bits of significand and it vanishes, not because single precision is better but because it is coarser, and the coarser grid happens to snap both sides onto the same point. `0.1` is no more representable in float32 than in float64. There are simply fewer places to land.\n\nSo more precision does not mean fewer surprises, and any correctness argument of the form \"it printed the right answer in my test\" is worthless. The only durable fix for exact decimal work is leaving binary floating point behind.\n\nOn the fourth option: `Math.fround` does round to nearest, as IEEE 754 requires. Truncation would be a different operation with a different result.",
+      "explanation": "Yes, it's `true`. In single precision, `0.1 + 0.2` and `0.3` are the same float. Convert it back to a double and you get `0.30000001192092896`.\n\nThis is the most useful lesson from the whole `0.1 + 0.2` example. The mismatch comes from where the rounding boundaries fall at 53 bits. It isn't a law of binary arithmetic. With 24 bits of significand the grid is coarser, and both sides happen to round to the same point. Single precision isn't more accurate. `0.1` is no more representable in float32 than in float64. There are just fewer values to land on.\n\nSo more precision doesn't mean fewer surprises, and \"it printed the right answer in my test\" proves nothing. For exact decimal work, the only lasting fix is to stop using binary floating point.\n\nAbout the fourth option: `Math.fround` rounds to nearest, as IEEE 754 requires. Truncation is a different operation and gives a different result.",
       "references": "- [MDN: Math.fround()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math/fround)\n- [Wikipedia: Single-precision floating-point format](https://en.wikipedia.org/wiki/Single-precision_floating-point_format)"
     },
     {
@@ -767,7 +767,7 @@
           "isCorrect": false
         }
       ],
-      "explanation": "Round-to-nearest-ties-to-even, also called banker's rounding, is the default for every arithmetic operation, and JavaScript gives you no way to change it.\n\nYou can watch the tie-breaking directly. Integers near 2⁵² sit on a grid of spacing 1, and halves are exactly representable, so these are real ties:\n\n```js\n2 ** 52 + 0.5 === 2 ** 52;        // true, tie, 2**52 is even, so down\n(2 ** 52 + 1.5) - 2 ** 52 === 2;  // true, tie, so up to the even 2**52+2\n1 + 2 ** -53 === 1;               // true, tie, rounds to the even significand\n```\n\nTies-to-even beats ties-away-from-zero because it carries no systematic bias. Rounding halves consistently upward makes long sums drift steadily high, while alternating between down and up cancels out over many operations.\n\nHere is the trap. `Math.round` and `toFixed` do not follow this rule. Both are ECMA-262 conveniences with their own definitions. `Math.round` rounds ties toward positive infinity, so `Math.round(-2.5)` is `-2` rather than `-3`. `toFixed` rounds ties away from zero on the magnitude, so `(2.5).toFixed(0)` is `\"3\"`. Three rounding behaviours in one language, and you have to keep them straight.",
+      "explanation": "IEEE 754 uses round to nearest, ties to even (also called banker's rounding) for every arithmetic operation by default, and JavaScript doesn't let you change it.\n\nYou can see the tie rule directly. Near 2⁵², doubles are 1 apart and `0.5` is exact, so these sums are real ties:\n\n```js\n2 ** 52 + 0.5 === 2 ** 52;        // true, tie, 2**52 is even, so down\n(2 ** 52 + 1.5) - 2 ** 52 === 2;  // true, tie, so up to the even 2**52+2\n1 + 2 ** -53 === 1;               // true, tie, rounds to the even significand\n```\n\nTies to even is preferred over ties away from zero because it has no bias. Always rounding halves up makes long sums drift upward. Rounding to even goes down about as often as up, so the errors cancel out.\n\nWatch out, though: `Math.round` and `toFixed` don't follow this rule. ECMA-262 defines each of them separately. `Math.round` rounds ties toward positive infinity, so `Math.round(-2.5)` is `-2`, not `-3`. `toFixed` rounds ties away from zero, so `(2.5).toFixed(0)` is `\"3\"`. That's three different rounding rules in one language.",
       "references": "- [Wikipedia: IEEE 754 rounding rules](https://en.wikipedia.org/wiki/IEEE_754#Rounding_rules)\n- [MDN: Math.round()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math/round)"
     },
     {
@@ -797,7 +797,7 @@
           "isCorrect": false
         }
       ],
-      "explanation": "`NaN` splits the same three sameness algorithms as `-0`, but in the opposite direction, which is what makes the pair worth studying together.\n\n`NaN === NaN` is `false`. IEEE 754 requires every comparison involving `NaN` to be false, so `NaN` is the one value not equal to itself.\n\n`Object.is(NaN, NaN)` is `true`. SameValue deliberately overrides IEEE comparison to give you a usable identity predicate.\n\n`[NaN].includes(NaN)` is `true` while `[NaN].indexOf(NaN)` is `-1`. `includes` uses SameValueZero, the older `indexOf` uses strict equality, and so two array search methods give opposite answers about the same array.\n\n`typeof NaN` is `\"number\"`, because `NaN` is a double. A whole family of them, in fact: any bit pattern with all exponent bits set and a non-zero significand.\n\nPut the two questions side by side and the design makes sense. `-0` is where `===` and SameValueZero agree against `Object.is`. `NaN` is where `Object.is` and SameValueZero agree against `===`. Neither pair of algorithms lines up across both values, which is exactly why the language needs all three.",
+      "explanation": "`NaN` splits the same three comparison algorithms as `-0`, but the other way around, so it helps to learn them together.\n\n`NaN === NaN` is `false`. IEEE 754 says `NaN` is unequal to everything, including itself.\n\n`Object.is(NaN, NaN)` is `true`. SameValue overrides the IEEE rule on purpose, so you have a reliable identity check.\n\n`[NaN].includes(NaN)` is `true`, but `[NaN].indexOf(NaN)` is `-1`. `includes` uses SameValueZero, while the older `indexOf` uses strict equality, so two array search methods disagree about the same array.\n\n`typeof NaN` is `\"number\"`, because `NaN` is a double. In fact there are many `NaN` bit patterns: any pattern with all exponent bits set and a non-zero significand.\n\nCompare the two cases. With `-0`, `===` and SameValueZero agree, and `Object.is` differs. With `NaN`, `Object.is` and SameValueZero agree, and `===` differs. No two algorithms agree on both values, which is why the language needs all three.",
       "references": "- [MDN: Equality comparisons and sameness](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Equality_comparisons_and_sameness)\n- [MDN: NaN](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/NaN)\n- [MDN: Array.prototype.includes()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/includes)"
     },
     {
@@ -807,7 +807,7 @@
       "type": "single-choice",
       "options": [
         {
-          "text": "It never terminates. After ten steps `x` is `0.9999999999999999`, and it sails past `1` forever.",
+          "text": "It never ends. After ten steps `x` is `0.9999999999999999`, and it keeps going past `1` forever.",
           "isCorrect": true
         },
         {
@@ -823,7 +823,7 @@
           "isCorrect": false
         }
       ],
-      "explanation": "It is an infinite loop. Ten accumulated additions of `0.1` give this:\n\n```js\nlet s = 0;\nfor (let i = 0; i < 10; i++) s += 0.1;\ns;        // 0.9999999999999999\ns === 1;  // false\n```\n\nEach `+= 0.1` rounds, the errors accumulate, and the accumulator misses `1` by one ULP. Then it keeps going, and every value after that misses too, so `x !== 1` stays true forever. The same accumulation is why summing `0.1` a million times gives `100000.00000133288` instead of `100000`.\n\nTwo reliable fixes. Loop over integers and derive the float, so error never accumulates in the first place:\n\n```js\nfor (let i = 0; i < 10; i++) doSomething(i / 10);\n```\n\nOr use a relational condition like `x < 1` rather than an equality one, so a near miss cannot run away. That still leaves you guessing whether the final iteration happens, which is why I prefer the integer loop.",
+      "explanation": "It's an infinite loop. Adding `0.1` ten times gives:\n\n```js\nlet s = 0;\nfor (let i = 0; i < 10; i++) s += 0.1;\ns;        // 0.9999999999999999\ns === 1;  // false\n```\n\nEach `+= 0.1` rounds, the errors add up, and the total misses `1` by one ULP. Every later value misses too, so `x !== 1` stays true forever. The same buildup is why adding `0.1` a million times gives `100000.00000133288` instead of `100000`.\n\nThere are two fixes. The more reliable one is to loop over integers and compute the float from them, so errors never build up:\n\n```js\nfor (let i = 0; i < 10; i++) doSomething(i / 10);\n```\n\nOr use `x < 1` instead of `x !== 1`, so a near miss can't run forever. You still can't be sure whether the last iteration runs, which is why I prefer the integer loop.",
       "references": "- [David Goldberg: *What Every Computer Scientist Should Know About Floating-Point Arithmetic*](https://docs.oracle.com/cd/E19957-01/806-3568/ncg_goldberg.html)\n- [0.30000000000000004.com](https://0.30000000000000004.com/)"
     },
     {
@@ -849,12 +849,12 @@
           "isCorrect": false
         }
       ],
-      "explanation": "`5`. Off by a factor of ten million, from a function that should never have been handed a number in the first place.\n\n`parseInt` takes a string. Give it a number and it coerces first, which is where the shortest-round-trip printer walks in:\n\n```js\nString(0.000005);  // \"0.000005\"   -> parseInt reads \"0\"\nString(0.0000005); // \"5e-7\"       -> parseInt reads \"5\", stops at \"e\"\n```\n\nECMA-262 switches `Number::toString` to exponential notation once the value drops below 10⁻⁶, and `String(0.000001)` is still `\"0.000001\"` so the boundary is tight. `parseInt` then does what it always does: consume the leading integer digits and silently discard the rest of the string, `e-7` included.\n\nThe same mechanism makes `parseInt(1e21)` return `1`. So the rule is simple. `parseInt` is for parsing user-supplied strings with a radix. `Math.trunc` is for turning a number into an integer. Passing a number to `parseInt` is always a bug, even when it happens to work.",
+      "explanation": "`5`. That's off by a factor of ten million, from a function that shouldn't get a number in the first place.\n\n`parseInt` expects a string. If you pass a number, it converts it to a string first, using the same shortest round-trip printing:\n\n```js\nString(0.000005);  // \"0.000005\"   -> parseInt reads \"0\"\nString(0.0000005); // \"5e-7\"       -> parseInt reads \"5\", stops at \"e\"\n```\n\nECMA-262 switches `Number::toString` to exponential notation below 10⁻⁶, and `String(0.000001)` is still `\"0.000001\"`, so the cutoff is right there. `parseInt` then reads the leading digits and ignores the rest of the string, including `e-7`.\n\nFor the same reason, `parseInt(1e21)` returns `1`. Use `parseInt` to parse strings, with a radix. Use `Math.trunc` to turn a number into an integer. Passing a number to `parseInt` is always a bug, even when it happens to work.",
       "references": "- [MDN: parseInt()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/parseInt)\n- [ECMA-262: Number::toString](https://tc39.es/ecma262/#sec-numeric-types-number-tostring)"
     },
     {
       "id": "how-to-actually-handle-money",
-      "title": "Which of these approaches actually make money arithmetic correct in JavaScript?",
+      "title": "Which of these approaches make money arithmetic correct in JavaScript?",
       "type": "multiple-choice",
       "options": [
         {
@@ -878,7 +878,7 @@
           "isCorrect": false
         }
       ],
-      "explanation": "The three that work all share one property. The value is never a binary float.\n\n```js\n10 + 20 === 30;          // true, integer cents are exact\n0.1 + 0.2 === 0.3;       // false, the same amounts as floats\nNumber.MAX_SAFE_INTEGER; // 9007199254740991 cents, about $90 trillion\n```\n\nInteger minor units get you `10 + 20 === 30` exactly, because integers below 2⁵³ are exact. Division for display is the only lossy step, and it happens once, at the edge. This is what Stripe's API does, where every amount is an integer in the currency's smallest unit.\n\nA decimal library like `decimal.js` or `big.js` implements base-10 arithmetic in software, the same trade-off as SQL `NUMERIC`. You need one when exact non-integer scales matter, such as tax rates, per-unit prices, or currencies with three decimal places.\n\n`BigInt` minor units matter once cents overflow `Number.MAX_SAFE_INTEGER`, which happens at about $90 trillion. That is beyond most ledgers but not beyond high-volume aggregates, low-value currencies, or crypto denominated in wei.\n\nThe two that fail are unfortunately the popular ones. Rounding with `toFixed(2)` at every step adds error rather than removing it, since it introduces a fresh rounding at each operation on top of the storage error already there, and `(1.005).toFixed(2)` shows it cannot be trusted even for a single value. A tolerance-based comparison does not make the arithmetic correct either. It makes the bug silent, so two ledgers that genuinely differ by a cent now compare as equal.\n\nThe TC39 decimal proposal aims to bring exact decimals into the language itself. It is not shipping yet, so you still need one of the three above.",
+      "explanation": "The three that work have one thing in common: the value is never a binary float.\n\n```js\n10 + 20 === 30;          // true, integer cents are exact\n0.1 + 0.2 === 0.3;       // false, the same amounts as floats\nNumber.MAX_SAFE_INTEGER; // 9007199254740991 cents, about $90 trillion\n```\n\nWith integer minor units, `10 + 20 === 30` exactly, because integers below 2⁵³ are exact. The only lossy step is dividing for display, and that happens once, at the end. Stripe's API works this way. Every amount is an integer in the currency's smallest unit.\n\nA decimal library like `decimal.js` or `big.js` does base-10 arithmetic in software, with the same trade-off as SQL `NUMERIC`. You need one for exact fractional values, such as tax rates, per-unit prices, or currencies with three decimal places.\n\n`BigInt` minor units matter once cents go past `Number.MAX_SAFE_INTEGER`, at about $90 trillion. Most ledgers won't get there, but large aggregates, low-value currencies, or crypto amounts in wei can.\n\nUnfortunately, the two that fail are the popular ones. Calling `toFixed(2)` after every step adds error instead of removing it, because each call rounds again on top of the storage error. And `(1.005).toFixed(2)` shows you can't trust it even once. A tolerance comparison doesn't make the math correct either. It hides the bug, so two ledgers that really differ by a cent compare as equal.\n\nThe TC39 Decimal proposal would add exact decimals to the language. It hasn't shipped yet, so for now use one of the three approaches above.",
       "references": "- [decimal.js, arbitrary-precision decimal arithmetic](https://github.com/MikeMcl/decimal.js)\n- [TC39: the Decimal proposal](https://tc39.es/proposal-decimal/)\n- [MDN: BigInt](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/BigInt)\n- [PostgreSQL: Numeric Types](https://www.postgresql.org/docs/current/datatype-numeric.html)"
     }
   ]
