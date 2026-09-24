@@ -16,6 +16,7 @@ import styles from "./quiz-detail-header.module.css";
 interface QuizDetailHeaderProps {
   quiz: Quiz;
   runStatus: RunStatus | undefined;
+  tagHref: (tag: string) => string;
 }
 
 /**
@@ -24,7 +25,7 @@ interface QuizDetailHeaderProps {
  * quiz is stable, so its Markdown title/description are parsed (`marked` +
  * `sanitize-html`) once and reused instead of on every render.
  */
-function QuizDetailHeaderComponent({ quiz, runStatus }: QuizDetailHeaderProps) {
+function QuizDetailHeaderComponent({ quiz, runStatus, tagHref }: QuizDetailHeaderProps) {
   const titleHtml = useMemo(() => renderMarkdownField("quizTitle", quiz.title), [quiz.title]);
   const descriptionHtml = useMemo(
     () =>
@@ -39,7 +40,9 @@ function QuizDetailHeaderComponent({ quiz, runStatus }: QuizDetailHeaderProps) {
       {quiz.tags.length > 0 && (
         <div className={styles.tags} aria-label="Tags">
           {quiz.tags.map((tag) => (
-            <Badge key={tag}>{tag}</Badge>
+            <Badge key={tag} href={tagHref(tag)}>
+              {tag}
+            </Badge>
           ))}
         </div>
       )}

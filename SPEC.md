@@ -247,6 +247,8 @@ The continue block sorts Runs by `updatedAt`, resolves them across both namespac
 
 The Tag filter stores a comma-separated `?tags=` value with `history.replaceState`. Unknown Tags are ignored.
 
+Tag badges on quiz cards and Quiz detail link to their own list filtered to that one Tag: Catalog Quizzes to `/quizzes/?tags={tag}`, Library Quizzes to `/library/?tags={tag}`. The link replaces any current filter and lands on page 1. Import preview badges are not links.
+
 ### Player
 
 The Catalog and Library use the same player with different Quiz sources.

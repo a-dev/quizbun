@@ -1,5 +1,5 @@
 import type { Quiz } from "@/shared/lib/quiz";
-import { withBase } from "@/shared/lib/routing";
+import { tagFilterHref, withBase } from "@/shared/lib/routing";
 
 import { QuizDetail } from "@/features/quiz-detail";
 
@@ -23,6 +23,7 @@ export function CatalogQuizScreen({ quiz }: CatalogQuizScreenProps) {
       source="catalog"
       backHref={withBase("quizzes/")}
       backLabel="Back to the Catalog"
+      tagHref={(tag) => tagFilterHref("quizzes/", tag)}
       renderPlayer={renderPlayer}
     />
   );

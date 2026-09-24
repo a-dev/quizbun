@@ -8,6 +8,7 @@ import {
   parseListUrlState,
   QUIZZES_PER_PAGE,
   stringifyListUrlState,
+  tagFilterHref,
   withBase,
 } from "@/shared/lib/routing";
 import type { ListUrlState } from "@/shared/lib/routing";
@@ -188,6 +189,7 @@ export function QuizzesCatalog({
                 key={summary.id}
                 summary={summary}
                 href={withBase(`quizzes/${encodeURIComponent(summary.id)}/`)}
+                tagHref={(tag) => tagFilterHref("quizzes/", tag)}
                 showDescription
               />
             ))}

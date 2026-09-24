@@ -9,6 +9,7 @@ import {
   clampPage,
   parseListUrlState,
   stringifyListUrlState,
+  tagFilterHref,
   withBase,
 } from "@/shared/lib/routing";
 import type { ListUrlState } from "@/shared/lib/routing";
@@ -311,6 +312,7 @@ export function LibraryList() {
                   key={summary.id}
                   summary={summary}
                   href={withBase(`library/quiz/?id=${encodeURIComponent(summary.id)}`)}
+                  tagHref={(tag) => tagFilterHref("library/", tag)}
                   actions={
                     <div className={styles.actions}>
                       <Button

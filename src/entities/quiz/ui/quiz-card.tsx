@@ -26,6 +26,8 @@ export interface QuizCardProps {
   showCreatedAt?: boolean;
   isPreview?: boolean;
   size?: "s" | "m";
+  /** Href for a Tag badge; when set (and not a preview), each badge links there. */
+  tagHref?: (tag: string) => string;
   /** Caller-provided actions (Export, delete, …); the card stays data-only. */
   actions?: ReactNode;
 }
@@ -55,6 +57,7 @@ export function QuizCard({
   showDescription = false,
   isPreview = false,
   size = "m",
+  tagHref,
   actions,
 }: Readonly<QuizCardProps>) {
   const descriptionExcerpt =
@@ -111,7 +114,7 @@ export function QuizCard({
       {summary.tags.length > 0 && (
         <div aria-label="Tags" className={styles.tags}>
           {summary.tags.map((tag) => (
-            <Badge key={tag} size="s">
+            <Badge key={tag} size="s" href={isPreview ? undefined : tagHref?.(tag)}>
               {tag}
             </Badge>
           ))}

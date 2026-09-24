@@ -5,8 +5,10 @@ import {
   hasActiveListFilters,
   parseListUrlState,
   stringifyListUrlState,
+  tagFilterHref,
 } from "./list-url-state";
 import type { ListUrlState } from "./list-url-state";
+import { withBase } from "./with-base";
 
 const availableTags = ["css", "javascript", "web"] as const;
 
@@ -97,6 +99,13 @@ describe("stringifyListUrlState", () => {
         availableTags,
       ),
     ).toBe("");
+  });
+});
+
+describe("tagFilterHref", () => {
+  test("links a list filtered to exactly that Tag", () => {
+    expect(tagFilterHref("quizzes/", "advanced")).toBe(`${withBase("quizzes/")}?tags=advanced`);
+    expect(tagFilterHref("library/", "css")).toBe(`${withBase("library/")}?tags=css`);
   });
 });
 

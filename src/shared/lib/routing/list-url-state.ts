@@ -1,3 +1,5 @@
+import { withBase } from "./with-base";
+
 export type ListTagMatchMode = "and" | "or";
 
 export interface ListUrlState {
@@ -66,6 +68,22 @@ export function stringifyListUrlState(
   if (otherParams !== "") queryParts.push(otherParams);
 
   return queryParts.length === 0 ? "" : `?${queryParts.join("&")}`;
+}
+
+/**
+ * Href for a list (`quizzes/` or `library/`) filtered to exactly one Tag. Tag
+ * badges link here: a plain link that replaces any current filter and lands on
+ * page 1, so it is the same everywhere the badge renders.
+ */
+export function tagFilterHref(listPath: "quizzes/" | "library/", tag: string): string {
+  const state: ListUrlState = {
+    selectedTags: [tag],
+    tagMatchMode: DEFAULT_TAG_MATCH_MODE,
+    titleQuery: "",
+    page: 1,
+  };
+
+  return `${withBase(listPath)}${stringifyListUrlState(state, [tag])}`;
 }
 
 export function hasActiveListFilters(state: ListUrlState): boolean {

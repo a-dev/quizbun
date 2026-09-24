@@ -6,6 +6,18 @@
     background: transparent;
   }
 
+  /* A linked badge keeps the static look; the hover ring is an inset shadow so
+     it adds no box size and leaves the focus outline free. */
+  .root:any-link {
+    cursor: pointer;
+    text-decoration: none;
+    transition: box-shadow 0.3s ease;
+
+    &:hover {
+      box-shadow: inset 0 0 0 1px var(--_hover-border, currentcolor);
+    }
+  }
+
   .size-s {
     composes: rounded-s from "#styles/shape.module.css";
 
@@ -24,6 +36,8 @@
   }
 
   .intent-taxonomy {
+    --_hover-border: var(--color-taxonomy-border-hover);
+
     color: var(--color-text-on-taxonomy);
     background-color: var(--color-taxonomy-bg);
   }

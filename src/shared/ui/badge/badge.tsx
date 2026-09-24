@@ -21,14 +21,26 @@ type Props = {
   children?: ReactNode;
   size?: Size;
   intent?: Intent;
-} & HTMLAttributes<HTMLDivElement>;
-export function Badge({ children, size = "s", intent = "taxonomy", className, ...props }: Props) {
+  /** Renders the badge as a link (e.g. a Tag badge linking to its filtered list). */
+  href?: string;
+} & HTMLAttributes<HTMLElement>;
+export function Badge({
+  children,
+  size = "s",
+  intent = "taxonomy",
+  href,
+  className,
+  ...props
+}: Props) {
+  const Element = href === undefined ? "div" : "a";
+
   return (
-    <div
+    <Element
       {...props}
+      href={href}
       className={cx(styles.root, SIZE_STYLES[size], INTENT_STYLES[intent], className)}
     >
       {children}
-    </div>
+    </Element>
   );
 }

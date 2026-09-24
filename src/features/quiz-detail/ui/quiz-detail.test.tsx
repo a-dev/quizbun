@@ -53,6 +53,7 @@ async function renderDetail(quiz: Quiz) {
       source="library"
       backHref="/library/"
       backLabel="Library"
+      tagHref={(tag) => `/library/?tags=${tag}`}
       renderPlayer={({ urlView }) => <div>{urlView}</div>}
     />,
   );
@@ -75,6 +76,7 @@ describe("QuizDetail", () => {
         source="catalog"
         backHref="/quizzes/"
         backLabel="Catalog"
+        tagHref={(tag) => `/quizzes/?tags=${tag}`}
         renderPlayer={() => null}
       />,
     );

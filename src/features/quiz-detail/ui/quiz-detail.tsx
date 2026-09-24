@@ -26,6 +26,8 @@ export interface QuizDetailProps {
   source: RunSource;
   backHref: string;
   backLabel: string;
+  /** Href for a Tag badge: the hosting surface's own list filtered to that Tag. */
+  tagHref: (tag: string) => string;
   /**
    * Injected by the hosting page (FSD: features must not import each other).
    * Receives the quiz, its Run namespace, and an exit callback back to detail.
@@ -45,7 +47,14 @@ export interface QuizDetailProps {
  * and the injected player) share one route (SPEC.md §4): `usePlayerRoute` derives
  * which to show from the URL, so activating the primary action never navigates.
  */
-export function QuizDetail({ quiz, source, backHref, backLabel, renderPlayer }: QuizDetailProps) {
+export function QuizDetail({
+  quiz,
+  source,
+  backHref,
+  backLabel,
+  tagHref,
+  renderPlayer,
+}: QuizDetailProps) {
   const { state, surface, enter, startHref, questionHref, exit, replace } = usePlayerRoute(quiz);
   const { status, answers, error, refresh, reset } = useRunStatus(source, quiz);
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
@@ -108,7 +117,7 @@ export function QuizDetail({ quiz, source, backHref, backLabel, renderPlayer }: 
       className={layout.page}
     >
       <BackButton href={backHref} text={backLabel} />
-      <QuizDetailHeader quiz={quiz} runStatus={status} />
+      <QuizDetailHeader quiz={quiz} runStatus={status} tagHref={tagHref} />
 
       {error !== undefined && <Note type="error">{error}</Note>}
 

@@ -1,4 +1,4 @@
-import { withBase } from "@/shared/lib/routing";
+import { tagFilterHref, withBase } from "@/shared/lib/routing";
 import { BackButton } from "@/shared/ui/breadcrumbs";
 import { TopLineLoader } from "@/shared/ui/loader";
 import { Note } from "@/shared/ui/note";
@@ -47,6 +47,7 @@ export function QuizDetailView({ renderPlayer }: QuizDetailViewProps) {
       source="library"
       backHref={withBase("library/")}
       backLabel="Back to the Library"
+      tagHref={(tag) => tagFilterHref("library/", tag)}
       renderPlayer={renderPlayer}
     />
   );

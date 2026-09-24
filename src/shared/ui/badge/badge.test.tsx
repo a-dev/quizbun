@@ -26,4 +26,11 @@ describe("Badge", () => {
     );
     await expect.element(screen.getByTestId("badge")).toHaveClass("custom-badge");
   });
+
+  it("renders as a link when given an href", async () => {
+    const screen = await page.render(<Badge href="/quizzes/?tags=css">css</Badge>);
+    await expect
+      .element(screen.getByRole("link", { name: "css" }))
+      .toHaveAttribute("href", "/quizzes/?tags=css");
+  });
 });
