@@ -137,6 +137,7 @@ Shuffling, Option labels, pagination, Page size, keyboard controls, and layout n
 - The `create-quiz` skill owns the [AI generation prompt](skills/create-quiz/references/quiz-generation-prompt.md). The site renders that source with a short introduction.
 - CI validates every file in [docs/examples](docs/examples) with the Zod schema.
 - The Public catalog profile adds repository-only rules. It requires `description`, `language`, at least one Tag, repository-wide Quiz id uniqueness, and a filename that matches the Quiz id. Every Catalog Image also requires generated `width` and `height` that match the vendored file.
+- Catalog titles use sentence case: only the first word and words that are always capitalized, such as names and acronyms, start with a capital. Human review and the PR checklist enforce it.
 
 ## 3. Architecture
 

@@ -15,4 +15,5 @@ Full walkthrough: https://a-dev.github.io/quizbun/docs/contributing/
 - [ ] `description` and `language` are set, and there is at least one tag.
 - [ ] The file is `content/quizzes/{id}.json`, where `{id}` is the quiz's `id`.
 - [ ] Every Explanation teaches the concept — none of them just restate the correct answer.
+- [ ] Titles are in sentence case: `Agents and tool calling: what could go wrong?`, not `Agents and Tool Calling: What Could Go Wrong?`.
 - [ ] I understand that by submitting this quiz I license it under the repository's license ([details](https://a-dev.github.io/quizbun/docs/contributing/#licensing-what-submitting-means)).

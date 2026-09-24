@@ -95,6 +95,7 @@ Reviewers check the Quiz's teaching quality:
 - Write unambiguous Questions. Incorrect Options should be plausible without misleading Learners.
 - Use each Explanation to teach the concept and explain why an answer is correct or incorrect. Simply restating the correct answer fails review.
 - Include relevant, trustworthy References for further reading when useful. They cannot replace the Explanation.
+- Write titles in sentence case. Capitalize the first word and words that are always capitalized, such as names, products, and acronyms. Lowercase the word after a colon. Write `Agents and tool calling: what could go wrong?`, not `Agents and Tool Calling: What Could Go Wrong?`. This applies to Quiz and Question titles.
 
 ## The error-message round-trip
 
