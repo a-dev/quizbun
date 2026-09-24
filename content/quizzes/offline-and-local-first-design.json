@@ -1,20 +1,20 @@
 {
   "schemaVersion": 1,
   "id": "offline-and-local-first-design",
-  "title": "Offline & local-first design",
-  "description": "A local-first app treats the network as an enhancement, not a requirement. Work through service-worker caching strategies (cache-first, network-first, stale-while-revalidate), durable client storage, queueing and replaying mutations made while offline, and the genuinely hard part — resolving conflicts when two clients diverge (last-write-wins, version vectors, and CRDTs).",
+  "title": "Offline web apps: caching, queued writes, and conflict resolution",
+  "description": "A local-first app works without a network and treats the connection as a bonus. This quiz covers service-worker caching strategies (cache-first, network-first, stale-while-revalidate), durable storage in the browser, and queueing writes made offline so you can replay them later. Then it turns to the hardest part, resolving conflicts when two clients edit the same data, with last-write-wins, version vectors, and CRDTs.",
   "language": "en",
   "tags": ["system-design", "frontend"],
   "questions": [
     {
       "id": "stale-while-revalidate-strategy",
-      "title": "Which caching strategy serves the cached response instantly, then refreshes the cache in the background?",
-      "description": "A news feed needs to paint instantly on every visit, but you also want the content to be reasonably fresh the *next* time it loads.",
+      "title": "Which caching strategy returns the cached response right away, then updates the cache in the background?",
+      "description": "A news feed should appear instantly on every visit, and you also want the content to be fairly fresh the *next* time it loads.",
       "images": [
         {
           "src": "offline-write-path.svg",
-          "alt": "Five steps for one offline mutation. Apply the change optimistically, which commits you to handling the failure case later. Queue the mutation locally with an idempotency key, in IndexedDB rather than localStorage, since the key is what makes a later replay safe. Try to send it, letting the request fail truthfully. If it fails, register a Background Sync tag so the browser replays the request when connectivity returns, even after the tab is closed. On rejection, roll back the optimistic change and tell the user. Four cards follow: inside a service worker only the Cache API and IndexedDB are available, with no localStorage or document.cookie; an IndexedDB transaction auto-commits as soon as it has no pending request, so awaiting an unrelated fetch makes the next add throw TransactionInactiveError; stored data may still be evicted unless you call navigator.storage.persist(); and navigator.onLine being true only means the device has a network interface.",
-          "caption": "Serve from cache now, refresh behind it for next time.",
+          "alt": "Five steps for one offline mutation. First, apply the change optimistically, which means you must handle failure later. Second, queue the mutation locally in IndexedDB, not localStorage, with an idempotency key so a later replay is safe. Third, try to send it and let the request fail honestly. Fourth, if it fails, register a Background Sync tag so the browser replays the request when the connection returns, even after the tab closes. Fifth, if the server rejects it, roll back the optimistic change and tell the user. Four cards follow. A service worker can use only the Cache API and IndexedDB, not localStorage or document.cookie. An IndexedDB transaction commits on its own as soon as it has no pending request, so awaiting an unrelated fetch makes the next add throw TransactionInactiveError. The browser may still evict stored data unless you call navigator.storage.persist(). A true navigator.onLine only means the device has a network interface.",
+          "caption": "Serve from the cache now, refresh it for next time.",
           "placement": "explanation",
           "width": 720,
           "height": 618
@@ -39,17 +39,17 @@
           "isCorrect": false
         }
       ],
-      "explanation": "**Stale-while-revalidate** answers from the cache immediately (the \"stale\" part) and, in parallel, fires a network request whose fresh response *replaces* the cache entry (the \"revalidate\" part) — so the current load is instant and the next one is up to date.\n\nThe others behave differently:\n\n- **Cache-first** short-circuits on a cache hit and never revalidates, so it can serve stale data indefinitely (great for hashed, immutable assets).\n- **Network-first** blocks on the network and only falls back to the cache when the request fails (good when freshness matters more than speed).\n- **Cache-only** never touches the network at all.\n\nThe name mirrors the HTTP `Cache-Control: stale-while-revalidate` directive, which expresses the same trade-off at the CDN layer.",
+      "explanation": "**Stale-while-revalidate** answers from the cache right away (the \"stale\" part). At the same time it sends a network request, and the fresh response *replaces* the cache entry (the \"revalidate\" part). This load is instant, and the next one is up to date.\n\nThe other strategies work differently:\n\n- **Cache-first** returns a cache hit and never revalidates, so it can serve stale data forever. It suits hashed, immutable assets.\n- **Network-first** waits for the network and falls back to the cache only when the request fails. Use it when freshness matters more than speed.\n- **Cache-only** never uses the network.\n\nThe name comes from the HTTP `Cache-Control: stale-while-revalidate` directive, which makes the same trade-off at the CDN.",
       "references": "[Chrome for Developers: Workbox caching strategies overview](https://developer.chrome.com/docs/workbox/caching-strategies-overview)"
     },
     {
       "id": "service-worker-storage-apis",
-      "title": "Which storage APIs can code inside a service worker use directly?",
-      "description": "A service worker runs off the main thread in a worker context — there is no `window` and no `document`, and synchronous, main-thread-only APIs are unavailable.",
+      "title": "Which storage APIs can a service worker use directly?",
+      "description": "A service worker runs on its own worker thread. It has no `window` and no `document`, and it can't use synchronous APIs that exist only on the main thread.",
       "images": [
         {
           "src": "offline-write-path.svg",
-          "alt": "Five steps for one offline mutation. Apply the change optimistically, which commits you to handling the failure case later. Queue the mutation locally with an idempotency key, in IndexedDB rather than localStorage, since the key is what makes a later replay safe. Try to send it, letting the request fail truthfully. If it fails, register a Background Sync tag so the browser replays the request when connectivity returns, even after the tab is closed. On rejection, roll back the optimistic change and tell the user. Four cards follow: inside a service worker only the Cache API and IndexedDB are available, with no localStorage or document.cookie; an IndexedDB transaction auto-commits as soon as it has no pending request, so awaiting an unrelated fetch makes the next add throw TransactionInactiveError; stored data may still be evicted unless you call navigator.storage.persist(); and navigator.onLine being true only means the device has a network interface.",
+          "alt": "Five steps for one offline mutation. First, apply the change optimistically, which means you must handle failure later. Second, queue the mutation locally in IndexedDB, not localStorage, with an idempotency key so a later replay is safe. Third, try to send it and let the request fail honestly. Fourth, if it fails, register a Background Sync tag so the browser replays the request when the connection returns, even after the tab closes. Fifth, if the server rejects it, roll back the optimistic change and tell the user. Four cards follow. A service worker can use only the Cache API and IndexedDB, not localStorage or document.cookie. An IndexedDB transaction commits on its own as soon as it has no pending request, so awaiting an unrelated fetch makes the next add throw TransactionInactiveError. The browser may still evict stored data unless you call navigator.storage.persist(). A true navigator.onLine only means the device has a network interface.",
           "caption": "Two asynchronous stores, and no `window`.",
           "placement": "explanation",
           "width": 720,
@@ -75,18 +75,18 @@
           "isCorrect": false
         }
       ],
-      "explanation": "Service workers have no DOM and run on a separate thread, so anything synchronous or document-bound is out:\n\n- `localStorage` is a **synchronous** API and is simply not exposed to workers.\n- `document.cookie` needs a `document`, which a worker doesn't have.\n\nWhat remains are the **asynchronous, worker-safe** APIs: the **Cache API**, purpose-built to store `Request`/`Response` pairs for offline navigation, and **IndexedDB**, for structured application data and your offline mutation queue. This is exactly why offline-first architectures standardize on *IndexedDB + Cache API* rather than `localStorage`.",
+      "explanation": "A service worker has no DOM and runs on its own thread, so it can't use anything synchronous or tied to the document:\n\n- `localStorage` is **synchronous**, so workers don't get it.\n- `document.cookie` needs a `document`, and a worker has none.\n\nThat leaves the **asynchronous** APIs that work in workers. The **Cache API** stores `Request`/`Response` pairs for offline pages, and **IndexedDB** holds structured app data and your outbox of offline mutations. This is why offline-first apps use IndexedDB and the Cache API instead of `localStorage`.",
       "references": "[MDN: Using Service Workers](https://developer.mozilla.org/en-US/docs/Web/API/Service_Worker_API/Using_Service_Workers)"
     },
     {
       "id": "indexeddb-transaction-auto-commit",
       "title": "Why does this IndexedDB write throw `TransactionInactiveError`?",
-      "description": "The intent is to fetch some data and store it in an outbox object store within a single transaction:\n\n```js\nconst tx = db.transaction('outbox', 'readwrite');\nconst store = tx.objectStore('outbox');\n\nconst res = await fetch('/api/sync'); // await something unrelated to IndexedDB\nstore.add(await res.json());          // throws: TransactionInactiveError\n```",
+      "description": "The code should fetch some data and store it in the `outbox` object store, all in one transaction:\n\n```js\nconst tx = db.transaction('outbox', 'readwrite');\nconst store = tx.objectStore('outbox');\n\nconst res = await fetch('/api/sync'); // await something unrelated to IndexedDB\nstore.add(await res.json());          // throws: TransactionInactiveError\n```",
       "images": [
         {
           "src": "offline-write-path.svg",
-          "alt": "Five steps for one offline mutation. Apply the change optimistically, which commits you to handling the failure case later. Queue the mutation locally with an idempotency key, in IndexedDB rather than localStorage, since the key is what makes a later replay safe. Try to send it, letting the request fail truthfully. If it fails, register a Background Sync tag so the browser replays the request when connectivity returns, even after the tab is closed. On rejection, roll back the optimistic change and tell the user. Four cards follow: inside a service worker only the Cache API and IndexedDB are available, with no localStorage or document.cookie; an IndexedDB transaction auto-commits as soon as it has no pending request, so awaiting an unrelated fetch makes the next add throw TransactionInactiveError; stored data may still be evicted unless you call navigator.storage.persist(); and navigator.onLine being true only means the device has a network interface.",
-          "caption": "The transaction is already gone by the time `add` runs.",
+          "alt": "Five steps for one offline mutation. First, apply the change optimistically, which means you must handle failure later. Second, queue the mutation locally in IndexedDB, not localStorage, with an idempotency key so a later replay is safe. Third, try to send it and let the request fail honestly. Fourth, if it fails, register a Background Sync tag so the browser replays the request when the connection returns, even after the tab closes. Fifth, if the server rejects it, roll back the optimistic change and tell the user. Four cards follow. A service worker can use only the Cache API and IndexedDB, not localStorage or document.cookie. An IndexedDB transaction commits on its own as soon as it has no pending request, so awaiting an unrelated fetch makes the next add throw TransactionInactiveError. The browser may still evict stored data unless you call navigator.storage.persist(). A true navigator.onLine only means the device has a network interface.",
+          "caption": "The transaction has already ended when `add` runs.",
           "placement": "explanation",
           "width": 720,
           "height": 618
@@ -95,33 +95,33 @@
       "type": "single-choice",
       "options": [
         {
-          "text": "The transaction auto-committed while awaiting the unrelated `fetch`, so the store is no longer active by the time `add` runs",
+          "text": "The transaction committed on its own while the code awaited the unrelated `fetch`, so it is no longer active when `add` runs",
           "isCorrect": true
         },
         {
-          "text": "A `readwrite` transaction may only contain a single request",
+          "text": "A `readwrite` transaction can contain only one request",
           "isCorrect": false
         },
         {
-          "text": "The value must be passed through `JSON.stringify` before `store.add` will accept it",
+          "text": "`store.add` only accepts values passed through `JSON.stringify` first",
           "isCorrect": false
         },
         {
-          "text": "IndexedDB cannot store the result of `res.json()` because it is a Promise",
+          "text": "IndexedDB can't store the result of `res.json()` because it is a Promise",
           "isCorrect": false
         }
       ],
-      "explanation": "An IndexedDB transaction stays active only while there is pending IDB work for it in the current event-loop turn. As soon as control returns to the event loop with no queued requests against the transaction — which is exactly what `await fetch(...)` causes — the transaction **auto-commits** and goes inactive. The later `store.add` then targets a dead transaction and throws `TransactionInactiveError`.\n\nThe fix is to do all non-IDB async work *first*, then open the transaction and run every IDB operation synchronously inside it:\n\n```js\nconst payload = await (await fetch('/api/sync')).json(); // await BEFORE the tx\nconst tx = db.transaction('outbox', 'readwrite');\ntx.objectStore('outbox').add(payload);                   // no await in between\n```\n\nThe distractors are wrong: a transaction can hold many requests, `add` stores structured-cloneable values (not JSON strings), and `await res.json()` has already resolved to a plain object. This auto-commit design is what keeps IndexedDB transactions cheap (no long-held locks) — but it routinely surprises developers used to long-lived SQL transactions.",
+      "explanation": "An IndexedDB transaction stays active only while it has pending requests in the current event-loop turn. When control goes back to the event loop with nothing queued on the transaction, which is exactly what `await fetch(...)` does, the transaction **auto-commits** and becomes inactive. The later `store.add` then runs against a finished transaction and throws `TransactionInactiveError`.\n\nTo fix it, do all the other async work *first*. Then open the transaction and make every IndexedDB call inside it without awaiting anything else:\n\n```js\nconst payload = await (await fetch('/api/sync')).json(); // await BEFORE the tx\nconst tx = db.transaction('outbox', 'readwrite');\ntx.objectStore('outbox').add(payload);                   // no await in between\n```\n\nThe other options are wrong. A transaction can hold many requests, `add` stores structured-cloneable values rather than JSON strings, and `await res.json()` has already resolved to a plain object. Auto-commit keeps IndexedDB transactions cheap because they never hold locks for long, but it often surprises developers used to long-lived SQL transactions.",
       "references": "[MDN: IDBTransaction](https://developer.mozilla.org/en-US/docs/Web/API/IDBTransaction)"
     },
     {
       "id": "indexeddb-default-durability",
-      "title": "By default, is the data your app writes to IndexedDB safe from the browser deleting it?",
-      "description": "Your offline-first app keeps the user's *only* copy of their not-yet-synced work in IndexedDB.",
+      "title": "By default, can you count on the browser to keep the data your app writes to IndexedDB?",
+      "description": "Your offline-first app keeps the *only* copy of the user's unsynced work in IndexedDB.",
       "images": [
         {
           "src": "offline-write-path.svg",
-          "alt": "Five steps for one offline mutation. Apply the change optimistically, which commits you to handling the failure case later. Queue the mutation locally with an idempotency key, in IndexedDB rather than localStorage, since the key is what makes a later replay safe. Try to send it, letting the request fail truthfully. If it fails, register a Background Sync tag so the browser replays the request when connectivity returns, even after the tab is closed. On rejection, roll back the optimistic change and tell the user. Four cards follow: inside a service worker only the Cache API and IndexedDB are available, with no localStorage or document.cookie; an IndexedDB transaction auto-commits as soon as it has no pending request, so awaiting an unrelated fetch makes the next add throw TransactionInactiveError; stored data may still be evicted unless you call navigator.storage.persist(); and navigator.onLine being true only means the device has a network interface.",
+          "alt": "Five steps for one offline mutation. First, apply the change optimistically, which means you must handle failure later. Second, queue the mutation locally in IndexedDB, not localStorage, with an idempotency key so a later replay is safe. Third, try to send it and let the request fail honestly. Fourth, if it fails, register a Background Sync tag so the browser replays the request when the connection returns, even after the tab closes. Fifth, if the server rejects it, roll back the optimistic change and tell the user. Four cards follow. A service worker can use only the Cache API and IndexedDB, not localStorage or document.cookie. An IndexedDB transaction commits on its own as soon as it has no pending request, so awaiting an unrelated fetch makes the next add throw TransactionInactiveError. The browser may still evict stored data unless you call navigator.storage.persist(). A true navigator.onLine only means the device has a network interface.",
           "caption": "Best-effort until you ask for persistence.",
           "placement": "explanation",
           "width": 720,
@@ -131,34 +131,34 @@
       "type": "single-choice",
       "options": [
         {
-          "text": "No — default storage is \"best-effort\" and can be evicted under storage pressure; call `navigator.storage.persist()` to request \"persistent\" storage",
+          "text": "No. Storage is \"best-effort\" by default, and the browser can evict it when disk space runs low",
           "isCorrect": true
         },
         {
-          "text": "Yes — IndexedDB data is permanent until the user manually clears the site's data",
+          "text": "Yes. The data stays until the user clears the site's data",
           "isCorrect": false
         },
         {
-          "text": "Yes — as long as the database stays under the 5 MB quota",
+          "text": "Yes, as long as the database stays under the 5 MB quota",
           "isCorrect": false
         },
         {
-          "text": "No — IndexedDB is wiped automatically every time the tab is closed",
+          "text": "No. The browser wipes IndexedDB every time the tab closes",
           "isCorrect": false
         }
       ],
-      "explanation": "Under the Storage Standard, an origin's storage is **best-effort** by default: the browser may evict it when the device runs low on disk, typically clearing least-recently-used origins first. For data that is the *only* copy of unsynced work, request **durable** storage with `await navigator.storage.persist()`; if granted, the origin becomes exempt from automatic eviction and is only cleared by explicit user action. You can read the current mode with `navigator.storage.persisted()` and check headroom with `navigator.storage.estimate()`.\n\nThe distractors mix up other storage myths: the ~5 MB figure is a rough `localStorage` limit (IndexedDB quotas are far larger and dynamic), and surviving a tab close is precisely what distinguishes IndexedDB from `sessionStorage`.",
+      "explanation": "Under the Storage Standard, an origin's storage is **best-effort** by default. When the device runs low on disk space, the browser may evict it, usually starting with the origins used least recently. If IndexedDB holds the *only* copy of unsynced work, request **persistent** storage with `await navigator.storage.persist()`. Once the browser grants it, it won't evict the origin on its own, and only the user can clear it. `navigator.storage.persisted()` tells you the current mode, and `navigator.storage.estimate()` shows how much space is left.\n\nThe wrong answers mix up other storage myths. The ~5 MB figure is a rough `localStorage` limit, while IndexedDB quotas are much larger and change with free disk space. Surviving a closed tab is exactly what separates IndexedDB from `sessionStorage`.",
       "references": "[MDN: StorageManager.persist()](https://developer.mozilla.org/en-US/docs/Web/API/StorageManager/persist)"
     },
     {
       "id": "optimistic-update-rollback",
-      "title": "What does an optimistic UI update commit you to handling?",
-      "description": "A todo app writes a new item into local state and renders it immediately, before the server has confirmed the create.",
+      "title": "What do you have to handle when you update the UI optimistically?",
+      "description": "A todo app adds a new item to local state and shows it right away, before the server confirms it was created.",
       "images": [
         {
           "src": "offline-write-path.svg",
-          "alt": "Five steps for one offline mutation. Apply the change optimistically, which commits you to handling the failure case later. Queue the mutation locally with an idempotency key, in IndexedDB rather than localStorage, since the key is what makes a later replay safe. Try to send it, letting the request fail truthfully. If it fails, register a Background Sync tag so the browser replays the request when connectivity returns, even after the tab is closed. On rejection, roll back the optimistic change and tell the user. Four cards follow: inside a service worker only the Cache API and IndexedDB are available, with no localStorage or document.cookie; an IndexedDB transaction auto-commits as soon as it has no pending request, so awaiting an unrelated fetch makes the next add throw TransactionInactiveError; stored data may still be evicted unless you call navigator.storage.persist(); and navigator.onLine being true only means the device has a network interface.",
-          "caption": "Step 1 and step 5 are the same promise, made and paid.",
+          "alt": "Five steps for one offline mutation. First, apply the change optimistically, which means you must handle failure later. Second, queue the mutation locally in IndexedDB, not localStorage, with an idempotency key so a later replay is safe. Third, try to send it and let the request fail honestly. Fourth, if it fails, register a Background Sync tag so the browser replays the request when the connection returns, even after the tab closes. Fifth, if the server rejects it, roll back the optimistic change and tell the user. Four cards follow. A service worker can use only the Cache API and IndexedDB, not localStorage or document.cookie. An IndexedDB transaction commits on its own as soon as it has no pending request, so awaiting an unrelated fetch makes the next add throw TransactionInactiveError. The browser may still evict stored data unless you call navigator.storage.persist(). A true navigator.onLine only means the device has a network interface.",
+          "caption": "Step 5 undoes step 1 when the server says no.",
           "placement": "explanation",
           "width": 720,
           "height": 618
@@ -167,7 +167,7 @@
       "type": "single-choice",
       "options": [
         {
-          "text": "A rollback (compensating) path that reverts the local change if the server ultimately rejects it",
+          "text": "A rollback path that undoes the local change if the server rejects it",
           "isCorrect": true
         },
         {
@@ -179,22 +179,22 @@
           "isCorrect": false
         },
         {
-          "text": "Switching storage from IndexedDB to `localStorage` for speed",
+          "text": "Moving storage from IndexedDB to `localStorage` for speed",
           "isCorrect": false
         }
       ],
-      "explanation": "\"Optimistic\" means you **assume success** and update local state right away, so the UI feels instant and keeps working offline. The price of that assumption is that you must be able to **undo** it: if the server later rejects the write (validation error, conflict, auth failure), you reconcile by rolling local state back to its previous value and surfacing the error.\n\nTanStack Query models this lifecycle explicitly: `onMutate` snapshots the cache and applies the optimistic change, `onError` restores the snapshot, and `onSettled` refetches to converge with the server. The blocking-spinner option describes the *pessimistic* approach that optimistic UI deliberately avoids. Without a compensating path, a rejected write leaves the client confidently showing data the server never accepted.",
+      "explanation": "An optimistic update **assumes success** and changes local state right away, so the UI feels instant and keeps working offline. The cost is that you must be able to **undo** it. If the server later rejects the write because of a validation error, a conflict, or an auth failure, roll local state back to its previous value and show the error.\n\nTanStack Query models this lifecycle directly. `onMutate` saves a snapshot of the cache and applies the optimistic change, `onError` restores the snapshot, and `onSettled` refetches to match the server. The blocking spinner is the *pessimistic* approach that optimistic UI avoids. Without a rollback path, a rejected write leaves the client showing data the server never accepted.",
       "references": "[TanStack Query: Optimistic Updates](https://tanstack.com/query/latest/docs/framework/react/guides/optimistic-updates)"
     },
     {
       "id": "replay-idempotency-key",
-      "title": "What one-word term names the dedup key for replaying queued mutations?",
-      "description": "When the device reconnects, your outbox replays a `POST` that may have *already* succeeded server-side before the connection dropped. To let the server recognize the retry and avoid creating a duplicate resource, the client attaches a unique **______** key.\n\nThe term is also the property an operation has when applying it twice has the same effect as applying it once.",
+      "title": "What's the one-word name for the key that stops a replayed mutation from running twice?",
+      "description": "When the device reconnects, your outbox replays a `POST` that may have *already* succeeded on the server before the connection dropped. To let the server recognize the retry and skip the duplicate, the client attaches a unique **______** key.\n\nThe same word describes an operation that has the same effect whether you apply it once or twice.",
       "images": [
         {
           "src": "offline-write-path.svg",
-          "alt": "Five steps for one offline mutation. Apply the change optimistically, which commits you to handling the failure case later. Queue the mutation locally with an idempotency key, in IndexedDB rather than localStorage, since the key is what makes a later replay safe. Try to send it, letting the request fail truthfully. If it fails, register a Background Sync tag so the browser replays the request when connectivity returns, even after the tab is closed. On rejection, roll back the optimistic change and tell the user. Four cards follow: inside a service worker only the Cache API and IndexedDB are available, with no localStorage or document.cookie; an IndexedDB transaction auto-commits as soon as it has no pending request, so awaiting an unrelated fetch makes the next add throw TransactionInactiveError; stored data may still be evicted unless you call navigator.storage.persist(); and navigator.onLine being true only means the device has a network interface.",
-          "caption": "Step 2: the key travels with the queued mutation.",
+          "alt": "Five steps for one offline mutation. First, apply the change optimistically, which means you must handle failure later. Second, queue the mutation locally in IndexedDB, not localStorage, with an idempotency key so a later replay is safe. Third, try to send it and let the request fail honestly. Fourth, if it fails, register a Background Sync tag so the browser replays the request when the connection returns, even after the tab closes. Fifth, if the server rejects it, roll back the optimistic change and tell the user. Four cards follow. A service worker can use only the Cache API and IndexedDB, not localStorage or document.cookie. An IndexedDB transaction commits on its own as soon as it has no pending request, so awaiting an unrelated fetch makes the next add throw TransactionInactiveError. The browser may still evict stored data unless you call navigator.storage.persist(). A true navigator.onLine only means the device has a network interface.",
+          "caption": "In step 2, the key is stored with the queued mutation.",
           "placement": "explanation",
           "width": 720,
           "height": 618
@@ -205,18 +205,18 @@
         "mode": "text",
         "acceptedAnswers": ["idempotency", "idempotence", "idempotent"]
       },
-      "explanation": "An operation is **idempotent** when performing it multiple times has the same effect as performing it once. Replaying an offline outbox is inherently unreliable — the original request may have reached the server *before* its acknowledgement was lost — so each mutation carries an **idempotency key** (a client-generated unique id, usually a UUID). The server records keys it has already processed and, on seeing a repeat, returns the original result instead of acting again. That turns an at-least-once delivery channel into effectively exactly-once semantics.\n\nStripe's API popularized this pattern with its `Idempotency-Key` header, precisely so a retried charge never bills a customer twice.",
+      "explanation": "An operation is **idempotent** when running it several times has the same effect as running it once. Replaying an offline outbox is unreliable by nature, because the original request may have reached the server *before* the response was lost. So each mutation carries an **idempotency key**, a unique id the client generates (usually a UUID). The server remembers the keys it has processed. When it sees a repeat, it returns the original result instead of doing the work again. Delivery is still at-least-once, but the effect happens exactly once.\n\nStripe's API made this pattern popular with its `Idempotency-Key` header, so a retried charge never bills a customer twice.",
       "references": "[Stripe API: Idempotent requests](https://docs.stripe.com/api/idempotent_requests)"
     },
     {
       "id": "background-sync-deferred-replay",
-      "title": "Which API defers a failed request until the browser regains connectivity — even after the page has closed?",
-      "description": "You want a queued message to send the moment the device is back online, without the user having to reopen the app.",
+      "title": "Which API holds a failed request until the browser is back online, even after the page closes?",
+      "description": "You want a queued message to go out as soon as the device is back online, without the user reopening the app.",
       "images": [
         {
           "src": "offline-write-path.svg",
-          "alt": "Five steps for one offline mutation. Apply the change optimistically, which commits you to handling the failure case later. Queue the mutation locally with an idempotency key, in IndexedDB rather than localStorage, since the key is what makes a later replay safe. Try to send it, letting the request fail truthfully. If it fails, register a Background Sync tag so the browser replays the request when connectivity returns, even after the tab is closed. On rejection, roll back the optimistic change and tell the user. Four cards follow: inside a service worker only the Cache API and IndexedDB are available, with no localStorage or document.cookie; an IndexedDB transaction auto-commits as soon as it has no pending request, so awaiting an unrelated fetch makes the next add throw TransactionInactiveError; stored data may still be evicted unless you call navigator.storage.persist(); and navigator.onLine being true only means the device has a network interface.",
-          "caption": "Step 4 survives the tab being closed.",
+          "alt": "Five steps for one offline mutation. First, apply the change optimistically, which means you must handle failure later. Second, queue the mutation locally in IndexedDB, not localStorage, with an idempotency key so a later replay is safe. Third, try to send it and let the request fail honestly. Fourth, if it fails, register a Background Sync tag so the browser replays the request when the connection returns, even after the tab closes. Fifth, if the server rejects it, roll back the optimistic change and tell the user. Four cards follow. A service worker can use only the Cache API and IndexedDB, not localStorage or document.cookie. An IndexedDB transaction commits on its own as soon as it has no pending request, so awaiting an unrelated fetch makes the next add throw TransactionInactiveError. The browser may still evict stored data unless you call navigator.storage.persist(). A true navigator.onLine only means the device has a network interface.",
+          "caption": "Step 4 still works after the tab closes.",
           "placement": "explanation",
           "width": 720,
           "height": 618
@@ -225,7 +225,7 @@
       "type": "single-choice",
       "options": [
         {
-          "text": "The Background Sync API — `registration.sync.register('tag')` plus a `sync` event handled in the service worker",
+          "text": "The Background Sync API, with `registration.sync.register('tag')` and a `sync` handler in the service worker",
           "isCorrect": true
         },
         {
@@ -237,22 +237,22 @@
           "isCorrect": false
         },
         {
-          "text": "`storage` events fired across tabs by `localStorage`",
+          "text": "`storage` events that `localStorage` fires across tabs",
           "isCorrect": false
         }
       ],
-      "explanation": "The **Background Sync API** lets a page register a sync tag (`await registration.sync.register('outbox')`). The browser then fires a `sync` event in the **service worker** once it judges the device has connectivity — and crucially this can happen *after the page is closed*, with the browser retrying on a backoff if the handler rejects. That durable, page-independent replay is exactly what an offline mutation queue needs.\n\nThe distractors all die with the page: a `setInterval` poll and a `beforeunload` handler can't run once the tab is gone, and cross-tab `storage` events require another open tab. (They also lean on `navigator.onLine`, which only reports link status, not real reachability — see the next idea.)",
+      "explanation": "With the **Background Sync API**, a page registers a sync tag (`await registration.sync.register('outbox')`). When the browser decides the device has connectivity, it fires a `sync` event in the **service worker**. This can happen *after the page is closed*, and if the handler rejects, the browser retries later with backoff. An offline mutation queue needs exactly this kind of replay, which doesn't depend on the page.\n\nThe wrong answers all stop working when the page closes. A `setInterval` poll and a `beforeunload` handler can't run once the tab is gone, and cross-tab `storage` events need another tab open. The polling option also relies on `navigator.onLine`, which reports only link status, not whether a server is reachable. The last question covers that.",
       "references": "[MDN: Background Synchronization API](https://developer.mozilla.org/en-US/docs/Web/API/Background_Synchronization_API)"
     },
     {
       "id": "last-write-wins-risk",
-      "title": "What is the fundamental risk of Last-Write-Wins conflict resolution?",
-      "description": "Two clients edit the same record while offline. On sync, the write carrying the newer timestamp is kept and the other is dropped.",
+      "title": "What is the main risk of last-write-wins conflict resolution?",
+      "description": "Two clients edit the same record while offline. When they sync, the write with the newer timestamp wins and the other is dropped.",
       "images": [
         {
           "src": "conflict-resolution.svg",
-          "alt": "Three approaches to concurrent edits. Last-write-wins lets one timestamp decide and discards the loser's change silently, with clock skew picking the winner. Version vectors are per-node counters that detect whether two versions are causally ordered or genuinely concurrent — detection only, never a merge. CRDTs provide a merge that is commutative, associative and idempotent, so replicas that saw the same updates converge whatever order those arrived in. A worked G-Counter merge follows: replicaA holds A 5, B 2, C 0 for a value of 7; replicaB holds A 1, B 7, C 4 for a value of 12; the element-wise maximum gives A 5, B 7, C 4, and the merged value is 16. A closing line notes that converging is not the same as being right.",
-          "caption": "The left card: a silent discard, decided by a clock.",
+          "alt": "Three ways to handle concurrent edits. Last-write-wins lets one timestamp decide and silently discards the other change, and clock skew can pick the winner. Version vectors are per-node counters that detect whether two versions are causally ordered or truly concurrent. They only detect conflicts and never merge. CRDTs have a merge that is commutative, associative, and idempotent, so replicas that received the same updates converge in any order. A worked G-Counter merge follows. replicaA holds A 5, B 2, C 0, a value of 7. replicaB holds A 1, B 7, C 4, a value of 12. The element-wise maximum is A 5, B 7, C 4, so the merged value is 16. A closing line notes that converging is not the same as being right.",
+          "caption": "In the left card, a clock decides and the other write silently disappears.",
           "placement": "explanation",
           "width": 720,
           "height": 472
@@ -261,34 +261,34 @@
       "type": "single-choice",
       "options": [
         {
-          "text": "The \"losing\" write is silently discarded, and clock skew can make the wrong write win",
+          "text": "The losing write disappears silently, and clock skew can make the wrong write win",
           "isCorrect": true
         },
         {
-          "text": "It requires every client to run a consensus protocol before it may write",
+          "text": "Every client must run a consensus protocol before it can write",
           "isCorrect": false
         },
         {
-          "text": "It can only be applied to numeric fields",
+          "text": "It works only on numeric fields",
           "isCorrect": false
         },
         {
-          "text": "It always produces a merge conflict that a human must resolve by hand",
+          "text": "It always creates a merge conflict that a person must resolve by hand",
           "isCorrect": false
         }
       ],
-      "explanation": "LWW resolves conflicts by comparing a timestamp (or version) on each write and keeping the latest. It's appealing because it's simple and *fully automatic* — no human, no coordination — but that automation is also its danger: the discarded write disappears with **no record and no merge**, so concurrent edits lose data silently. Worse, it trusts wall-clock timestamps, and client clocks drift; a write that happened *later* in real time can carry an *earlier* timestamp and lose (or vice-versa).\n\nSystems that adopt LWW usually mitigate this with a logical or **hybrid logical clock** and a deterministic tie-breaker (e.g., node id) so that all replicas at least pick the *same* winner. When silently dropping data is unacceptable, you reach for **version vectors** (to detect concurrency) or **CRDTs** (to merge instead of discard) — the topics of the next two questions.",
+      "explanation": "Last-write-wins (LWW) compares a timestamp or version on each write and keeps the newest one. It's simple and *fully automatic*, with no human and no coordination. That automation is also the danger. The losing write disappears with **no record and no merge**, so concurrent edits silently lose data. LWW also trusts wall-clock timestamps, and client clocks drift. A write that happened *later* in real time can carry an *earlier* timestamp and lose, or the other way around.\n\nSystems that use LWW usually soften this with a logical or **hybrid logical clock** and a fixed tie-breaker, such as the node id, so every replica at least picks the *same* winner. When silently dropping data is unacceptable, use **version vectors** to detect concurrent edits or **CRDTs** to merge them instead of discarding one. The next two questions cover both.",
       "references": "[Amazon: Dynamo — Highly Available Key-value Store (SOSP 2007)](https://www.allthingsdistributed.com/files/amazon-dynamo-sosp2007.pdf)"
     },
     {
       "id": "version-vector-detect-vs-resolve",
       "title": "What does a version vector (vector clock) actually give you?",
-      "description": "Each replica carries a per-node counter map alongside the value it stores.",
+      "description": "Each replica keeps a map of per-node counters next to the value it stores.",
       "images": [
         {
           "src": "conflict-resolution.svg",
-          "alt": "Three approaches to concurrent edits. Last-write-wins lets one timestamp decide and discards the loser's change silently, with clock skew picking the winner. Version vectors are per-node counters that detect whether two versions are causally ordered or genuinely concurrent — detection only, never a merge. CRDTs provide a merge that is commutative, associative and idempotent, so replicas that saw the same updates converge whatever order those arrived in. A worked G-Counter merge follows: replicaA holds A 5, B 2, C 0 for a value of 7; replicaB holds A 1, B 7, C 4 for a value of 12; the element-wise maximum gives A 5, B 7, C 4, and the merged value is 16. A closing line notes that converging is not the same as being right.",
-          "caption": "The middle card detects; it does not merge.",
+          "alt": "Three ways to handle concurrent edits. Last-write-wins lets one timestamp decide and silently discards the other change, and clock skew can pick the winner. Version vectors are per-node counters that detect whether two versions are causally ordered or truly concurrent. They only detect conflicts and never merge. CRDTs have a merge that is commutative, associative, and idempotent, so replicas that received the same updates converge in any order. A worked G-Counter merge follows. replicaA holds A 5, B 2, C 0, a value of 7. replicaB holds A 1, B 7, C 4, a value of 12. The element-wise maximum is A 5, B 7, C 4, so the merged value is 16. A closing line notes that converging is not the same as being right.",
+          "caption": "The middle card detects conflicts but doesn't merge them.",
           "placement": "explanation",
           "width": 720,
           "height": 472
@@ -297,15 +297,15 @@
       "type": "single-choice",
       "options": [
         {
-          "text": "A way to *detect* whether two versions are causally ordered or genuinely concurrent — but not how to merge them",
+          "text": "A way to *detect* whether two versions are causally ordered or truly concurrent, but not how to merge them",
           "isCorrect": true
         },
         {
-          "text": "A guarantee that any two versions can always be merged automatically",
+          "text": "A guarantee that any two versions can be merged automatically",
           "isCorrect": false
         },
         {
-          "text": "A globally synchronized wall-clock time shared by every node",
+          "text": "A synchronized wall-clock time that every node shares",
           "isCorrect": false
         },
         {
@@ -313,17 +313,17 @@
           "isCorrect": false
         }
       ],
-      "explanation": "A version vector stores, per replica, how many updates from that replica a given version has incorporated. Comparing two vectors element-wise reveals their causal relationship: if every component of A is ≤ B and at least one is strictly <, then A **happened-before** B and B is the newer descendant; if neither vector dominates the other, the versions are **concurrent** — a true conflict.\n\nThat is the whole job: **detection, not resolution**. Dynamo-style stores surface concurrent versions as *siblings* and hand them back to the application (or to an LWW/CRDT policy) to reconcile. So a vector clock tells you *that* a conflict exists and *who descends from whom*; choosing the merged value is a separate, application-level decision.",
+      "explanation": "A version vector records, for each replica, how many of that replica's updates a version includes. Comparing two vectors entry by entry shows how the versions relate. If every entry in A is ≤ the matching entry in B and at least one is strictly smaller, A **happened before** B, and B is the newer version. If neither vector dominates the other, the versions are **concurrent**, which is a real conflict.\n\nSo a version vector **detects** conflicts. It doesn't resolve them. Dynamo-style stores return concurrent versions as *siblings* and let the application, or an LWW or CRDT policy, reconcile them. A vector clock tells you *that* a conflict exists and which version descends from which. Picking the merged value is a separate decision for the application.",
       "references": "[Amazon: Dynamo — Highly Available Key-value Store (SOSP 2007)](https://www.allthingsdistributed.com/files/amazon-dynamo-sosp2007.pdf)"
     },
     {
       "id": "crdt-properties",
       "title": "Which statements about CRDTs are true?",
-      "description": "CRDT stands for **Conflict-free Replicated Data Type** — the data structures behind collaborative, coordination-free sync.",
+      "description": "CRDT stands for **Conflict-free Replicated Data Type**. These data structures power collaborative sync without coordination.",
       "images": [
         {
           "src": "conflict-resolution.svg",
-          "alt": "Three approaches to concurrent edits. Last-write-wins lets one timestamp decide and discards the loser's change silently, with clock skew picking the winner. Version vectors are per-node counters that detect whether two versions are causally ordered or genuinely concurrent — detection only, never a merge. CRDTs provide a merge that is commutative, associative and idempotent, so replicas that saw the same updates converge whatever order those arrived in. A worked G-Counter merge follows: replicaA holds A 5, B 2, C 0 for a value of 7; replicaB holds A 1, B 7, C 4 for a value of 12; the element-wise maximum gives A 5, B 7, C 4, and the merged value is 16. A closing line notes that converging is not the same as being right.",
+          "alt": "Three ways to handle concurrent edits. Last-write-wins lets one timestamp decide and silently discards the other change, and clock skew can pick the winner. Version vectors are per-node counters that detect whether two versions are causally ordered or truly concurrent. They only detect conflicts and never merge. CRDTs have a merge that is commutative, associative, and idempotent, so replicas that received the same updates converge in any order. A worked G-Counter merge follows. replicaA holds A 5, B 2, C 0, a value of 7. replicaB holds A 1, B 7, C 4, a value of 12. The element-wise maximum is A 5, B 7, C 4, so the merged value is 16. A closing line notes that converging is not the same as being right.",
           "caption": "The right card names the three merge properties.",
           "placement": "explanation",
           "width": 720,
@@ -333,7 +333,7 @@
       "type": "multiple-choice",
       "options": [
         {
-          "text": "Replicas that have received the same set of updates converge to the same state, regardless of the order in which the updates were applied",
+          "text": "Replicas that received the same set of updates end up in the same state, whatever order they applied them in",
           "isCorrect": true
         },
         {
@@ -341,26 +341,26 @@
           "isCorrect": true
         },
         {
-          "text": "Replicas must agree via a consensus protocol (e.g., Raft) before they can merge",
+          "text": "Replicas must agree through a consensus protocol (such as Raft) before they can merge",
           "isCorrect": false
         },
         {
-          "text": "Automatic convergence guarantees the merged result matches what the user intended",
+          "text": "Automatic convergence guarantees the merged result is what the user intended",
           "isCorrect": false
         }
       ],
-      "explanation": "A state-based CRDT's merge is mathematically a **join on a semilattice** — **commutative, associative, and idempotent** — which is exactly what makes replicas converge to one state no matter the order or duplication of updates, and with **no coordination or consensus**. That coordination-free property is the headline feature; it's the \"conflict-free\" in the name, and it's why CRDTs *don't* need Raft/Paxos.\n\nBut \"conflict-free\" is a claim about **state convergence**, not **intent**. A CRDT guarantees every replica ends up identical — not that the identical result is what a human wanted. Concurrently editing the same text region, for instance, can converge to an interleaving no author intended. So CRDTs eliminate manual merging of *state*, while *semantic* conflicts can still require application-level UX.",
-      "references": "[crdt.tech — introduction and resources on Conflict-free Replicated Data Types](https://crdt.tech/)"
+      "explanation": "A state-based CRDT's merge is a **join on a semilattice**. It is **commutative, associative, and idempotent**, so replicas converge to one state no matter how updates are ordered or duplicated, with **no coordination or consensus**. That is the \"conflict-free\" in the name, and it's why CRDTs don't need Raft or Paxos.\n\n\"Conflict-free\" is a promise about **state**, though, and says nothing about **intent**. Every replica ends up identical, but the result may not be what anyone wanted. If two people edit the same stretch of text at once, the merge can interleave their words in a way neither author meant. CRDTs remove manual merging of state, and your app may still need UI for conflicts in meaning.",
+      "references": "[crdt.tech: introduction and resources on Conflict-free Replicated Data Types](https://crdt.tech/)"
     },
     {
       "id": "g-counter-merge-value",
       "title": "After the two replicas merge, what value does the G-Counter report?",
-      "description": "A **G-Counter** is a state-based CRDT: each replica keeps a map of per-node counts and increments only its *own* entry; the counter's value is the **sum** of all entries, and two states merge by taking the **element-wise maximum** of their maps.\n\nTwo replicas are about to sync:\n\n```json\n{\n  \"replicaA\": { \"A\": 5, \"B\": 2, \"C\": 0 },\n  \"replicaB\": { \"A\": 1, \"B\": 7, \"C\": 4 }\n}\n```\n\nEnter a single integer.",
+      "description": "A **G-Counter** is a state-based CRDT. Each replica keeps a map of per-node counts and increments only its *own* entry. The counter's value is the **sum** of all entries, and two states merge by taking the **element-wise maximum** of their maps.\n\nTwo replicas are about to sync:\n\n```json\n{\n  \"replicaA\": { \"A\": 5, \"B\": 2, \"C\": 0 },\n  \"replicaB\": { \"A\": 1, \"B\": 7, \"C\": 4 }\n}\n```\n\nEnter a single integer.",
       "images": [
         {
           "src": "conflict-resolution.svg",
-          "alt": "Three approaches to concurrent edits. Last-write-wins lets one timestamp decide and discards the loser's change silently, with clock skew picking the winner. Version vectors are per-node counters that detect whether two versions are causally ordered or genuinely concurrent — detection only, never a merge. CRDTs provide a merge that is commutative, associative and idempotent, so replicas that saw the same updates converge whatever order those arrived in. A worked G-Counter merge follows: replicaA holds A 5, B 2, C 0 for a value of 7; replicaB holds A 1, B 7, C 4 for a value of 12; the element-wise maximum gives A 5, B 7, C 4, and the merged value is 16. A closing line notes that converging is not the same as being right.",
-          "caption": "Element-wise maximum, then sum the row.",
+          "alt": "Three ways to handle concurrent edits. Last-write-wins lets one timestamp decide and silently discards the other change, and clock skew can pick the winner. Version vectors are per-node counters that detect whether two versions are causally ordered or truly concurrent. They only detect conflicts and never merge. CRDTs have a merge that is commutative, associative, and idempotent, so replicas that received the same updates converge in any order. A worked G-Counter merge follows. replicaA holds A 5, B 2, C 0, a value of 7. replicaB holds A 1, B 7, C 4, a value of 12. The element-wise maximum is A 5, B 7, C 4, so the merged value is 16. A closing line notes that converging is not the same as being right.",
+          "caption": "Take the element-wise maximum, then sum the row.",
           "placement": "explanation",
           "width": 720,
           "height": 472
@@ -371,18 +371,18 @@
         "mode": "numeric",
         "acceptedAnswers": [16]
       },
-      "explanation": "Merge takes the per-node **maximum**, because each node only ever grows its own entry — so the larger value is always the more up-to-date count for that node, and taking the max can never lose an increment.\n\nElement-wise max of the two maps:\n\n- `A`: max(5, 1) = 5\n- `B`: max(2, 7) = 7\n- `C`: max(0, 4) = 4\n\nThe merged state is `{ A: 5, B: 7, C: 4 }`, and the value is the sum: **5 + 7 + 4 = 16**. Both replicas now hold the identical merged map, so they have converged.\n\nThis merge is commutative, associative, and **idempotent** (re-merging the same state changes nothing) — exactly why a G-Counter qualifies as a CRDT. It's also why you must never *decrement*: a shrinking entry would break the \"max is newest\" invariant. Supporting decrements requires a **PN-Counter**, which pairs a grow-only increment map with a second grow-only decrement map and subtracts the two sums.",
-      "references": "[crdt.tech — introduction and resources on Conflict-free Replicated Data Types](https://crdt.tech/)"
+      "explanation": "The merge takes the **maximum** for each node. Each node only ever increases its own entry, so the larger value is always the newer count for that node, and taking the max never loses an increment.\n\nThe element-wise max of the two maps:\n\n- `A`: max(5, 1) = 5\n- `B`: max(2, 7) = 7\n- `C`: max(0, 4) = 4\n\nThe merged state is `{ A: 5, B: 7, C: 4 }`, and the value is the sum: **5 + 7 + 4 = 16**. Both replicas now hold the same merged map, so they have converged.\n\nThis merge is commutative, associative, and **idempotent** (merging the same state again changes nothing), which is what makes a G-Counter a CRDT. It's also why a G-Counter can never *decrement*. A shrinking entry would break the rule that the max is the newest value. For decrements you need a **PN-Counter**, which pairs a grow-only map of increments with a second grow-only map of decrements and subtracts one sum from the other.",
+      "references": "[crdt.tech: introduction and resources on Conflict-free Replicated Data Types](https://crdt.tech/)"
     },
     {
       "id": "navigator-online-guarantee",
       "title": "What does `navigator.onLine === true` actually guarantee?",
-      "description": "Your sync code checks `navigator.onLine` before deciding whether to flush the outbox.",
+      "description": "Your sync code checks `navigator.onLine` before it decides whether to flush the outbox.",
       "images": [
         {
           "src": "offline-write-path.svg",
-          "alt": "Five steps for one offline mutation. Apply the change optimistically, which commits you to handling the failure case later. Queue the mutation locally with an idempotency key, in IndexedDB rather than localStorage, since the key is what makes a later replay safe. Try to send it, letting the request fail truthfully. If it fails, register a Background Sync tag so the browser replays the request when connectivity returns, even after the tab is closed. On rejection, roll back the optimistic change and tell the user. Four cards follow: inside a service worker only the Cache API and IndexedDB are available, with no localStorage or document.cookie; an IndexedDB transaction auto-commits as soon as it has no pending request, so awaiting an unrelated fetch makes the next add throw TransactionInactiveError; stored data may still be evicted unless you call navigator.storage.persist(); and navigator.onLine being true only means the device has a network interface.",
-          "caption": "An interface, and nothing beyond it.",
+          "alt": "Five steps for one offline mutation. First, apply the change optimistically, which means you must handle failure later. Second, queue the mutation locally in IndexedDB, not localStorage, with an idempotency key so a later replay is safe. Third, try to send it and let the request fail honestly. Fourth, if it fails, register a Background Sync tag so the browser replays the request when the connection returns, even after the tab closes. Fifth, if the server rejects it, roll back the optimistic change and tell the user. Four cards follow. A service worker can use only the Cache API and IndexedDB, not localStorage or document.cookie. An IndexedDB transaction commits on its own as soon as it has no pending request, so awaiting an unrelated fetch makes the next add throw TransactionInactiveError. The browser may still evict stored data unless you call navigator.storage.persist(). A true navigator.onLine only means the device has a network interface.",
+          "caption": "A network interface exists, and that's all it tells you.",
           "placement": "explanation",
           "width": 720,
           "height": 618
@@ -391,23 +391,23 @@
       "type": "single-choice",
       "options": [
         {
-          "text": "Only that the device has *a* network connection — not that your server, or the internet, is reachable",
+          "text": "Only that the device has *a* network connection, not that your server or the internet is reachable",
           "isCorrect": true
         },
         {
-          "text": "That a TCP connection to your API server has succeeded",
+          "text": "That a TCP connection to your API server succeeded",
           "isCorrect": false
         },
         {
-          "text": "That the most recent `fetch()` returned a 2xx response",
+          "text": "That the last `fetch()` returned a 2xx response",
           "isCorrect": false
         },
         {
-          "text": "That the service worker is active and controlling the page",
+          "text": "That the service worker is active and controls the page",
           "isCorrect": false
         }
       ],
-      "explanation": "`navigator.onLine` reflects only whether the browser believes it has a network link — e.g., a Wi-Fi interface is associated and up. It returns `true` behind a captive portal, on a LAN with no internet, or while your specific API is down — all cases where requests still fail.\n\nIt's useful as a cheap **negative** signal: `false` reliably means \"don't even try.\" But a `true` must never be trusted as \"this request will succeed.\" Robust offline-first code treats the network as fallible regardless: attempt the request, and on failure enqueue it for retry (ideally via Background Sync) rather than gating on `onLine`. Pair it with the `online`/`offline` events for reactivity, but always design for the request itself to fail.",
+      "explanation": "`navigator.onLine` only reports whether the browser thinks it has a network link, for example a connected Wi-Fi interface. It returns `true` behind a captive portal, on a LAN with no internet, and while your API is down. Requests fail in all of these cases.\n\nIt works as a cheap **negative** signal: `false` reliably means there's no point trying. A `true` never means a request will succeed. Solid offline-first code assumes the network can fail anyway. Send the request, and if it fails, queue it for retry (ideally with Background Sync) instead of checking `onLine` first. Listen to the `online` and `offline` events to react to changes, but always plan for the request itself to fail.",
       "references": "[MDN: Navigator.onLine](https://developer.mozilla.org/en-US/docs/Web/API/Navigator/onLine)"
     }
   ]

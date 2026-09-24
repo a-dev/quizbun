@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "id": "can-you-catch-the-ai-bug",
-  "title": "Can you catch the AI's bug?",
-  "description": "Review plausible AI-generated TypeScript, React, browser, Node.js, and SQL code. Catch race conditions, security mistakes, invented APIs, and assumptions that look reasonable until the runtime disagrees.",
+  "title": "Bugs that pass a quick read: reviewing AI-generated TypeScript and SQL",
+  "description": "Find the bugs in AI-written TypeScript, React, browser, Node.js, and SQL code that looks fine at first glance. You'll run into race conditions, security holes, made-up APIs, and assumptions the runtime doesn't share.",
   "language": "en",
   "tags": [
     "code-review",
@@ -15,8 +15,8 @@
   "questions": [
     {
       "id": "stale-search-response",
-      "title": "What can make this search UI display results for the wrong query?",
-      "description": "An AI generated this React Effect:\n\n```tsx\nuseEffect(() => {\n  fetch(`/api/search?q=${encodeURIComponent(query)}`)\n    .then((response) => response.json())\n    .then(setResults);\n}, [query]);\n```\n\nThe user types `cat`, then quickly changes it to `caterpillar`.",
+      "title": "Why can this search box show results for the wrong query?",
+      "description": "An AI wrote this React Effect:\n\n```tsx\nuseEffect(() => {\n  fetch(`/api/search?q=${encodeURIComponent(query)}`)\n    .then((response) => response.json())\n    .then(setResults);\n}, [query]);\n```\n\nThe user types `cat`, then quickly changes it to `caterpillar`.",
       "type": "single-choice",
       "options": [
         {
@@ -36,13 +36,13 @@
           "isCorrect": false
         }
       ],
-      "explanation": "Each Effect starts an independent request, and network responses may arrive in a different order from the requests. The older `cat` request therefore can win the race and call `setResults` last. Cleanup should invalidate the old Effect, and an `AbortController` can also abort its fetch. React's documentation demonstrates the cleanup-flag pattern specifically to prevent this race.",
+      "explanation": "Each Effect run starts its own request, and responses can come back in any order. If the `cat` request is slower, it calls `setResults` last and wins. Use the Effect's cleanup to ignore the old result, and add an `AbortController` if you also want to cancel the old fetch. React's docs show this exact pattern.",
       "references": "[React: Fetching data with Effects and avoiding race conditions](https://react.dev/reference/react/useEffect#fetching-data-with-effects)\n\n[MDN: `AbortController.abort()`](https://developer.mozilla.org/en-US/docs/Web/API/AbortController/abort)"
     },
     {
       "id": "promise-all-is-not-cancellation",
-      "title": "What happens to the other operations when `chargeCard()` rejects first?",
-      "description": "```ts\nawait Promise.all([\n  chargeCard(),\n  reserveInventory(),\n  sendConfirmationEmail(),\n]);\n```\n\nAssume all three functions start work immediately and have no shared cancellation signal.",
+      "title": "What happens to the other two calls when `chargeCard()` rejects first?",
+      "description": "```ts\nawait Promise.all([\n  chargeCard(),\n  reserveInventory(),\n  sendConfirmationEmail(),\n]);\n```\n\nAssume all three functions start work immediately and share no cancellation signal.",
       "type": "single-choice",
       "options": [
         {
@@ -62,12 +62,12 @@
           "isCorrect": false
         }
       ],
-      "explanation": "`Promise.all()` is fail-fast: its aggregate Promise rejects when an input rejects. That changes only the aggregate's state; it does not undo side effects or inject cancellation into already-started work. Cancellation must be designed into the operations, commonly by passing an `AbortSignal`, and business rollback requires an explicit compensation or transaction strategy.",
+      "explanation": "`Promise.all()` rejects as soon as any input rejects. That changes only the combined Promise: work that already started keeps going, and nothing gets undone. If you need cancellation, build it into the functions, usually by passing an `AbortSignal`. If you need rollback, write compensating steps or use a transaction.",
       "references": "[MDN: `Promise.all()` fail-fast behavior](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/all#promise.all_fail-fast_behavior)\n\n[MDN: `AbortController`](https://developer.mozilla.org/en-US/docs/Web/API/AbortController)"
     },
     {
       "id": "filesystem-check-then-write",
-      "title": "Why is this existence check unsafe even though both calls are awaited?",
+      "title": "Why is this existence check unsafe when both calls are awaited?",
       "description": "```ts\nimport { access, writeFile } from \"node:fs/promises\";\n\nawait access(path);\nawait writeFile(path, payload);\n```",
       "type": "single-choice",
       "options": [
@@ -88,7 +88,7 @@
           "isCorrect": false
         }
       ],
-      "explanation": "This is a time-of-check-to-time-of-use race. Awaiting orders the current function's calls, but it cannot freeze filesystem state against other processes. Node explicitly advises using the file directly and handling the resulting error. When creating a new file must be exclusive, an exclusive open/write flag such as `wx` can make the check and creation one filesystem operation, subject to filesystem-specific guarantees.",
+      "explanation": "This is a time-of-check to time-of-use (TOCTOU) race. `await` puts your own calls in order, but another process can still change the file in between. The Node docs recommend skipping the check: use the file directly and handle the error. To create a file only if it doesn't exist yet, the `wx` flag checks and creates in one operation, as far as the filesystem guarantees it.",
       "references": "[Node.js: `fsPromises.access()` and its race-condition warning](https://nodejs.org/api/fs.html#fspromisesaccesspath-mode)\n\n[Node.js: File system flags](https://nodejs.org/api/fs.html#file-system-flags)"
     },
     {
@@ -114,17 +114,17 @@
           "isCorrect": false
         }
       ],
-      "explanation": "`forEach()` expects a synchronous callback and ignores the Promises returned by `async` callbacks. Its own return value is `undefined`, so `await` has nothing pending to wait for. Use `await Promise.all(records.map(save))` for concurrent completion, or `for...of` with `await` when saves must be sequential.",
+      "explanation": "`forEach()` ignores whatever its callback returns, including the Promises from `async` callbacks. It returns `undefined`, so `await` has nothing to wait for. Use `await Promise.all(records.map(save))` to save everything at once, or a `for...of` loop with `await` to save one at a time.",
       "references": "[MDN: `Array.prototype.forEach()` does not wait for Promises](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/forEach#description)"
     },
     {
       "id": "effect-local-ignore-flag",
-      "title": "Why does this cleanup flag block a stale response without blocking the current one?",
+      "title": "How does this cleanup flag drop a stale response but keep the current one?",
       "description": "```tsx\nuseEffect(() => {\n  let ignore = false;\n\n  fetchBio(person).then((bio) => {\n    if (!ignore) setBio(bio);\n  });\n\n  return () => {\n    ignore = true;\n  };\n}, [person]);\n```",
       "type": "single-choice",
       "options": [
         {
-          "text": "Each Effect execution closes over its own `ignore` binding, and cleanup changes the binding used by that execution's callback",
+          "text": "Each Effect run gets its own `ignore` variable, and cleanup flips only that run's copy",
           "isCorrect": true
         },
         {
@@ -140,13 +140,13 @@
           "isCorrect": false
         }
       ],
-      "explanation": "Every Effect setup call creates a distinct lexical environment. Its Promise callback and cleanup share that execution's `ignore` variable. When the dependency changes, React runs the old cleanup, so only the old callback observes `true`; the new execution has a fresh `false`. This suppresses the stale state update but does not cancel network work—use an `AbortController` if cancellation is also desired.",
+      "explanation": "Every time the Effect runs, it creates a new `ignore` variable that only that run's `.then()` callback and cleanup can see. When `person` changes, React calls the old cleanup, so only the old callback sees `true`. The new run starts with its own `false`. This skips the stale state update, but the request still runs. Add an `AbortController` if you want to cancel it too.",
       "references": "[React: `useEffect` data-fetching cleanup example](https://react.dev/reference/react/useEffect#fetching-data-with-effects)"
     },
     {
       "id": "database-read-modify-write",
-      "title": "Which changes can prevent a lost update in this balance workflow?",
-      "description": "Two PostgreSQL transactions at the default `READ COMMITTED` level both read a balance of `100`, compute `100 - 10` in application code, then each execute `UPDATE accounts SET balance = 90`. Select every sound strategy for this simplified case.",
+      "title": "Which changes prevent a lost update in this balance workflow?",
+      "description": "Two PostgreSQL transactions at the default `READ COMMITTED` level both read a balance of `100`, compute `100 - 10` in application code, and then each run `UPDATE accounts SET balance = 90`. Select every approach that works in this simplified case.",
       "type": "multiple-choice",
       "options": [
         {
@@ -170,12 +170,12 @@
           "isCorrect": false
         }
       ],
-      "explanation": "A transaction boundary alone does not make an application-level read-modify-write atomic under `READ COMMITTED`; concurrent transactions can read the same earlier value. A relative `UPDATE` lets PostgreSQL apply the expression to the row version it actually updates. Row locking serializes the read-modify-write section. `SERIALIZABLE` detects executions that cannot match a serial order, but the application must retry serialization failures.",
+      "explanation": "Under `READ COMMITTED`, wrapping a read-modify-write in a transaction doesn't make it atomic, because both transactions can read the same old value. A relative `UPDATE` lets PostgreSQL subtract from the row's current value at write time. `SELECT ... FOR UPDATE` locks the row, so the second transaction waits its turn. `SERIALIZABLE` detects the conflict and fails one transaction, and your code has to retry it.",
       "references": "[PostgreSQL: Transaction isolation](https://www.postgresql.org/docs/current/transaction-iso.html)\n\n[PostgreSQL: `SELECT` locking clause](https://www.postgresql.org/docs/current/sql-select.html#SQL-FOR-UPDATE-SHARE)"
     },
     {
       "id": "innerhtml-user-input",
-      "title": "What is the safest direct fix when the value should be displayed only as text?",
+      "title": "What's the safest fix if the name only needs to show up as text?",
       "description": "```ts\nconst name = new URLSearchParams(location.search).get(\"name\") ?? \"\";\ngreeting.innerHTML = `Welcome, ${name}!`;\n```",
       "type": "single-choice",
       "options": [
@@ -196,13 +196,13 @@
           "isCorrect": false
         }
       ],
-      "explanation": "`innerHTML` parses its string as markup and is an injection sink, so attacker-controlled input can become executable HTML. `textContent` inserts text without HTML parsing and directly matches the requirement. URL encoding and Base64 are transport encodings, not HTML sanitizers. If trusted rich HTML were required, the design would need a reviewed sanitizer or Trusted Types policy instead.",
+      "explanation": "`innerHTML` parses its string as HTML, so anyone who controls the URL can inject markup and scripts. `textContent` inserts plain text, which is all this greeting needs. URL encoding and Base64 change how data travels; they don't make HTML safe. If you really need to render user-supplied HTML, use a well-reviewed sanitizer or a Trusted Types policy.",
       "references": "[MDN: `innerHTML` security considerations](https://developer.mozilla.org/en-US/docs/Web/API/Element/innerHTML#security_considerations)\n\n[OWASP: HTML5 Security Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/HTML5_Security_Cheat_Sheet.html)"
     },
     {
       "id": "postmessage-origin-checks",
-      "title": "Which security checks are missing from this cross-window token handoff?",
-      "description": "```ts\npopup.postMessage({ token }, \"*\");\n\nwindow.addEventListener(\"message\", (event) => {\n  applySession(event.data.token);\n});\n```\n\nSelect every required correction for a known HTTPS receiver.",
+      "title": "Which security checks does this cross-window token handoff need?",
+      "description": "```ts\npopup.postMessage({ token }, \"*\");\n\nwindow.addEventListener(\"message\", (event) => {\n  applySession(event.data.token);\n});\n```\n\nSelect every fix needed for a known HTTPS receiver.",
       "type": "multiple-choice",
       "options": [
         {
@@ -226,13 +226,13 @@
           "isCorrect": false
         }
       ],
-      "explanation": "An exact `targetOrigin` prevents delivery after the target window has navigated to an unintended origin. The receiver must independently authenticate the sender using `origin` and sometimes `source`, then validate the data structure. Base64 provides no confidentiality, and CORS governs selected network response sharing—not trust for `postMessage` events.",
+      "explanation": "An exact `targetOrigin` keeps the token from reaching the popup after it navigates to another site. The receiver has to check who sent the message with `event.origin` (and sometimes `event.source`), then check the data's shape. Base64 hides nothing. CORS controls which sites can read network responses and plays no part in trusting `postMessage` events.",
       "references": "[MDN: `window.postMessage()` security concerns](https://developer.mozilla.org/en-US/docs/Web/API/Window/postMessage#security_concerns)"
     },
     {
       "id": "cors-is-not-authorization",
-      "title": "What security property is still missing after this CORS configuration?",
-      "description": "An API returns private invoices and sets:\n\n```http\nAccess-Control-Allow-Origin: https://app.example\n```\n\nIts handler returns any invoice named by `?invoiceId=...` without checking the caller's identity or ownership.",
+      "title": "What's still missing after this CORS setup?",
+      "description": "An API returns private invoices and sets:\n\n```http\nAccess-Control-Allow-Origin: https://app.example\n```\n\nIts handler returns any invoice named by `?invoiceId=...` without checking who is asking or whether they own it.",
       "type": "single-choice",
       "options": [
         {
@@ -252,13 +252,13 @@
           "isCorrect": false
         }
       ],
-      "explanation": "CORS tells conforming browsers which origins may expose a response to frontend JavaScript. It is not an authentication or per-object authorization system, and non-browser clients are not constrained by browser CORS enforcement. The API must authenticate the caller and verify that caller may access the requested invoice; otherwise changing the identifier creates an IDOR vulnerability.",
-      "references": "[OWASP: REST Security Cheat Sheet—CORS](https://cheatsheetseries.owasp.org/cheatsheets/REST_Security_Cheat_Sheet.html#cors)\n\n[OWASP: Insecure Direct Object Reference Prevention](https://cheatsheetseries.owasp.org/cheatsheets/Insecure_Direct_Object_Reference_Prevention_Cheat_Sheet.html)"
+      "explanation": "CORS tells browsers which origins may read a response from JavaScript. It doesn't check who the caller is or whether they own the invoice, and non-browser clients ignore it entirely. The API has to authenticate the caller and confirm they may see that invoice. Otherwise anyone can change the ID and read someone else's invoice, a bug known as an insecure direct object reference (IDOR).",
+      "references": "[OWASP: REST Security Cheat Sheet, CORS](https://cheatsheetseries.owasp.org/cheatsheets/REST_Security_Cheat_Sheet.html#cors)\n\n[OWASP: Insecure Direct Object Reference Prevention](https://cheatsheetseries.owasp.org/cheatsheets/Insecure_Direct_Object_Reference_Prevention_Cheat_Sheet.html)"
     },
     {
       "id": "samesite-lax-state-changing-get",
-      "title": "Why can `SameSite=Lax` fail to protect this transfer endpoint?",
-      "description": "The session cookie uses `SameSite=Lax`. The application mutates state through `GET /transfer?to=attacker&amount=500`, and a victim follows an attacker-controlled top-level link to that URL.",
+      "title": "Why doesn't `SameSite=Lax` protect this transfer endpoint?",
+      "description": "The session cookie uses `SameSite=Lax`. The app moves money on `GET /transfer?to=attacker&amount=500`, and the victim clicks an attacker's link to that URL.",
       "type": "single-choice",
       "options": [
         {
@@ -278,12 +278,12 @@
           "isCorrect": false
         }
       ],
-      "explanation": "`SameSite=Lax` generally permits cookies on top-level cross-site navigation with safe methods such as GET. A server must not make GET perform a transfer, because an external link can then trigger a credentialed state change. OWASP treats SameSite as defense in depth for most deployments and recommends proper CSRF defenses plus non-safe methods for state changes.",
-      "references": "[OWASP: CSRF Prevention Cheat Sheet—SameSite limitations](https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html#limitations-of-samesite)"
+      "explanation": "`SameSite=Lax` still sends cookies when a user follows a link from another site, as long as the request uses a safe method like GET. If a GET request can move money, a link anywhere can trigger a transfer with the victim's session. Use POST or another non-safe method for changes and add proper CSRF protection. OWASP recommends SameSite only as an extra layer on top of that.",
+      "references": "[OWASP: CSRF Prevention Cheat Sheet, SameSite limitations](https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html#limitations-of-samesite)"
     },
     {
       "id": "sql-parameters-and-identifiers",
-      "title": "Why does this parameterized query not safely select from the requested table?",
+      "title": "Why can't this parameterized query choose the table?",
       "description": "```ts\nconst result = await client.query(\n  \"SELECT * FROM $1 WHERE id = $2\",\n  [tableName, id],\n);\n```",
       "type": "single-choice",
       "options": [
@@ -304,12 +304,12 @@
           "isCorrect": false
         }
       ],
-      "explanation": "Parameter binding safely supplies data such as `id`, but PostgreSQL does not substitute parameters into grammar positions for database, schema, table, or column names. Prefer a static query chosen from an allowlisted mapping. If dynamic identifiers are unavoidable, use the driver's documented identifier-escaping mechanism; do not interpolate untrusted text directly.",
+      "explanation": "Parameters carry data values like `id`. PostgreSQL won't put them where a name belongs, such as a database, schema, table, or column. The safest option is a fixed set of queries chosen through an allowlist. If you truly need a dynamic name, escape it with your driver's identifier-escaping function, and never paste untrusted text into the SQL string.",
       "references": "[node-postgres: Parameterized queries and identifiers](https://node-postgres.com/features/queries#parameterized-query)"
     },
     {
       "id": "math-random-reset-token",
-      "title": "What is wrong with this password-reset token generator?",
+      "title": "What's wrong with this password-reset token generator?",
       "description": "```ts\nconst token = Math.random().toString(36).slice(2);\n```",
       "type": "single-choice",
       "options": [
@@ -330,12 +330,12 @@
           "isCorrect": false
         }
       ],
-      "explanation": "`Math.random()` is intended for non-security uses and does not promise cryptographic unpredictability. Reset tokens must come from a cryptographically secure generator and have enough entropy, such as bytes produced by Web Crypto's `getRandomValues()` or an appropriate server-side crypto API. Encoding those bytes is separate from generating them securely.",
+      "explanation": "`Math.random()` is meant for non-security uses and doesn't guarantee unpredictable output. Reset tokens need enough bytes from a cryptographically secure generator, such as Web Crypto's `getRandomValues()` or your server's crypto API. How you encode those bytes afterward is a separate step and doesn't make them more or less secure.",
       "references": "[MDN: `Math.random()` security warning](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math/random)\n\n[MDN: `Crypto.getRandomValues()`](https://developer.mozilla.org/en-US/docs/Web/API/Crypto/getRandomValues)"
     },
     {
       "id": "invented-response-parser",
-      "title": "Which correction uses the standard Fetch API to parse this response body?",
+      "title": "Which standard Fetch API call parses this response body?",
       "description": "```ts\nconst response = await fetch(\"/api/profile\");\nconst profile = await response.parseJSON();\n```",
       "type": "single-choice",
       "options": [
@@ -356,7 +356,7 @@
           "isCorrect": false
         }
       ],
-      "explanation": "`Response` defines `json()`, which reads the body stream to completion and returns a Promise for the parsed JavaScript value. `parseJSON()` is not a standard `Response` method. Parsing success also says nothing about HTTP success, so production code commonly checks `response.ok` before consuming the body.",
+      "explanation": "`Response` has a `json()` method. It reads the whole body and returns a Promise of the parsed value. `parseJSON()` doesn't exist. Also, a body that parses fine can still come from a failed request, so real code usually checks `response.ok` first.",
       "references": "[MDN: `Response.json()`](https://developer.mozilla.org/en-US/docs/Web/API/Response/json)\n\n[MDN: `Response.ok`](https://developer.mozilla.org/en-US/docs/Web/API/Response/ok)"
     },
     {
@@ -382,13 +382,13 @@
           "isCorrect": false
         }
       ],
-      "explanation": "The controller owns the imperative `abort()` operation and exposes its `signal`. Abort state, reason, events, and `throwIfAborted()` belong to that `AbortSignal`. Calling `throwIfAborted()` on the signal throws its abort reason when already aborted and otherwise does nothing.",
+      "explanation": "The controller does one thing: `abort()`. Everything else lives on its `signal`, including the abort state, the reason, the `abort` event, and `throwIfAborted()`. `signal.throwIfAborted()` throws the abort reason if the signal is already aborted and does nothing otherwise.",
       "references": "[MDN: `AbortSignal.throwIfAborted()`](https://developer.mozilla.org/en-US/docs/Web/API/AbortSignal/throwIfAborted)\n\n[MDN: `AbortController`](https://developer.mozilla.org/en-US/docs/Web/API/AbortController)"
     },
     {
       "id": "groupby-api-location",
-      "title": "Which modern JavaScript call correctly groups the orders by status?",
-      "description": "The generated code calls an obsolete proposal shape:\n\n```ts\nconst byStatus = orders.groupBy((order) => order.status);\n```",
+      "title": "Which modern JavaScript call groups the orders by status?",
+      "description": "The generated code uses the shape of an old proposal:\n\n```ts\nconst byStatus = orders.groupBy((order) => order.status);\n```",
       "type": "single-choice",
       "options": [
         {
@@ -408,12 +408,12 @@
           "isCorrect": false
         }
       ],
-      "explanation": "The standardized API is the static `Object.groupBy(items, callback)`. Earlier browser versions experimented with an array instance method, but the design moved to a static method for web-compatibility reasons. It returns a null-prototype object whose property values are arrays; `Map.groupBy()` is the companion when keys should not be coerced to property keys.",
+      "explanation": "The standard API is the static `Object.groupBy(items, callback)`. Browsers once tried an array method, but it caused web-compatibility problems, so the design moved to a static method. It returns a null-prototype object whose values are arrays. Use `Map.groupBy()` when the keys shouldn't be converted to property keys.",
       "references": "[MDN: `Object.groupBy()` and the former array method](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/groupBy)"
     },
     {
       "id": "promise-with-resolvers",
-      "title": "Which built-in replaces this invented deferred-Promise API in modern JavaScript?",
+      "title": "Which built-in replaces this made-up deferred Promise API?",
       "description": "```ts\nconst { promise, resolve, reject } = Promise.defer();\n```\n\nAssume a runtime that supports Baseline 2024 JavaScript features.",
       "type": "single-choice",
       "options": [
@@ -434,13 +434,13 @@
           "isCorrect": false
         }
       ],
-      "explanation": "`Promise.withResolvers()` returns a plain object containing `promise`, `resolve`, and `reject`. `Promise.defer()` sounds plausible because libraries have used deferred abstractions, but it is not the standard method. Compatibility still matters: `withResolvers()` is a Baseline 2024 feature, so older targets need a fallback or polyfill.",
+      "explanation": "`Promise.withResolvers()` returns a plain object with `promise`, `resolve`, and `reject`. `Promise.defer()` sounds right because some libraries offer a deferred helper, but it isn't standard. `withResolvers()` became Baseline in 2024, so older targets need a fallback or polyfill.",
       "references": "[MDN: `Promise.withResolvers()`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/withResolvers)"
     },
     {
       "id": "set-union-not-merge",
-      "title": "Which standard call combines these Sets without mutating `permissions`?",
-      "description": "```ts\nconst permissions = new Set([\"read\", \"write\"]);\nconst extra = new Set([\"audit\"]);\nconst combined = permissions.merge(extra);\n```\n\nAssume a runtime that supports Baseline 2024 Set composition methods.",
+      "title": "Which standard call combines these Sets without changing `permissions`?",
+      "description": "```ts\nconst permissions = new Set([\"read\", \"write\"]);\nconst extra = new Set([\"audit\"]);\nconst combined = permissions.merge(extra);\n```\n\nAssume a runtime that supports the Baseline 2024 Set methods.",
       "type": "single-choice",
       "options": [
         {
@@ -460,12 +460,12 @@
           "isCorrect": false
         }
       ],
-      "explanation": "`Set.prototype.union()` returns a new Set containing values found in either operand and leaves the receiver unchanged. `merge()` is not the standard Set composition method. Because `union()` is a newer feature, code targeting older engines still needs a compatibility strategy such as constructing a Set from both iterables.",
+      "explanation": "`Set.prototype.union()` returns a new Set with every value from both Sets and leaves the original alone. `merge()` doesn't exist. `union()` is fairly new, so for older engines you can build a new Set from both, as in `new Set([...permissions, ...extra])`.",
       "references": "[MDN: `Set.prototype.union()`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Set/union)"
     },
     {
       "id": "localstorage-getjson",
-      "title": "Which implementation correctly replaces the invented `localStorage.getJSON()` call?",
+      "title": "What should replace the made-up `localStorage.getJSON()` call?",
       "description": "```ts\nconst preferences = localStorage.getJSON(\"preferences\");\n```",
       "type": "single-choice",
       "options": [
@@ -486,17 +486,17 @@
           "isCorrect": false
         }
       ],
-      "explanation": "The Web Storage API stores strings. `getItem(key)` returns a string or `null`; structured values require an application convention such as `JSON.stringify()` on write and `JSON.parse()` on read. Robust code also handles missing data and malformed or outdated stored JSON instead of assuming parsing always succeeds.",
+      "explanation": "Web Storage stores only strings. `getItem(key)` returns a string or `null`, so storing objects means calling `JSON.stringify()` when you write and `JSON.parse()` when you read. Be ready for a missing key and for stored JSON that's broken or in an old format.",
       "references": "[MDN: `Storage.getItem()`](https://developer.mozilla.org/en-US/docs/Web/API/Storage/getItem)\n\n[MDN: Using Web Storage with JSON](https://developer.mozilla.org/en-US/docs/Web/API/Web_Storage_API/Using_the_Web_Storage_API)"
     },
     {
       "id": "fetch-404-resolution",
-      "title": "What does this function do when the server returns a normal HTTP 404 response?",
+      "title": "What does this function do when the server returns a 404?",
       "description": "```ts\nasync function loadUser() {\n  try {\n    const response = await fetch(\"/api/users/42\");\n    return await response.json();\n  } catch {\n    return { kind: \"offline\" };\n  }\n}\n```",
       "type": "single-choice",
       "options": [
         {
-          "text": "`fetch()` fulfills with a `Response`; the code attempts to parse the 404 body instead of entering `catch` merely because of the status",
+          "text": "`fetch()` resolves with a `Response`, so the code tries to parse the 404 body instead of jumping to `catch`",
           "isCorrect": true
         },
         {
@@ -512,12 +512,12 @@
           "isCorrect": false
         }
       ],
-      "explanation": "Fetch rejects for request failures such as malformed URLs or network errors, not simply because the server returned an HTTP error status. A 404 normally fulfills with a `Response`, so code must check `response.ok` or `response.status` and decide how to handle it. Parsing can still reject separately if the response body is not valid JSON.",
+      "explanation": "`fetch()` rejects only when the request itself fails, for example on a network error or a malformed URL. An HTTP error status like 404 still resolves with a `Response`, so check `response.ok` or `response.status` yourself. `response.json()` can also reject on its own if the body isn't valid JSON.",
       "references": "[MDN: `fetch()` rejection and HTTP error behavior](https://developer.mozilla.org/en-US/docs/Web/API/Window/fetch)"
     },
     {
       "id": "default-sort-double-surprise",
-      "title": "What is logged after this default sort?",
+      "title": "What does this code log after the default sort?",
       "description": "```ts\nconst original = [10, 2, 1];\nconst sorted = original.sort();\nconsole.log(original, sorted, original === sorted);\n```",
       "type": "single-choice",
       "options": [
@@ -538,7 +538,7 @@
           "isCorrect": false
         }
       ],
-      "explanation": "`sort()` mutates the array in place and returns the same array reference. Without a comparator, it converts elements to strings and compares UTF-16 code units, so the string `\"10\"` sorts before `\"2\"`. Numeric ascending order requires a comparator such as `(a, b) => a - b`; `toSorted()` provides a non-mutating alternative in supported runtimes.",
+      "explanation": "`sort()` sorts the array in place and returns the same array. Without a comparator, it compares elements as strings, so `\"10\"` comes before `\"2\"`. To sort numbers, pass `(a, b) => a - b`. If you want a sorted copy and an untouched original, use `toSorted()` where it's supported.",
       "references": "[MDN: `Array.prototype.sort()`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/sort)"
     },
     {
@@ -564,7 +564,7 @@
           "isCorrect": false
         }
       ],
-      "explanation": "JSON has no built-in JavaScript BigInt mapping, so encountering a BigInt makes `JSON.stringify()` throw unless custom serialization is supplied. Converting a large BigInt to `Number` can lose precision; a common explicit contract serializes it as a decimal string and revives it deliberately on the receiving side.",
+      "explanation": "JSON has no BigInt type, so `JSON.stringify()` throws unless you tell it how to serialize one. Converting a large BigInt to `Number` can lose precision. A common fix is to send it as a decimal string and convert it back on the other side.",
       "references": "[MDN: BigInt cannot be serialized in JSON by default](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Errors/BigInt_not_serializable)"
     },
     {
@@ -574,7 +574,7 @@
       "type": "single-choice",
       "options": [
         {
-          "text": "No; `user?.profile` becomes `undefined`, then `.name` throws because parentheses ended the continuous optional chain",
+          "text": "No; `user?.profile` becomes `undefined`, then `.name` throws because the parentheses end the optional chain",
           "isCorrect": true
         },
         {
@@ -590,17 +590,17 @@
           "isCorrect": false
         }
       ],
-      "explanation": "Optional chaining short-circuits only along one continuous chain. Parenthesizing `user?.profile` produces `undefined`, after which ordinary `.name` access throws a `TypeError`. `user?.profile?.name` keeps both potentially nullish accesses optional and evaluates to `undefined` here.",
+      "explanation": "Optional chaining short-circuits only within one unbroken chain. The parentheses end the chain, so `user?.profile` gives `undefined`, and the plain `.name` after it throws a `TypeError`. Write `user?.profile?.name` instead, which returns `undefined` here.",
       "references": "[MDN: Optional chaining short-circuiting and grouping](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Optional_chaining#short-circuiting)"
     },
     {
       "id": "react-three-stale-increments",
-      "title": "Starting from zero, what count appears after one click?",
+      "title": "Starting from zero, what does the count show after one click?",
       "description": "```tsx\n<button\n  onClick={() => {\n    setCount(count + 1);\n    setCount(count + 1);\n    setCount(count + 1);\n  }}\n>\n  +3\n</button>\n```",
       "type": "single-choice",
       "options": [
         {
-          "text": "`1`, because all three calls queue replacement with the same render's value plus one",
+          "text": "`1`, because all three calls set the count to the same render's value plus one",
           "isCorrect": true
         },
         {
@@ -616,17 +616,17 @@
           "isCorrect": false
         }
       ],
-      "explanation": "The `count` variable is a snapshot from the current render; calling its setter does not change that local value. Each call therefore queues the same replacement value, `1`. To compose three increments, queue updater functions—`setCount((n) => n + 1)` three times—so React passes each updater the previous queued result.",
+      "explanation": "`count` is a snapshot from the current render, and calling the setter doesn't change it. All three calls ask for the same value, `1`. To add three, pass an updater function instead: call `setCount((n) => n + 1)` three times, and React gives each call the result of the one before.",
       "references": "[React: Queueing a series of state updates](https://react.dev/learn/queueing-a-series-of-state-updates)"
     },
     {
       "id": "typescript-private-runtime",
-      "title": "What privacy guarantee does this TypeScript `private` field provide at runtime?",
-      "description": "```ts\nclass Vault {\n  private code = \"swordfish\";\n}\n\nconsole.log(new Vault()[\"code\"]);\n```\n\nAssume normal JavaScript emission and no additional runtime transformation.",
+      "title": "How private is this TypeScript `private` field at runtime?",
+      "description": "```ts\nclass Vault {\n  private code = \"swordfish\";\n}\n\nconsole.log(new Vault()[\"code\"]);\n```\n\nAssume normal JavaScript output with no extra runtime transforms.",
       "type": "single-choice",
       "options": [
         {
-          "text": "No hard runtime privacy; the modifier is erased and bracket access can read the ordinary emitted property",
+          "text": "Not private at runtime; TypeScript erases the modifier, and bracket access reads the ordinary property",
           "isCorrect": true
         },
         {
@@ -642,7 +642,7 @@
           "isCorrect": false
         }
       ],
-      "explanation": "TypeScript's `private` modifier provides design-time checking but is erased from emitted JavaScript, so it is soft privacy rather than a security boundary. ECMAScript `#code` private fields have runtime-enforced access rules. Neither mechanism should be used to embed a real secret in client-delivered code, because users control that code and its execution environment.",
+      "explanation": "TypeScript checks `private` only at compile time and removes it from the emitted JavaScript, so it isn't a security boundary. JavaScript's own `#code` private fields are enforced at runtime. Neither one can hide a real secret in client code, because the user controls that code and where it runs.",
       "references": "[TypeScript 3.8 release notes: soft `private` versus ECMAScript `#` fields](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html#which-should-i-use)"
     }
   ]

@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "id": "rag-without-the-hand-waving",
-  "title": "RAG without the hand-waving",
-  "description": "A practical quiz about how RAG systems split, retrieve, rank, cite, and evaluate information, and how they fail. Every explanation links to supporting research or technical documentation.",
+  "title": "How RAG systems retrieve, rank, and cite evidence",
+  "description": "A practical quiz on how RAG systems chunk, retrieve, rank, cite, and evaluate information, and where they break. Each explanation links to a paper or technical doc.",
   "language": "en",
   "tags": ["rag", "retrieval", "embeddings", "evaluation", "llm"],
   "questions": [
@@ -12,8 +12,8 @@
       "images": [
         {
           "src": "rag-pipeline.svg",
-          "alt": "One RAG request drawn as two rows of stages. An offline ingestion row runs source docs, chunk, embed passages and index, with the index labelled non-parametric memory and a note that a source edit which never reaches the index is an ingestion bug. A query-time row sends the user query into two parallel branches — dense approximate nearest neighbours over stored vectors, and lexical BM25 for exact codes, names and ids — which merge in an RRF fuse box computing 1 / (60 + rank), then a cross-encoder rerank of the top n, then a prompt, a generator labelled parametric memory, and an answer with citations. A footer names the metric for each stage, and a closing strip reads: a reranker only reorders the candidates it was handed.",
-          "caption": "Lewis et al. describe the sequence-to-sequence model as parametric memory and the dense Wikipedia index as non-parametric memory.",
+          "alt": "One RAG request drawn as two rows of stages. The offline ingestion row runs source docs through chunking, passage embedding, and indexing. The index is labelled non-parametric memory, with a note that a source edit that never reaches the index is an ingestion bug. In the query-time row, the user query goes to two parallel branches: dense approximate nearest neighbours over stored vectors, and lexical BM25 for exact codes, names, and ids. They merge in an RRF fuse box computing 1 / (60 + rank), then a cross-encoder reranks the top n, and the result goes into a prompt, a generator labelled parametric memory, and an answer with citations. A footer names the metric for each stage, and a closing strip reads: a reranker only reorders the candidates it was handed.",
+          "caption": "Lewis et al. call the sequence-to-sequence model parametric memory and the dense Wikipedia index non-parametric memory.",
           "placement": "explanation",
           "width": 720,
           "height": 548
@@ -22,7 +22,7 @@
       "type": "single-choice",
       "options": [
         {
-          "text": "A pretrained sequence-to-sequence model and a dense Wikipedia index queried by a neural retriever",
+          "text": "A pretrained sequence-to-sequence model and a dense Wikipedia index searched by a neural retriever",
           "isCorrect": true
         },
         {
@@ -38,7 +38,7 @@
           "isCorrect": false
         }
       ],
-      "explanation": "Lewis et al. describe the sequence-to-sequence model as parametric memory and the dense Wikipedia index as non-parametric memory. A neural retriever searches the index, and the generator uses the retrieved passages. A larger context window or different decoding settings alone do not make a system RAG.",
+      "explanation": "Lewis et al. call the sequence-to-sequence model parametric memory and the dense Wikipedia index non-parametric memory. A neural retriever searches the index, and the generator reads the passages it returns. A bigger context window or different decoding settings don't turn a model into RAG.",
       "references": "[Lewis et al.: Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks](https://arxiv.org/abs/2005.11401)"
     },
     {
@@ -47,8 +47,8 @@
       "images": [
         {
           "src": "rag-pipeline.svg",
-          "alt": "One RAG request drawn as two rows of stages. An offline ingestion row runs source docs, chunk, embed passages and index, with the index labelled non-parametric memory and a note that a source edit which never reaches the index is an ingestion bug. A query-time row sends the user query into two parallel branches — dense approximate nearest neighbours over stored vectors, and lexical BM25 for exact codes, names and ids — which merge in an RRF fuse box computing 1 / (60 + rank), then a cross-encoder rerank of the top n, then a prompt, a generator labelled parametric memory, and an answer with citations. A footer names the metric for each stage, and a closing strip reads: a reranker only reorders the candidates it was handed.",
-          "caption": "The model retrieves passages from a dense index and passes them to the generator. The index is non-parametric memory, so the source corpus does not have to be stored in the generator's weights.",
+          "alt": "One RAG request drawn as two rows of stages. The offline ingestion row runs source docs through chunking, passage embedding, and indexing. The index is labelled non-parametric memory, with a note that a source edit that never reaches the index is an ingestion bug. In the query-time row, the user query goes to two parallel branches: dense approximate nearest neighbours over stored vectors, and lexical BM25 for exact codes, names, and ids. They merge in an RRF fuse box computing 1 / (60 + rank), then a cross-encoder reranks the top n, and the result goes into a prompt, a generator labelled parametric memory, and an answer with citations. A footer names the metric for each stage, and a closing strip reads: a reranker only reorders the candidates it was handed.",
+          "caption": "The model pulls passages from a dense index and hands them to the generator. Because the index is non-parametric memory, the generator's weights don't have to store the source corpus.",
           "placement": "explanation",
           "width": 720,
           "height": 548
@@ -61,7 +61,7 @@
           "isCorrect": true
         },
         {
-          "text": "The external index acts as non-parametric memory.",
+          "text": "The external index is non-parametric memory.",
           "isCorrect": true
         },
         {
@@ -73,18 +73,18 @@
           "isCorrect": false
         }
       ],
-      "explanation": "The model retrieves passages from a dense index and passes them to the generator. The index is non-parametric memory, so the source corpus does not have to be stored in the generator's weights. Retrieval still does not guarantee a correct answer. RAGTruth documents unsupported and contradictory claims in RAG output.",
+      "explanation": "The model pulls passages from a dense index and hands them to the generator. Because the index is non-parametric memory, the generator's weights don't have to store the source corpus. Retrieval still doesn't guarantee a correct answer. RAGTruth documents RAG outputs with unsupported and contradictory claims.",
       "references": "[Lewis et al.: Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks](https://arxiv.org/abs/2005.11401) · [Niu et al.: RAGTruth](https://arxiv.org/abs/2401.00396)"
     },
     {
       "id": "chunk-boundary-negation",
       "title": "A chunk splits a refund rule from its exception. What should you fix first?",
-      "description": "The policy says: \"Refunds are allowed within 30 days, unless the license key has been activated.\" Retrieval returns only the permissive clause.",
+      "description": "The policy says: \"Refunds are allowed within 30 days, unless the license key has been activated.\" Retrieval returns only the part that allows refunds.",
       "images": [
         {
           "src": "chunking-boundaries.svg",
-          "alt": "Three panels about chunking. The first splits “Refunds are allowed within 30 days, unless the license key has been activated.” at a character count, leaving a highlighted chunk holding only the permissive clause and a greyed chunk holding the exception, then shows a fixed version where one self-contained unit carries both. The second lays out four retrieval units — whole document, section, passage, proposition — noting that one unit means one vector. The third draws three overlapping fixed windows with the shared regions framed, listing what overlap buys (a boundary fact appears in both neighbours) against what it costs (the same text is indexed twice, so results can be near-duplicates), and noting that overlap finds no semantic boundaries and changes no embedding dimension.",
-          "caption": "The chunk no longer contains the full rule. Fix that loss before tuning the generator. The Dense X Retrieval study found that the retrieval unit affects both retrieval and downstream QA.",
+          "alt": "Three panels about chunking. The first splits \"Refunds are allowed within 30 days, unless the license key has been activated.\" at a character count. A highlighted chunk holds only the permissive clause, and a greyed chunk holds the exception. A fixed version keeps both in one self-contained unit. The second panel lays out four retrieval units: whole document, section, passage, and proposition. It notes that one unit means one vector. The third draws three overlapping fixed windows with the shared regions framed. Overlap puts a boundary fact in both neighbours, but the same text is indexed twice, so results can be near-duplicates. A note says overlap finds no semantic boundaries and changes no embedding dimension.",
+          "caption": "The retrieved chunk no longer holds the full rule, so fix the chunking before tuning the generator. The Dense X Retrieval study found that the choice of retrieval unit affects both retrieval and downstream QA.",
           "placement": "explanation",
           "width": 720,
           "height": 596
@@ -93,23 +93,23 @@
       "type": "single-choice",
       "options": [
         {
-          "text": "Change the chunking so the rule and its exception stay in one self-contained retrieval unit, then retest retrieval.",
+          "text": "Change the chunking so the rule and its exception stay in one self-contained unit, then retest retrieval.",
           "isCorrect": true
         },
         {
-          "text": "Leave the chunks unchanged and raise the generation temperature.",
+          "text": "Keep the chunks and raise the generation temperature.",
           "isCorrect": false
         },
         {
-          "text": "Leave the chunks unchanged and increase the embedding dimension.",
+          "text": "Keep the chunks and increase the embedding dimension.",
           "isCorrect": false
         },
         {
-          "text": "Retrieve more unrelated policy chunks to supply extra context.",
+          "text": "Retrieve more unrelated policy chunks for extra context.",
           "isCorrect": false
         }
       ],
-      "explanation": "The chunk no longer contains the full rule. Fix that loss before tuning the generator. The Dense X Retrieval study found that the retrieval unit affects both retrieval and downstream QA. It defines propositions as short, self-contained fact units. Here, the rule and its exception need to stay together.",
+      "explanation": "The retrieved chunk no longer holds the full rule, so fix the chunking before tuning the generator. The Dense X Retrieval study found that the choice of retrieval unit affects both retrieval and downstream QA. Its units are propositions, which are short, self-contained facts. Here, the rule and its exception belong in the same unit.",
       "references": "[Chen et al.: Dense X Retrieval](https://arxiv.org/abs/2312.06648)"
     },
     {
@@ -118,8 +118,8 @@
       "images": [
         {
           "src": "chunking-boundaries.svg",
-          "alt": "Three panels about chunking. The first splits “Refunds are allowed within 30 days, unless the license key has been activated.” at a character count, leaving a highlighted chunk holding only the permissive clause and a greyed chunk holding the exception, then shows a fixed version where one self-contained unit carries both. The second lays out four retrieval units — whole document, section, passage, proposition — noting that one unit means one vector. The third draws three overlapping fixed windows with the shared regions framed, listing what overlap buys (a boundary fact appears in both neighbours) against what it costs (the same text is indexed twice, so results can be near-duplicates), and noting that overlap finds no semantic boundaries and changes no embedding dimension.",
-          "caption": "A whole manual may cover many unrelated topics, so one embedding can be too broad for a narrow query.",
+          "alt": "Three panels about chunking. The first splits \"Refunds are allowed within 30 days, unless the license key has been activated.\" at a character count. A highlighted chunk holds only the permissive clause, and a greyed chunk holds the exception. A fixed version keeps both in one self-contained unit. The second panel lays out four retrieval units: whole document, section, passage, and proposition. It notes that one unit means one vector. The third draws three overlapping fixed windows with the shared regions framed. Overlap puts a boundary fact in both neighbours, but the same text is indexed twice, so results can be near-duplicates. A note says overlap finds no semantic boundaries and changes no embedding dimension.",
+          "caption": "A whole manual can cover many unrelated topics, so a single embedding may be too broad for a narrow query.",
           "placement": "explanation",
           "width": 720,
           "height": 596
@@ -144,17 +144,17 @@
           "isCorrect": false
         }
       ],
-      "explanation": "A whole manual may cover many unrelated topics, so one embedding can be too broad for a narrow query. Chen et al. compared documents, passages, sentences, and propositions. The choice of retrieval unit changed both retrieval and downstream performance. Their result supports testing smaller, self-contained units, but it does not make one-sentence chunks a universal rule.",
+      "explanation": "A whole manual can cover many unrelated topics, so a single embedding may be too broad for a narrow query. Chen et al. compared documents, passages, sentences, and propositions as retrieval units, and the choice changed both retrieval and downstream results. That's a reason to test smaller self-contained units. It doesn't make one-sentence chunks a universal rule.",
       "references": "[Chen et al.: Dense X Retrieval](https://arxiv.org/abs/2312.06648)"
     },
     {
       "id": "chunk-overlap-tradeoffs",
-      "title": "What can fixed-window chunk overlap change?",
+      "title": "What can overlap between fixed-size chunks change?",
       "images": [
         {
           "src": "chunking-boundaries.svg",
-          "alt": "Three panels about chunking. The first splits “Refunds are allowed within 30 days, unless the license key has been activated.” at a character count, leaving a highlighted chunk holding only the permissive clause and a greyed chunk holding the exception, then shows a fixed version where one self-contained unit carries both. The second lays out four retrieval units — whole document, section, passage, proposition — noting that one unit means one vector. The third draws three overlapping fixed windows with the shared regions framed, listing what overlap buys (a boundary fact appears in both neighbours) against what it costs (the same text is indexed twice, so results can be near-duplicates), and noting that overlap finds no semantic boundaries and changes no embedding dimension.",
-          "caption": "With overlap, each new chunk starts with text copied from the end of the previous chunk. This can preserve context around a boundary, but it also repeats text in the index and sometimes in the prompt.",
+          "alt": "Three panels about chunking. The first splits \"Refunds are allowed within 30 days, unless the license key has been activated.\" at a character count. A highlighted chunk holds only the permissive clause, and a greyed chunk holds the exception. A fixed version keeps both in one self-contained unit. The second panel lays out four retrieval units: whole document, section, passage, and proposition. It notes that one unit means one vector. The third draws three overlapping fixed windows with the shared regions framed. Overlap puts a boundary fact in both neighbours, but the same text is indexed twice, so results can be near-duplicates. A note says overlap finds no semantic boundaries and changes no embedding dimension.",
+          "caption": "With overlap, each chunk starts with text copied from the end of the previous one. That keeps context around a boundary, but it repeats text in the index and sometimes in the prompt.",
           "placement": "explanation",
           "width": 720,
           "height": 596
@@ -163,23 +163,23 @@
       "type": "multiple-choice",
       "options": [
         {
-          "text": "A fact near a boundary can appear in both adjacent chunks.",
+          "text": "A fact near a boundary can appear in both neighboring chunks.",
           "isCorrect": true
         },
         {
-          "text": "The index contains repeated text, and retrieval can return near-duplicate chunks.",
+          "text": "The index holds repeated text, and retrieval can return near-duplicate chunks.",
           "isCorrect": true
         },
         {
-          "text": "It guarantees that every chunk follows a semantic boundary.",
+          "text": "Every chunk ends on a semantic boundary.",
           "isCorrect": false
         },
         {
-          "text": "It changes the embedding model's vector dimensionality.",
+          "text": "The embedding model's vector dimension changes.",
           "isCorrect": false
         }
       ],
-      "explanation": "With overlap, each new chunk starts with text copied from the end of the previous chunk. This can preserve context around a boundary, but it also repeats text in the index and sometimes in the prompt. Overlap does not find semantic boundaries or change the embedding model's output dimension.",
+      "explanation": "With overlap, each chunk starts with text copied from the end of the previous one. That keeps context around a boundary, but it repeats text in the index and sometimes in the prompt. Overlap doesn't find semantic boundaries, and it doesn't change the embedding model's output dimension.",
       "references": "[Microsoft Learn: Text Split skill](https://learn.microsoft.com/en-us/azure/search/cognitive-search-skill-textsplit) · [Chen et al.: Dense X Retrieval](https://arxiv.org/abs/2312.06648) · [Google AI for Developers: Understand and count tokens](https://ai.google.dev/gemini-api/docs/tokens)"
     },
     {
@@ -188,8 +188,8 @@
       "images": [
         {
           "src": "rag-pipeline.svg",
-          "alt": "One RAG request drawn as two rows of stages. An offline ingestion row runs source docs, chunk, embed passages and index, with the index labelled non-parametric memory and a note that a source edit which never reaches the index is an ingestion bug. A query-time row sends the user query into two parallel branches — dense approximate nearest neighbours over stored vectors, and lexical BM25 for exact codes, names and ids — which merge in an RRF fuse box computing 1 / (60 + rank), then a cross-encoder rerank of the top n, then a prompt, a generator labelled parametric memory, and an answer with citations. A footer names the metric for each stage, and a closing strip reads: a reranker only reorders the candidates it was handed.",
-          "caption": "DPR uses separate encoders for queries and passages. The system can encode corpus passages before any live query arrives and store their vectors in an index.",
+          "alt": "One RAG request drawn as two rows of stages. The offline ingestion row runs source docs through chunking, passage embedding, and indexing. The index is labelled non-parametric memory, with a note that a source edit that never reaches the index is an ingestion bug. In the query-time row, the user query goes to two parallel branches: dense approximate nearest neighbours over stored vectors, and lexical BM25 for exact codes, names, and ids. They merge in an RRF fuse box computing 1 / (60 + rank), then a cross-encoder reranks the top n, and the result goes into a prompt, a generator labelled parametric memory, and an answer with citations. A footer names the metric for each stage, and a closing strip reads: a reranker only reorders the candidates it was handed.",
+          "caption": "DPR uses separate encoders for queries and passages. It can encode the corpus before any query arrives and store the vectors in an index.",
           "placement": "explanation",
           "width": 720,
           "height": 548
@@ -198,7 +198,7 @@
       "type": "single-choice",
       "options": [
         {
-          "text": "Documents can be encoded ahead of time, while a query is encoded at request time and compared with stored vectors.",
+          "text": "You can encode documents ahead of time, then encode only the query at request time and compare it with the stored vectors.",
           "isCorrect": true
         },
         {
@@ -210,11 +210,11 @@
           "isCorrect": false
         },
         {
-          "text": "It eliminates the need for an index by storing the corpus in the query vector.",
+          "text": "It removes the need for an index by storing the corpus in the query vector.",
           "isCorrect": false
         }
       ],
-      "explanation": "DPR uses separate encoders for queries and passages. The system can encode corpus passages before any live query arrives and store their vectors in an index. At request time, it encodes the query and searches those vectors. A model that jointly scores every query-document pair is better suited to the smaller reranking stage.",
+      "explanation": "DPR uses separate encoders for queries and passages. It can encode the corpus before any query arrives and store the vectors in an index. At request time, it encodes only the query and searches those vectors. A model that scores each query-document pair jointly fits the smaller reranking stage better.",
       "references": "[Karpukhin et al.: Dense Passage Retrieval for Open-Domain Question Answering](https://arxiv.org/abs/2004.04906) · [Reimers and Gurevych: Sentence-BERT](https://arxiv.org/abs/1908.10084)"
     },
     {
@@ -239,18 +239,18 @@
           "isCorrect": false
         }
       ],
-      "explanation": "Cosine similarity is `x·y / (||x|| ||y||)`. L2 normalization makes both norms equal to `1`, so the expression becomes `x·y`. Under this condition, dot product and cosine similarity give the same scores and the same ranking.",
+      "explanation": "Cosine similarity is `x·y / (||x|| ||y||)`. L2 normalization sets both norms to `1`, which leaves `x·y`. So for normalized vectors, dot product and cosine similarity give the same scores and the same ranking.",
       "references": "[scikit-learn: cosine_similarity](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.pairwise.cosine_similarity.html)"
     },
     {
       "id": "exact-identifier-hybrid-retrieval",
       "title": "Dense retrieval misses an exact error code. What should you add?",
-      "description": "Dense search finds conceptually related troubleshooting pages but misses the runbook that contains the exact code.",
+      "description": "Dense search finds related troubleshooting pages but misses the runbook with the exact code.",
       "images": [
         {
           "src": "rag-pipeline.svg",
-          "alt": "One RAG request drawn as two rows of stages. An offline ingestion row runs source docs, chunk, embed passages and index, with the index labelled non-parametric memory and a note that a source edit which never reaches the index is an ingestion bug. A query-time row sends the user query into two parallel branches — dense approximate nearest neighbours over stored vectors, and lexical BM25 for exact codes, names and ids — which merge in an RRF fuse box computing 1 / (60 + rank), then a cross-encoder rerank of the top n, then a prompt, a generator labelled parametric memory, and an answer with citations. A footer names the metric for each stage, and a closing strip reads: a reranker only reorders the candidates it was handed.",
-          "caption": "Vector search is good at semantic matches, while keyword search is good at exact strings. Azure AI Search lists product codes, names, dates, and specialized terms as cases where keyword search can work better.",
+          "alt": "One RAG request drawn as two rows of stages. The offline ingestion row runs source docs through chunking, passage embedding, and indexing. The index is labelled non-parametric memory, with a note that a source edit that never reaches the index is an ingestion bug. In the query-time row, the user query goes to two parallel branches: dense approximate nearest neighbours over stored vectors, and lexical BM25 for exact codes, names, and ids. They merge in an RRF fuse box computing 1 / (60 + rank), then a cross-encoder reranks the top n, and the result goes into a prompt, a generator labelled parametric memory, and an answer with citations. A footer names the metric for each stage, and a closing strip reads: a reranker only reorders the candidates it was handed.",
+          "caption": "Vector search is good at matching meaning, and keyword search is good at matching exact strings. The Azure AI Search docs list product codes, names, dates, and specialized terms as cases where keyword search can do better.",
           "placement": "explanation",
           "width": 720,
           "height": 548
@@ -259,7 +259,7 @@
       "type": "single-choice",
       "options": [
         {
-          "text": "Add a lexical retrieval branch and fuse it with vector results.",
+          "text": "Add a lexical retrieval branch and fuse its results with the vector results.",
           "isCorrect": true
         },
         {
@@ -267,7 +267,7 @@
           "isCorrect": false
         },
         {
-          "text": "Increase generation temperature until the model guesses the matching runbook.",
+          "text": "Raise the generation temperature until the model guesses the right runbook.",
           "isCorrect": false
         },
         {
@@ -275,7 +275,7 @@
           "isCorrect": false
         }
       ],
-      "explanation": "Vector search is good at semantic matches, while keyword search is good at exact strings. Azure AI Search lists product codes, names, dates, and specialized terms as cases where keyword search can work better. A hybrid query keeps both strengths and merges their rankings.",
+      "explanation": "Vector search is good at matching meaning, and keyword search is good at matching exact strings. The Azure AI Search docs list product codes, names, dates, and specialized terms as cases where keyword search can do better. A hybrid query runs both and merges their rankings.",
       "references": "[Microsoft Learn: Hybrid Search in Azure AI Search](https://learn.microsoft.com/en-us/azure/search/hybrid-search-overview)"
     },
     {
@@ -284,23 +284,23 @@
       "type": "single-choice",
       "options": [
         {
-          "text": "It can search efficiently but miss an exact nearest neighbor for some queries.",
+          "text": "It's fast, but it can miss the exact nearest neighbor for some queries.",
           "isCorrect": true
         },
         {
-          "text": "The stored embeddings are converted back into approximate source sentences.",
+          "text": "It converts the stored embeddings back into approximate source sentences.",
           "isCorrect": false
         },
         {
-          "text": "Every returned document has approximately the same relevance.",
+          "text": "Every returned document has about the same relevance.",
           "isCorrect": false
         },
         {
-          "text": "Similarity scores become factual-confidence probabilities.",
+          "text": "Similarity scores become the probability that a passage is factually correct.",
           "isCorrect": false
         }
       ],
-      "explanation": "HNSW searches a hierarchical proximity graph instead of comparing the query with every vector. This makes search efficient, but an approximate method can miss an exact nearest neighbor. Similarity measures geometric proximity, not confidence that a passage is factually correct.",
+      "explanation": "HNSW searches a layered proximity graph instead of comparing the query with every vector. That makes search fast, but an approximate method can miss the exact nearest neighbor. Similarity measures how close two vectors are, not how likely a passage is to be correct.",
       "references": "[Malkov and Yashunin: Efficient and Robust Approximate Nearest Neighbor Search Using HNSW](https://arxiv.org/abs/1603.09320)"
     },
     {
@@ -310,7 +310,7 @@
       "images": [
         {
           "src": "ranking-and-fusion.svg",
-          "alt": "Three panels on ranking. The first shows a BM25 result list scored 18.4 down to 6.2 beside a dense vector list scored 0.83 down to 0.71, then the reciprocal-rank fusion of doc-A: 1 / (60 + 4) + 1 / (60 + 1) = 0.01563 + 0.01639 = 0.03202, with a note that ranks are comparable by construction so no normalization is needed. The second shows five result slots, three marked relevant and two not, plus a fourth relevant chunk stranded at rank 23, and the arithmetic recall@5 = 3 relevant found / 4 relevant total = 0.75. The third lists what raising k from 5 to 50 trades: recall can rise, distractors arrive, and context is spent.",
+          "alt": "Three panels on ranking. The first shows a BM25 result list scored 18.4 down to 6.2 beside a dense vector list scored 0.83 down to 0.71, then the reciprocal rank fusion of doc-A: 1 / (60 + 4) + 1 / (60 + 1) = 0.01563 + 0.01639 = 0.03202. A note says ranks are comparable by construction, so no normalization is needed. The second shows five result slots, three marked relevant and two not, plus a fourth relevant chunk stranded at rank 23, with the arithmetic recall@5 = 3 relevant found / 4 relevant total = 0.75. The third lists what raising k from 5 to 50 trades: recall can rise, distractors arrive, and context is spent.",
           "caption": "Recall is the number of relevant items retrieved divided by the total number of relevant items.",
           "placement": "explanation",
           "width": 720,
@@ -322,26 +322,26 @@
         "mode": "numeric",
         "acceptedAnswers": [0.75]
       },
-      "explanation": "Recall is the number of relevant items retrieved divided by the total number of relevant items. Here that is `3 / 4 = 0.75`. The other two results lower precision, not recall.",
+      "explanation": "Recall is the number of relevant items retrieved divided by the total number of relevant items. Here that's `3 / 4 = 0.75`. The two irrelevant results lower precision, not recall.",
       "references": "[NIST TREC: Evaluation of Ranked Lists](https://trec.nist.gov/presentations/TREC9/overview/tsld014.htm)"
     },
     {
       "id": "more-top-k-not-guaranteed-better",
-      "title": "Why might increasing retrieval `k` from 5 to 50 make an answer worse?",
+      "title": "Why might raising retrieval `k` from 5 to 50 make the answer worse?",
       "description": "The system sends every retrieved passage to the generator.",
       "images": [
         {
           "src": "ranking-and-fusion.svg",
-          "alt": "Three panels on ranking. The first shows a BM25 result list scored 18.4 down to 6.2 beside a dense vector list scored 0.83 down to 0.71, then the reciprocal-rank fusion of doc-A: 1 / (60 + 4) + 1 / (60 + 1) = 0.01563 + 0.01639 = 0.03202, with a note that ranks are comparable by construction so no normalization is needed. The second shows five result slots, three marked relevant and two not, plus a fourth relevant chunk stranded at rank 23, and the arithmetic recall@5 = 3 relevant found / 4 relevant total = 0.75. The third lists what raising k from 5 to 50 trades: recall can rise, distractors arrive, and context is spent.",
-          "caption": "Raising `k` can recover more relevant chunks, but it also admits lower-ranked distractors.",
+          "alt": "Three panels on ranking. The first shows a BM25 result list scored 18.4 down to 6.2 beside a dense vector list scored 0.83 down to 0.71, then the reciprocal rank fusion of doc-A: 1 / (60 + 4) + 1 / (60 + 1) = 0.01563 + 0.01639 = 0.03202. A note says ranks are comparable by construction, so no normalization is needed. The second shows five result slots, three marked relevant and two not, plus a fourth relevant chunk stranded at rank 23, with the arithmetic recall@5 = 3 relevant found / 4 relevant total = 0.75. The third lists what raising k from 5 to 50 trades: recall can rise, distractors arrive, and context is spent.",
+          "caption": "Raising `k` can recover more relevant chunks, but it also lets in lower-ranked distractors.",
           "placement": "explanation",
           "width": 720,
           "height": 644
         },
         {
           "src": "context-placement.svg",
-          "alt": "Two panels. The first spends an 8,192-token combined budget as one bar: 2,100 tokens of instructions and query, five retrieved chunks of 900 each, a 1,200-token answer reserve, and a thin remaining sliver labelled 392 tokens left, with the arithmetic 2,100 + (5 × 900) + 1,200 = 7,800 and 8,192 − 7,800 = 392. The second plots the Lost in the Middle shape — accuracy against the position of the relevant passage among twenty, high at the first and last positions and lowest in the middle, with the dip marked — beside the same five chunks in prompt order, the first and last marked read reliably and the third marked buried. A closing strip reads: fitting inside the window is a capacity fact, not a promise that every detail is used.",
-          "caption": "The context bar is finite, so extra retrieved chunks leave fewer tokens for instructions and the answer.",
+          "alt": "Two panels. The first shows an 8,192-token combined budget as one bar: 2,100 tokens of instructions and query, five retrieved chunks of 900 each, a 1,200-token answer reserve, and a thin sliver labelled 392 tokens left. The arithmetic reads 2,100 + (5 × 900) + 1,200 = 7,800 and 8,192 − 7,800 = 392. The second plots the Lost in the Middle curve: accuracy against the position of the relevant passage among twenty, high at the first and last positions and lowest in the middle. Beside it, the same five chunks sit in prompt order, with the first and last marked read reliably and the third marked buried. A closing strip reads: fitting inside the window is a capacity fact, not a promise that every detail is used.",
+          "caption": "The context window is finite, so every extra chunk leaves fewer tokens for instructions and the answer.",
           "placement": "explanation",
           "width": 720,
           "height": 606
@@ -350,7 +350,7 @@
       "type": "single-choice",
       "options": [
         {
-          "text": "It may improve recall, but the extra passages can distract the generator and use more context.",
+          "text": "Recall may go up, but the extra passages can distract the generator and use up context.",
           "isCorrect": true
         },
         {
@@ -358,15 +358,15 @@
           "isCorrect": false
         },
         {
-          "text": "Recall always decreases whenever `k` increases.",
+          "text": "Recall always drops when `k` increases.",
           "isCorrect": false
         },
         {
-          "text": "All vector indexes return exactly the same documents for every value of `k`.",
+          "text": "Every vector index returns exactly the same documents for every value of `k`.",
           "isCorrect": false
         }
       ],
-      "explanation": "A larger candidate set may include more supporting evidence, but it can also add hard distractors and use scarce prompt tokens. The cited ACL study reports cases where irrelevant retrieved passages caused the answer model to respond incorrectly. Test `k` against retrieval and end-to-end metrics instead of assuming that more passages always help.",
+      "explanation": "More passages can bring more supporting evidence, but they can also bring hard distractors and use up prompt tokens. Amiraz et al. report cases where irrelevant retrieved passages led the model to answer incorrectly. Test `k` against both retrieval and end-to-end metrics instead of assuming more passages always help.",
       "references": "[Amiraz et al.: The Distracting Effect](https://aclanthology.org/2025.acl-long.892/) · [Google AI for Developers: Understand and count tokens](https://ai.google.dev/gemini-api/docs/tokens)"
     },
     {
@@ -376,8 +376,8 @@
       "images": [
         {
           "src": "ranking-and-fusion.svg",
-          "alt": "Three panels on ranking. The first shows a BM25 result list scored 18.4 down to 6.2 beside a dense vector list scored 0.83 down to 0.71, then the reciprocal-rank fusion of doc-A: 1 / (60 + 4) + 1 / (60 + 1) = 0.01563 + 0.01639 = 0.03202, with a note that ranks are comparable by construction so no normalization is needed. The second shows five result slots, three marked relevant and two not, plus a fourth relevant chunk stranded at rank 23, and the arithmetic recall@5 = 3 relevant found / 4 relevant total = 0.75. The third lists what raising k from 5 to 50 trades: recall can rise, distractors arrive, and context is spent.",
-          "caption": "Substitute the ranks into the formula: `1/61 + 1/64 = 0.01639344 + 0.015625 = 0.03201844`.",
+          "alt": "Three panels on ranking. The first shows a BM25 result list scored 18.4 down to 6.2 beside a dense vector list scored 0.83 down to 0.71, then the reciprocal rank fusion of doc-A: 1 / (60 + 4) + 1 / (60 + 1) = 0.01563 + 0.01639 = 0.03202. A note says ranks are comparable by construction, so no normalization is needed. The second shows five result slots, three marked relevant and two not, plus a fourth relevant chunk stranded at rank 23, with the arithmetic recall@5 = 3 relevant found / 4 relevant total = 0.75. The third lists what raising k from 5 to 50 trades: recall can rise, distractors arrive, and context is spent.",
+          "caption": "Plug the ranks into the formula: `1/61 + 1/64 = 0.01639344 + 0.015625 = 0.03201844`.",
           "placement": "explanation",
           "width": 720,
           "height": 644
@@ -389,7 +389,7 @@
         "acceptedAnswers": [0.03202],
         "tolerance": 0.000005
       },
-      "explanation": "Substitute the ranks into the formula: `1/61 + 1/64 = 0.01639344 + 0.015625 = 0.03201844`. Rounded to five decimal places, the score is `0.03202`. RRF adds a reciprocal contribution from each result list that contains the document.",
+      "explanation": "Plug the ranks into the formula: `1/61 + 1/64 = 0.01639344 + 0.015625 = 0.03201844`. Rounded to five decimal places, that's `0.03202`. RRF adds one reciprocal term for each result list that contains the document.",
       "references": "[Elasticsearch Reference: Reciprocal Rank Fusion](https://www.elastic.co/docs/reference/elasticsearch/rest-apis/reciprocal-rank-fusion)"
     },
     {
@@ -398,8 +398,8 @@
       "images": [
         {
           "src": "ranking-and-fusion.svg",
-          "alt": "Three panels on ranking. The first shows a BM25 result list scored 18.4 down to 6.2 beside a dense vector list scored 0.83 down to 0.71, then the reciprocal-rank fusion of doc-A: 1 / (60 + 4) + 1 / (60 + 1) = 0.01563 + 0.01639 = 0.03202, with a note that ranks are comparable by construction so no normalization is needed. The second shows five result slots, three marked relevant and two not, plus a fourth relevant chunk stranded at rank 23, and the arithmetic recall@5 = 3 relevant found / 4 relevant total = 0.75. The third lists what raising k from 5 to 50 trades: recall can rise, distractors arrive, and context is spent.",
-          "caption": "BM25 and vector search produce scores with different meanings and scales. RRF does not compare those raw scores.",
+          "alt": "Three panels on ranking. The first shows a BM25 result list scored 18.4 down to 6.2 beside a dense vector list scored 0.83 down to 0.71, then the reciprocal rank fusion of doc-A: 1 / (60 + 4) + 1 / (60 + 1) = 0.01563 + 0.01639 = 0.03202. A note says ranks are comparable by construction, so no normalization is needed. The second shows five result slots, three marked relevant and two not, plus a fourth relevant chunk stranded at rank 23, with the arithmetic recall@5 = 3 relevant found / 4 relevant total = 0.75. The third lists what raising k from 5 to 50 trades: recall can rise, distractors arrive, and context is spent.",
+          "caption": "BM25 and vector search produce scores on different scales with different meanings. RRF never compares those raw scores.",
           "placement": "explanation",
           "width": 720,
           "height": 644
@@ -408,7 +408,7 @@
       "type": "single-choice",
       "options": [
         {
-          "text": "It uses each document's rank in each result list rather than treating unlike raw scores as comparable.",
+          "text": "It works with each document's rank in each result list, so it never compares the raw scores.",
           "isCorrect": true
         },
         {
@@ -424,7 +424,7 @@
           "isCorrect": false
         }
       ],
-      "explanation": "BM25 and vector search produce scores with different meanings and scales. RRF does not compare those raw scores. For each result list, it adds `1 / (k + rank)` for the document. A document that ranks well in one or more branches gets a larger fused score.",
+      "explanation": "BM25 and vector search produce scores on different scales with different meanings. RRF never compares those raw scores. For each result list, it adds `1 / (k + rank)` for the document, so a document that ranks well in one or more lists gets a higher fused score.",
       "references": "[Elasticsearch Reference: Reciprocal Rank Fusion](https://www.elastic.co/docs/reference/elasticsearch/rest-apis/reciprocal-rank-fusion) · [Cormack, Clarke, and Büttcher: Reciprocal Rank Fusion](https://cormack.uwaterloo.ca/cormacksigir09-rrf.pdf)"
     },
     {
@@ -433,8 +433,8 @@
       "images": [
         {
           "src": "rag-pipeline.svg",
-          "alt": "One RAG request drawn as two rows of stages. An offline ingestion row runs source docs, chunk, embed passages and index, with the index labelled non-parametric memory and a note that a source edit which never reaches the index is an ingestion bug. A query-time row sends the user query into two parallel branches — dense approximate nearest neighbours over stored vectors, and lexical BM25 for exact codes, names and ids — which merge in an RRF fuse box computing 1 / (60 + rank), then a cross-encoder rerank of the top n, then a prompt, a generator labelled parametric memory, and an answer with citations. A footer names the metric for each stage, and a closing strip reads: a reranker only reorders the candidates it was handed.",
-          "caption": "A reranker scores a query and passage together, which costs more than comparing precomputed vectors.",
+          "alt": "One RAG request drawn as two rows of stages. The offline ingestion row runs source docs through chunking, passage embedding, and indexing. The index is labelled non-parametric memory, with a note that a source edit that never reaches the index is an ingestion bug. In the query-time row, the user query goes to two parallel branches: dense approximate nearest neighbours over stored vectors, and lexical BM25 for exact codes, names, and ids. They merge in an RRF fuse box computing 1 / (60 + rank), then a cross-encoder reranks the top n, and the result goes into a prompt, a generator labelled parametric memory, and an answer with citations. A footer names the metric for each stage, and a closing strip reads: a reranker only reorders the candidates it was handed.",
+          "caption": "A reranker reads the query and passage together, which costs more than comparing precomputed vectors.",
           "placement": "explanation",
           "width": 720,
           "height": 548
@@ -443,7 +443,7 @@
       "type": "single-choice",
       "options": [
         {
-          "text": "After a fast retriever has produced a smaller candidate set.",
+          "text": "After a fast retriever has narrowed the corpus to a smaller candidate set.",
           "isCorrect": true
         },
         {
@@ -451,7 +451,7 @@
           "isCorrect": false
         },
         {
-          "text": "After generation, to reorder the words in the completed answer.",
+          "text": "After generation, to reorder the words in the finished answer.",
           "isCorrect": false
         },
         {
@@ -459,7 +459,7 @@
           "isCorrect": false
         }
       ],
-      "explanation": "A reranker scores a query and passage together, which costs more than comparing precomputed vectors. The usual pipeline first retrieves a broad candidate set with a cheaper method, then applies the reranker to that smaller set. Nogueira and Cho use BERT in this second-stage role.",
+      "explanation": "A reranker reads the query and passage together, which costs more than comparing precomputed vectors. So a typical pipeline first pulls a broad candidate set with a cheaper method, then reranks only that smaller set. Nogueira and Cho use BERT in this second-stage role.",
       "references": "[Nogueira and Cho: Passage Re-ranking with BERT](https://arxiv.org/abs/1901.04085) · [Reimers and Gurevych: Sentence-BERT](https://arxiv.org/abs/1908.10084)"
     },
     {
@@ -468,8 +468,8 @@
       "images": [
         {
           "src": "rag-pipeline.svg",
-          "alt": "One RAG request drawn as two rows of stages. An offline ingestion row runs source docs, chunk, embed passages and index, with the index labelled non-parametric memory and a note that a source edit which never reaches the index is an ingestion bug. A query-time row sends the user query into two parallel branches — dense approximate nearest neighbours over stored vectors, and lexical BM25 for exact codes, names and ids — which merge in an RRF fuse box computing 1 / (60 + rank), then a cross-encoder rerank of the top n, then a prompt, a generator labelled parametric memory, and an answer with citations. A footer names the metric for each stage, and a closing strip reads: a reranker only reorders the candidates it was handed.",
-          "caption": "Reranking changes the order of a candidate list. It does not add missing passages by itself.",
+          "alt": "One RAG request drawn as two rows of stages. The offline ingestion row runs source docs through chunking, passage embedding, and indexing. The index is labelled non-parametric memory, with a note that a source edit that never reaches the index is an ingestion bug. In the query-time row, the user query goes to two parallel branches: dense approximate nearest neighbours over stored vectors, and lexical BM25 for exact codes, names, and ids. They merge in an RRF fuse box computing 1 / (60 + rank), then a cross-encoder reranks the top n, and the result goes into a prompt, a generator labelled parametric memory, and an answer with citations. A footer names the metric for each stage, and a closing strip reads: a reranker only reorders the candidates it was handed.",
+          "caption": "Reranking changes the order of a candidate list. It doesn't add missing passages.",
           "placement": "explanation",
           "width": 720,
           "height": 548
@@ -478,15 +478,15 @@
       "type": "single-choice",
       "options": [
         {
-          "text": "No. A reranker can only score the candidates it receives unless another retrieval step adds the missing passage.",
+          "text": "No. A reranker only scores the candidates it receives. Another retrieval step would have to add the missing passage.",
           "isCorrect": true
         },
         {
-          "text": "Yes. A reranker reconstructs all missing corpus passages from the query.",
+          "text": "Yes. A reranker reconstructs missing corpus passages from the query.",
           "isCorrect": false
         },
         {
-          "text": "Yes. Every reranker automatically performs exhaustive corpus search before scoring.",
+          "text": "Yes. Every reranker searches the whole corpus before scoring.",
           "isCorrect": false
         },
         {
@@ -494,7 +494,7 @@
           "isCorrect": false
         }
       ],
-      "explanation": "Reranking changes the order of a candidate list. It does not add missing passages by itself. If the retriever omits the only supporting passage, the reranker never sees it. Measure first-stage recall separately from reranking quality.",
+      "explanation": "Reranking changes the order of a candidate list. It doesn't add missing passages. If the retriever drops the only supporting passage, the reranker never sees it, so measure first-stage recall separately from reranking quality.",
       "references": "[Nogueira and Cho: Passage Re-ranking with BERT](https://arxiv.org/abs/1901.04085) · [NIST TREC: Evaluation of Ranked Lists](https://trec.nist.gov/presentations/TREC9/overview/tsld014.htm)"
     },
     {
@@ -503,8 +503,8 @@
       "images": [
         {
           "src": "context-placement.svg",
-          "alt": "Two panels. The first spends an 8,192-token combined budget as one bar: 2,100 tokens of instructions and query, five retrieved chunks of 900 each, a 1,200-token answer reserve, and a thin remaining sliver labelled 392 tokens left, with the arithmetic 2,100 + (5 × 900) + 1,200 = 7,800 and 8,192 − 7,800 = 392. The second plots the Lost in the Middle shape — accuracy against the position of the relevant passage among twenty, high at the first and last positions and lowest in the middle, with the dip marked — beside the same five chunks in prompt order, the first and last marked read reliably and the third marked buried. A closing strip reads: fitting inside the window is a capacity fact, not a promise that every detail is used.",
-          "caption": "Liu et al. changed the position of relevant information in multi-document QA and key-value retrieval tasks.",
+          "alt": "Two panels. The first shows an 8,192-token combined budget as one bar: 2,100 tokens of instructions and query, five retrieved chunks of 900 each, a 1,200-token answer reserve, and a thin sliver labelled 392 tokens left. The arithmetic reads 2,100 + (5 × 900) + 1,200 = 7,800 and 8,192 − 7,800 = 392. The second plots the Lost in the Middle curve: accuracy against the position of the relevant passage among twenty, high at the first and last positions and lowest in the middle. Beside it, the same five chunks sit in prompt order, with the first and last marked read reliably and the third marked buried. A closing strip reads: fitting inside the window is a capacity fact, not a promise that every detail is used.",
+          "caption": "Liu et al. moved the relevant information to different positions in multi-document QA and key-value retrieval tasks.",
           "placement": "explanation",
           "width": 720,
           "height": 606
@@ -513,11 +513,11 @@
       "type": "single-choice",
       "options": [
         {
-          "text": "Relevant information can be used less reliably when placed in the middle than near the beginning or end, even when the input fits the context window.",
+          "text": "Models can use relevant information less reliably in the middle of the input than near the beginning or end, even when everything fits in the context window.",
           "isCorrect": true
         },
         {
-          "text": "Any information inside the declared context window is used equally well at every position.",
+          "text": "Models use information equally well at every position inside the context window.",
           "isCorrect": false
         },
         {
@@ -529,18 +529,18 @@
           "isCorrect": false
         }
       ],
-      "explanation": "Liu et al. changed the position of relevant information in multi-document QA and key-value retrieval tasks. Performance was often better when the evidence appeared near the beginning or end and worse when it appeared in the middle. Fitting text into the context window does not guarantee that the model will use every part equally well.",
+      "explanation": "Liu et al. moved the relevant information to different positions in multi-document QA and key-value retrieval tasks. Performance was often better when the evidence came near the beginning or end, and worse when it sat in the middle. Fitting text into the context window doesn't mean the model uses every part equally well.",
       "references": "[Liu et al.: Lost in the Middle](https://arxiv.org/abs/2307.03172)"
     },
     {
       "id": "context-budget-arithmetic",
-      "title": "How many tokens remain in this context budget?",
-      "description": "The combined input-output limit is `8,192` tokens. Instructions and the query use `2,100`; five chunks use `900` each; and the answer reserves `1,200`. Enter the maximum number of additional tokens that fit.",
+      "title": "How many tokens are left in this context budget?",
+      "description": "The combined input and output limit is `8,192` tokens. Instructions and the query use `2,100`, five chunks use `900` each, and the answer reserves `1,200`. Enter the largest number of extra tokens that still fit.",
       "images": [
         {
           "src": "context-placement.svg",
-          "alt": "Two panels. The first spends an 8,192-token combined budget as one bar: 2,100 tokens of instructions and query, five retrieved chunks of 900 each, a 1,200-token answer reserve, and a thin remaining sliver labelled 392 tokens left, with the arithmetic 2,100 + (5 × 900) + 1,200 = 7,800 and 8,192 − 7,800 = 392. The second plots the Lost in the Middle shape — accuracy against the position of the relevant passage among twenty, high at the first and last positions and lowest in the middle, with the dip marked — beside the same five chunks in prompt order, the first and last marked read reliably and the third marked buried. A closing strip reads: fitting inside the window is a capacity fact, not a promise that every detail is used.",
-          "caption": "Five chunks use `5 × 900 = 4,500` tokens. The reserved total is `2,100 + 4,500 + 1,200 = 7,800`.",
+          "alt": "Two panels. The first shows an 8,192-token combined budget as one bar: 2,100 tokens of instructions and query, five retrieved chunks of 900 each, a 1,200-token answer reserve, and a thin sliver labelled 392 tokens left. The arithmetic reads 2,100 + (5 × 900) + 1,200 = 7,800 and 8,192 − 7,800 = 392. The second plots the Lost in the Middle curve: accuracy against the position of the relevant passage among twenty, high at the first and last positions and lowest in the middle. Beside it, the same five chunks sit in prompt order, with the first and last marked read reliably and the third marked buried. A closing strip reads: fitting inside the window is a capacity fact, not a promise that every detail is used.",
+          "caption": "Five chunks use `5 × 900 = 4,500` tokens, so the total is `2,100 + 4,500 + 1,200 = 7,800`.",
           "placement": "explanation",
           "width": 720,
           "height": 606
@@ -551,7 +551,7 @@
         "mode": "numeric",
         "acceptedAnswers": [392]
       },
-      "explanation": "Five chunks use `5 × 900 = 4,500` tokens. The reserved total is `2,100 + 4,500 + 1,200 = 7,800`. That leaves `8,192 - 7,800 = 392` tokens. Real limits depend on the model, so check the documentation for the model you use.",
+      "explanation": "Five chunks use `5 × 900 = 4,500` tokens, so the total is `2,100 + 4,500 + 1,200 = 7,800`. That leaves `8,192 - 7,800 = 392` tokens. Real limits vary by model, so check your model's documentation.",
       "references": "[Google AI for Developers: Understand and count tokens](https://ai.google.dev/gemini-api/docs/tokens)"
     },
     {
@@ -560,11 +560,11 @@
       "type": "multiple-choice",
       "options": [
         {
-          "text": "Whether each attached citation actually supports the claim it follows",
+          "text": "Whether each citation actually supports the claim it's attached to",
           "isCorrect": true
         },
         {
-          "text": "Whether claims that require evidence have citation support rather than leaving major claims uncited",
+          "text": "Whether every claim that needs evidence has a citation",
           "isCorrect": true
         },
         {
@@ -576,7 +576,7 @@
           "isCorrect": false
         }
       ],
-      "explanation": "Citation correctness asks whether each citation supports its claim. Citation completeness asks whether the claims that need evidence are covered. An answer can fail either test: it may cite an irrelevant source, or support one sentence while leaving other factual claims uncited. ALCE evaluates both properties; link count and keyword overlap are not enough.",
+      "explanation": "Citation correctness asks whether each citation supports its claim. Citation completeness asks whether every claim that needs evidence has a citation. An answer can fail either test by citing an irrelevant source, or by supporting one sentence and leaving other factual claims uncited. ALCE measures both. Link count and keyword overlap tell you neither.",
       "references": "[Gao et al.: Enabling Large Language Models to Generate Text with Citations](https://arxiv.org/abs/2305.14627)"
     },
     {
@@ -585,7 +585,7 @@
       "type": "single-choice",
       "options": [
         {
-          "text": "A system can output a correct answer while retrieving or citing the wrong evidence, so answer quality alone does not establish grounding.",
+          "text": "A system can give a correct answer while retrieving or citing the wrong evidence, so answer quality alone doesn't show grounding.",
           "isCorrect": true
         },
         {
@@ -601,7 +601,7 @@
           "isCorrect": false
         }
       ],
-      "explanation": "A correct answer can still have the wrong evidence. The model might know the answer from its parameters or guess correctly while citing an irrelevant passage. KILT evaluates downstream task performance and provenance separately, which exposes answers whose retrieval trail does not support them.",
+      "explanation": "A correct answer can still rest on the wrong evidence. The model might know the answer from its weights, or guess right while citing an irrelevant passage. KILT scores task performance and provenance separately, which exposes answers whose retrieval trail doesn't support them.",
       "references": "[Petroni et al.: KILT](https://arxiv.org/abs/2009.02252)"
     },
     {
@@ -610,7 +610,7 @@
       "type": "single-choice",
       "options": [
         {
-          "text": "The generator can add a claim that is unsupported by, or contradictory to, the retrieved passage.",
+          "text": "The generator can add a claim that the retrieved passage doesn't support, or even contradicts.",
           "isCorrect": true
         },
         {
@@ -626,17 +626,17 @@
           "isCorrect": false
         }
       ],
-      "explanation": "Retrieval supplies evidence, but a general generator can still write claims that the evidence does not support. RAGTruth documents RAG outputs with unsupported or contradictory claims. When the right passage was retrieved, this is a failure of context use or generation faithfulness, not retrieval recall.",
+      "explanation": "Retrieval supplies evidence, but the generator can still write claims the evidence doesn't support. RAGTruth documents RAG outputs with unsupported or contradictory claims. If the right passage was retrieved, the failure is in how the generator used it, not in retrieval recall.",
       "references": "[Niu et al.: RAGTruth](https://arxiv.org/abs/2401.00396)"
     },
     {
       "id": "evaluate-rag-components",
-      "title": "Which parts of a RAG pipeline should be evaluated separately?",
+      "title": "Which parts of a RAG pipeline should you evaluate separately?",
       "images": [
         {
           "src": "rag-pipeline.svg",
-          "alt": "One RAG request drawn as two rows of stages. An offline ingestion row runs source docs, chunk, embed passages and index, with the index labelled non-parametric memory and a note that a source edit which never reaches the index is an ingestion bug. A query-time row sends the user query into two parallel branches — dense approximate nearest neighbours over stored vectors, and lexical BM25 for exact codes, names and ids — which merge in an RRF fuse box computing 1 / (60 + rank), then a cross-encoder rerank of the top n, then a prompt, a generator labelled parametric memory, and an answer with citations. A footer names the metric for each stage, and a closing strip reads: a reranker only reorders the candidates it was handed.",
-          "caption": "RAG has several stages, so one end-to-end score cannot show where a failure began. RAGAS separates the relevance and focus of retrieved passages, faithful use of those passages, and answer quality.",
+          "alt": "One RAG request drawn as two rows of stages. The offline ingestion row runs source docs through chunking, passage embedding, and indexing. The index is labelled non-parametric memory, with a note that a source edit that never reaches the index is an ingestion bug. In the query-time row, the user query goes to two parallel branches: dense approximate nearest neighbours over stored vectors, and lexical BM25 for exact codes, names, and ids. They merge in an RRF fuse box computing 1 / (60 + rank), then a cross-encoder reranks the top n, and the result goes into a prompt, a generator labelled parametric memory, and an answer with citations. A footer names the metric for each stage, and a closing strip reads: a reranker only reorders the candidates it was handed.",
+          "caption": "RAG has several stages, so a single end-to-end score can't show where a failure started. RAGAS scores the retrieved passages for relevance and focus, checks whether the answer stays faithful to them, and rates the answer itself.",
           "placement": "explanation",
           "width": 720,
           "height": 548
@@ -649,11 +649,11 @@
           "isCorrect": true
         },
         {
-          "text": "Whether generation uses the retrieved context faithfully",
+          "text": "Whether generation stays faithful to the retrieved context",
           "isCorrect": true
         },
         {
-          "text": "The quality of the generated answer itself",
+          "text": "The quality of the answer itself",
           "isCorrect": true
         },
         {
@@ -661,16 +661,16 @@
           "isCorrect": false
         }
       ],
-      "explanation": "RAG has several stages, so one end-to-end score cannot show where a failure began. RAGAS separates the relevance and focus of retrieved passages, faithful use of those passages, and answer quality. Separate scores help distinguish a retrieval failure from a generation failure.",
+      "explanation": "RAG has several stages, so a single end-to-end score can't show where a failure started. RAGAS scores the retrieved passages for relevance and focus, checks whether the answer stays faithful to them, and rates the answer itself. Separate scores tell you whether retrieval or generation went wrong.",
       "references": "[Es et al.: RAGAS](https://arxiv.org/abs/2309.15217)"
     },
     {
       "id": "embedding-benchmark-generalization",
-      "title": "Why is one embedding leaderboard score not enough to choose a model?",
+      "title": "Why isn't one embedding leaderboard score enough to choose a model?",
       "type": "single-choice",
       "options": [
         {
-          "text": "Embedding performance varies across tasks and domains, so the target retrieval workload still needs representative evaluation.",
+          "text": "Embedding quality varies across tasks and domains, so you still need to test on your own retrieval workload.",
           "isCorrect": true
         },
         {
@@ -686,18 +686,18 @@
           "isCorrect": false
         }
       ],
-      "explanation": "MTEB covers several embedding tasks and found that no single method was best at all of them. BEIR tests retrieval on varied datasets and out-of-distribution settings, where methods show different quality and cost tradeoffs. Use a leaderboard to shortlist models, then test them on representative queries, languages, documents, and relevance judgments from your own workload.",
+      "explanation": "MTEB covers several embedding tasks and found that no single method was best at all of them. BEIR tests retrieval across varied datasets, including out-of-distribution ones, where methods trade quality against cost differently. Use a leaderboard to shortlist models, then test them on queries, languages, documents, and relevance judgments from your own workload.",
       "references": "[Muennighoff et al.: MTEB](https://arxiv.org/abs/2210.07316) · [Thakur et al.: BEIR](https://arxiv.org/abs/2104.08663)"
     },
     {
       "id": "stale-index-failure",
-      "title": "Retrieval returns an outdated policy after the source changes. What should you fix?",
-      "description": "The source document was updated, but the old chunk and embedding are still in the index.",
+      "title": "Retrieval returns an outdated policy after the source changed. What should you fix?",
+      "description": "The source document was updated, but the old chunk and its embedding are still in the index.",
       "images": [
         {
           "src": "rag-pipeline.svg",
-          "alt": "One RAG request drawn as two rows of stages. An offline ingestion row runs source docs, chunk, embed passages and index, with the index labelled non-parametric memory and a note that a source edit which never reaches the index is an ingestion bug. A query-time row sends the user query into two parallel branches — dense approximate nearest neighbours over stored vectors, and lexical BM25 for exact codes, names and ids — which merge in an RRF fuse box computing 1 / (60 + rank), then a cross-encoder rerank of the top n, then a prompt, a generator labelled parametric memory, and an answer with citations. A footer names the metric for each stage, and a closing strip reads: a reranker only reorders the candidates it was handed.",
-          "caption": "The source changed, but the index did not. Update or delete the stale chunks and index the current document.",
+          "alt": "One RAG request drawn as two rows of stages. The offline ingestion row runs source docs through chunking, passage embedding, and indexing. The index is labelled non-parametric memory, with a note that a source edit that never reaches the index is an ingestion bug. In the query-time row, the user query goes to two parallel branches: dense approximate nearest neighbours over stored vectors, and lexical BM25 for exact codes, names, and ids. They merge in an RRF fuse box computing 1 / (60 + rank), then a cross-encoder reranks the top n, and the result goes into a prompt, a generator labelled parametric memory, and an answer with citations. A footer names the metric for each stage, and a closing strip reads: a reranker only reorders the candidates it was handed.",
+          "caption": "The source changed, but the index didn't. Delete or replace the stale chunks and index the current document.",
           "placement": "explanation",
           "width": 720,
           "height": 548
@@ -706,23 +706,23 @@
       "type": "single-choice",
       "options": [
         {
-          "text": "Fix ingestion and index freshness: delete or replace the stale chunks, then index the current version.",
+          "text": "Fix ingestion: delete or replace the stale chunks, then index the current version.",
           "isCorrect": true
         },
         {
-          "text": "Increase generation temperature so the model invents a newer policy.",
+          "text": "Raise the generation temperature so the model invents a newer policy.",
           "isCorrect": false
         },
         {
-          "text": "Keep both versions without timestamps and ask the model to choose randomly.",
+          "text": "Keep both versions without timestamps and let the model pick one at random.",
           "isCorrect": false
         },
         {
-          "text": "Retrain the generator while deliberately leaving the stale retrieval index unchanged.",
+          "text": "Retrain the generator and leave the stale index as it is.",
           "isCorrect": false
         }
       ],
-      "explanation": "The source changed, but the index did not. Update or delete the stale chunks and index the current document. RAG keeps this external knowledge separate from the generator's parameters, but the system still needs an ingestion process that applies source updates and deletions. Generation settings cannot make an old passage current.",
+      "explanation": "The source changed, but the index didn't. Delete or replace the stale chunks and index the current document. RAG keeps this knowledge outside the generator's weights, so the ingestion pipeline has to apply source updates and deletions. Generation settings can't make an old passage current.",
       "references": "[Lewis et al.: Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks](https://arxiv.org/abs/2005.11401) · [Petroni et al.: KILT](https://arxiv.org/abs/2009.02252)"
     },
     {
@@ -731,23 +731,23 @@
       "type": "multiple-choice",
       "options": [
         {
-          "text": "An attacker who can inject malicious text into the knowledge base may steer answers for targeted queries.",
+          "text": "An attacker who can add malicious text to the knowledge base can steer answers to targeted queries.",
           "isCorrect": true
         },
         {
-          "text": "Instructions embedded in retrieved websites or files can act as indirect prompt injection.",
+          "text": "Instructions hidden in retrieved websites or files can act as indirect prompt injection.",
           "isCorrect": true
         },
         {
-          "text": "Using RAG fully eliminates prompt-injection risk.",
+          "text": "Using RAG removes prompt-injection risk entirely.",
           "isCorrect": false
         },
         {
-          "text": "High vector similarity proves that retrieved content is trustworthy and non-malicious.",
+          "text": "High vector similarity proves that retrieved content is safe to trust.",
           "isCorrect": false
         }
       ],
-      "explanation": "PoisonedRAG shows that malicious text added to a knowledge base can steer answers to targeted questions. OWASP describes indirect prompt injection through external sources such as websites and files, and notes that RAG does not remove this risk. Similarity measures relevance, not trust. Treat retrieved content as untrusted input and apply suitable controls.",
+      "explanation": "PoisonedRAG shows that malicious text added to a knowledge base can steer answers to targeted questions. OWASP describes indirect prompt injection through external sources such as websites and files, and notes that RAG doesn't remove this risk. Similarity measures relevance, not trust, so treat retrieved content as untrusted input.",
       "references": "[Zou et al.: PoisonedRAG](https://arxiv.org/abs/2402.07867) · [OWASP GenAI: Prompt Injection](https://genai.owasp.org/llmrisk/llm01-prompt-injection/)"
     }
   ]

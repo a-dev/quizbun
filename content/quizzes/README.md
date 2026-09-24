@@ -1,6 +1,6 @@
 # Public quizzes
 
-One JSON file per public Quiz, conforming to the Quiz Object Standard
+One JSON file per public quiz, conforming to the Quiz Object Standard
 (`/schema/quiz.v1.json`). The filename must equal the quiz `id`: `{id}.json`.
 
 These files are the Catalog content source: the site build loads them through

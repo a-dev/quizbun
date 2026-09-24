@@ -1,20 +1,20 @@
 {
   "schemaVersion": 1,
   "id": "node-streams-backpressure",
-  "title": "Node.js streams & backpressure",
-  "description": "Readable, Writable, and Transform streams, `.pipe()` vs `stream.pipeline()`, what backpressure actually protects, and how object mode changes the rules. Every answer is verified by running the code in Node.",
+  "title": "Node.js streams: flow control, piping, and object mode",
+  "description": "Readable, Writable, and Transform streams, `.pipe()` versus `stream.pipeline()`, what backpressure protects, and how object mode changes the rules. Each answer comes with code we ran in Node to check it.",
   "language": "en",
   "tags": ["nodejs", "javascript", "async"],
   "questions": [
     {
       "id": "transform-extends-duplex",
-      "title": "A Transform stream is a specialized form of which base stream class?",
-      "description": "Name the stream class with both a readable and a writable side that Transform builds on.",
+      "title": "A Transform stream is a special kind of which base stream class?",
+      "description": "Name the class with both a readable side and a writable side that Transform builds on.",
       "images": [
         {
           "src": "stream-classes.svg",
-          "alt": "A class map read as extends: Readable, a source you pull chunks out of, and Writable, a sink you push chunks into, both feed into Duplex — one object with a readable side and a writable side — which in turn feeds Transform, a Duplex whose readable side is derived from its writable side. Four cards list the methods you implement: _read(size), _write(chunk, enc, cb), _transform(chunk, enc, cb), and _flush(cb), a Transform's one last push after the final chunk. A note says you call read, write and pipe while Node calls the underscore versions, and that _flush runs before 'end'.",
-          "caption": "Transform sits one level under Duplex.",
+          "alt": "A class map where each arrow means extends. Readable, a source you pull chunks from, and Writable, a sink you push chunks into, both lead to Duplex, one object with a readable side and a writable side. Duplex leads to Transform, a Duplex whose readable side is computed from its writable side. Four cards list the methods you implement: _read(size), _write(chunk, enc, cb), _transform(chunk, enc, cb), and _flush(cb), which lets a Transform push once more after the final chunk. A note says you call read, write, and pipe, while Node calls the underscore versions, and that _flush runs before 'end'.",
+          "caption": "Transform sits one level below Duplex.",
           "placement": "explanation",
           "width": 720,
           "height": 520
@@ -25,18 +25,18 @@
         "mode": "text",
         "acceptedAnswers": ["Duplex", "Duplex stream"]
       },
-      "explanation": "A `Transform` extends `Duplex`. A `Duplex` has an *independent* readable side and writable side (think of a TCP socket: you read from it and write to it, and the two directions are unrelated). A `Transform` is the special case where the readable output is **computed from** the writable input — you write chunks in, a transformed version comes out.\n\nYou can confirm the hierarchy directly:\n\n```js\nconst { Transform, Duplex } = require(\"node:stream\");\nconsole.log(Object.getPrototypeOf(Transform.prototype) === Duplex.prototype); // true\n```\n\nSo the chain is `Transform → Duplex → (Readable + Writable)`. `zlib.createGzip()` and `crypto.createHash()` are everyday Transforms.",
+      "explanation": "`Transform` extends `Duplex`. A `Duplex` has a readable side and a writable side that work independently. A TCP socket is the classic example: you read from it and write to it, and the two directions are unrelated. A `Transform` is a `Duplex` whose output is computed from its input. You write chunks in, and a transformed version comes out.\n\nYou can check the hierarchy yourself:\n\n```js\nconst { Transform, Duplex } = require(\"node:stream\");\nconsole.log(Object.getPrototypeOf(Transform.prototype) === Duplex.prototype); // true\n```\n\nSo the chain is `Transform → Duplex → (Readable + Writable)`. `zlib.createGzip()` and `crypto.createHash()` are Transforms you have probably used already.",
       "references": "[Node.js: Class stream.Transform](https://nodejs.org/api/stream.html#class-streamtransform)"
     },
     {
       "id": "write-returns-false",
       "title": "What does `writable.write(chunk)` returning `false` tell you?",
-      "description": "A `write()` call returns `false`. Pick the correct interpretation.",
+      "description": "A `write()` call returns `false`. What does that mean?",
       "images": [
         {
           "src": "pipe-backpressure.svg",
-          "alt": "A pipe from a Readable created by createReadStream to a slow Writable HTTP response, with the writable's internal queue drawn between them as a fill bar against a dashed highWaterMark line. Two panels follow. When the queue is at or above the mark, write(chunk) returns false — the chunk is still accepted and queued — and pipe() calls readable.pause(). When the queue drains below the mark, the 'drain' event fires and pipe() calls readable.resume(). A closing note says ignoring the false only queues more chunks in memory until RSS kills the process, so backpressure guards memory rather than the socket or the disk, and that objectMode counts objects, making the default mark 16 objects instead of 16 KB.",
-          "caption": "`false` is a queue-depth signal, not a rejection.",
+          "alt": "A pipe from a Readable made by createReadStream to a slow Writable HTTP response. Between them, the writable's internal queue is drawn as a fill bar with a dashed highWaterMark line. Two panels follow. In the first, the queue is at or above the mark: write(chunk) returns false, the chunk is still queued, and pipe() calls readable.pause(). In the second, the queue drains below the mark: the 'drain' event fires and pipe() calls readable.resume(). A closing note says that ignoring false only queues more chunks in memory until the process runs out of it, so backpressure protects memory rather than the socket or the disk. It also says objectMode counts objects, so the default mark is 16 objects instead of 16 KB.",
+          "caption": "`false` reports how full the queue is. The chunk still goes in.",
           "placement": "explanation",
           "width": 720,
           "height": 528
@@ -45,11 +45,11 @@
       "type": "single-choice",
       "options": [
         {
-          "text": "The internal buffer has reached `highWaterMark`; you should stop writing and wait for the `'drain'` event.",
+          "text": "The internal buffer has reached `highWaterMark`. Stop writing and wait for the `'drain'` event.",
           "isCorrect": true
         },
         {
-          "text": "The chunk was rejected and discarded — you must call `write()` again with the same chunk.",
+          "text": "The chunk was rejected and discarded, so you must call `write()` again with the same chunk.",
           "isCorrect": false
         },
         {
@@ -61,18 +61,18 @@
           "isCorrect": false
         }
       ],
-      "explanation": "A `false` return is a **flow-control signal, not an error**. The chunk you just passed is still accepted and buffered — `false` only means the buffered amount has reached `highWaterMark`, so a well-behaved producer should pause and resume on `'drain'`.\n\nProof that the chunk is not dropped:\n\n```js\nconst { Writable } = require(\"node:stream\");\nconst w = new Writable({ highWaterMark: 4, write(c, e, cb) { setTimeout(cb, 1000); } });\nconsole.log(w.write(\"zzzz\")); // false  (buffered length 4 >= hwm 4)\nconsole.log(w.writableLength);  // 4      (the chunk is buffered, not lost)\n```\n\nIgnoring `false` is legal — Node keeps buffering — but that is exactly how you defeat backpressure and grow memory without bound.",
+      "explanation": "`false` is a flow-control signal, and the stream still accepts and buffers the chunk you just passed. It only means the buffer has reached `highWaterMark`, so a well-behaved producer should pause and resume on `'drain'`.\n\nThis shows the chunk isn't dropped:\n\n```js\nconst { Writable } = require(\"node:stream\");\nconst w = new Writable({ highWaterMark: 4, write(c, e, cb) { setTimeout(cb, 1000); } });\nconsole.log(w.write(\"zzzz\")); // false  (buffered length 4 >= hwm 4)\nconsole.log(w.writableLength);  // 4      (the chunk is buffered, not lost)\n```\n\nYou're allowed to ignore `false`, and Node will keep buffering. That defeats backpressure, though, and memory grows without limit.",
       "references": "[Node.js: writable.write()](https://nodejs.org/api/stream.html#writablewritechunk-encoding-callback)"
     },
     {
       "id": "what-backpressure-protects",
-      "title": "What does backpressure in Node streams actually protect?",
-      "description": "Backpressure is the signal a slow consumer sends a fast producer. What resource is it guarding?",
+      "title": "What does backpressure in Node streams protect?",
+      "description": "Backpressure is how a slow consumer tells a fast producer to wait. Which resource does it protect?",
       "images": [
         {
           "src": "pipe-backpressure.svg",
-          "alt": "A pipe from a Readable created by createReadStream to a slow Writable HTTP response, with the writable's internal queue drawn between them as a fill bar against a dashed highWaterMark line. Two panels follow. When the queue is at or above the mark, write(chunk) returns false — the chunk is still accepted and queued — and pipe() calls readable.pause(). When the queue drains below the mark, the 'drain' event fires and pipe() calls readable.resume(). A closing note says ignoring the false only queues more chunks in memory until RSS kills the process, so backpressure guards memory rather than the socket or the disk, and that objectMode counts objects, making the default mark 16 objects instead of 16 KB.",
-          "caption": "The queue in the middle is process memory, and nothing else.",
+          "alt": "A pipe from a Readable made by createReadStream to a slow Writable HTTP response. Between them, the writable's internal queue is drawn as a fill bar with a dashed highWaterMark line. Two panels follow. In the first, the queue is at or above the mark: write(chunk) returns false, the chunk is still queued, and pipe() calls readable.pause(). In the second, the queue drains below the mark: the 'drain' event fires and pipe() calls readable.resume(). A closing note says that ignoring false only queues more chunks in memory until the process runs out of it, so backpressure protects memory rather than the socket or the disk. It also says objectMode counts objects, so the default mark is 16 objects instead of 16 KB.",
+          "caption": "The queue in the middle lives in process memory.",
           "placement": "explanation",
           "width": 720,
           "height": 528
@@ -81,29 +81,29 @@
       "type": "single-choice",
       "options": [
         {
-          "text": "Memory — it stops a fast producer from growing the consumer's buffer without bound.",
+          "text": "Memory. It stops a fast producer from growing the consumer's buffer without limit.",
           "isCorrect": true
         },
         {
-          "text": "Ordering — it keeps chunks from arriving out of sequence.",
+          "text": "Ordering. It keeps chunks from arriving out of sequence.",
           "isCorrect": false
         },
         {
-          "text": "CPU time — it caps how much work the event loop does per tick.",
+          "text": "CPU time. It caps how much work the event loop does per tick.",
           "isCorrect": false
         },
         {
-          "text": "Bandwidth — it compresses data so fewer bytes travel over the network.",
+          "text": "Bandwidth. It compresses data so fewer bytes cross the network.",
           "isCorrect": false
         }
       ],
-      "explanation": "Backpressure is flow control whose job is to keep buffered (unconsumed) data from piling up in **process memory**. When a producer outruns a consumer, the unread chunks have to live *somewhere* — the stream's internal buffer, i.e. RAM. Backpressure is the feedback loop (`write()` returning `false`, then `'drain'`) that throttles the producer so the buffer hovers near `highWaterMark` instead of growing until the process runs out of heap.\n\nIt is *not* about ordering (streams already deliver chunks in order), nor CPU scheduling, nor bandwidth/compression. Picture a fast tap filling a slow-draining sink: backpressure turns the tap down so the sink never overflows — and the sink is your memory.",
+      "explanation": "When a producer outruns a consumer, the unread chunks have to wait somewhere, and that place is the stream's internal buffer in process memory. Backpressure is the feedback loop that slows the producer down: `write()` returns `false`, the producer pauses, and `'drain'` tells it to continue. The buffer stays near `highWaterMark` instead of growing until the process runs out of heap.\n\nStreams already deliver chunks in order, and backpressure has nothing to do with CPU scheduling, bandwidth, or compression. Picture a fast tap over a slow drain. Backpressure turns the tap down before the sink overflows, and the sink is your memory.",
       "references": "[Node.js: Backpressuring in Streams](https://nodejs.org/en/learn/modules/backpressuring-in-streams)"
     },
     {
       "id": "pipe-vs-pipeline",
       "title": "Which statements about `.pipe()` and `stream.pipeline()` are correct?",
-      "description": "Select every true statement. Both connect a readable to a writable, but they differ in lifecycle handling.",
+      "description": "Select every true statement. Both connect a readable to a writable, but they handle errors and cleanup differently.",
       "type": "multiple-choice",
       "options": [
         {
@@ -123,18 +123,18 @@
           "isCorrect": false
         }
       ],
-      "explanation": "The common myth is that `.pipe()` does not handle backpressure — it does. The real gap is **error and resource handling**. With `.pipe()`, if one stream errors, the others are left dangling (not destroyed), leaking file descriptors and memory; you have to wire `'error'` handlers and `destroy()` calls on every stream yourself.\n\n`stream.pipeline()` (Node 10+) exists to fix exactly this: it forwards data with backpressure **and** destroys all streams and surfaces the first error.\n\n```js\nconst { pipeline } = require(\"node:stream\");\npipeline(src, transform, dest, (err) => {\n  if (err) console.error(\"failed, all streams destroyed:\", err.message);\n});\n```\n\nVerified contrast: after the destination errors, `src.destroyed` is `false` with `.pipe()` but `true` with `pipeline()`. Prefer `pipeline` (or `stream/promises`) for anything beyond a toy.",
+      "explanation": "A common myth says `.pipe()` ignores backpressure. It handles backpressure fine. The real difference is error handling and cleanup. With `.pipe()`, if one stream errors, nothing destroys the others, so they leak file descriptors and memory. You have to add `'error'` handlers and `destroy()` calls to every stream yourself.\n\n`stream.pipeline()` (Node 10+) fixes this. It forwards data with backpressure, destroys every stream when one fails, and reports the first error.\n\n```js\nconst { pipeline } = require(\"node:stream\");\npipeline(src, transform, dest, (err) => {\n  if (err) console.error(\"failed, all streams destroyed:\", err.message);\n});\n```\n\nWe checked the difference: after the destination errors, `src.destroyed` is `false` with `.pipe()` and `true` with `pipeline()`. Use `pipeline` (or the promise version in `stream/promises`) for anything bigger than a toy script.",
       "references": "[Node.js: stream.pipeline()](https://nodejs.org/api/stream.html#streampipelinesource-transforms-destination-callback)"
     },
     {
       "id": "custom-stream-methods",
-      "title": "When writing custom streams, which implementation rules are correct?",
-      "description": "Select every true statement about the underscore-prefixed methods you implement.",
+      "title": "Which rules for writing custom streams are correct?",
+      "description": "Select every true statement about the underscore methods you implement.",
       "images": [
         {
           "src": "stream-classes.svg",
-          "alt": "A class map read as extends: Readable, a source you pull chunks out of, and Writable, a sink you push chunks into, both feed into Duplex — one object with a readable side and a writable side — which in turn feeds Transform, a Duplex whose readable side is derived from its writable side. Four cards list the methods you implement: _read(size), _write(chunk, enc, cb), _transform(chunk, enc, cb), and _flush(cb), a Transform's one last push after the final chunk. A note says you call read, write and pipe while Node calls the underscore versions, and that _flush runs before 'end'.",
-          "caption": "Four underscore methods, all of them called by Node, not you.",
+          "alt": "A class map where each arrow means extends. Readable, a source you pull chunks from, and Writable, a sink you push chunks into, both lead to Duplex, one object with a readable side and a writable side. Duplex leads to Transform, a Duplex whose readable side is computed from its writable side. Four cards list the methods you implement: _read(size), _write(chunk, enc, cb), _transform(chunk, enc, cb), and _flush(cb), which lets a Transform push once more after the final chunk. A note says you call read, write, and pipe, while Node calls the underscore versions, and that _flush runs before 'end'.",
+          "caption": "Node calls all four underscore methods. You don't.",
           "placement": "explanation",
           "width": 720,
           "height": 520
@@ -143,7 +143,7 @@
       "type": "multiple-choice",
       "options": [
         {
-          "text": "A custom `Readable` implements `_read(size)` and emits data via `this.push(chunk)`.",
+          "text": "A custom `Readable` implements `_read(size)` and emits data with `this.push(chunk)`.",
           "isCorrect": true
         },
         {
@@ -159,18 +159,18 @@
           "isCorrect": false
         }
       ],
-      "explanation": "Each base class defines protected methods you override; you never call them directly — the stream machinery does:\n\n- `Readable`: `_read(size)` → call `this.push(chunk)` to supply data, `this.push(null)` to end.\n- `Writable`: `_write(chunk, encoding, callback)` → call `callback()` when the chunk is handled (or `callback(err)`).\n- `Transform`: `_transform(chunk, encoding, callback)` → produce output via `this.push()` or `callback(null, output)`; optionally `_flush(callback)` for trailing data.\n\nA `Transform` already **is** a `Duplex`, so it implements `_read`/`_write` internally on your behalf — you only supply `_transform` (and maybe `_flush`). The constructor shorthand uses the same names without the underscore:\n\n```js\nconst { Transform } = require(\"node:stream\");\nconst upper = new Transform({\n  transform(chunk, enc, cb) { cb(null, chunk.toString().toUpperCase()); }\n});\n// write \"ab\", \"cd\" → reads \"ABCD\"\n```",
+      "explanation": "Each base class has internal methods you override. You never call them yourself; the stream machinery does.\n\n- `Readable`: implement `_read(size)`. Call `this.push(chunk)` to supply data and `this.push(null)` to end.\n- `Writable`: implement `_write(chunk, encoding, callback)`. Call `callback()` when you've handled the chunk, or `callback(err)` if it failed.\n- `Transform`: implement `_transform(chunk, encoding, callback)`. Produce output with `this.push()` or `callback(null, output)`. Add `_flush(callback)` if you need to emit trailing data.\n\nA `Transform` is already a `Duplex`, so it implements `_read` and `_write` for you. You only write `_transform`, plus `_flush` if you need it. The constructor shorthand uses the same names without the underscore:\n\n```js\nconst { Transform } = require(\"node:stream\");\nconst upper = new Transform({\n  transform(chunk, enc, cb) { cb(null, chunk.toString().toUpperCase()); }\n});\n// write \"ab\", \"cd\" → reads \"ABCD\"\n```",
       "references": "[Node.js: Implementing a Transform stream](https://nodejs.org/api/stream.html#implementing-a-transform-stream)"
     },
     {
       "id": "object-mode-default-hwm",
       "title": "In object mode, what is a stream's default `highWaterMark`?",
-      "description": "Give the number of objects buffered by default when `objectMode: true` and no `highWaterMark` is set.",
+      "description": "How many objects does a stream buffer by default when you set `objectMode: true` and leave `highWaterMark` unset?",
       "images": [
         {
           "src": "pipe-backpressure.svg",
-          "alt": "A pipe from a Readable created by createReadStream to a slow Writable HTTP response, with the writable's internal queue drawn between them as a fill bar against a dashed highWaterMark line. Two panels follow. When the queue is at or above the mark, write(chunk) returns false — the chunk is still accepted and queued — and pipe() calls readable.pause(). When the queue drains below the mark, the 'drain' event fires and pipe() calls readable.resume(). A closing note says ignoring the false only queues more chunks in memory until RSS kills the process, so backpressure guards memory rather than the socket or the disk, and that objectMode counts objects, making the default mark 16 objects instead of 16 KB.",
-          "caption": "The blue note: the mark counts objects instead of bytes.",
+          "alt": "A pipe from a Readable made by createReadStream to a slow Writable HTTP response. Between them, the writable's internal queue is drawn as a fill bar with a dashed highWaterMark line. Two panels follow. In the first, the queue is at or above the mark: write(chunk) returns false, the chunk is still queued, and pipe() calls readable.pause(). In the second, the queue drains below the mark: the 'drain' event fires and pipe() calls readable.resume(). A closing note says that ignoring false only queues more chunks in memory until the process runs out of it, so backpressure protects memory rather than the socket or the disk. It also says objectMode counts objects, so the default mark is 16 objects instead of 16 KB.",
+          "caption": "The blue note says the mark counts objects instead of bytes.",
           "placement": "explanation",
           "width": 720,
           "height": 528
@@ -181,18 +181,18 @@
         "mode": "numeric",
         "acceptedAnswers": [16]
       },
-      "explanation": "In object mode, `highWaterMark` is measured in **number of objects**, and the default is **16**. (In byte mode the default is a byte count — historically 16 KiB, raised to 64 KiB in Node 22+ — which is why memorizing the *byte* number is fragile, but the object-mode default of 16 has been stable.)\n\n```js\nconst { Writable } = require(\"node:stream\");\nconst w = new Writable({ objectMode: true, write(o, e, cb) { cb(); } });\nconsole.log(w.writableHighWaterMark); // 16\n```\n\nSo with the default, a producer can get ~16 objects ahead of a slow consumer before `write()` starts returning `false`.",
+      "explanation": "In object mode, `highWaterMark` counts objects, and the default is 16. In byte mode, the default is a byte count. It was 16 KiB for years and went up to 64 KiB in Node 22, so the byte number is easy to misremember. The object-mode default has stayed at 16.\n\n```js\nconst { Writable } = require(\"node:stream\");\nconst w = new Writable({ objectMode: true, write(o, e, cb) { cb(); } });\nconsole.log(w.writableHighWaterMark); // 16\n```\n\nWith the default, a producer can get about 16 objects ahead of a slow consumer before `write()` starts returning `false`.",
       "references": "[Node.js: Buffering and highWaterMark](https://nodejs.org/api/stream.html#buffering)"
     },
     {
       "id": "object-mode-semantics",
-      "title": "What does enabling `objectMode: true` change about a stream?",
-      "description": "Pick the accurate description of object-mode behavior.",
+      "title": "What does `objectMode: true` change about a stream?",
+      "description": "Pick the accurate description of object mode.",
       "images": [
         {
           "src": "pipe-backpressure.svg",
-          "alt": "A pipe from a Readable created by createReadStream to a slow Writable HTTP response, with the writable's internal queue drawn between them as a fill bar against a dashed highWaterMark line. Two panels follow. When the queue is at or above the mark, write(chunk) returns false — the chunk is still accepted and queued — and pipe() calls readable.pause(). When the queue drains below the mark, the 'drain' event fires and pipe() calls readable.resume(). A closing note says ignoring the false only queues more chunks in memory until RSS kills the process, so backpressure guards memory rather than the socket or the disk, and that objectMode counts objects, making the default mark 16 objects instead of 16 KB.",
-          "caption": "The mark changes unit; each chunk passes through whole.",
+          "alt": "A pipe from a Readable made by createReadStream to a slow Writable HTTP response. Between them, the writable's internal queue is drawn as a fill bar with a dashed highWaterMark line. Two panels follow. In the first, the queue is at or above the mark: write(chunk) returns false, the chunk is still queued, and pipe() calls readable.pause(). In the second, the queue drains below the mark: the 'drain' event fires and pipe() calls readable.resume(). A closing note says that ignoring false only queues more chunks in memory until the process runs out of it, so backpressure protects memory rather than the socket or the disk. It also says objectMode counts objects, so the default mark is 16 objects instead of 16 KB.",
+          "caption": "The mark changes units, and each chunk passes through whole.",
           "placement": "explanation",
           "width": 720,
           "height": 528
@@ -201,7 +201,7 @@
       "type": "single-choice",
       "options": [
         {
-          "text": "`highWaterMark` counts objects instead of bytes, and each chunk passes through as a single value — never concatenated or split.",
+          "text": "`highWaterMark` counts objects instead of bytes, and each chunk passes through as a single value that is never merged or split.",
           "isCorrect": true
         },
         {
@@ -217,18 +217,18 @@
           "isCorrect": false
         }
       ],
-      "explanation": "By default a stream moves `Buffer`/`string` data, `highWaterMark` is a byte count, and adjacent chunks may be merged or split. Set `objectMode: true` and the stream instead carries arbitrary JavaScript values (objects, arrays, numbers…), **one discrete value per chunk**, with `highWaterMark` becoming a **count of objects**. No JSON serialization happens — the actual reference flows through.\n\nBackpressure still works; it just counts objects:\n\n```js\nconst { Writable } = require(\"node:stream\");\nconst w = new Writable({ objectMode: true, highWaterMark: 2, write(o, e, cb) { setImmediate(cb); } });\nconsole.log(w.write({ n: 1 })); // true  (1 buffered, < 2)\nconsole.log(w.write({ n: 2 })); // false (2 buffered, hwm reached)\nconsole.log(w.write({ n: 3 })); // false\n```\n\nThis is what lets object-mode streams power record-by-record pipelines (CSV rows, DB results) with the same flow control as byte streams.",
+      "explanation": "By default, a stream carries `Buffer` or string data, `highWaterMark` counts bytes, and Node may merge or split neighboring chunks. With `objectMode: true`, the stream carries any JavaScript value (objects, arrays, numbers), one value per chunk, and `highWaterMark` counts objects. Nothing gets serialized to JSON. The stream passes the actual reference along.\n\nBackpressure still works. It just counts objects:\n\n```js\nconst { Writable } = require(\"node:stream\");\nconst w = new Writable({ objectMode: true, highWaterMark: 2, write(o, e, cb) { setImmediate(cb); } });\nconsole.log(w.write({ n: 1 })); // true  (1 buffered, < 2)\nconsole.log(w.write({ n: 2 })); // false (2 buffered, hwm reached)\nconsole.log(w.write({ n: 3 })); // false\n```\n\nThis is why object-mode streams suit record-by-record pipelines, such as CSV rows or database results. They get the same flow control as byte streams.",
       "references": "[Node.js: Object mode](https://nodejs.org/api/stream.html#object-mode)"
     },
     {
       "id": "ignoring-backpressure",
       "title": "You write to a slow `Writable` in a tight loop and ignore every `false` return. What happens?",
-      "description": "No `'drain'` waiting, no pausing — just keep calling `write()`.",
+      "description": "You never wait for `'drain'` and never pause. You just keep calling `write()`.",
       "images": [
         {
           "src": "pipe-backpressure.svg",
-          "alt": "A pipe from a Readable created by createReadStream to a slow Writable HTTP response, with the writable's internal queue drawn between them as a fill bar against a dashed highWaterMark line. Two panels follow. When the queue is at or above the mark, write(chunk) returns false — the chunk is still accepted and queued — and pipe() calls readable.pause(). When the queue drains below the mark, the 'drain' event fires and pipe() calls readable.resume(). A closing note says ignoring the false only queues more chunks in memory until RSS kills the process, so backpressure guards memory rather than the socket or the disk, and that objectMode counts objects, making the default mark 16 objects instead of 16 KB.",
-          "caption": "Without the pause arrow, the middle box just keeps growing.",
+          "alt": "A pipe from a Readable made by createReadStream to a slow Writable HTTP response. Between them, the writable's internal queue is drawn as a fill bar with a dashed highWaterMark line. Two panels follow. In the first, the queue is at or above the mark: write(chunk) returns false, the chunk is still queued, and pipe() calls readable.pause(). In the second, the queue drains below the mark: the 'drain' event fires and pipe() calls readable.resume(). A closing note says that ignoring false only queues more chunks in memory until the process runs out of it, so backpressure protects memory rather than the socket or the disk. It also says objectMode counts objects, so the default mark is 16 objects instead of 16 KB.",
+          "caption": "Without the pause, the middle box keeps growing.",
           "placement": "explanation",
           "width": 720,
           "height": 528
@@ -237,7 +237,7 @@
       "type": "single-choice",
       "options": [
         {
-          "text": "The internal buffer keeps growing past `highWaterMark` and memory climbs without bound — `highWaterMark` is advisory, not a hard cap.",
+          "text": "The internal buffer grows past `highWaterMark` and memory keeps climbing, because `highWaterMark` only decides when `write()` starts returning `false`.",
           "isCorrect": true
         },
         {
@@ -253,18 +253,18 @@
           "isCorrect": false
         }
       ],
-      "explanation": "`highWaterMark` is a **threshold for the advisory signal, not an enforced ceiling**. Node will happily keep buffering everything you write; nothing throws, nothing is dropped, and the event loop never blocks (writes are non-blocking). The buffer just grows — straight toward an out-of-memory crash if the producer keeps winning.\n\n```js\nconst { Writable } = require(\"node:stream\");\nconst w = new Writable({ highWaterMark: 4, write(c, e, cb) { setTimeout(cb, 1000); } });\nfor (let i = 0; i < 5; i++) w.write(\"zzzz\"); // all return false, all ignored\nconsole.log(w.writableLength); // 20 — far past hwm of 4, no error\n```\n\nThat is the whole point of honoring backpressure: respect `false`, wait for `'drain'`, and the buffer stays bounded. `.pipe()` and `pipeline()` do this for you.",
+      "explanation": "`highWaterMark` only decides when `write()` starts returning `false`. Node doesn't enforce it as a limit. It keeps buffering everything you write: nothing throws, nothing is dropped, and the event loop never blocks, because writes are non-blocking. The buffer just grows, and if the producer keeps winning, the process eventually runs out of memory.\n\n```js\nconst { Writable } = require(\"node:stream\");\nconst w = new Writable({ highWaterMark: 4, write(c, e, cb) { setTimeout(cb, 1000); } });\nfor (let i = 0; i < 5; i++) w.write(\"zzzz\"); // all return false, all ignored\nconsole.log(w.writableLength); // 20 — far past hwm of 4, no error\n```\n\nSo respect `false` and wait for `'drain'`, and the buffer stays bounded. `.pipe()` and `pipeline()` do this for you.",
       "references": "[Node.js: writable.writableLength](https://nodejs.org/api/stream.html#writablewritablelength)"
     },
     {
       "id": "drain-event",
-      "title": "After `write()` returns `false`, which event signals it is safe to resume writing?",
-      "description": "You paused your producer on backpressure. What do you wait for?",
+      "title": "After `write()` returns `false`, which event tells you it's safe to write again?",
+      "description": "Your producer paused because of backpressure. Which event do you wait for?",
       "images": [
         {
           "src": "pipe-backpressure.svg",
-          "alt": "A pipe from a Readable created by createReadStream to a slow Writable HTTP response, with the writable's internal queue drawn between them as a fill bar against a dashed highWaterMark line. Two panels follow. When the queue is at or above the mark, write(chunk) returns false — the chunk is still accepted and queued — and pipe() calls readable.pause(). When the queue drains below the mark, the 'drain' event fires and pipe() calls readable.resume(). A closing note says ignoring the false only queues more chunks in memory until RSS kills the process, so backpressure guards memory rather than the socket or the disk, and that objectMode counts objects, making the default mark 16 objects instead of 16 KB.",
-          "caption": "The right panel: the one event that says writing may resume.",
+          "alt": "A pipe from a Readable made by createReadStream to a slow Writable HTTP response. Between them, the writable's internal queue is drawn as a fill bar with a dashed highWaterMark line. Two panels follow. In the first, the queue is at or above the mark: write(chunk) returns false, the chunk is still queued, and pipe() calls readable.pause(). In the second, the queue drains below the mark: the 'drain' event fires and pipe() calls readable.resume(). A closing note says that ignoring false only queues more chunks in memory until the process runs out of it, so backpressure protects memory rather than the socket or the disk. It also says objectMode counts objects, so the default mark is 16 objects instead of 16 KB.",
+          "caption": "The right panel shows the event that lets writing resume.",
           "placement": "explanation",
           "width": 720,
           "height": 528
@@ -289,7 +289,7 @@
           "isCorrect": false
         }
       ],
-      "explanation": "`'drain'` fires once the buffered amount has fallen back below `highWaterMark`, meaning the writable can accept more data. The canonical backpressure-aware writer looks like:\n\n```js\nfunction writeOne(stream, data, done) {\n  if (!stream.write(data)) stream.once(\"drain\", done); // paused; resume on drain\n  else process.nextTick(done);                          // still room; continue now\n}\n```\n\nThe distractors are real events that mean other things: `'finish'` fires after `end()` once all data is flushed (end of the *writable*), `'resume'` belongs to *readable* streams switching into flowing mode, and there is no generic `'ready'` event for resuming writes after backpressure.",
+      "explanation": "`'drain'` fires when the buffer falls back below `highWaterMark`, so the writable can take more data. A typical backpressure-aware writer looks like this:\n\n```js\nfunction writeOne(stream, data, done) {\n  if (!stream.write(data)) stream.once(\"drain\", done); // paused; resume on drain\n  else process.nextTick(done);                          // still room; continue now\n}\n```\n\n`'finish'` and `'resume'` are real events that mean something else. `'finish'` fires after `end()`, once all data has been flushed. `'resume'` belongs to readable streams and fires when they switch into flowing mode. No standard `'ready'` event tells you to resume writing after backpressure.",
       "references": "[Node.js: Event: 'drain'](https://nodejs.org/api/stream.html#event-drain)"
     },
     {
@@ -299,8 +299,8 @@
       "images": [
         {
           "src": "stream-classes.svg",
-          "alt": "A class map read as extends: Readable, a source you pull chunks out of, and Writable, a sink you push chunks into, both feed into Duplex — one object with a readable side and a writable side — which in turn feeds Transform, a Duplex whose readable side is derived from its writable side. Four cards list the methods you implement: _read(size), _write(chunk, enc, cb), _transform(chunk, enc, cb), and _flush(cb), a Transform's one last push after the final chunk. A note says you call read, write and pipe while Node calls the underscore versions, and that _flush runs before 'end'.",
-          "caption": "`_flush` is the last chance before `'end'`.",
+          "alt": "A class map where each arrow means extends. Readable, a source you pull chunks from, and Writable, a sink you push chunks into, both lead to Duplex, one object with a readable side and a writable side. Duplex leads to Transform, a Duplex whose readable side is computed from its writable side. Four cards list the methods you implement: _read(size), _write(chunk, enc, cb), _transform(chunk, enc, cb), and _flush(cb), which lets a Transform push once more after the final chunk. A note says you call read, write, and pipe, while Node calls the underscore versions, and that _flush runs before 'end'.",
+          "caption": "`_flush` is your last chance to push before `'end'`.",
           "placement": "explanation",
           "width": 720,
           "height": 520
@@ -309,7 +309,7 @@
       "type": "single-choice",
       "options": [
         {
-          "text": "To emit any final buffered output after the last input chunk but before `'end'` — e.g. a compressor flushing its remaining bytes.",
+          "text": "To emit any leftover output after the last input chunk and before `'end'`, like a compressor flushing its final bytes.",
           "isCorrect": true
         },
         {
@@ -325,18 +325,18 @@
           "isCorrect": false
         }
       ],
-      "explanation": "Some transforms accumulate state and must emit a tail once the input ends. `_flush(callback)` is called **after the last chunk has been written but before the `'end'` event**, giving you a final chance to `this.push()` leftover output. A gzip Transform, for example, holds compression state and must flush the final bytes so the archive is complete.\n\n```js\nconst { Transform } = require(\"node:stream\");\nconst buf = [];\nconst join = new Transform({\n  transform(chunk, enc, cb) { buf.push(chunk.toString()); cb(); },\n  flush(cb) { cb(null, buf.join(\",\")); } // emit the accumulated tail before 'end'\n});\n// write \"a\", \"b\", \"c\", then end() → reads \"a,b,c\"\n```\n\nIt does not free memory, touch file descriptors, or reset the stream for reuse — Node streams are single-use.",
+      "explanation": "Some transforms build up state and need to emit a tail once the input ends. Node calls `_flush(callback)` after the last chunk has been written and before the `'end'` event, so you get one last chance to `this.push()` leftover output. A gzip Transform, for example, holds compression state and must flush its final bytes, or the archive is incomplete.\n\n```js\nconst { Transform } = require(\"node:stream\");\nconst buf = [];\nconst join = new Transform({\n  transform(chunk, enc, cb) { buf.push(chunk.toString()); cb(); },\n  flush(cb) { cb(null, buf.join(\",\")); } // emit the accumulated tail before 'end'\n});\n// write \"a\", \"b\", \"c\", then end() → reads \"a,b,c\"\n```\n\n`_flush` doesn't free memory, touch file descriptors, or reset the stream. Node streams can't be reused anyway.",
       "references": "[Node.js: transform._flush()](https://nodejs.org/api/stream.html#transform_flushcallback)"
     },
     {
       "id": "pipe-http-backpressure",
-      "title": "`fs.createReadStream(bigFile).pipe(res)` streams a huge file to a slow HTTP client. How is memory kept bounded?",
-      "description": "`res` is the writable HTTP response and the client reads slowly. What does `pipe()` do under the hood?",
+      "title": "`fs.createReadStream(bigFile).pipe(res)` sends a huge file to a slow HTTP client. What keeps memory bounded?",
+      "description": "`res` is the writable HTTP response, and the client reads slowly. What does `pipe()` do behind the scenes?",
       "images": [
         {
           "src": "pipe-backpressure.svg",
-          "alt": "A pipe from a Readable created by createReadStream to a slow Writable HTTP response, with the writable's internal queue drawn between them as a fill bar against a dashed highWaterMark line. Two panels follow. When the queue is at or above the mark, write(chunk) returns false — the chunk is still accepted and queued — and pipe() calls readable.pause(). When the queue drains below the mark, the 'drain' event fires and pipe() calls readable.resume(). A closing note says ignoring the false only queues more chunks in memory until RSS kills the process, so backpressure guards memory rather than the socket or the disk, and that objectMode counts objects, making the default mark 16 objects instead of 16 KB.",
-          "caption": "`pipe()` wires the pause and resume for you.",
+          "alt": "A pipe from a Readable made by createReadStream to a slow Writable HTTP response. Between them, the writable's internal queue is drawn as a fill bar with a dashed highWaterMark line. Two panels follow. In the first, the queue is at or above the mark: write(chunk) returns false, the chunk is still queued, and pipe() calls readable.pause(). In the second, the queue drains below the mark: the 'drain' event fires and pipe() calls readable.resume(). A closing note says that ignoring false only queues more chunks in memory until the process runs out of it, so backpressure protects memory rather than the socket or the disk. It also says objectMode counts objects, so the default mark is 16 objects instead of 16 KB.",
+          "caption": "`pipe()` handles the pause and resume for you.",
           "placement": "explanation",
           "width": 720,
           "height": 528
@@ -345,7 +345,7 @@
       "type": "single-choice",
       "options": [
         {
-          "text": "When `res.write()` returns `false`, `pipe()` pauses the readable and resumes it on `res`'s `'drain'`, so reads track the client's speed.",
+          "text": "When `res.write()` returns `false`, `pipe()` pauses the readable and resumes it on `res`'s `'drain'`, so reads keep pace with the client.",
           "isCorrect": true
         },
         {
@@ -361,7 +361,7 @@
           "isCorrect": false
         }
       ],
-      "explanation": "`pipe()` wires the two streams' flow control together. It watches the destination's `write()` return value: on `false` it calls `source.pause()` (stopping the file reads), and it listens for the destination's `'drain'` to call `source.resume()`. The result is that the file is read only as fast as the socket can send, so at most about one `highWaterMark` of data sits in memory regardless of file size — a 10 GB file can stream in roughly constant memory.\n\nThe distractors describe the failure modes backpressure prevents: buffering everything (memory blow-up), dropping data (corruption), or blocking the loop (Node never blocks on I/O). `pipeline(fs.createReadStream(bigFile), res, cb)` behaves the same way but also cleans up and reports errors.",
+      "explanation": "`pipe()` links the flow control of the two streams. It watches what the destination's `write()` returns. On `false`, it calls `source.pause()`, which stops reading the file. When the destination emits `'drain'`, it calls `source.resume()`. The file is read only as fast as the socket can send it, so about one `highWaterMark` of data sits in memory at a time, whatever the file size. A 10 GB file streams in roughly constant memory.\n\nThe wrong answers describe the failures backpressure prevents. Buffering the whole file blows up memory, dropping bytes corrupts the data, and Node never blocks the event loop on I/O. `pipeline(fs.createReadStream(bigFile), res, cb)` works the same way and also cleans up and reports errors.",
       "references": "[Node.js: readable.pipe()](https://nodejs.org/api/stream.html#readablepipedestination-options)"
     }
   ]

@@ -15,7 +15,7 @@ export function QuizbunCreate({ copyPrompt }: Readonly<Props>) {
   return (
     <div className={styles.root}>
       <p className={styles.eyebrow}>
-        <Sparkles className={styles.eyebrowIcon} size="16" aria-hidden="true" />
+        <Sparkles className={styles.eyebrowIcon} size="14" aria-hidden="true" />
         ...with the AI you already use
       </p>
 
@@ -25,7 +25,7 @@ export function QuizbunCreate({ copyPrompt }: Readonly<Props>) {
             Nothing on your topic? <em className={styles.accent}>Write it in a minute.</em>
           </h2>
           <span className={styles.marker} aria-hidden="true">
-            <ChevronDown size="24" />
+            <ChevronDown size="16" />
           </span>
         </summary>
 
