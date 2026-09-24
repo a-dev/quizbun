@@ -65,7 +65,7 @@ async function expectEveryCardTagged(page: Page, tag: string) {
   expect(cardCount).toBeGreaterThan(0);
 
   for (let index = 0; index < cardCount; index += 1) {
-    const tags = await cards.nth(index).getByLabel("Tags").locator("div").allInnerTexts();
+    const tags = await cards.nth(index).getByLabel("Tags").getByRole("link").allInnerTexts();
 
     expect(tags.map((text) => text.trim())).toContain(tag);
   }
@@ -109,7 +109,7 @@ test("Catalog lists Quizzes, filters by Tags, syncs deep links, and opens a Quiz
   const firstCard = quizCards(page).first();
   const quizTitle = (await firstCard.getByRole("heading").innerText()).trim();
 
-  await firstCard.getByRole("link").click();
+  await firstCard.getByRole("heading").getByRole("link").click();
 
   await expect(page).toHaveURL(/\/quizzes\/[^/]+\/$/);
   await expect(page.getByRole("heading", { name: quizTitle, level: 1 })).toBeVisible();
