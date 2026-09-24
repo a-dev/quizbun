@@ -1,6 +1,6 @@
 /**
- * Mutation testing — optional, never part of CI. Run it with `bun run mutate`
- * (or `bun run mutate:file <glob>`) when you want to know whether a test suite
+ * Mutation testing — optional, never part of CI. Run it with `bun run test:mutation`
+ * (or `bun run test:mutate  <glob>`) when you want to know whether a test suite
  * actually asserts on the behaviour it covers.
  *
  * `@stryker-mutator/vitest-runner` is patched (see `patches/`): it builds
