@@ -1,10 +1,9 @@
 import type { ReactNode } from "react";
 
-import { ArrowRight } from "lucide-react";
-
 import { renderInlineMarkdownExcerpt, renderMarkdownFieldText } from "@/shared/lib/render";
 import type { QuizSummary } from "@/shared/lib/storage";
 import { Badge } from "@/shared/ui/badge";
+import { LinkArrow } from "@/shared/ui/link-arrow";
 import { MarkdownRender } from "@/shared/ui/markdown";
 
 import { cx, typography } from "#styles";
@@ -57,7 +56,7 @@ export function QuizCard({
   isPreview = false,
   size = "m",
   actions,
-}: QuizCardProps) {
+}: Readonly<QuizCardProps>) {
   const descriptionExcerpt =
     showDescription && summary.description !== undefined
       ? renderInlineMarkdownExcerpt(firstParagraph(summary.description), {
@@ -96,10 +95,8 @@ export function QuizCard({
           </span>
         ) : (
           <a href={href} className={cx(typography.hLink, styles.titleLink)}>
-            <>
-              {renderMarkdownFieldText("quizTitle", summary.title)}
-              <ArrowRight size="18" className={styles.arrowLink} />
-            </>
+            {renderMarkdownFieldText("quizTitle", summary.title)}
+            <LinkArrow size={18} motion="bounce" className={styles.arrowLink} />
           </a>
         )}
       </h3>

@@ -1,6 +1,6 @@
 import type { ComponentProps } from "react";
 
-import { ArrowLeft } from "lucide-react";
+import { LinkArrow } from "../link-arrow";
 
 import { cx } from "#styles";
 import styles from "./back-button.module.css";
@@ -27,7 +27,7 @@ type Props = LinkProps | ButtonProps;
 export function BackButton({ text = "Back", className, ...props }: Props) {
   const content = (
     <>
-      <ArrowLeft size={16} className={styles.icon} />
+      <LinkArrow size={16} motion="wobbly" direction="left" className={styles.icon} />
       <span className={styles.text}>{text}</span>
     </>
   );
