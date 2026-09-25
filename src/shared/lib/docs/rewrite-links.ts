@@ -11,7 +11,8 @@ import { resolve } from "node:path";
  */
 
 export const GITHUB_REPO_URL = "https://github.com/a-dev/quizbun";
-export const SITE_URL = "https://a-dev.github.io/quizbun/";
+export const SITE_URL = "https://quizbun.fyi/";
+const LEGACY_SITE_URL = "https://a-dev.github.io/quizbun/";
 
 /** Repo Markdown files that have a site page rendered from them. */
 export const DOC_SITE_PAGES: Readonly<Record<string, string>> = {
@@ -48,6 +49,10 @@ export function resolveDocLink(target: string, context: DocLinkContext): string 
   // previews and on the live deploy alike.
   if (trimmedTarget.startsWith(SITE_URL)) {
     return joinBase(context.base, trimmedTarget.slice(SITE_URL.length));
+  }
+
+  if (trimmedTarget.startsWith(LEGACY_SITE_URL)) {
+    return joinBase(context.base, trimmedTarget.slice(LEGACY_SITE_URL.length));
   }
 
   if (/^https?:\/\//i.test(trimmedTarget)) {

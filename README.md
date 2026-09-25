@@ -3,7 +3,7 @@
 Quizbun is a static, explanation-first quiz catalog built around the Quiz Object
 Standard.
 
-[https://a-dev.github.io/quizbun/](https://a-dev.github.io/quizbun/)
+[https://quizbun.fyi/](https://quizbun.fyi/)
 
 ## Create quizzes with an AI agent
 

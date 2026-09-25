@@ -7,3 +7,9 @@ test("the built site serves the home page", async ({ page }) => {
   const response = await page.goto("/");
   expect(response?.ok()).toBeTruthy();
 });
+
+test("the built site serves a catalog deep link", async ({ page }) => {
+  const response = await page.goto("/quizzes/");
+  expect(response?.ok()).toBeTruthy();
+  await expect(page).toHaveURL(/\/quizzes\/$/);
+});

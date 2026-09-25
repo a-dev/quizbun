@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { type DocLinkContext, GITHUB_REPO_URL, resolveDocLink } from "./rewrite-links";
 
 const context = (overrides: Partial<DocLinkContext> = {}): DocLinkContext => ({
-  base: "/quizbun/",
+  base: "/",
   fileExists: () => true,
   sourceRepoPath: "docs/standard.md",
   ...overrides,
@@ -11,16 +11,16 @@ const context = (overrides: Partial<DocLinkContext> = {}): DocLinkContext => ({
 
 describe("resolveDocLink", () => {
   it("rewrites links between published docs to site routes", () => {
-    expect(resolveDocLink("./quiz-generation-page.md", context())).toBe("/quizbun/docs/prompt/");
+    expect(resolveDocLink("./quiz-generation-page.md", context())).toBe("/docs/prompt/");
     expect(
       resolveDocLink("../standard.md", context({ sourceRepoPath: "docs/examples/README.md" })),
-    ).toBe("/quizbun/docs/standard/");
+    ).toBe("/docs/standard/");
   });
 
   it("preserves fragments on rewritten site links", () => {
     expect(
       resolveDocLink("./standard.md#markdown", context({ sourceRepoPath: "docs/contributing.md" })),
-    ).toBe("/quizbun/docs/standard/#markdown");
+    ).toBe("/docs/standard/#markdown");
   });
 
   it("works without a base path prefix", () => {
@@ -33,7 +33,7 @@ describe("resolveDocLink", () => {
         "../../public/schema/quiz.v1.json",
         context({ sourceRepoPath: "docs/examples/README.md" }),
       ),
-    ).toBe("/quizbun/schema/quiz.v1.json");
+    ).toBe("/schema/quiz.v1.json");
   });
 
   it("rewrites canonical example JSON files to their download routes", () => {
@@ -42,7 +42,7 @@ describe("resolveDocLink", () => {
         "./public-quiz-single-choice.json",
         context({ sourceRepoPath: "docs/examples/README.md" }),
       ),
-    ).toBe("/quizbun/docs/examples/public-quiz-single-choice.json");
+    ).toBe("/docs/examples/public-quiz-single-choice.json");
   });
 
   it("points repo-only files at GitHub", () => {
@@ -52,9 +52,11 @@ describe("resolveDocLink", () => {
   });
 
   it("rewrites absolute live-site links to base-relative ones", () => {
-    expect(resolveDocLink("https://a-dev.github.io/quizbun/import/", context())).toBe(
-      "/quizbun/import/",
-    );
+    expect(resolveDocLink("https://quizbun.fyi/import/", context())).toBe("/import/");
+  });
+
+  it("rewrites legacy site links to root paths", () => {
+    expect(resolveDocLink("https://a-dev.github.io/quizbun/import/", context())).toBe("/import/");
   });
 
   it("passes through external, mailto, and fragment-only links", () => {
