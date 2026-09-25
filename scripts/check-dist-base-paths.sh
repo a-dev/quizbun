@@ -14,18 +14,21 @@ if [[ ! -f "$DIST_DIR/manifest.webmanifest" || ! -f "$DIST_DIR/robots.txt" || ! 
   exit 1
 fi
 
-if rg -n '"/quizbun/|url\(/quizbun/|https://a-dev\.github\.io/quizbun' "$DIST_DIR" -g '*.html' -g '*.xml' -g '*.txt' -g '*.webmanifest' -g '*.js' -g '*.css'; then
+if find "$DIST_DIR" -type f \( -name '*.html' -o -name '*.xml' -o -name '*.txt' -o -name '*.webmanifest' -o -name '*.js' -o -name '*.css' \) \
+  -exec grep -nEH '"/quizbun/|url\(/quizbun/|https://a-dev\.github\.io/quizbun' {} + | grep .; then
   echo "error: legacy /quizbun/ URL found in '$DIST_DIR'" >&2
   exit 1
 fi
 
-if ! rg -q 'https://quizbun\.fyi/sitemap-0\.xml' "$DIST_DIR/sitemap-index.xml" ||
-   ! rg -q 'Sitemap: https://quizbun\.fyi/sitemap-index\.xml' "$DIST_DIR/robots.txt"; then
+if ! grep -qE 'https://quizbun\.fyi/sitemap-0\.xml' "$DIST_DIR/sitemap-index.xml" ||
+   ! grep -qE 'Sitemap: https://quizbun\.fyi/sitemap-index\.xml' "$DIST_DIR/robots.txt"; then
   echo "error: sitemap or robots.txt does not use the canonical domain" >&2
   exit 1
 fi
 
-if rg -n '<link rel="canonical" href="https?://(?!quizbun\.fyi/)|<meta property="og:url" content="https?://(?!quizbun\.fyi/)' "$DIST_DIR" -g '*.html' --pcre2; then
+if find "$DIST_DIR" -type f -name '*.html' \
+  -exec grep -nEHo '<link rel="canonical" href="https?://[^"]*|<meta property="og:url" content="https?://[^"]*' {} + \
+  | grep -vE 'https?://quizbun\.fyi/'; then
   echo "error: noncanonical page URL found in '$DIST_DIR'" >&2
   exit 1
 fi
