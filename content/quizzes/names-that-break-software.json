@@ -1,0 +1,258 @@
+{
+  "schemaVersion": 1,
+  "id": "names-that-break-software",
+  "title": "Names that break software: NULL, True and little Bobby Tables",
+  "description": "A man gets the licence plate NULL and receives $12,049 of strangers' parking tickets. A woman named Null can't book a flight online. An actor named True is locked out of iCloud for six months. A whole English town can't sign up for AOL. Each Question starts from a real person or place, asks what the software did wrong, and ends with the fix.",
+  "language": "en",
+  "tags": ["sql", "security", "i18n", "debugging"],
+  "author": "Quizbun",
+  "questions": [
+    {
+      "id": "null-plate-what-happened",
+      "title": "In late 2016, a security researcher registered this California vanity plate as a programmer's joke. What did it bring him?",
+      "description": "Joseph Tartaro, known as Droogie, chose `NULL` because in many programming languages it means \"no value\".",
+      "type": "single-choice",
+      "images": [
+        {
+          "src": "null-licence-plate.svg",
+          "alt": "A plain, generic licence plate with the word NULL in large capitals and the small label vanity plate underneath.",
+          "caption": "Generic illustration, not California's plate design. Image: Quizbun.",
+          "width": 560,
+          "height": 300
+        },
+        {
+          "src": "null-plate-data-path.svg",
+          "alt": "Two rows of three boxes. Top row, labelled missing plate stored as the text NULL: a parking ticket for a Honda with the plate left blank becomes a citation record with plate equal to the string NULL, and the owner lookup finds NULL equals NULL, a match, so the fine is mailed to the driver whose plate reads NULL. Bottom row, labelled missing plate stored as a real NULL: the same ticket becomes a record with plate equal to NULL, no value at all, and the lookup NULL equals the string NULL gives unknown, so there is no match and the ticket is sent for review.",
+          "caption": "Simplified reconstruction of the reported mechanism. Diagram: Quizbun.",
+          "placement": "explanation",
+          "width": 720,
+          "height": 460
+        }
+      ],
+      "options": [
+        { "text": "Parking tickets written without a plate number were matched to his car, so strangers' fines were mailed to him", "isCorrect": true },
+        { "text": "Plate-reading cameras skipped his car, so he never got a ticket again", "isCorrect": false },
+        { "text": "The DMV system crashed each time an officer searched for his plate", "isCorrect": false },
+        { "text": "Nothing: the DMV rejected the plate as a reserved word before it was issued", "isCorrect": false }
+      ],
+      "explanation": "Hundreds of citations for Hondas, Toyotas and Mercedes arrived from across California. He drives an Infiniti, and he says some tickets dated from 2014, before he had the plate.\n\nThe citations came through the Citation Processing Center, a private company that handles tickets for many California cities. When an officer left the plate field empty, the record reportedly ended up holding `NULL` as text. To a database, the four letters N-U-L-L are an ordinary string, and they match a real plate that reads `NULL`. So every ticket without a plate found an owner: him.\n\nThe camera idea sounds reasonable, but it misses how the data flows. The bug wasn't in reading plates. It was in how a missing value was written down.",
+      "references": "[WIRED: How a 'NULL' License Plate Landed One Hacker in Ticket Hell (2019)](https://www.wired.com/story/null-license-plate-landed-one-hacker-ticket-hell/), [Gizmodo: Security researcher's 'NULL' vanity plates cause glitch](https://gizmodo.com/security-researcher-s-null-vanity-plates-cause-glitch-1837206261)"
+    },
+    {
+      "id": "null-plate-fine-total",
+      "title": "At the peak, how much in other people's traffic fines was assigned to the NULL plate, in US dollars?",
+      "description": "Type a number. An answer within about $1,000 counts.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [12049],
+        "tolerance": 1049
+      },
+      "explanation": "WIRED reported that at one point he faced **$12,049** in fines that weren't his. Most tickets were $37 to $80 each, for parking and stopping violations, so that total means well over a hundred tickets.\n\nThe DMV worked with the processing company to cancel most of them, and the total fell to $6,262 before his DEF CON talk in August 2019. New tickets kept arriving, though. Cancelling the fines cleaned up the data but left the bug in place, so every new ticket without a plate still matched his car.",
+      "references": "[WIRED: How a 'NULL' License Plate Landed One Hacker in Ticket Hell (2019)](https://www.wired.com/story/null-license-plate-landed-one-hacker-ticket-hell/)"
+    },
+    {
+      "id": "null-plate-trigger",
+      "title": "The plate caused no trouble for more than a year. What set off the flood of tickets?",
+      "type": "single-choice",
+      "options": [
+        { "text": "He paid a genuine $35 ticket in early 2018, which linked the plate NULL to his name and address", "isCorrect": true },
+        { "text": "He renewed his registration online in 2017, and the DMV website rejected his plate", "isCorrect": false },
+        { "text": "He gave a talk about the plate at DEF CON, and someone reported him", "isCorrect": false },
+        { "text": "A new plate-reading camera network came online in Los Angeles", "isCorrect": false }
+      ],
+      "explanation": "In early 2018 he got a real ticket, $35 for a missing registration sticker, and paid it. WIRED reports that the payment appears to have tied `NULL` to his personal details in the processing center's database. After that, every citation stored with a `NULL` plate had a name and address to go to.\n\nThe 2017 renewal was a real early warning. The DMV website said his plate and VIN were invalid, and he renewed with a reference number instead. But that broke a website form, not the ticket system. The talk came in 2019, long after the tickets began.\n\nThis is a common shape for this kind of bug: bad data can sit unnoticed until another record gives it something to join with.",
+      "references": "[WIRED: How a 'NULL' License Plate Landed One Hacker in Ticket Hell (2019)](https://www.wired.com/story/null-license-plate-landed-one-hacker-ticket-hell/)"
+    },
+    {
+      "id": "null-plate-fix",
+      "title": "Which changes to the ticket system would stop tickets with no plate from reaching the NULL driver?",
+      "type": "multiple-choice",
+      "options": [
+        { "text": "Store a missing plate as SQL `NULL`, not as the text `'NULL'`", "isCorrect": true },
+        { "text": "Refuse to look up an owner when the plate is missing, and send the ticket for manual review", "isCorrect": true },
+        { "text": "Replace the text `'NULL'` with a different placeholder, such as `'NONE'`", "isCorrect": false },
+        { "text": "Compare plates case-sensitively, so `'NULL'` no longer matches `'null'`", "isCorrect": false }
+      ],
+      "explanation": "SQL `NULL` means \"no value\", and it never equals anything, not even another `NULL`. The comparison `plate = 'NULL'` returns *unknown* when `plate` is a real `NULL`, and a `WHERE` clause keeps only rows where the condition is true. So a real `NULL` can't match anybody.\n\n```sql\n-- The bug: a missing plate stored as a four-letter string\nSELECT owner FROM plates WHERE plate = 'NULL';   -- finds the NULL driver\n\n-- The fix: store no value, then check for it explicitly\nSELECT * FROM citations WHERE plate IS NULL;     -- the tickets that need review\n```\n\nThe second fix adds a safety net. Code that sees an empty plate shouldn't try to find an owner at all.\n\nA new placeholder only moves the problem. Plates such as `NONE`, `NOPLATE` or `MISSING` are just as easy to register, and whoever holds one inherits the bug. Case-sensitive matching doesn't help either, because the plate and the placeholder are both uppercase `NULL`.\n\nThe SQL query detective Quiz covers how `NULL` behaves in comparisons, joins and aggregates.",
+      "references": "[Wikipedia: Null (SQL)](https://en.wikipedia.org/wiki/Null_(SQL)), [WIRED: How a 'NULL' License Plate Landed One Hacker in Ticket Hell (2019)](https://www.wired.com/story/null-license-plate-landed-one-hacker-ticket-hell/)"
+    },
+    {
+      "id": "jennifer-null-flights",
+      "title": "Jennifer Null, from Virginia, tries to book a flight on most airline websites. What happens?",
+      "type": "single-choice",
+      "options": [
+        { "text": "The site says she left the surname field blank and asks her to try again", "isCorrect": true },
+        { "text": "The booking goes through, but her ticket prints with no name on it", "isCorrect": false },
+        { "text": "The site flags her as a possible security threat and blocks the booking", "isCorrect": false },
+        { "text": "The site charges her card and then loses the booking", "isCorrect": false }
+      ],
+      "explanation": "She told the BBC in 2016 that most sites report an empty surname field. She has to phone the airline instead, and has sometimes been told her story can't be true.\n\nThe likely cause is a check that treats the text `\"Null\"` as if it meant \"no value\". Some code paths turn a missing value into the string `\"null\"` when they serialize it. A later check that sees `\"null\"` can't tell a missing surname from her real one. Her name is a correct, ordinary string, and the validator mistakes it for a missing value.\n\nIt's the NULL plate bug in reverse. The plate turned missing data into a name. Her name gets turned into missing data.",
+      "references": "[BBC Future: Hello, I'm Mr Null. My name makes me invisible to computers (2016)](https://www.bbc.com/future/article/20160325-the-names-that-break-computer-systems)"
+    },
+    {
+      "id": "rachel-true-lockout",
+      "title": "Actor and author Rachel True went public in March 2021 about being locked out of her iCloud account. How long had it lasted?",
+      "type": "single-choice",
+      "options": [
+        { "text": "About six months", "isCorrect": true },
+        { "text": "About two days", "isCorrect": false },
+        { "text": "About two weeks", "isCorrect": false },
+        { "text": "About three years", "isCorrect": false }
+      ],
+      "explanation": "Rachel True, known for the 1996 film *The Craft*, said she had been unable to use iCloud for about **six months**. She had spent more than six hours on the phone with support over several days, and Apple kept charging her for the storage she couldn't reach.\n\nThe story spread after she posted the error message she'd been seeing. Once it went viral, a member of the iCloud team reached out to help. The next Question looks at that message.",
+      "references": "[The Register: Name True, iCloud access false (2021)](https://www.theregister.com/2021/03/08/name_true_apple_icloud_access/), [9to5Mac: iCloud coding error locks out Rachel True over a boolean flag (2021)](https://9to5mac.com/2021/03/07/icloud-user-locked-out-for-six-months-over-coding-bug-related-to-her-last-name/)"
+    },
+    {
+      "id": "rachel-true-cause",
+      "title": "Rachel True's error message read: `Type error: cannot set value 'true' to property 'lastName'`. What does it suggest went wrong?",
+      "type": "single-choice",
+      "images": [
+        {
+          "src": "true-string-to-boolean.svg",
+          "alt": "A three-step flow. A form field labelled last name contains True. Parsed as a literal without quotes, it becomes lastName colon true in lowercase. A schema check that expects lastName to be a string then raises a type error. Below, two boxes compare the quoted string True, a surname kept as text, with the bare boolean true, a yes or no value that is no longer a name.",
+          "caption": "Illustrative. Apple has not published the cause. Diagram: Quizbun.",
+          "placement": "explanation",
+          "width": 720,
+          "height": 400
+        }
+      ],
+      "options": [
+        { "text": "Somewhere, her surname was read as the boolean `true`, and the `lastName` field only accepts strings", "isCorrect": true },
+        { "text": "Her surname was on a blocklist of reserved words, and the account was frozen", "isCorrect": false },
+        { "text": "Her surname was too short to meet a minimum length rule", "isCorrect": false },
+        { "text": "Her surname matched a SQL keyword and was treated as an injection attempt", "isCorrect": false }
+      ],
+      "explanation": "The message names the property, `lastName`, and the value, lowercase `true`. It's a boolean, not the text \"True\". Somewhere between her keyboard and Apple's servers, a parser or converter saw the four letters with no quotes around them and turned them into a yes/no value. The next step expected a string, so it refused to store a boolean.\n\nThe usual fix is to keep text as text from start to finish. Send names as quoted JSON strings. Declare the field's type in the schema. Never let a generic converter guess types from what the value looks like.\n\nApple didn't publish a post-mortem, so this is the reported mechanism, based on the error message. The other Options don't fit that message: a blocklist, a length rule or an injection filter would reject the name, not complain that a `true` value can't go into a text property.",
+      "references": "[The Register: Name True, iCloud access false (2021)](https://www.theregister.com/2021/03/08/name_true_apple_icloud_access/), [Engadget: iCloud allegedly locked out a user over her last name (2021)](https://www.engadget.com/icloud-true-last-name-lock-out-192224309.html)"
+    },
+    {
+      "id": "yaml-norway-problem",
+      "title": "A config file lists country codes in YAML. A YAML 1.1 parser such as PyYAML loads `country: NO`. What value does it give Norway's code?",
+      "description": "```yaml\ncountries:\n  - GB\n  - FR\n  - NO\n```\n\nType the value, the way the parser would print it.",
+      "type": "input",
+      "validation": {
+        "mode": "text",
+        "acceptedAnswers": ["false", "False", "boolean false", "the boolean false", "bool false"]
+      },
+      "explanation": "In YAML 1.1, a bare `NO` is the boolean **false**. The 1.1 type repository lists `y`, `Y`, `yes`, `Yes`, `YES`, `on`, `On`, `ON` and the `true` spellings as true, and `n`, `N`, `no`, `No`, `NO`, `off`, `Off`, `OFF` and the `false` spellings as false. So the list loads as `['GB', 'FR', False]`, and Norway disappears. Developers call it the Norway problem.\n\nYAML 1.2 (2009) narrowed its core schema to `true` and `false`, but many widely used parsers, PyYAML among them, still follow 1.1.\n\nThe fix is the same one as for Rachel True: say that it's text. Quote it as `\"NO\"`, or use a parser mode or schema that loads strings as strings.",
+      "references": "[YAML 1.1: Boolean Language-Independent Type](https://yaml.org/type/bool.html), [YAML 1.2.2 specification](https://yaml.org/spec/1.2.2/)"
+    },
+    {
+      "id": "scunthorpe-aol-filter",
+      "title": "In 1996, people in Scunthorpe, a town in North Lincolnshire, England, couldn't create AOL accounts. Why?",
+      "type": "single-choice",
+      "images": [
+        {
+          "src": "substring-filter-town-name.svg",
+          "alt": "Two panels using the harmless example word hell and the village name Hellifield. The substring check, name to lower case includes hell, highlights the first four letters of Hellifield and blocks it. The whole-word check, a regular expression with word boundaries around hell, allows Hellifield because hell is inside a longer word.",
+          "caption": "The same mechanism shown with a milder word. Diagram: Quizbun.",
+          "placement": "explanation",
+          "width": 720,
+          "height": 400
+        }
+      ],
+      "options": [
+        { "text": "AOL's profanity filter found a rude word hidden inside the town's name", "isCorrect": true },
+        { "text": "AOL didn't yet offer service to that part of England", "isCorrect": false },
+        { "text": "The town's name was longer than AOL's address field allowed", "isCorrect": false },
+        { "text": "The town's dial-up exchange wasn't compatible with AOL's modems", "isCorrect": false }
+      ],
+      "explanation": "The filter checked for a banned word *anywhere* in the text, and one sits in letters two to five of \"Scunthorpe\". A substring check doesn't know where words begin or end, so it blocks the whole town.\n\nThe diagram shows the same mechanism with a milder word. The village of Hellifield in North Yorkshire contains `hell`, so a substring filter for `hell` blocks it too.\n\nThe case gave the problem its name. Filters that block innocent text because of a substring are said to have the **Scunthorpe problem**. Other towns have hit it too, including Penistone and Clitheroe, and so has London's Horniman Museum.",
+      "references": "[Wikipedia: Scunthorpe problem](https://en.wikipedia.org/wiki/Scunthorpe_problem)"
+    },
+    {
+      "id": "scunthorpe-renamed",
+      "title": "AOL's first answer to Scunthorpe residents didn't fix the filter. What did AOL tell them to do?",
+      "type": "single-choice",
+      "options": [
+        { "text": "Enter the town as \"Sconthorpe\"", "isCorrect": true },
+        { "text": "Enter a nearby town's name instead", "isCorrect": false },
+        { "text": "Write to AOL for a manual exemption", "isCorrect": false },
+        { "text": "Leave the town field blank", "isCorrect": false }
+      ],
+      "explanation": "Resident Doug Blackie found that AOL's registration would accept him only if he typed the town as **Sconthorpe**. One changed letter made the banned substring disappear. The *Scunthorpe Evening Telegraph* covered it on 9 April 1996, and RISKS Digest summed it up: as far as AOL was concerned, the town would \"henceforth be known as\" Sconthorpe.\n\nThat's a workaround, not a fix. It changes the user's data to suit the filter, and the next town or surname with a hidden match hits the same bug. AOL did the same to Craig Cockburn, whose surname contains a banned word: it first told him to write it with a zero in place of the first \"o\".",
+      "references": "[RISKS Digest 18.07: AOL and Scunthorpe (1996)](https://catless.ncl.ac.uk/Risks/18.07.html), [Wikipedia: Scunthorpe problem](https://en.wikipedia.org/wiki/Scunthorpe_problem)"
+    },
+    {
+      "id": "word-boundary-limits",
+      "title": "A developer switches the profanity filter from substring matching to whole-word matching, like `\\bword\\b`. Which problems remain?",
+      "type": "multiple-choice",
+      "options": [
+        { "text": "A person whose surname is itself a word on the list is still blocked", "isCorrect": true },
+        { "text": "Anyone who adds spaces, dots or digits inside a banned word gets past the filter", "isCorrect": true },
+        { "text": "Languages written without spaces between words, such as Chinese, Japanese and Thai, have no word boundaries for `\\b` to find", "isCorrect": true },
+        { "text": "Scunthorpe is still blocked", "isCorrect": false }
+      ],
+      "explanation": "Whole-word matching fixes Scunthorpe itself. In a regular expression, `\\b` matches only where a letter meets a non-letter, so a banned word buried inside \"Scunthorpe\" no longer matches.\n\nThree problems remain:\n\n- **Real names that are listed words.** Some surnames are also English words that a filter might ban. Whole-word matching blocks those exactly as before.\n- **Evasion.** Rude text written with spaces, dots or digits between the letters isn't a whole word anymore, so it gets through. Every workaround that people use to dodge filters works here.\n- **Scripts without spaces.** In JavaScript, `\\b` only treats ASCII letters, digits and `_` as word characters, and Chinese, Japanese and Thai don't separate words with spaces. The filter either matches inside other words again or doesn't work at all.\n\nA filter can't know what a name means. For names and places, the safer design is to skip automatic blocking and send doubtful cases to a person.",
+      "references": "[Wikipedia: Scunthorpe problem](https://en.wikipedia.org/wiki/Scunthorpe_problem), [MDN: Word boundary assertion](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Regular_expressions/Word_boundary_assertion)"
+    },
+    {
+      "id": "bobby-tables-fix",
+      "title": "In xkcd's \"Exploits of a Mom\", a school's database loses its student table because of one pupil's name. Which changes stop it from happening again?",
+      "description": "The mother named her son `Robert'); DROP TABLE Students;--`, nicknamed little Bobby Tables. The school's code builds its query like this:\n\n```js\ndb.query(\"INSERT INTO Students (name) VALUES ('\" + name + \"');\");\n```",
+      "type": "multiple-choice",
+      "options": [
+        { "text": "Use a prepared statement and pass the name as a bound parameter", "isCorrect": true },
+        { "text": "Use the ORM's normal insert method, which binds values as parameters", "isCorrect": true },
+        { "text": "Remove apostrophes from every name before building the query", "isCorrect": false },
+        { "text": "Reject any name that contains the word `DROP`", "isCorrect": false }
+      ],
+      "explanation": "Pasted into the query, the name closes the string with `')`, ends the statement with `;`, adds its own `DROP TABLE Students;` and comments out the rest with `--`. The database can't tell the school's SQL from the pupil's name, because they arrive as one piece of text.\n\nA bound parameter sends the SQL and the value separately:\n\n```js\ndb.query(\"INSERT INTO Students (name) VALUES (?)\", [name]);\n```\n\nThe database parses the query first, then treats `name` as data, whatever characters it contains. An ORM's normal methods do the same thing internally. OWASP lists parameterized queries as the first defence against SQL injection.\n\nStripping apostrophes breaks real names such as O'Brien, and some injections don't need a quote at all: a query built as `\"... WHERE id = \" + id` can be attacked with no apostrophe anywhere. Banning `DROP` is a word filter with the Scunthorpe problem in both directions: it blocks harmless text containing \"drop\", and an attacker who wants to delete or read data has other statements to use.",
+      "references": "[xkcd 327: Exploits of a Mom](https://xkcd.com/327/), [OWASP: SQL Injection Prevention Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/SQL_Injection_Prevention_Cheat_Sheet.html)"
+    },
+    {
+      "id": "falsehoods-count",
+      "title": "In June 2010, Patrick McKenzie published \"Falsehoods Programmers Believe About Names\". How many falsehoods does the list contain?",
+      "type": "single-choice",
+      "options": [
+        { "text": "40", "isCorrect": true },
+        { "text": "10", "isCorrect": false },
+        { "text": "25", "isCorrect": false },
+        { "text": "101", "isCorrect": false }
+      ],
+      "explanation": "The list has **40** numbered items. It opens with \"People have exactly one canonical full name\" and ends with \"People have names.\" In between, the items get more exasperated, and several come in escalating runs, such as a name being assigned at birth, then within a year, then within five years.\n\nEach item describes a check that real software makes, and each one fails for someone. The post started a genre. There are now \"Falsehoods programmers believe\" lists for time, addresses, phone numbers and email.",
+      "references": "[Patrick McKenzie: Falsehoods Programmers Believe About Names (2010)](https://www.kalzumeus.com/2010/06/17/falsehoods-programmers-believe-about-names/)"
+    },
+    {
+      "id": "falsehoods-inspiration",
+      "title": "McKenzie's post opens by pointing to another programmer's complaint from the same day. What happened to John Graham-Cumming?",
+      "type": "single-choice",
+      "options": [
+        { "text": "A website told him his last name contained invalid characters, because of the hyphen", "isCorrect": true },
+        { "text": "A bank merged his account with another customer who had the same name", "isCorrect": false },
+        { "text": "An airline printed his name in all capitals, and security rejected his boarding pass", "isCorrect": false },
+        { "text": "A form cut his surname off after the first ten letters", "isCorrect": false }
+      ],
+      "explanation": "On 17 June 2010, Graham-Cumming blogged about forms that answered \"Graham-Cumming\" with an error saying his last name contained invalid characters. As he put it, the site really meant it wouldn't accept the hyphen, and calling part of someone's name \"invalid\" is rude.\n\nThe bug usually comes from a validation pattern like `^[A-Za-z]+$`. It looks tidy, but it rejects hyphens, apostrophes, spaces and every letter outside basic Latin. The W3C's advice for name fields is to accept the full range of characters people use and validate as little as possible.",
+      "references": "[John Graham-Cumming: Your last name contains invalid characters (2010)](https://blog.jgc.org/2010/06/your-last-name-contains-invalid.html), [W3C: Personal names around the world](https://www.w3.org/International/questions/qa-personal-names)"
+    },
+    {
+      "id": "hawaii-name-too-long",
+      "title": "Janice \"Lokelani\" Keihanaikukauakahihuliheekahaunaele's surname is 36 characters long. Hawaii's ID system in 2013 allowed 35. What did her driver's licence show?",
+      "type": "multiple-choice",
+      "options": [
+        { "text": "Her surname with the final letter cut off", "isCorrect": true },
+        { "text": "No first name at all", "isCorrect": true },
+        { "text": "Her surname abbreviated to its first ten letters", "isCorrect": false },
+        { "text": "Her maiden name in place of her married name", "isCorrect": false }
+      ],
+      "explanation": "Her surname has 35 letters plus an ʻokina, the Hawaiian glottal-stop mark, which makes 36 characters. Hawaii County's system cut it to fit the 35-character limit, and the licence and state ID left out her first name entirely. After a police officer gave her a hard time over the licence during a traffic stop, she wrote to Honolulu station KHON, and the story spread in September 2013.\n\nAfter the story spread, the state updated the system to allow 40 characters for first and last names, and she got a licence with her full name at the end of December 2013.\n\nA fixed-width name field is a guess about the longest name anyone will have. When the guess is wrong, cutting the name off silently is the worst outcome. The document then shows a name that belongs to nobody, and it no longer matches her other records.",
+      "references": "[CBS News: Hawaii woman's last name so long it won't fit on her license (2013)](https://www.cbsnews.com/news/hawaii-womans-last-name-so-long-it-wont-fit-on-her-license/), [Fox News: Hawaii woman with long last name forces state to alter ID policy (2013)](https://www.foxnews.com/us/hawaii-woman-with-long-last-name-forces-state-to-alter-id-policy)"
+    },
+    {
+      "id": "boss-which-are-falsehoods",
+      "title": "Final boss: which of these assumptions about names are false?",
+      "description": "Every person in this Quiz ran into at least one of them.",
+      "type": "multiple-choice",
+      "options": [
+        { "text": "People's names do not change", "isCorrect": true },
+        { "text": "People's names fit within a certain defined amount of space", "isCorrect": true },
+        { "text": "People's names are written in ASCII", "isCorrect": true },
+        { "text": "People have last names, family names, or anything else shared with their relatives", "isCorrect": true }
+      ],
+      "explanation": "All four are false. Each is a paraphrase of an item on McKenzie's list, and each has a real counterexample:\n\n- **Names change.** Jennifer Null took her surname when she married, and the new name broke airline websites.\n- **Names don't fit a fixed width.** Hawaii's 35-character field cut off the end of a real surname.\n- **Names aren't ASCII.** Written Hawaiian uses the ʻokina and the kahakō. Most of the world's names use characters outside ASCII, and a pattern like `^[A-Za-z]+$` rejects them.\n- **Not everyone has a family name.** Many Indonesians go by a single name, and Icelandic surnames are patronymics that differ between parent and child.\n\nThe common fix is to store a name as a Unicode string in one generous field, keep it exactly as the person typed it, and never read meaning into it: not a boolean, not a missing value, not a rude word, not code.",
+      "references": "[Patrick McKenzie: Falsehoods Programmers Believe About Names (2010)](https://www.kalzumeus.com/2010/06/17/falsehoods-programmers-believe-about-names/), [W3C: Personal names around the world](https://www.w3.org/International/questions/qa-personal-names)"
+    }
+  ]
+}
