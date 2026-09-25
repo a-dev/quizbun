@@ -1,0 +1,403 @@
+{
+  "schemaVersion": 1,
+  "id": "hollywood-hacking-real-or-nonsense",
+  "title": "Hollywood hacking: real or nonsense?",
+  "description": "Some movie hacks use real tools on real vulnerabilities. Others are technobabble written on deadline. Each Question takes a famous scene, whether a screen, a command or a line of dialogue, and asks if it would work. The Explanations cover the real tech behind it: a 3D file browser, port scans, an SSH bug, private IP addresses, and why \"Enhance!\" can't add detail the camera never captured.",
+  "language": "en",
+  "tags": ["security", "networking", "critical-thinking", "internet-culture"],
+  "author": "Quizbun",
+  "questions": [
+    {
+      "id": "jurassic-park-unix-system",
+      "title": "\"It's a UNIX system! I know this!\" What is the 3D interface Lex uses in *Jurassic Park*?",
+      "description": "In the 1993 film, Lex sits down at a computer that shows a landscape of glowing blocks on pedestals. She flies through it, finds what she needs and locks the control room doors just in time.",
+      "type": "single-choice",
+      "videos": [
+        {
+          "provider": "youtube",
+          "id": "JOeY07qKU9c",
+          "placement": "explanation"
+        }
+      ],
+      "options": [
+        {
+          "text": "A real file manager called fsn, made by Silicon Graphics for IRIX, its version of Unix",
+          "isCorrect": true
+        },
+        {
+          "text": "An animation the effects studio made to look like a computer, with no real software behind it",
+          "isCorrect": false
+        },
+        {
+          "text": "A flight simulator the set designers reskinned to look like a file system",
+          "isCorrect": false
+        },
+        {
+          "text": "A mock-up of a virtual reality headset view, projected onto the monitor",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "People love to mock this scene, yet it's one of the most accurate in this Quiz. The program is **fsn**, short for File System Navigator and pronounced \"fusion\". Silicon Graphics made it as an experimental 3D file manager for IRIX, its version of Unix. The park's control room runs on SGI workstations, so this is software those machines really ran.\n\nIt looks fake because almost nobody used fsn day to day. Most Unix users of the time worked in a text terminal. Lex is still right. Under the 3D landscape is an ordinary Unix directory tree, and the blocks are its files.",
+      "references": "[SGI Silicon Surf archive: 3D File System Navigator for IRIX](https://archive.irixnet.org/siliconsurf/free/cool_sw_01.html)\n\n[Wikipedia: File System Visualizer](https://en.wikipedia.org/wiki/File_System_Visualizer), an open-source clone of fsn"
+    },
+    {
+      "id": "fsn-tall-box",
+      "title": "In fsn, each directory is a pedestal with boxes standing on it. What does an unusually tall box tell you?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "That file is large",
+          "isCorrect": true
+        },
+        {
+          "text": "That file was changed recently",
+          "isCorrect": false
+        },
+        {
+          "text": "Only the root user can open that file",
+          "isCorrect": false
+        },
+        {
+          "text": "That program is running right now",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Each box is one file, and **its height is the file's size**. A directory's pedestal grows with the total size of its files, so big directories stand out from across the landscape.\n\nAge shows up too, as colour instead of height, which makes \"changed recently\" a near miss. Permissions and running programs don't show up at all, because fsn maps the file system, not what the machine is doing.\n\nDisk-usage tools still use the idea. Treemap viewers draw each file as a rectangle sized by its bytes, because size is what you want to see first when a disk fills up.",
+      "references": "[SGI Silicon Surf archive: 3D File System Navigator for IRIX](https://archive.irixnet.org/siliconsurf/free/cool_sw_01.html)"
+    },
+    {
+      "id": "ssh-default-port",
+      "title": "In *The Matrix Reloaded* (2003), Trinity scans a power station's server and finds exactly one open service: SSH. Which TCP port does an SSH server listen on by default?",
+      "description": "Type a port number.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [22]
+      },
+      "explanation": "SSH listens on **port 22**. A port number tells the operating system which program gets an incoming connection, such as 22 for SSH, 80 for plain HTTP and 443 for HTTPS. Common services have fixed numbers, so clients know where to connect without asking.\n\nTrinity's scan shows `22/tcp open ssh`, which means port 22, protocol TCP, state open, and the service usually found on that port. Security people love the scene for this line, because it's exactly what a real scan of a server running only SSH prints.",
+      "references": "[IANA: Service Name and Transport Protocol Port Number Registry](https://www.iana.org/assignments/service-names-port-numbers/service-names-port-numbers.xhtml)"
+    },
+    {
+      "id": "trinity-hack-verdict",
+      "title": "Here is Trinity's full hack from *The Matrix Reloaded*. How realistic is it?",
+      "description": "Her screen, shortened:\n\n```text\n# nmap -v -sS -O 10.2.2.2\nStarting nmap V. 2.54BETA25\n22/tcp     open        ssh\n\n# sshnuke 10.2.2.2 -rootpw=\"Z1ON0101\"\nConnecting to 10.2.2.2:ssh ... successful.\nAttempting to exploit SSHv1 CRC32 ... successful.\nReseting root password to \"Z1ON0101\".\nSystem open: Access Level <9>\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "A real scanner and a real 2001 SSH vulnerability; only the `sshnuke` program is made up",
+          "isCorrect": true
+        },
+        {
+          "text": "Completely made up, like most movie hacking",
+          "isCorrect": false
+        },
+        {
+          "text": "A real scanner, but the SSH vulnerability is fictional",
+          "isCorrect": false
+        },
+        {
+          "text": "Real tools, but these commands only work on Windows",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Almost everything checks out. **Nmap 2.54BETA25** was a real release of the free Nmap scanner. \"SSHv1 CRC32\" was a real bug, widely publicised in 2001, in servers that spoke version 1 of the SSH protocol. The steps come in a realistic order too: find what's listening, spot a known weakness, get in.\n\nThe made-up part is the `sshnuke` program with its tidy progress messages. \"Access Level <9>\" is movie flavour as well, since Unix has no numbered access levels.\n\nThe Nmap site says its author was \"shocked to find that Trinity does it properly\", and contrasts the scene with the 3D eye candy of films like *Hackers*. The practical lesson is that the city ran a server nobody had patched.",
+      "references": "[Nmap: Movies featuring the Nmap security scanner](https://nmap.org/movies/)\n\n[Help Net Security: Matrix hacking, a slice of reality in a world of make believe (2003)](https://www.helpnetsecurity.com/2003/05/21/matrix-hacking-a-slice-of-reality-in-a-world-of-make-believe/)"
+    },
+    {
+      "id": "nmap-syn-scan",
+      "title": "Trinity runs `nmap -sS`. What kind of scan is that?",
+      "type": "single-choice",
+      "images": [
+        {
+          "src": "syn-scan-half-open.svg",
+          "alt": "Three panels, each with Nmap on the left and the target on the right. Open port: Nmap sends SYN, the target replies SYN/ACK, and Nmap sends RST, so the port is open. Closed port: Nmap sends SYN and the target replies RST, so the port is closed. Filtered port: Nmap sends SYN, retries, and gets no reply, so the port is filtered. A note below says a normal client answers SYN/ACK with ACK and connects, but the scanner sends RST instead, so the connection never opens. That's a half-open scan.",
+          "caption": "Based on the Nmap Reference Guide. Diagram: Quizbun.",
+          "placement": "explanation",
+          "width": 720,
+          "height": 456
+        }
+      ],
+      "options": [
+        {
+          "text": "A SYN scan: it starts a TCP handshake on each port and reads the reply, but never finishes the connection",
+          "isCorrect": true
+        },
+        {
+          "text": "A secure scan that encrypts its probes so the target can't read them",
+          "isCorrect": false
+        },
+        {
+          "text": "A slow scan that spreads its probes over hours to avoid notice",
+          "isCorrect": false
+        },
+        {
+          "text": "An SSH-only scan that looks for SSH servers and ignores other services",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`-sS` is a **TCP SYN scan**. A TCP connection normally opens with three packets: SYN, SYN/ACK, ACK. Nmap sends only the first one, a SYN, to each port and reads the reply:\n\n- SYN/ACK means something is listening, so the port is open.\n- RST means nothing is listening, so the port is closed.\n- No reply, even after retries, usually means a firewall dropped the probe, so Nmap reports the port as filtered.\n\nWhen an open port answers, the scanning machine sends RST instead of the final ACK, so the connection never fully opens. That's why it's called a **half-open** scan. It needs raw-packet privileges, and Nmap uses it by default when run as root or Administrator.\n\nThe other flags in Trinity's command are real too. `-v` turns on verbose output, and `-O` asks Nmap to guess the target's operating system.",
+      "references": "[Nmap Reference Guide: TCP SYN scan (-sS)](https://nmap.org/book/synscan.html)"
+    },
+    {
+      "id": "private-ip-target",
+      "title": "Trinity's target is `10.2.2.2`. What does that address tell you about where she has to be?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "It's a private address, so she has to be on the power station's internal network",
+          "isCorrect": true
+        },
+        {
+          "text": "It's an invalid address, a movie fake like a 555 phone number",
+          "isCorrect": false
+        },
+        {
+          "text": "It's a public address, so she could scan it from anywhere in the world",
+          "isCorrect": false
+        },
+        {
+          "text": "It's the address of the terminal she's sitting at",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Every address from `10.0.0.0` to `10.255.255.255` is reserved for **private networks**. Homes, offices and factories reuse these addresses internally, and routers on the public internet don't carry traffic to them. Nobody outside can reach `10.2.2.2`. You have to be on the same internal network.\n\nThat fits the film. Trinity fights her way into the power station and works from a terminal inside the building. The address is valid, so it's not a 555-style fake, and the machine she scans is a separate server, not her own terminal.\n\nMany industrial networks rely on the same idea: keep the control systems off the internet and they're safe. That holds only until someone gets into the building or onto the internal network.",
+      "references": "[RFC 1918: Address Allocation for Private Internets](https://www.rfc-editor.org/rfc/rfc1918)"
+    },
+    {
+      "id": "ssh1-crc32-bug",
+      "title": "Which statements about the real SSH1 CRC32 bug, the one named on Trinity's screen, are true?",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "An attacker needed no password, because the attack happened before login",
+          "isCorrect": true
+        },
+        {
+          "text": "The attacker's code ran with the SSH server's privileges, which usually meant root",
+          "isCorrect": true
+        },
+        {
+          "text": "Fixed versions were available by 2001, about two years before the film",
+          "isCorrect": true
+        },
+        {
+          "text": "It only affected Windows servers",
+          "isCorrect": false
+        },
+        {
+          "text": "It let attackers read recorded SSH traffic, but not run anything",
+          "isCorrect": false
+        },
+        {
+          "text": "It was a flaw in the CRC32 checksum itself, so every version of SSH was affected",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The bug was an integer overflow in SSH1 servers, including older releases of OpenSSH and SSH Communications' Secure Shell. Ironically, it sat in code added to *defend* against a known weakness in how SSH1 used CRC32. The flaw triggered while the connection was being set up, before any login.\n\nThe SSH server ran as root, because it has to be able to log in any user, so the attacker's code ran as root too. That makes Trinity's next step, resetting the root password, believable. CERT's advisory lists two fixes: upgrade to a patched release, or turn off protocol version 1. SSH version 2 was designed differently and wasn't affected. The affected servers ran Unix-like systems, not Windows.",
+      "references": "[CERT/CC: VU#945216, SSH CRC32 attack detection code contains remote integer overflow](https://www.kb.cert.org/vuls/id/945216)"
+    },
+    {
+      "id": "matrix-police-warning",
+      "title": "After *The Matrix Reloaded* opened in 2003, who warned British viewers not to copy Trinity's hack?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Scotland Yard's Computer Crime Unit and the British Computer Society",
+          "isCorrect": true
+        },
+        {
+          "text": "Warner Bros., in a notice at the end of the film's credits",
+          "isCorrect": false
+        },
+        {
+          "text": "The OpenSSH developers, in a security advisory",
+          "isCorrect": false
+        },
+        {
+          "text": "The BBC, in a disclaimer before its reports on the film",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Scotland Yard's Computer Crime Unit and the British Computer Society issued a joint warning. Nmap's site quotes it: viewers \"should not be tempted to emulate the realistic depiction of computer hacking\".\n\nThe warning only made sense because the scene was realistic. Nobody warns audiences about the swirling 3D graphics in *Hackers*. What actually protected servers was administrators installing the fix, which had been out for two years. Only machines still unpatched in 2003 were at risk.",
+      "references": "[Nmap: Movies featuring the Nmap security scanner](https://nmap.org/movies/)"
+    },
+    {
+      "id": "nmap-filmography",
+      "title": "Nmap has appeared in many films since *The Matrix Reloaded*. Which of these films show it on screen?",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "*Live Free or Die Hard*",
+          "isCorrect": true
+        },
+        {
+          "text": "*The Bourne Ultimatum*",
+          "isCorrect": true
+        },
+        {
+          "text": "*Elysium*",
+          "isCorrect": true
+        },
+        {
+          "text": "*Ocean's 8*",
+          "isCorrect": true
+        },
+        {
+          "text": "*Hackers*",
+          "isCorrect": false
+        },
+        {
+          "text": "*Sneakers*",
+          "isCorrect": false
+        },
+        {
+          "text": "*WarGames*",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Nmap's site keeps a list of films and credits the people who spotted each scene. *Live Free or Die Hard* and *The Bourne Ultimatum* both came out in 2007. In *Bourne*, the CIA uses Zenmap, Nmap's graphical front end. *Elysium* (2013) shows a scan of the brain implant in Matt Damon's character. In *Ocean's 8* (2018), Rihanna's hacker has Nmap running in the background of several scenes.\n\nYou can rule out the other three by date alone. Nmap first appeared in September 1997, as an article with source code in *Phrack* magazine. *WarGames* (1983), *Sneakers* (1992) and *Hackers* (1995) all came out before it existed.",
+      "references": "[Nmap: Movies featuring the Nmap security scanner](https://nmap.org/movies/)\n\n[Phrack 51: The Art of Port Scanning (1997)](http://phrack.org/issues/51/11.html)"
+    },
+    {
+      "id": "csi-visual-basic-gui",
+      "title": "\"I'll create a GUI interface using Visual Basic, see if I can track an IP address.\" What's wrong with this line?",
+      "description": "From *CSI: NY*, \"Taxi\" (2008). A killer is blogging about the murders in real time, and a detective proposes this plan.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "A GUI only displays information and can't track anything, and an IP address alone rarely leads to a person",
+          "isCorrect": true
+        },
+        {
+          "text": "Visual Basic can't create GUIs",
+          "isCorrect": false
+        },
+        {
+          "text": "Nothing: building a custom tracking app is standard forensic practice",
+          "isCorrect": false
+        },
+        {
+          "text": "IP addresses are encrypted, so they can't be traced at all",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Each word is real, but together they make no sense. A **GUI** (graphical user interface) is the windows and buttons a program shows you, so \"GUI interface\" says \"interface\" twice. Visual Basic really was a popular way to build Windows GUIs, which rules out that distractor. But a front end tracks nothing. It's like offering to paint a dashboard to find a stolen car.\n\nThe tracking part is harder than the show suggests. The blog's host may have logged the IP address the posts came from. That address points to a network connection, not a person: an internet provider's customer, a café's Wi-Fi, a VPN or a proxy. Getting to a name usually means asking the provider for its records, often with a court order. IP addresses aren't secret or encrypted, though, so the last distractor goes too far.",
+      "references": "[TV Quotes: *CSI: NY*, the Visual Basic line](https://www.tv-quotes.com/shows/csi-ny/quote_25690.html)"
+    },
+    {
+      "id": "ncis-one-keyboard",
+      "title": "A hacker floods a lab computer with pop-ups, and two agents fight back by typing on the same keyboard at once. Real or nonsense?",
+      "description": "From *NCIS*, \"The Bone Yard\" (2004).",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Nonsense: a keyboard sends one stream of keystrokes, so two typists just scramble each other's commands",
+          "isCorrect": true
+        },
+        {
+          "text": "Real: it's pair programming, a standard technique in incident response",
+          "isCorrect": false
+        },
+        {
+          "text": "Real: two people typing together can enter commands twice as fast as the attacker",
+          "isCorrect": false
+        },
+        {
+          "text": "Real, but only with a split ergonomic keyboard",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A keyboard sends key presses one at a time to a single program. When two people type at once, their letters interleave. Two commands turn into one line of gibberish, and neither runs.\n\nPair programming is real, which makes it the tempting distractor. Two people share one computer, but only one types while the other reviews and thinks ahead. Typing speed doesn't matter here anyway, because the attack is software running on the machine, not a person racing the agents.\n\nReal responders start with **containment**. They cut the machine off from the network so the attacker loses access, and they don't wipe it, so the evidence survives. Then they work out how the attacker got in.",
+      "references": "[Wikipedia: NCIS season 2, \"The Bone Yard\"](https://en.wikipedia.org/wiki/NCIS_season_2)\n\n[NIST SP 800-61 Rev. 2: Computer Security Incident Handling Guide](https://csrc.nist.gov/pubs/sp/800/61/r2/final)"
+    },
+    {
+      "id": "enhance-blurry-face",
+      "title": "A detective zooms into a security-camera frame until the suspect's face is a few blocky pixels, then says \"Enhance!\" A sharp face appears. Can software do that?",
+      "type": "single-choice",
+      "images": [
+        {
+          "src": "enhance-many-originals.svg",
+          "alt": "Four different 16 by 16 pixel images: a smiling face, a frowning face, the number 42, and random noise. Averaging each 4 by 4 block of pixels shrinks all four to the same 4 by 4 thumbnail. The caption says \"Enhance!\" would have to guess which image the thumbnail came from.",
+          "caption": "Diagram: Quizbun.",
+          "placement": "explanation",
+          "width": 720,
+          "height": 470
+        }
+      ],
+      "options": [
+        {
+          "text": "No: many different sharp faces shrink to the same few pixels, so the detail isn't there to recover",
+          "isCorrect": true
+        },
+        {
+          "text": "Yes, if the computer has enough processing power",
+          "isCorrect": false
+        },
+        {
+          "text": "Yes: AI upscalers recover the original face exactly",
+          "isCorrect": false
+        },
+        {
+          "text": "Yes, but only from uncompressed video, not from JPEGs",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "When a camera records a face with only a few pixels, each pixel stores one averaged colour for a whole patch of the scene. The diagram shows why that can't be undone. A smile, a frown, the number 42 and random noise all average down to the same 4×4 thumbnail, and nothing in the thumbnail says which one it came from. More computing power doesn't help, because the camera never saved that information.\n\nCompression makes things worse, but uncompressed video doesn't solve the problem. A perfect lossless copy of a tiny face is still a tiny face.\n\nSoftware can sharpen a little when real information is left, such as in a slightly blurred but detailed photo, or across many frames of the same scene. Beyond that, any program that draws a crisp face is **inventing** one. The next Question shows what that looks like.",
+      "references": "[PULSE paper: Self-Supervised Photo Upsampling via Latent Space Exploration of Generative Models (CVPR 2020)](https://arxiv.org/abs/2003.03808)"
+    },
+    {
+      "id": "pulse-obama-upsampling",
+      "title": "In June 2020, someone fed a pixelated photo of Barack Obama into PULSE, a research tool that turns low-resolution faces into sharp ones. What came out?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "A sharp, realistic face of a white man who wasn't Obama",
+          "isCorrect": true
+        },
+        {
+          "text": "A sharp, accurate photo of Obama",
+          "isCorrect": false
+        },
+        {
+          "text": "An error, because the tool refused photos of real people",
+          "isCorrect": false
+        },
+        {
+          "text": "The same blurry image, because it had nothing to add",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "PULSE, from researchers at Duke University, doesn't try to recover the real face. It searches the output of a face generator for a sharp face that **shrinks to the same pixels** as the input. As the previous Question showed, many faces match, so PULSE returns the one the generator finds most typical of the faces it learned from.\n\nThe Obama result spread widely and became a standard example of bias in AI. The system's idea of a \"typical\" face came from its training data and design, which pulled the output towards white faces. The researchers themselves said the method creates a plausible face and doesn't recover the person's real identity.\n\nSo an AI-sharpened face can't be evidence. It shows who the model imagined, not who stood in front of the camera.",
+      "references": "[The Gradient: Lessons from the PULSE model and discussion (2020)](https://thegradient.pub/pulse-lessons/)\n\n[PULSE paper (CVPR 2020)](https://arxiv.org/abs/2003.03808)"
+    },
+    {
+      "id": "boss-real-tool-real-use",
+      "title": "Final round: which of these scenes show a real tool doing something it can actually do?",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "Trinity finds an open SSH port with an Nmap SYN scan",
+          "isCorrect": true
+        },
+        {
+          "text": "Lex browses the park's files in SGI's 3D file manager",
+          "isCorrect": true
+        },
+        {
+          "text": "A detective builds a Visual Basic GUI to track an IP address",
+          "isCorrect": false
+        },
+        {
+          "text": "Two agents type on one keyboard to beat a hacker",
+          "isCorrect": false
+        },
+        {
+          "text": "An investigator says \"Enhance!\" and reads a face from a few pixels",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Two scenes pass. Nmap's SYN scan reports open ports exactly as Trinity's screen shows. SGI's fsn was a real IRIX file manager and did what Lex uses it for, showing a directory tree as a 3D landscape.\n\nThe other three fail in different ways. The *CSI: NY* line strings real words into a plan that makes no sense, since a GUI displays information and tracks nothing. The *NCIS* keyboard gets the hardware wrong, because one keyboard sends one stream of keystrokes. \"Enhance!\" gets information wrong. Detail the camera never recorded can only be guessed, and an AI guess is still a guess.\n\nNext time you watch a hacking scene, ask two things. Can you name the real tool on screen? Is it doing the job it was built for?",
+      "references": "[Nmap: Movies featuring the Nmap security scanner](https://nmap.org/movies/)"
+    }
+  ]
+}
