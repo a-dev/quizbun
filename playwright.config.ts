@@ -34,9 +34,7 @@ export default defineConfig({
   // cross-engine issue surfaces.
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
   // Run against the real static build served by `astro preview` — the faithful
-  // production artifact, not the dev server. Base path stays "/" (GITHUB_PAGES
-  // unset); base-path correctness is covered separately by
-  // scripts/check-dist-base-paths.sh, so specs navigate with RELATIVE paths.
+  // production artifact, not the dev server. Specs navigate with root paths.
   webServer: {
     // Astro auto-backgrounds preview when it detects an AI agent. Tell it that
     // backgrounding is already handled so Playwright can own the foreground

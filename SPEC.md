@@ -143,7 +143,7 @@ Shuffling, Option labels, pagination, Page size, keyboard controls, and layout n
 
 Quizbun uses Astro 7 static output and React 19 islands, with Bun as the package manager and Node 22.12 or newer. GitHub Pages hosts the build. JavaScript hydrates only interactive parts such as the player, Import, Library, Tag filter, continue block, and copy-prompt control.
 
-GitHub Pages builds set `GITHUB_PAGES=true`, which changes Astro's base path to `/quizbun`. Route and asset URLs must use `withBase` or the documentation loader's rewriting. Do not hardcode root-relative site URLs.
+GitHub Pages serves `https://quizbun.fyi/` with Astro base `/`. Route and asset URLs use `withBase` or the documentation loader's rewriting.
 
 ### Code layout
 
@@ -293,9 +293,9 @@ Vitest runs two projects under [vitest.config.ts](vitest.config.ts):
 - Unit tests use `.spec.ts` in Node.
 - Component tests use `.test.tsx` in real Chromium through `vitest-browser-react`.
 
-Playwright runs `.e2e.ts` journeys in [e2e](e2e) against a root-base `astro preview` build. Rebuild after a `GITHUB_PAGES=true` build because Playwright's base URL has no `/quizbun` prefix. Each test gets fresh browser storage. Catalog tests derive mutable content from the rendered page instead of hardcoding Quiz names.
+Playwright runs `.e2e.ts` journeys in [e2e](e2e) against a root-base `astro preview` build. Each test gets fresh browser storage. Catalog tests derive mutable content from the rendered page instead of hardcoding Quiz names.
 
-The covered journeys include Import through Summary, Catalog filtering, every Question type, resume, Library management, Page-size changes, Content-hash invalidation, media behavior, preview deep links, keyboard and phone use, theme behavior, install metadata, and storage notices. A deploy-fidelity test for base-path deep links remains open.
+The covered journeys include Import through Summary, Catalog filtering, every Question type, resume, Library management, Page-size changes, Content-hash invalidation, media behavior, preview deep links, keyboard and phone use, theme behavior, install metadata, and storage notices. A deploy-fidelity test covers root-path deep links.
 
 Stryker runs mutation testing over the unit lane, driven by [stryker.config.mjs](stryker.config.mjs) and [vitest.stryker.config.ts](vitest.stryker.config.ts). It is a local tool for finding tests that execute code without asserting on it — `bun run test:mutation` for everything in scope, `bun run mutate:file <glob>` for one file, `bun run mutate:report` to open the HTML report. It is deliberately outside CI: it is slow, its score is advisory, and `thresholds.break` is `null` so it never fails a command. Files the unit lane does not reach show up as "no coverage" rather than as survivors; they are exercised by the component and e2e lanes instead.
 
@@ -326,7 +326,7 @@ While the repository is private, CI runs only through `workflow_dispatch`. Resto
 - App v1.1.0 added installation guidance and persistent browser storage for Library and Run durability.
 - Standard v1.1 added Question Images and Videos across schema, docs, validation, assets, rendering, and tests without changing `schemaVersion`.
 - Standard v1.2 added optional Image `width` and `height` across schema, docs, and the JSON Schema artifact, with `scripts/generate-quiz-image-sizes.ts` generating them. The pre-launch Catalog migration wrote dimensions for 743 Images across 726 Questions in 55 Quizzes. The Public catalog profile verifies every pair against its vendored file.
-- Local production and `/quizbun/` base-path builds pass. A live GitHub Pages acceptance run remains blocked while the repository is private.
+- The production build targets the custom domain at the root path. Live GitHub Pages acceptance follows the domain cutover.
 
 When the repository becomes public, restore automatic CI, deploy `main`, publish the release, run the full acceptance flow on the live URL, and verify validation on a pull request from a fork.
 

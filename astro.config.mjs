@@ -9,37 +9,26 @@ import { loadEnv } from "vite";
 import { sharedViteConfig } from "./vite.shared.ts";
 import { quizAssets } from "./astro-quiz-assets.ts";
 
-const githubPagesBase = "/quizbun";
-const githubPagesSite = `https://a-dev.github.io${githubPagesBase}`;
 const devtoolsBuild = process.env.DEVTOOLS === "true";
 
-const { ALLOWED_HOSTS = "", GITHUB_PAGES } = loadEnv(
-  process.env.NODE_ENV ?? "development",
-  process.cwd(),
-  "",
-);
+const { ALLOWED_HOSTS = "" } = loadEnv(process.env.NODE_ENV ?? "development", process.cwd(), "");
 const allowedHosts = ALLOWED_HOSTS.split(",")
   .map((host) => host.trim())
   .filter(Boolean);
-const base = GITHUB_PAGES === "true" ? githubPagesBase : "/";
 
-// Base-relative, so the exclusion list stays the same in a root build and a
-// `GITHUB_PAGES=true` one. Duplicates (`/quizzes/page/1/` canonicals to
+// Duplicates (`/quizzes/page/1/` canonicals to
 // `/quizzes/`) and the two device-local Library shells have nothing to index.
 const excludedSitemapRoutes = new Set(["/library/", "/library/quiz/", "/quizzes/page/1/"]);
-const basePrefix = base === "/" ? "" : base;
 
 /** @param {string} page */
 function sitemapRoutePath(page) {
   const pathname = new URL(page).pathname;
 
-  return basePrefix !== "" && pathname.startsWith(`${basePrefix}/`)
-    ? pathname.slice(basePrefix.length)
-    : pathname;
+  return pathname;
 }
 
 export default defineConfig({
-  base,
+  base: "/",
   server: {
     allowedHosts,
   },
@@ -51,7 +40,7 @@ export default defineConfig({
     quizAssets(),
   ],
   output: "static",
-  site: githubPagesSite,
+  site: "https://quizbun.fyi",
   vite: {
     ...sharedViteConfig,
     plugins: [

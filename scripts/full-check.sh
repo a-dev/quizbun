@@ -33,7 +33,7 @@ STEPS=(
   "quiz:sizes:check	ci	Check Quiz Image dimensions	bun run quiz:sizes:check"
   "schema:check	ci	Check JSON Schema drift	bun run schema:check"
   "skill:create-quiz:check	ci	Check create-quiz skill drift	bun run skill:create-quiz:check"
-  "build	ci	Build static site (GITHUB_PAGES=true)	GITHUB_PAGES=true bun run build"
+  "build	ci	Build static site	bun run build"
   "dist:base-paths	ci	Check dist for base-path regressions	bash scripts/check-dist-base-paths.sh"
   "e2e	ci	E2E tests	bun run e2e"
   "knip	extra	Unused files, exports and dependencies	bun run knip"
@@ -92,8 +92,8 @@ for step in "${STEPS[@]}"; do
     continue
   fi
 
-  # The base-path guard only means anything against a fresh GITHUB_PAGES
-  # build, so it goes with the build step — a stale dist/ would report
+  # The dist URL guard only means anything against a fresh build,
+  # so it goes with the build step — a stale dist/ would report
   # failures that say nothing about the current tree.
   if [[ "$id" == "dist:base-paths" ]] && [[ " ${passed[*]+"${passed[*]}"} " != *" build "* ]]; then
     skipped+=("$id")

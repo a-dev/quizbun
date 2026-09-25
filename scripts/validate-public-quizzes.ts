@@ -17,7 +17,7 @@ import { toPathLabel } from "./quiz-validation";
 // this report — the round-trip section of the contributor guide.
 const CONTRIBUTOR_GUIDE_HINT =
   "\nHow to fix this (and how to paste the report back into an AI chat):\n" +
-  "https://a-dev.github.io/quizbun/docs/contributing/#the-error-message-round-trip";
+  "https://quizbun.fyi/docs/contributing/#the-error-message-round-trip";
 
 // Stays exactly as given: the loader dates Quizzes from `git log` output, whose
 // paths are repo-relative, so an absolute directory would match nothing there.

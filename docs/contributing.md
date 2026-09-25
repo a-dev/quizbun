@@ -1,10 +1,10 @@
 # Contributing a Quiz to the public catalog
 
-Submit a Quiz to Quizbun's [public catalog](https://a-dev.github.io/quizbun/quizzes) through a pull request. This guide covers how to create and validate it, meet the publishing rules, and respond to review feedback.
+Submit a quiz to Quizbun's [public catalog](https://quizbun.fyi/quizzes) through a pull request. This guide covers how to create and validate it, meet the publishing rules, and respond to review feedback.
 
 ## License
 
-By submitting a public Quiz, you license it under the repository's [MIT license](../LICENSE). Separate per-Quiz licenses are not supported or planned. If you do not want to use MIT, keep your Quiz private by importing it on the [import page](https://a-dev.github.io/quizbun/import/).
+By submitting a public quiz, you license it under the repository's [MIT license](../LICENSE). Separate per-Quiz licenses are not supported or planned. If you do not want to use MIT, keep your Quiz private by importing it on the [import page](https://quizbun.fyi/import/).
 
 ## Step 1: generate the Quiz
 
@@ -18,7 +18,7 @@ Both validators below use the same schema and error formatter. See [the error-me
 
 ### The import page
 
-Paste your Quiz JSON into the [import page](https://a-dev.github.io/quizbun/import/):
+Paste your Quiz JSON into the [import page](https://quizbun.fyi/import/):
 
 - If it validates, save the Quiz to your Library. Complete a Run and read every Explanation as a Learner would.
 - If it fails, the error report identifies the exact JSON path to fix.

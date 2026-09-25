@@ -12,7 +12,7 @@ Bun; Node >= 22.12. Scripts live in `package.json` — `dev`, `build`, `check` (
 
 ## Rules
 
-- GitHub Pages sets `GITHUB_PAGES=true` → Astro `base` is `/quizbun`. Never hardcode absolute site/asset paths.
+- GitHub Pages serves the custom domain `https://quizbun.fyi/` at Astro base `/`. Use `withBase` for site and asset paths.
 - The Zod schema is the single source of truth for the Quiz Object Standard; `public/schema/quiz.v1.json` is generated from it. Unknown fields are errors. Validation messages are a product feature: path-precise and pasteable into an AI chat.
 - The Standard carries no presentation fields. Option identity is JSON order; shuffling, labeling, and page size are Renderer behavior.
 - Markdown goes through [markdown.ts](src/shared/lib/render/markdown.ts) (`marked` + `sanitize-html`); raw HTML is always stripped.
