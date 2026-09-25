@@ -1,0 +1,712 @@
+{
+  "schemaVersion": 1,
+  "id": "how-music-works",
+  "title": "How music works: waves, harmonics and why octaves sound the same",
+  "description": "Why do two notes an octave apart sound like the same note? Why does a clarinet sound hollow? Why is a piano tuned slightly wrong on purpose? Most questions show a waveform, a spectrum or a vibrating string and ask what you'll hear. It's for curious listeners and musicians. You don't need music theory, and the math stops at ratios. You can check several answers by humming or with a free tuner app.",
+  "language": "en",
+  "tags": [
+    "music",
+    "acoustics",
+    "science",
+    "mathematics"
+  ],
+  "questions": [
+    {
+      "id": "octave-same-note",
+      "title": "Two notes an octave apart sound like the same note, only higher. What do their waves have in common?",
+      "description": "A3 is 220 Hz and A4 is 440 Hz. The picture shows one pure wave for each note over the same stretch of time.",
+      "images": [
+        {
+          "src": "octave-waveforms.svg",
+          "alt": "Two sine waves stacked on the same time axis. The upper row, A3 at 220 Hz, completes 3 cycles. The lower row, A4 at 440 Hz, completes 6 cycles. Four dashed vertical lines mark where each cycle of the 220 Hz wave starts, and the 440 Hz wave also starts a new cycle at every one of them.",
+          "width": 720,
+          "height": 300
+        },
+        {
+          "src": "octave-harmonic-ladders.svg",
+          "alt": "Two rows of tick marks on one frequency axis from 0 to 2000 Hz. The top row shows harmonics of A3 at every multiple of 220 Hz. The bottom row shows harmonics of A4 at 440, 880, 1320 and 1760 Hz. A dashed link joins each A4 harmonic to an A3 harmonic at exactly the same frequency, so every A4 tick has a partner.",
+          "placement": "explanation",
+          "width": 720,
+          "height": 290
+        }
+      ],
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The upper wave repeats exactly twice in every cycle of the lower one, so every harmonic of the upper note is also a harmonic of the lower note",
+          "isCorrect": true
+        },
+        {
+          "text": "Both waves have the same amplitude, and the ear groups notes by loudness",
+          "isCorrect": false
+        },
+        {
+          "text": "Both notes are close to pure sine waves, and all sine waves sound alike",
+          "isCorrect": false
+        },
+        {
+          "text": "The upper note's wavelength is twice as long, so the peaks of the two waves line up",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "With a 2:1 frequency ratio, the two waves fall back into step at the start of every cycle of the lower note. Each dashed line in the first picture starts a fresh cycle of both.\n\nThe harmonics tell the same story. A real A3 has energy at 220, 440, 660, 880 Hz and up. A4 has 440, 880, 1320 Hz and up. Every harmonic of A4 is already in A3, so playing A4 on top of A3 adds no new frequencies, only more energy at existing ones. The two notes blend instead of clashing. That shared structure is a big part of why an octave feels like the same note moved up. It's also why a man and a woman singing \"the same\" tune are usually an octave apart without noticing.\n\nThe wavelength option has it backwards: twice the frequency means half the wavelength. Octave sameness is also partly learned. A 2019 study found that Tsimane' participants in Bolivia, who had heard little Western music, showed little octave equivalence when singing melodies back. US participants showed it clearly.",
+      "references": "[Wikipedia: Octave](https://en.wikipedia.org/wiki/Octave) · [Current Biology: Universal and non-universal features of musical pitch perception revealed by singing](https://doi.org/10.1016/j.cub.2019.08.020)"
+    },
+    {
+      "id": "string-mode-frequencies",
+      "title": "A plucked string vibrates in all of these shapes at once. Shape 1 is at 100 Hz. What frequencies does the string produce?",
+      "images": [
+        {
+          "src": "string-mode-shapes.svg",
+          "alt": "Four rows, each a string fixed at both ends and drawn with its vibration envelope. Shape 1 bows out in a single loop and is labeled 100 Hz. Shapes 2, 3 and 4 have two, three and four loops, with still points between them, and are labeled with a question mark in hertz.",
+          "width": 720,
+          "height": 350
+        }
+      ],
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "100, 200, 300, 400 Hz and upward: every whole-number multiple of 100 Hz",
+          "isCorrect": true
+        },
+        {
+          "text": "100, 200, 400, 800 Hz: each shape doubles the frequency of the one before",
+          "isCorrect": false
+        },
+        {
+          "text": "100 Hz only, because the other shapes are too weak to hear",
+          "isCorrect": false
+        },
+        {
+          "text": "100, 150, 225, 338 Hz: each shape is a fifth above the one before",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The ends of the string can't move, so a standing wave fits only if the string holds a whole number of half-wavelengths. Shape 1 holds one half-wavelength, shape 2 holds two, shape 3 holds three. The string's tension and mass per length set how fast waves travel along it, and frequency is that speed divided by wavelength. Half the wavelength gives twice the frequency, a third gives three times, and so on: 100, 200, 300, 400 Hz. That list is the harmonic series, `f_n = n × v / 2L`.\n\nDoubling at every step would give only octaves and skip shape 3, whose three loops give 300 Hz. The upper shapes are quieter than shape 1 but easy to hear. They're what makes a plucked string sound different from a tuning fork at the same pitch.",
+      "references": "[UNSW Music Acoustics: Strings, standing waves and harmonics](https://newt.phys.unsw.edu.au/jw/strings.html) · [Wikipedia: Harmonic series (music)](https://en.wikipedia.org/wiki/Harmonic_series_%28music%29)"
+    },
+    {
+      "id": "fret-fifth-length",
+      "title": "An open guitar string plays a note. How much of the string must vibrate to play the perfect fifth above it, a 3:2 frequency ratio?",
+      "images": [
+        {
+          "src": "fret-length-ratios.svg",
+          "alt": "Four horizontal strings from nut to bridge. The open string vibrates along its full length and plays f. Stopped at the 12th fret, half the length vibrates and plays 2f, an octave. At the 7th fret, two-thirds vibrates and plays three-halves f, a fifth. At the 5th fret, three-quarters vibrates and plays four-thirds f, a fourth.",
+          "placement": "explanation",
+          "width": 720,
+          "height": 320
+        }
+      ],
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Two-thirds of its length",
+          "isCorrect": true
+        },
+        {
+          "text": "One-third of its length",
+          "isCorrect": false
+        },
+        {
+          "text": "Three-quarters of its length",
+          "isCorrect": false
+        },
+        {
+          "text": "Half of its length",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "At fixed tension, a string's frequency is inversely proportional to its vibrating length. To multiply the frequency by 3/2, multiply the length by 2/3. On a guitar, that's the 7th fret. The same rule gives the other simple intervals. Half the length doubles the frequency: the octave, at the 12th fret. Three-quarters of the length gives 4:3: the perfect fourth, at the 5th fret. This is the monochord experiment traditionally credited to the Pythagoreans, and it's why we describe intervals as ratios.\n\nOne-third of the length triples the frequency. That gives the right note name, but an octave too high: an octave plus a fifth above the open string. Modern frets are placed for equal temperament, so the 7th fret actually leaves 0.6674 of the string vibrating, not 0.6667. The difference is too small to see.",
+      "references": "[UNSW Music Acoustics: Strings, standing waves and harmonics](https://newt.phys.unsw.edu.au/jw/strings.html) · [Wikipedia: Monochord](https://en.wikipedia.org/wiki/Monochord)"
+    },
+    {
+      "id": "natural-harmonic-midpoint",
+      "title": "A guitarist rests a fingertip lightly on the exact middle of an open string, without pressing it down, and plucks. What do you hear?",
+      "images": [
+        {
+          "src": "midpoint-touch-modes.svg",
+          "alt": "The first four vibration shapes of a string with a dashed vertical line at the midpoint where the finger rests. Shapes f and 3f bulge at the midpoint and are marked damped. Shapes 2f and 4f already have a still point at the midpoint and are marked survives. A caption notes that what survives, 2f, 4f, 6f, is a full harmonic series one octave up.",
+          "placement": "explanation",
+          "width": 720,
+          "height": 380
+        }
+      ],
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "A clear, bell-like note one octave above the open string",
+          "isCorrect": true
+        },
+        {
+          "text": "The open string's own note, only quieter",
+          "isCorrect": false
+        },
+        {
+          "text": "A muted thud with no clear pitch",
+          "isCorrect": false
+        },
+        {
+          "text": "A note a fifth above the open string",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A light touch doesn't shorten the string the way pressing onto a fret does. It only holds the string still at that one point. Any vibration shape that needs the midpoint to move dies almost at once. Shapes with an odd number of loops (f, 3f, 5f and so on) swing hardest at the middle, so they're damped. Shapes with an even number of loops (2f, 4f, 6f) already have a still point there, so they keep ringing.\n\nWhat's left, 2f, 4f, 6f, is a full harmonic series built on 2f, so you hear a clean note one octave up. The open string's own note can't survive, because its only shape moves most right where the finger is. Touch a third of the way along instead and only 3f, 6f, 9f survive: an octave plus a fifth. Guitarists compare these harmonics on neighboring strings to tune without an electronic tuner.",
+      "references": "[Wikipedia: String harmonic](https://en.wikipedia.org/wiki/String_harmonic) · [UNSW Music Acoustics: Harmonics](https://newt.phys.unsw.edu.au/jw/harmonics.html)"
+    },
+    {
+      "id": "pluck-position-tone",
+      "title": "A guitarist plucks the same open string first near its middle, then right next to the bridge. Which statements about the second pluck are true?",
+      "images": [
+        {
+          "src": "pluck-position-spectra.svg",
+          "alt": "Two bar charts of harmonic strength for harmonics 1 to 12. Plucked at the middle: a tall first bar, a small third bar, a tiny fifth bar, and nothing at any even number. Plucked one tenth of the way from the bridge: bars that shrink gradually across harmonics 1 to 9, with the 10th harmonic marked as zero.",
+          "placement": "explanation",
+          "width": 720,
+          "height": 300
+        }
+      ],
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "The pitch stays the same",
+          "isCorrect": true
+        },
+        {
+          "text": "The upper harmonics get stronger relative to the fundamental, so the note sounds brighter and thinner",
+          "isCorrect": true
+        },
+        {
+          "text": "Any harmonic that has a still point exactly at the plucking spot is missing from the sound",
+          "isCorrect": true
+        },
+        {
+          "text": "The fundamental frequency rises, because a shorter part of the string was pulled",
+          "isCorrect": false
+        },
+        {
+          "text": "Only odd-numbered harmonics sound",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Pitch depends on the string's length, tension and mass. Where you pluck changes none of them, so the fundamental stays put. What changes is the mix of harmonics.\n\nPulling the string aside at one point bends it into a triangle. In that triangle, the strength of harmonic n is proportional to `sin(nπβ) / n²`, where β is the plucking point as a fraction of the string's length. A harmonic with a still point right under your finger gets zero, because you can't set a shape moving from the one spot where it doesn't move. That holds wherever you pluck. At the middle it removes every even harmonic, which is where the odd-only option comes from. That option describes the first pluck, not the second.\n\nPlucking one tenth of the way from the bridge removes only the 10th, 20th and so on, and it spreads energy much more evenly into the upper harmonics. That's the bright, nasal tone guitarists get by playing close to the bridge.",
+      "references": "[UNSW Music Acoustics: Strings, standing waves and harmonics](https://newt.phys.unsw.edu.au/jw/strings.html)"
+    },
+    {
+      "id": "adjacent-harmonic-intervals",
+      "title": "Among the first six harmonics of one note, which intervals appear between two neighboring harmonics?",
+      "description": "Harmonics 1 and 2 are neighbors. Harmonics 2 and 4 are not.",
+      "images": [
+        {
+          "src": "harmonic-series-intervals.svg",
+          "alt": "Six vertical marks for harmonics 1 to 6 of a 100 Hz note, from 100 to 600 Hz, placed on a pitch axis so equal ratios take equal space. Brackets between neighbors are labeled octave 2:1, fifth 3:2, fourth 4:3, major third 5:4 and minor third 6:5, each bracket shorter than the one before.",
+          "placement": "explanation",
+          "width": 720,
+          "height": 280
+        }
+      ],
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "Octave",
+          "isCorrect": true
+        },
+        {
+          "text": "Perfect fifth",
+          "isCorrect": true
+        },
+        {
+          "text": "Perfect fourth",
+          "isCorrect": true
+        },
+        {
+          "text": "Major third",
+          "isCorrect": true
+        },
+        {
+          "text": "Minor third",
+          "isCorrect": true
+        },
+        {
+          "text": "Major second",
+          "isCorrect": false
+        },
+        {
+          "text": "Tritone",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Neighbors n and n + 1 are in the ratio (n + 1):n. Harmonics 1 and 2 give 2:1, the octave. Then come 3:2 (the fifth), 4:3 (the fourth), 5:4 (the major third) and 6:5 (the minor third). The core intervals of Western harmony all live inside the sound of a single string or pipe, which is one reason those ratios got their names first.\n\nThe steps shrink as you climb. A major second first shows up between harmonics 8 and 9, as 9:8, past the first six. A tritone needs a ratio like 7:5, which links harmonics 5 and 7. Those are two steps apart, not neighbors.",
+      "references": "[Wikipedia: Harmonic series (music)](https://en.wikipedia.org/wiki/Harmonic_series_%28music%29)"
+    },
+    {
+      "id": "clarinet-spectrum",
+      "title": "One spectrum is a clarinet in its low register, the other is a flute. Which one is the clarinet?",
+      "description": "Each bar is one harmonic of the same 147 Hz note. Bar height is its strength.",
+      "images": [
+        {
+          "src": "two-spectra-x-y.svg",
+          "alt": "Two bar charts of harmonics 1 to 10 for the same 147 Hz note. Instrument X: every harmonic is present, and the bars shrink smoothly from left to right. Instrument Y: harmonics 1, 3, 5, 7 and 9 are tall, while harmonics 2, 4, 6, 8 and 10 are barely visible.",
+          "width": 720,
+          "height": 290
+        },
+        {
+          "src": "pipe-modes-open-vs-closed.svg",
+          "alt": "Air motion inside two pipes for their three lowest resonances. The pipe open at both ends, like a flute, has maximum motion at both ends and resonates at f, 2f and 3f. The pipe closed at one end, like a clarinet, has no motion at the closed end and maximum motion at the open end, and resonates at f, 3f and 5f.",
+          "placement": "explanation",
+          "width": 720,
+          "height": 360
+        }
+      ],
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Instrument Y, whose even-numbered harmonics are almost missing",
+          "isCorrect": true
+        },
+        {
+          "text": "Instrument X, whose harmonics fade smoothly with no gaps",
+          "isCorrect": false
+        },
+        {
+          "text": "Neither: a clarinet and a flute playing the same note have the same spectrum",
+          "isCorrect": false
+        },
+        {
+          "text": "A spectrum can't tell them apart; only the waveform's shape identifies an instrument",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A flute is open at both ends, so air moves freely in and out at each end. The standing waves that fit hold a whole number of half-wavelengths, which gives the full series f, 2f, 3f.\n\nA clarinet's reed and mouthpiece close off its top end, so the air there can't swing back and forth, while the bell end is open. Between a still end and a free end, only an odd number of quarter-wavelengths fits, which gives f, 3f, 5f. In the low register the even harmonics are weak but not gone. That's the gap-toothed pattern in instrument Y, and it's where the clarinet's hollow sound comes from. Higher up the range, the even harmonics fill back in. The quarter-wavelength fit also explains why a clarinet plays about an octave lower than a flute of similar length.\n\nBore shape matters too. The oboe and saxophone also use reeds, but their cone-shaped bores bring back the full harmonic series.",
+      "references": "[UNSW Music Acoustics: Open vs closed pipes](https://newt.phys.unsw.edu.au/jw/pipes.html) · [UNSW Music Acoustics: Clarinet acoustics](https://newt.phys.unsw.edu.au/jw/clarinetacoustics.html)"
+    },
+    {
+      "id": "closed-pipe-next-resonance",
+      "title": "A pipe closed at one end resonates lowest at 100 Hz. What is the next resonance frequency above that, in hertz?",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [
+          300
+        ]
+      },
+      "explanation": "The air can't move at the closed end and moves most at the open end. The shortest wave that fits puts a quarter of a wavelength in the pipe, and that's the 100 Hz resonance. To fit another one, the wave has to go from still to free again, which adds half a wavelength. Three quarter-wavelengths in the same pipe means three times the frequency: 300 Hz. After that come 500 Hz, 700 Hz and so on.\n\n200 Hz is the tempting answer. It would put two quarter-wavelengths, half a wavelength, in the pipe, and that needs the same condition at both ends: still at both or free at both. A pipe with one closed end can't do that. The stopped pipes of a pan flute follow the same rule.",
+      "references": "[UNSW Music Acoustics: Open vs closed pipes](https://newt.phys.unsw.edu.au/jw/pipes.html)"
+    },
+    {
+      "id": "clarinet-overblow-twelfth",
+      "title": "Overblow a flute and its note jumps up an octave. When a clarinetist presses the register key, how far up does the note jump?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "An octave plus a fifth, the interval called a twelfth",
+          "isCorrect": true
+        },
+        {
+          "text": "An octave, the same as the flute",
+          "isCorrect": false
+        },
+        {
+          "text": "Two octaves",
+          "isCorrect": false
+        },
+        {
+          "text": "A perfect fifth",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Overblowing, or opening a small register vent, makes the air column lock onto a higher resonance instead of its lowest one. A flute is a pipe open at both ends, so its next resonance is 2f, one octave up. A clarinet acts like a pipe closed at one end and has no strong 2f resonance. Its next one is 3f. A 3:1 ratio is an octave (2:1) plus a fifth (3:2), the interval called a twelfth.\n\nThat's why the clarinet's register key isn't called an octave key. It's also why clarinet fingerings don't repeat from one register to the next the way flute and saxophone fingerings do. The same fingering one register up plays a twelfth higher, so clarinetists learn two different sets. The saxophone also uses a single reed, but its cone-shaped bore overblows at the octave.",
+      "references": "[UNSW Music Acoustics: Clarinet acoustics](https://newt.phys.unsw.edu.au/jw/clarinetacoustics.html) · [Wikipedia: Register key](https://en.wikipedia.org/wiki/Register_key)"
+    },
+    {
+      "id": "phase-changes-waveform",
+      "title": "Waves A and B contain the same six harmonics at the same strengths. Only the timing of each harmonic differs. How do they sound as steady tones?",
+      "images": [
+        {
+          "src": "same-harmonics-two-phases.svg",
+          "alt": "Two waveforms, each shown for two cycles. Wave A is a steep sawtooth-like ramp with a sharp drop once per cycle. Wave B has the same repeat length but a completely different, lumpy shape with small ripples and one deep dip per cycle.",
+          "width": 720,
+          "height": 300
+        }
+      ],
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The same, or so close that most listeners can't tell them apart",
+          "isCorrect": true
+        },
+        {
+          "text": "Very different, because the ear hears the shape of the wave",
+          "isCorrect": false
+        },
+        {
+          "text": "B sounds higher, because its wave has more wiggles",
+          "isCorrect": false
+        },
+        {
+          "text": "A sounds much harsher, because its wave has sharper corners",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The inner ear works like a bank of filters, each tuned to a narrow band of frequencies. For a steady tone, it mostly reports how much energy lands in each band, and A and B match there: same harmonics, same strengths. Shifting when each harmonic peaks (its phase) changes the waveform's shape a lot, but the ear throws most of that timing away. Helmholtz built on Ohm's work to state this in the 19th century, and it's known as Ohm's acoustic law.\n\nThe law has limits. With a low fundamental and many high harmonics crowded into one filter, careful listeners can sometimes hear a phase change as a slight change in roughness. The takeaway still holds: judge timbre from the spectrum, not from the outline on an oscilloscope. Pitch doesn't change either, since both waves repeat at the same rate, twice in the window shown.",
+      "references": "[Wikipedia: Ohm's acoustic law](https://en.wikipedia.org/wiki/Ohm%27s_acoustic_law) · [Wikipedia: Timbre](https://en.wikipedia.org/wiki/Timbre)"
+    },
+    {
+      "id": "helium-voice",
+      "title": "After breathing in helium, a person's voice sounds squeaky and high. What actually changed?",
+      "images": [
+        {
+          "src": "helium-formant-shift.svg",
+          "alt": "Two spectra of the same sung vowel at 150 Hz, from 0 to 4 kHz. In both, harmonic lines are evenly spaced every 150 Hz. In air, a dashed resonance curve peaks near 600, 1500 and 2600 Hz. In helium, the peaks sit higher, near 1000, 2500 and 3700 Hz, while the harmonic lines stay at the same positions.",
+          "placement": "explanation",
+          "width": 720,
+          "height": 320
+        }
+      ],
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The resonances of the throat and mouth moved up, while the vocal folds kept vibrating at almost the same rate",
+          "isCorrect": true
+        },
+        {
+          "text": "The vocal folds vibrate faster, because helium is lighter than air",
+          "isCorrect": false
+        },
+        {
+          "text": "Helium carries high frequencies better than air, so the listener hears less bass",
+          "isCorrect": false
+        },
+        {
+          "text": "Every harmonic rose by the same factor, like a sped-up recording",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A voice has two separate parts. The vocal folds set the pitch. They open and close at the fundamental frequency and make a buzz full of harmonics. The throat, mouth and nose then act as resonators that boost some harmonics and weaken others. Those resonance peaks, called formants, are what make \"ah\" sound different from \"ee\".\n\nThe resonant frequencies of an air space scale with the speed of sound, and sound travels nearly three times faster in helium than in air, so the formants jump up. The vocal folds are tissue driven by muscle tension, so they keep buzzing at about the same rate, and the harmonics stay where they were. You get the same pitch with the treble boosted, which the ear hears as small and squeaky. In practice the shift is smaller than the full factor, because the helium mixes with air in the lungs. The sound reaches the listener through ordinary room air, so the air in between plays no part.\n\nA sped-up recording raises the pitch and the formants together. That's why it sounds like a chipmunk and not like helium.",
+      "references": "[Wikipedia: Formant](https://en.wikipedia.org/wiki/Formant)"
+    },
+    {
+      "id": "which-sounds-harmonic",
+      "title": "Which of these sounds have overtones at, or very close to, whole-number multiples of their lowest frequency?",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "A bowed violin note",
+          "isCorrect": true
+        },
+        {
+          "text": "A sung vowel",
+          "isCorrect": true
+        },
+        {
+          "text": "A clarinet note",
+          "isCorrect": true
+        },
+        {
+          "text": "A crash cymbal",
+          "isCorrect": false
+        },
+        {
+          "text": "A church bell",
+          "isCorrect": false
+        },
+        {
+          "text": "A snare drum hit",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Harmonic overtones come from sustained vibration of a string or an air column: a string driven by a bow, air in a tube driven by a reed, the vocal tract driven by the vocal folds. In a bowed or blown note, the driving force locks every overtone onto exact multiples of the fundamental. The clarinet counts even with its weak even harmonics, because the ones it has still sit on the whole-number grid.\n\nPlates, shells and membranes vibrate in two dimensions, and their natural modes fall at irregular ratios. A cymbal has so many irregular modes that a crash sounds like noise. A snare drum's head, rattled by its wires, gives a burst with no steady pitch. A church bell is the interesting case. Bell founders shape the bell so several of its partials land on musical intervals, but the result still isn't a harmonic series: one tuned partial, the tierce, sits a minor third above the prime. The strike note you hear as the bell's pitch doesn't match any single partial either. Your brain infers it.",
+      "references": "[Wikipedia: Inharmonicity](https://en.wikipedia.org/wiki/Inharmonicity) · [Wikipedia: Strike tone](https://en.wikipedia.org/wiki/Strike_tone)"
+    },
+    {
+      "id": "drum-inharmonic",
+      "title": "Why does a struck drumhead give a vaguer pitch than a plucked string?",
+      "images": [
+        {
+          "src": "membrane-vs-string-partials.svg",
+          "alt": "Two rows of overtones plotted as multiples of the lowest frequency, from 0 to 4 times, with dashed grid lines at 1, 2, 3 and 4. The string's overtones sit exactly on the grid lines. The ideal drumhead's overtones fall at 1, 1.59, 2.14, 2.30, 2.65, 2.92, 3.16, 3.50, 3.60 and 3.65, mostly between grid lines.",
+          "placement": "explanation",
+          "width": 720,
+          "height": 270
+        }
+      ],
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "A drumhead's overtones fall at irregular multiples of its lowest frequency, so no single pitch explains them all",
+          "isCorrect": true
+        },
+        {
+          "text": "A drumhead has no overtones, and a tone without overtones has no pitch",
+          "isCorrect": false
+        },
+        {
+          "text": "Drum sounds are too short for the ear to measure a pitch",
+          "isCorrect": false
+        },
+        {
+          "text": "A drumhead's lowest mode is below the range of human hearing",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "To hear a pitch, the ear looks for one fundamental whose harmonics explain the frequencies it hears. A string makes that easy, because every overtone is a multiple of one frequency. An ideal circular membrane vibrates at 1, 1.59, 2.14, 2.30, 2.65 and 2.92 times its lowest frequency, and no harmonic series fits that set. You get a thump with a rough pitch region instead of a note.\n\nThe other options fail simple checks. A tuning fork has almost no overtones and a perfectly clear pitch. A timpani note rings for seconds. Timpani also show how to give a drum a pitch. The air in the kettle and around the head loads the membrane, so several of its modes shift close to the ratios 2 : 3 : 4. That's close enough to a harmonic series for timpani to play definite notes, tuned to the key of the piece.",
+      "references": "[Wikipedia: Vibrations of a circular membrane](https://en.wikipedia.org/wiki/Vibrations_of_a_circular_membrane) · [Wikipedia: Timpani](https://en.wikipedia.org/wiki/Timpani)"
+    },
+    {
+      "id": "beats-what-you-hear",
+      "title": "Two flutes hold steady notes at 440 Hz and 442 Hz. What do you hear?",
+      "images": [
+        {
+          "src": "beat-envelope.svg",
+          "alt": "Three waveforms, slowed down for display. Tone 1 has 20 cycles in the window and tone 2 has 22. Their sum has a dashed outline that swells to double height, shrinks to nothing, and swells again, twice across the window. A caption reads: the sum swells and fades 22 minus 20 equals 2 times per window.",
+          "placement": "explanation",
+          "width": 720,
+          "height": 350
+        }
+      ],
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "One tone near 441 Hz that swells and fades twice per second",
+          "isCorrect": true
+        },
+        {
+          "text": "Two separate notes, one slightly higher than the other",
+          "isCorrect": false
+        },
+        {
+          "text": "The two notes plus a steady low hum at 2 Hz",
+          "isCorrect": false
+        },
+        {
+          "text": "One steady tone at 441 Hz with constant loudness",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Frequencies this close excite the same filter in the inner ear, so you hear one tone at their average instead of two notes. Over time, the two waves drift in and out of step. When their peaks line up they add up, and half a beat later a peak meets a trough and they cancel. That happens as many times per second as the frequencies differ: 442 − 440 = 2 beats per second.\n\nA 2 Hz \"tone\" would be far below the range of hearing, so there's no low hum, only the loudness rising and falling. Move the two notes further apart and the beats speed up into a rough buzz. Eventually the sound splits into two distinct notes.",
+      "references": "[Wikipedia: Beat (acoustics)](https://en.wikipedia.org/wiki/Beat_%28acoustics%29)"
+    },
+    {
+      "id": "tuning-by-beats",
+      "title": "You tune a guitar string against a 440 Hz reference and hear 3 beats per second. You tighten the string a little, and the beats speed up to 5 per second. What was the string's frequency before you tightened it, in hertz?",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [
+          443
+        ]
+      },
+      "explanation": "Three beats per second means the string was 3 Hz away from 440, so it was either 437 or 443 Hz. Beats alone never tell you which side you're on. Tightening a string always raises its frequency. From 437 Hz, tightening would move it toward 440 and the beats would slow down. They sped up, so the string moved away from 440 and must have started above it: 443 Hz. It's now about 445 Hz.\n\nTo fix it, loosen the string until the beats slow down and stop. If they start again, you've gone too far. Tuners used this nudge-and-listen method long before electronic tuners existed.",
+      "references": "[Wikipedia: Beat (acoustics)](https://en.wikipedia.org/wiki/Beat_%28acoustics%29)"
+    },
+    {
+      "id": "fifth-smooth-tritone-rough",
+      "title": "Played on a violin, a perfect fifth sounds smooth and a tritone sounds rough and tense. What is one physical reason?",
+      "images": [
+        {
+          "src": "fifth-vs-tritone-harmonics.svg",
+          "alt": "Two panels comparing harmonics of a 200 Hz note with an upper note. Perfect fifth at 300 Hz: upper-note harmonics at 600 and 1200 Hz join lower-note harmonics with green exact-match links. Tritone at 283 Hz: red links join near misses with beat rates of 34, 49, 69 and 14 per second.",
+          "placement": "explanation",
+          "width": 720,
+          "height": 370
+        }
+      ],
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "In a fifth, many harmonics of the two notes coincide exactly. In a tritone, many land close together without matching, and those pairs beat rapidly",
+          "isCorrect": true
+        },
+        {
+          "text": "The tritone's two notes are farther apart than a fifth's, and wide intervals sound rough",
+          "isCorrect": false
+        },
+        {
+          "text": "The upper note of a tritone is louder than the lower one",
+          "isCorrect": false
+        },
+        {
+          "text": "A tritone produces frequencies outside the range of human hearing",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The picture uses a 200 Hz note. Add a pure fifth at 300 Hz, and its harmonics at 600 and 1200 Hz land exactly on harmonics of the lower note, while the rest stay well clear. Add an equal-tempered tritone at about 283 Hz, and several of its harmonics miss a lower-note harmonic by 14 to 69 Hz. Those near misses beat tens of times per second, which the ear hears as roughness. It's the slow beating from the two-flutes question, sped up past the point where you can count it.\n\nHermann von Helmholtz proposed this explanation in 1863. In 1965, experiments by Plomp and Levelt found that roughness peaks when two tones fall close together inside one of the ear's frequency filters. Roughness isn't the whole story of consonance, though. Which intervals feel tense also depends on musical training and style, and the tritone is right at home in blues and jazz. The width option is backwards: a tritone is narrower than a fifth.",
+      "references": "[Wikipedia: Consonance and dissonance](https://en.wikipedia.org/wiki/Consonance_and_dissonance)"
+    },
+    {
+      "id": "twelve-fifths-comma",
+      "title": "Stack twelve pure 3:2 fifths up from C, and you'd expect to land on C again, seven octaves higher. Instead you overshoot. By how much, and what do modern keyboards do about it?",
+      "images": [
+        {
+          "src": "spiral-of-fifths.svg",
+          "alt": "Twelve pure fifths stacked from C and plotted on the octave circle. Angle shows each note's pitch within the octave and distance from the center counts the fifths stacked. Dashed spokes mark the twelve equally spaced notes. The points spiral outward through G, D, A, E, B, F sharp, C sharp, G sharp, D sharp, A sharp and E sharp. Step 12, B sharp, lands slightly clockwise of C's spoke instead of on it, and a dashed line with a question mark joins it back to C.",
+          "width": 720,
+          "height": 500
+        }
+      ],
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "By about 23.5 cents, roughly a quarter of a semitone. Equal temperament narrows every fifth by about 2 cents so the circle closes",
+          "isCorrect": true
+        },
+        {
+          "text": "By about 23.5 cents. Keyboards leave one fifth 23.5 cents narrow and avoid the keys that use it",
+          "isCorrect": false
+        },
+        {
+          "text": "By about 2 cents, which is too small to hear, so nothing is done about it",
+          "isCorrect": false
+        },
+        {
+          "text": "There is no overshoot; the stack lands exactly on C on a properly tuned instrument",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Twelve fifths multiply the frequency by (3/2)¹² ≈ 129.75. Seven octaves multiply it by 2⁷ = 128. The mismatch, 129.75 / 128 ≈ 1.0136, is the Pythagorean comma: about 23.5 cents, where 100 cents is one equal-tempered semitone. In the picture, step 12, B♯, lands just past the C it was meant to return to. There's no way around the overshoot. A power of 3/2 has an odd number on top and a power of 2 has an even one, so no stack of pure fifths can ever equal a stack of octaves.\n\nOlder Pythagorean tunings pushed the whole comma into one fifth, the \"wolf\" fifth, which sounded so bad that music steered clear of it. That's the second option, and it describes history, not modern keyboards. Equal temperament spreads the comma across all twelve fifths. Each one is 700 cents instead of about 702, about 2 cents short, which few people can hear, and every key becomes usable.",
+      "references": "[Wikipedia: Pythagorean comma](https://en.wikipedia.org/wiki/Pythagorean_comma) · [Wikipedia: Equal temperament](https://en.wikipedia.org/wiki/Equal_temperament)"
+    },
+    {
+      "id": "equal-temperament-semitone",
+      "title": "On an equal-tempered keyboard, how are the frequencies of the twelve notes in one octave spaced?",
+      "images": [
+        {
+          "src": "semitones-log-spacing.svg",
+          "alt": "The thirteen equal-tempered notes from A at 220 Hz to A at 440 Hz, marked on a plain hertz scale. The marks spread further apart toward the top. The first gap, A to A sharp, is labeled 13.1 Hz, and the last gap, G sharp to A, is labeled 24.7 Hz.",
+          "placement": "explanation",
+          "width": 720,
+          "height": 250
+        }
+      ],
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Each note's frequency is the previous one's multiplied by the twelfth root of 2, about 1.0595",
+          "isCorrect": true
+        },
+        {
+          "text": "Each note is the previous one plus one-twelfth of the octave's width in hertz",
+          "isCorrect": false
+        },
+        {
+          "text": "Each note's frequency is the previous one's multiplied by 13/12",
+          "isCorrect": false
+        },
+        {
+          "text": "The notes follow the harmonic series, so the steps get smaller toward the top",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Pitch works in ratios, not differences. 220 → 440 Hz and 440 → 880 Hz both sound like one octave, even though one gap is 220 Hz wide and the other is 440 Hz. So steps that sound equal need equal ratios. Twelve identical steps must multiply to 2, so each step is 2^(1/12) ≈ 1.0595, a rise of about 6%.\n\nMeasured in hertz, the steps grow as you climb. A3 to A♯3 is 13.1 Hz, and G♯4 to A4 is 24.7 Hz. With equal steps in hertz, the low semitones would sound huge and the high ones tiny. Multiplying by 13/12 twelve times gives about 2.61, which overshoots the octave badly.",
+      "references": "[Wikipedia: Equal temperament](https://en.wikipedia.org/wiki/Equal_temperament)"
+    },
+    {
+      "id": "equal-temperament-tradeoffs",
+      "title": "Which statements about equal temperament, the tuning of nearly every modern piano and fretted guitar, are true?",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "A piece sounds the same in every key, only higher or lower",
+          "isCorrect": true
+        },
+        {
+          "text": "Its fifths are slightly narrower than a pure 3:2 fifth",
+          "isCorrect": true
+        },
+        {
+          "text": "Its major thirds are noticeably wider than a pure 5:4 third",
+          "isCorrect": true
+        },
+        {
+          "text": "All of its intervals except the octave are pure whole-number ratios",
+          "isCorrect": false
+        },
+        {
+          "text": "It removes the Pythagorean comma from the physics of sound",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Equal temperament accepts small errors everywhere to avoid large errors anywhere. Every semitone is the same ratio, so a piece can move to any key and keep its character. The cost falls on the intervals. Fifths are 700 cents against a pure 702, about 2 cents narrow and nearly inaudible. Fourths are about 2 cents wide. Major thirds are 400 cents against a pure 386, almost 14 cents wide. You can hear that as a slow shimmer of beats when you hold a major chord on a piano.\n\nOnly the octave is pure, the reverse of what the fourth statement claims. And the comma hasn't gone anywhere. It's been cut into twelve slices of about 2 cents, one per fifth. Singers and string players can adjust each note as they go, and they often drift toward purer thirds. A keyboard player can't.",
+      "references": "[Wikipedia: Equal temperament](https://en.wikipedia.org/wiki/Equal_temperament)"
+    },
+    {
+      "id": "missing-fundamental-phone",
+      "title": "A phone's tiny speaker can't produce 60 Hz, yet you still hear a bass line play a 60 Hz note. Why?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The speaker still plays the note's harmonics at 120, 180, 240 Hz and up, and the brain infers the missing 60 Hz fundamental from them",
+          "isCorrect": true
+        },
+        {
+          "text": "Your ear canal resonates at 60 Hz and supplies the missing note",
+          "isCorrect": false
+        },
+        {
+          "text": "The phone's case vibrates at 60 Hz and carries the note through your hand",
+          "isCorrect": false
+        },
+        {
+          "text": "Nothing is heard at that pitch; you remember the bass from hearing the song on better speakers",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The brain doesn't read pitch off the lowest frequency present. It looks for a pattern. 120, 180 and 240 Hz are all multiples of 60 Hz, and 60 Hz is the largest frequency they're all multiples of. So you hear a 60 Hz pitch even though nothing at 60 Hz reaches your ear. This is called the missing fundamental, or virtual pitch. Audio processing uses it on purpose: bass-enhancement effects add extra harmonics of low notes a small speaker can't play, so it sounds fuller than it is.\n\nThe effect brings back the pitch, not the physical thump. The ear canal resonates around 3 kHz, far from 60 Hz. And people hear the missing fundamental even in sounds they've never heard before, so memory can't explain it.",
+      "references": "[Wikipedia: Missing fundamental](https://en.wikipedia.org/wiki/Missing_fundamental)"
+    },
+    {
+      "id": "missing-fundamental-pitch",
+      "title": "This sound contains only the frequencies shown. What pitch do listeners hear, in hertz?",
+      "images": [
+        {
+          "src": "missing-fundamental-spectrum.svg",
+          "alt": "A spectrum from 0 to 1200 Hz with four bars, at 400, 600, 800 and 1000 Hz, getting slightly shorter from left to right. There is nothing below 400 Hz.",
+          "width": 720,
+          "height": 270
+        }
+      ],
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [
+          200
+        ]
+      },
+      "explanation": "400, 600, 800 and 1000 Hz are consecutive multiples of 200 Hz. They're harmonics 2 to 5 of a 200 Hz note with its first harmonic removed. The auditory system reports the fundamental that best explains the whole pattern, so listeners match the pitch to a 200 Hz tone, an octave below the lowest frequency actually present.\n\n400 Hz is the tempting answer. But a 400 Hz fundamental would have harmonics at 800 and 1200 Hz, leaving 600 and 1000 Hz unexplained. The spacing gives it away: each component is 200 Hz from the next.",
+      "references": "[Wikipedia: Missing fundamental](https://en.wikipedia.org/wiki/Missing_fundamental)"
+    },
+    {
+      "id": "piano-stretch-tuning",
+      "title": "A piano tuner deliberately tunes the highest notes sharp and the lowest notes flat compared with exact equal temperament. Why?",
+      "images": [
+        {
+          "src": "piano-stretch-curve.svg",
+          "alt": "Schematic curve of tuning deviation in cents across the piano keyboard from A0 to C8. It sits near zero through the middle, around C4 and A4, falls to about minus 25 cents at the bass end, and rises to about plus 30 cents at the treble end. Labels read bass tuned flat and treble tuned sharp.",
+          "placement": "explanation",
+          "width": 720,
+          "height": 320
+        }
+      ],
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Stiff piano strings have overtones slightly sharper than whole-number multiples, so octaves are widened to match them and sound in tune",
+          "isCorrect": true
+        },
+        {
+          "text": "Treble strings go flat as the piano warms up, so the tuner sets them sharp in advance",
+          "isCorrect": false
+        },
+        {
+          "text": "Equal temperament only works in the middle of the keyboard, so the outer octaves use just intonation",
+          "isCorrect": false
+        },
+        {
+          "text": "It is purely a matter of taste: a brighter treble, with no physical cause",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "An ideal string is perfectly flexible. A real piano string is steel wire, and its stiffness adds a restoring force that matters most for the short, tightly curved upper modes. Each overtone ends up slightly sharp of its whole-number position, and the error grows with harmonic number. This is called inharmonicity.\n\nA tuner sets each octave by listening for beats between the upper note and the second partial of the lower note. Because that partial is sharp, a beat-free octave comes out slightly wider than exactly 2:1. The stretch adds up octave by octave, so near the ends of the keyboard the notes sit tens of cents off strict equal temperament. This pattern is called the Railsback curve, after O. L. Railsback, who measured it in 1938. Tune the \"correct\" way and the octaves would beat, and the top of the piano would sound flat against its own bass.\n\nSo a well-tuned piano is out of tune on purpose, twice over. Equal temperament bends every interval except the octave, and stretch tuning bends the octave too. Both choices make the instrument sound more in tune.",
+      "references": "[Wikipedia: Stretched tuning](https://en.wikipedia.org/wiki/Stretched_tuning) · [Wikipedia: Inharmonicity](https://en.wikipedia.org/wiki/Inharmonicity)"
+    }
+  ]
+}
