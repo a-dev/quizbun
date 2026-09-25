@@ -1,0 +1,441 @@
+{
+  "schemaVersion": 1,
+  "id": "game-bugs-that-became-features",
+  "title": "Game bugs that became features: Space Invaders, the Creeper and the Konami code",
+  "description": "A slow processor gave *Space Invaders* one of the first difficulty curves. Minecraft's best-known monster is a broken pig. Fighting-game combos started as an accident, and the most famous cheat code shipped because someone forgot to delete it. Each Question tells you what the developers saw and asks what they did next. One famous bug in this Quiz never happened.",
+  "language": "en",
+  "tags": [
+    "games",
+    "debugging",
+    "internet-culture"
+  ],
+  "author": "Quizbun",
+  "questions": [
+    {
+      "id": "space-invaders-speed-up",
+      "title": "In *Space Invaders*, the aliens march faster as you shoot them down. Why?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The hardware drew each frame faster when fewer aliens were left, and the designer kept the effect",
+          "isCorrect": true
+        },
+        {
+          "text": "A timer raised the aliens' speed every few seconds",
+          "isCorrect": false
+        },
+        {
+          "text": "Each alien you destroyed added a fixed amount to the formation's speed",
+          "isCorrect": false
+        },
+        {
+          "text": "The cabinet's processor ran faster as it warmed up",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Nobody programmed the speed-up. The game moves the aliens a little after each frame it draws. With a full formation, the Intel 8080 processor takes a long time to draw a frame. Shoot some aliens and there's less to draw, so each frame finishes sooner. The step per frame stays the same, but more frames fit into each second, so the formation speeds up.\n\nThe last alien is the fastest because the processor has almost nothing else to draw. In the image, frame time shrinks as aliens disappear, and steps per second grow.\n\nTo build this on purpose, you'd use a timer. *Space Invaders* got the same result without any speed code.",
+      "references": "[Wikipedia: Space Invaders](https://en.wikipedia.org/wiki/Space_Invaders)",
+      "images": [
+        {
+          "src": "space-invaders-frame-time.svg",
+          "alt": "Two bar charts side by side for 55, 30, 10 and 1 aliens left. Bars for the time to draw one frame get shorter as aliens disappear, from longest at 55 to shortest at 1. Bars for formation steps per second do the opposite, from shortest at 55 to longest at 1. A note says the step size never changes, only the number of steps per second does.",
+          "caption": "Illustrative proportions drawn for this Quiz, not measured timings.",
+          "placement": "explanation",
+          "width": 720,
+          "height": 450
+        }
+      ]
+    },
+    {
+      "id": "space-invaders-steady-speed-fix",
+      "title": "Suppose Tomohiro Nishikado had wanted the aliens to keep a steady speed. What is the usual fix for this kind of bug?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Tie movement to elapsed time, not frames: move by speed × time since the last update",
+          "isCorrect": true
+        },
+        {
+          "text": "Make the alien sprites smaller so every frame draws faster",
+          "isCorrect": false
+        },
+        {
+          "text": "Make each step bigger as more aliens are destroyed",
+          "isCorrect": false
+        },
+        {
+          "text": "Draw the aliens in a random order each frame",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The bug is that movement is counted in frames, so when frame times change, speed changes too. The fix is to count time instead. Check how long has passed since the last update and move by speed × elapsed time. Game developers call this elapsed time the *delta time*. A related fix runs the game logic on a fixed timer, however long drawing takes.\n\nSmaller sprites would make every frame faster, but a frame with 55 aliens would still take longer than a frame with 1, so the speed-up would stay. Bigger steps would make it worse.\n\nPC games in the 1980s made the same mistake. Some tied their speed to the processor and ran too fast on newer PCs. That's one reason PCs had a *turbo* button that could slow the machine back down to the original speed.",
+      "references": "[Wikipedia: Turbo button](https://en.wikipedia.org/wiki/Turbo_button), [Wikipedia: Space Invaders](https://en.wikipedia.org/wiki/Space_Invaders)"
+    },
+    {
+      "id": "space-invaders-release-year",
+      "title": "In what year was *Space Invaders* released in Japan?",
+      "description": "Answer with a four-digit year.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [
+          1978
+        ],
+        "tolerance": 1
+      },
+      "explanation": "**1978**. Taito released it in Japan in July 1978.\n\nNishikado built much of the hardware and development tools himself, adding his own circuits to the arcade board he started from. Even so, the 8080 couldn't draw a full formation quickly, and that limit caused the speed-up from the first Question.",
+      "references": "[Wikipedia: Space Invaders](https://en.wikipedia.org/wiki/Space_Invaders)"
+    },
+    {
+      "id": "why-nishikado-kept-it",
+      "title": "Nishikado noticed the aliens speeding up during development. Why did he keep it?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "He felt it made the game more interesting, and it made up for the hardware's limits",
+          "isCorrect": true
+        },
+        {
+          "text": "He ran out of time before the release date to fix it",
+          "isCorrect": false
+        },
+        {
+          "text": "Fixing it would have needed a more expensive processor",
+          "isCorrect": false
+        },
+        {
+          "text": "He didn't notice it until players reported it",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Nishikado could have written code to cancel out the speed-up. He kept it as part of the gameplay instead. Looking back, he said it made the game more interesting and made up for what the hardware couldn't do.\n\nIt also matched something he already wanted. Many arcade games of the time simply ended when a timer ran out, but Nishikado wanted his to get harder the longer you played. The accident gave him that. Each wave starts slowly and gets tense as it thins out, and the last alien is the hardest to hit.\n\nThis makes *Space Invaders* one of the earliest games with a difficulty curve inside each wave. It's also the first example of a pattern in this Quiz: a bug stays in when the team decides the result is fun.",
+      "references": "[Wikipedia: Space Invaders](https://en.wikipedia.org/wiki/Space_Invaders)"
+    },
+    {
+      "id": "creeper-pig-model",
+      "title": "In August 2009, Minecraft creator Markus Persson was making a pig. It loaded looking like the box labeled \"As it loaded\". What went wrong, and what did he do?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "He had swapped the length and the height, and he kept the result as a new monster, the Creeper",
+          "isCorrect": true
+        },
+        {
+          "text": "He deleted the model and started the pig again",
+          "isCorrect": false
+        },
+        {
+          "text": "The model loaded upside down, and he fixed the rotation",
+          "isCorrect": false
+        },
+        {
+          "text": "The game scaled it by mistake, and it became a chicken",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Persson mixed up the model's dimensions, so the length became the height. A long, low body turned into a short, tall one. Instead of deleting it, he said he'd keep it \"for a creepy creature\". That tall box became the Creeper's body, and the Creeper became Minecraft's best-known monster.\n\nSwapped arguments are an easy bug to write. When a function takes several numbers of the same type, such as `width, height, depth`, nothing stops you from passing them in the wrong order. With named parameters, or an object with named fields, the compiler or a reader can catch the mistake.",
+      "references": "[Wikipedia: Creeper (Minecraft)](https://en.wikipedia.org/wiki/Creeper_(Minecraft))",
+      "images": [
+        {
+          "src": "pig-model-as-planned-and-as-loaded.svg",
+          "alt": "Two plain boxes with dimension arrows. On the left, labeled As planned, a long, low box: the length arrow is long and the height arrow is short. On the right, labeled As it loaded, a short, tall box: its length matches the planned height, and its height matches the planned length.",
+          "caption": "Plain shapes drawn for this Quiz. No game art.",
+          "width": 720,
+          "height": 470
+        }
+      ]
+    },
+    {
+      "id": "creeper-green-skin",
+      "title": "Where did the Creeper's mottled green skin come from?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Persson based it on the game's existing leaves texture",
+          "isCorrect": true
+        },
+        {
+          "text": "An artist painted it to look like a cactus",
+          "isCorrect": false
+        },
+        {
+          "text": "It's a placeholder color for models without a texture",
+          "isCorrect": false
+        },
+        {
+          "text": "It was the pig's texture with the colors inverted",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "He reused something the game already had. After deciding to keep the broken pig, Persson gave it a green texture based on Minecraft's leaves.\n\nReusing textures, sounds and models is normal in games, especially for a solo developer on a pre-alpha project. That was Minecraft in 2009, and the Creeper is a good example: a coding mistake with a borrowed texture.",
+      "references": "[Wikipedia: Creeper (Minecraft)](https://en.wikipedia.org/wiki/Creeper_(Minecraft))"
+    },
+    {
+      "id": "creeper-first-weeks",
+      "title": "Which of these are true about the Creeper's first weeks?",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "The misshapen model first appeared on 20 August 2009",
+          "isCorrect": true
+        },
+        {
+          "text": "Persson gave it an aggressive AI and made it a hostile monster",
+          "isCorrect": true
+        },
+        {
+          "text": "It entered the game on 1 September 2009, in a pre-alpha build",
+          "isCorrect": true
+        },
+        {
+          "text": "A hired artist had sketched it first, and the bug only changed its size",
+          "isCorrect": false
+        },
+        {
+          "text": "Players found the broken pig in a public build and voted to keep it",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The whole story took under two weeks. The model appeared on 20 August 2009 while Persson was building the pig. He gave it an aggressive AI, made it a hostile mob, and added it to the game on 1 September 2009, in a pre-alpha version called `0.24_SURVIVAL_TEST`.\n\nThere was no concept sketch. The shape came straight from the bug, and the texture came from the leaves. Players didn't vote on it either. Persson decided alone, and the public first met the Creeper as a finished monster.",
+      "references": "[Wikipedia: Creeper (Minecraft)](https://en.wikipedia.org/wiki/Creeper_(Minecraft))"
+    },
+    {
+      "id": "street-fighter-ii-combo-discovery",
+      "title": "*Street Fighter II* (1991) made combos famous. How did its producer, Noritaka Funamizu, first notice them?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "During a bug check on the car-smashing bonus stage, he saw that extra hits were possible",
+          "isCorrect": true
+        },
+        {
+          "text": "Arcade players found them months after release and sent in letters",
+          "isCorrect": false
+        },
+        {
+          "text": "A tester wrote a list of button sequences that couldn't be blocked",
+          "isCorrect": false
+        },
+        {
+          "text": "He copied the idea from an earlier fighting game",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "In the bonus stage, you beat up a parked car. While checking it for bugs, Funamizu noticed he could land extra hits, because a second attack could start before the first had finished. Chain these hits together and you get a *combo*: once the first hit lands, the opponent can't escape the rest.\n\nFunamizu thought the timing was too hard for players to use, so the team left it in as a hidden feature. Players proved him wrong. Combos became central to competitive fighting games, and later games designed them on purpose.\n\n*Street Fighter II* wasn't the first game with combos. Culture Brain's *Shanghai Kid* (1985) already had a combo system. *Street Fighter II* is the game that made them standard.",
+      "references": "[Wikipedia: Combo (video games)](https://en.wikipedia.org/wiki/Combo_(video_games))"
+    },
+    {
+      "id": "street-fighter-ii-second-account",
+      "title": "In 2013, *Street Fighter II*'s lead designer, Akira Nishitani, explained canceling differently. What did he say it came from?",
+      "description": "*Canceling* means cutting a normal attack short to start a special move straight away. It's what makes many *Street Fighter II* combos possible.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "A system meant to make special moves easier to input, which also let them start during a normal attack",
+          "isCorrect": true
+        },
+        {
+          "text": "A deliberate feature planned from the first design documents",
+          "isCorrect": false
+        },
+        {
+          "text": "A memory error that skipped the end of each attack animation",
+          "isCorrect": false
+        },
+        {
+          "text": "An arcade-board timing bug that Capcom couldn't fix in time",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Nishitani said the team made special-move input more forgiving. If a player pressed the button too fast, the move wouldn't come out, so the game accepted inputs more generously. As a side effect, a special move could start after a normal attack had hit.\n\nHe didn't call it a bug. The team hadn't expected it, but decided during development to keep it. It \"didn't seem to cause any bugs\", he said, so it could \"be a feature to expand the gameplay\".\n\nSo there are two accounts. Funamizu remembers spotting extra hits during a bug check, and Nishitani describes an unplanned side effect of the input system. Both can be true, since two people in different roles saw the same behavior from different sides. Histories built from interviews often look like this. When accounts differ, report both and say who said what.",
+      "references": "[Game Developer: Street Fighter II designer opens up about the canceling bug (2013)](https://www.gamedeveloper.com/business/-i-street-fighter-ii-i-designer-opens-up-about-the-cancelling-bug-), [Wikipedia: Combo (video games)](https://en.wikipedia.org/wiki/Combo_(video_games))"
+    },
+    {
+      "id": "konami-code-origin",
+      "title": "Why did Kazuhisa Hashimoto create the Konami code?",
+      "description": "The sequence is ↑ ↑ ↓ ↓ ← → ← → B A on an NES controller. It first appeared in the NES version of *Gradius* (1986).",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "He found *Gradius* too hard to play through while testing it, so he gave himself every power-up",
+          "isCorrect": true
+        },
+        {
+          "text": "Konami's marketing team wanted a secret to print in game magazines",
+          "isCorrect": false
+        },
+        {
+          "text": "It was a copy-protection check that proved the cartridge was genuine",
+          "isCorrect": false
+        },
+        {
+          "text": "He wanted a way to demo the final levels at trade shows",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "It was a testing tool. Hashimoto was porting the 1985 arcade game *Gradius* to the NES and had to play it over and over to check his work. The game was too hard for him to get through, so he added a code that gave his ship every power-up.\n\nDevelopers still do this. With a debug menu, a skip-level key or a god mode, a tester can reach the part they need to check without being good at the game. Trouble starts when the shortcut reaches players, as the next Question shows.",
+      "references": "[Wikipedia: Konami Code](https://en.wikipedia.org/wiki/Konami_Code)"
+    },
+    {
+      "id": "konami-code-why-it-shipped",
+      "title": "The code was meant to be removed before *Gradius* shipped. Why was it still in the game?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "It was overlooked until mass production, and removing it that late risked new bugs",
+          "isCorrect": true
+        },
+        {
+          "text": "Nintendo's rules required every game to include a cheat",
+          "isCorrect": false
+        },
+        {
+          "text": "Hashimoto kept it on purpose as a hidden signature",
+          "isCorrect": false
+        },
+        {
+          "text": "It was stored in a part of the chip that couldn't be changed",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Somebody forgot, and by the time anyone noticed, it was too late to change safely. Nobody spotted the code until the game was being prepared for mass production. The developers left it in, because removing it could have caused new bugs and glitches.\n\nThat's a real engineering trade-off. A change made just before release gets the least testing. Deleting a few lines of debug code sounds harmless, but you can't patch a cartridge, so any mistake would ship in every copy. A known, harmless cheat was the safer choice.\n\nKonami later put the code in many games on purpose, and it became the company's signature.",
+      "references": "[Wikipedia: Konami Code](https://en.wikipedia.org/wiki/Konami_Code)"
+    },
+    {
+      "id": "contra-thirty-lives",
+      "title": "The code became famous through another NES game, *Contra*. How many lives did it give you there?",
+      "description": "Answer with a number.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [
+          30
+        ]
+      },
+      "explanation": "**30 lives**. *Contra* is hard, and with the code many more players could finish it.\n\nThat's why so many players learned the code from *Contra* rather than *Gradius*, and why it's also called the \"Contra code\" or the \"30 lives code\".",
+      "references": "[Wikipedia: Konami Code](https://en.wikipedia.org/wiki/Konami_Code)"
+    },
+    {
+      "id": "debug-shortcuts-lessons",
+      "title": "Which lessons from the Konami code apply to debug shortcuts in your own software?",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "Keep debug-only code behind a build flag, so release builds leave it out automatically",
+          "isCorrect": true
+        },
+        {
+          "text": "Deleting code just before a release is a change too, and it can introduce bugs",
+          "isCorrect": true
+        },
+        {
+          "text": "If a shortcut is undocumented, users won't find it",
+          "isCorrect": false
+        },
+        {
+          "text": "A test-only feature is safe to ship as long as it does nothing harmful in testing",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The Konami code shipped because removing it depended on someone remembering. A build flag takes memory out of it. Debug code is compiled only into development builds, so a release build can't contain it even if everyone forgets. Many languages and build tools support this, such as `#ifdef DEBUG` in C or build-time constants that a bundler strips.\n\nThe second lesson is why Konami left the code in. Removing code is a change, and a late change gets little testing.\n\nThe other two statements are traps. Players found the Konami code, and users find hidden routes, debug endpoints and test accounts too. \"Harmless in testing\" also misses the point. A cheat is harmless in a game, but a debug route that skips login is a security hole in a web app.",
+      "references": "[Wikipedia: Konami Code](https://en.wikipedia.org/wiki/Konami_Code)"
+    },
+    {
+      "id": "tribes-skiing",
+      "title": "In *Starsiege: Tribes* (1998), players found they could build up huge speed by tapping jump at the right moment while running downhill. What did the developer, Dynamix, do about it?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Turned it into an official feature of the sequel, *Tribes 2*",
+          "isCorrect": true
+        },
+        {
+          "text": "Patched it out within a few months",
+          "isCorrect": false
+        },
+        {
+          "text": "Left it alone and never acknowledged it",
+          "isCorrect": false
+        },
+        {
+          "text": "Banned it from official tournaments",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The trick, called *skiing*, came from a quirk in the game's physics engine. With the right timing on a downhill slope, a player kept building momentum instead of losing it. Add the game's jetpacks, and skilled players could cross huge maps at high speed.\n\nDynamix built on it. In *Tribes 2* (2001), skiing became a deliberate game feature.\n\nThis story is different from the earlier ones. Nishikado and Persson decided to keep their bugs before anyone else saw them. *Tribes* players found skiing after release and built a play style around it, so removing it would have broken the game they played. Once users depend on a behavior, it's part of your product, whether you planned it or not.",
+      "references": "[Wikipedia: Starsiege: Tribes](https://en.wikipedia.org/wiki/Starsiege:_Tribes)"
+    },
+    {
+      "id": "nuclear-gandhi-bug-that-never-was",
+      "title": "In *Civilization V* (2010), Gandhi is famously eager to use nuclear weapons. Which account of this \"bug that became a feature\" is accurate?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "There was no bug: *Civ V*'s designer set Gandhi's nuclear rating to the maximum as a joke, and the bug story appeared online in 2012",
+          "isCorrect": true
+        },
+        {
+          "text": "An underflow in the 1991 *Civilization* made Gandhi aggressive, and *Civ V* kept it as a tribute",
+          "isCorrect": false
+        },
+        {
+          "text": "*Civ V* shipped with an underflow bug, and a patch turned it into a feature",
+          "isCorrect": false
+        },
+        {
+          "text": "The 1991 game's manual listed Gandhi's aggression as a known bug",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "This is the Quiz's trap. The legend says the 1991 *Civilization* stored Gandhi's aggression as 1, democracy lowered it by 2, and the value wrapped around to 255, the maximum. The image shows the wraparound the story depends on.\n\nThe designers say it never happened. Sid Meier, who created the series, pointed out in his 2020 memoir that the game's integer variables were signed, so 1 − 2 would be −1, not 255. Brian Reynolds, lead designer of *Civilization II*, said the original game had only three aggression levels, so there was no 255 to wrap around to.\n\nThe nuke-happy Gandhi is real, but it was on purpose. In *Civilization V*, designer Jon Shafer gave Gandhi the maximum nuclear rating as a joke. Two years later, a TV Tropes user added the bug story without a source, and it spread from there.\n\nThe timeline settles it. The feature came first, and the \"bug\" was invented later to explain it. The Quiz *Tech myths that won't die* follows this myth further.",
+      "references": "[Wikipedia: Nuclear Gandhi](https://en.wikipedia.org/wiki/Nuclear_Gandhi)",
+      "images": [
+        {
+          "src": "unsigned-8-bit-underflow-wheel.svg",
+          "alt": "A ring of the 256 values of an unsigned 8-bit number, from 0 to 255. An arrow goes two steps back from 1, past 0, to 255. A side panel reads: unsigned 8-bit, 1 − 1 = 0, 0 − 1 wraps to 255, so 1 − 2 = 255. A second panel reads: signed 8-bit, the same bit pattern means −1, so 1 − 2 = −1, as expected.",
+          "caption": "Diagram drawn for Quizbun, shared with the Quiz *Tech myths that won't die*.",
+          "placement": "explanation",
+          "width": 720,
+          "height": 440
+        }
+      ]
+    },
+    {
+      "id": "fix-it-or-ship-it",
+      "title": "Fix it or ship it? Which of these glitches did the developers keep, or build into a later game?",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "*Space Invaders*' aliens speeding up as their numbers fall",
+          "isCorrect": true
+        },
+        {
+          "text": "Minecraft's pig with its length and height swapped",
+          "isCorrect": true
+        },
+        {
+          "text": "Canceling a normal attack into a special move in *Street Fighter II*",
+          "isCorrect": true
+        },
+        {
+          "text": "The power-up code in the NES version of *Gradius*",
+          "isCorrect": true
+        },
+        {
+          "text": "Skiing downhill in *Starsiege: Tribes*",
+          "isCorrect": true
+        },
+        {
+          "text": "An underflow that made Gandhi nuclear in the 1991 *Civilization*",
+          "isCorrect": false
+        },
+        {
+          "text": "*Pac-Man*'s broken level 256, which Namco turned into a bonus stage",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Five of these glitches were kept, each for its own reason:\n\n- *Space Invaders*: the speed-up made the game tense, and fixing it would have meant fighting the hardware.\n- The Creeper: the broken pig looked creepy, so it became a monster.\n- Canceling: it didn't seem to break anything and it opened up the game, even though the timing looked too hard at first.\n- The Konami code: removing it at the last minute was riskier than leaving it in.\n- Skiing: players built their game around it, so the sequel made it official.\n\nThe Gandhi underflow never existed, as the previous Question showed.\n\n*Pac-Man*'s level 256 is a real bug, but Namco never turned it into a bonus. An integer overflow makes that level load wrongly, and nobody can finish it. It's the same wraparound as in the Gandhi image, only upward: in 8 bits, 255 + 1 wraps to 0. Players call it a *kill screen*, because the game ends there.\n\nIn every kept case, someone decided the behavior was worth more than the fix. Keeping a bug is a design decision, just like fixing one.",
+      "references": "[Wikipedia: Space Invaders](https://en.wikipedia.org/wiki/Space_Invaders), [Wikipedia: Creeper (Minecraft)](https://en.wikipedia.org/wiki/Creeper_(Minecraft)), [Game Developer: Street Fighter II designer opens up about the canceling bug (2013)](https://www.gamedeveloper.com/business/-i-street-fighter-ii-i-designer-opens-up-about-the-cancelling-bug-), [Wikipedia: Konami Code](https://en.wikipedia.org/wiki/Konami_Code), [Wikipedia: Starsiege: Tribes](https://en.wikipedia.org/wiki/Starsiege:_Tribes), [Wikipedia: Pac-Man](https://en.wikipedia.org/wiki/Pac-Man), [Wikipedia: Nuclear Gandhi](https://en.wikipedia.org/wiki/Nuclear_Gandhi)"
+    }
+  ]
+}

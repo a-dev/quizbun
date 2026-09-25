@@ -1,0 +1,452 @@
+{
+  "schemaVersion": 1,
+  "id": "have-you-tried-turning-it-off-and-on-again",
+  "title": "Have you tried turning it off and on again? Real bugs a reboot hides",
+  "description": "On *The IT Crowd*, a reboot is a joke. For the Boeing 787, it was an FAA order. Each Question looks at a real system that failed because it ran too long, from Windows 95 to a Patriot missile battery, and asks why a restart hides the bug without fixing it. A few Questions need only a calculator.",
+  "language": "en",
+  "tags": ["debugging", "engineering", "mathematics"],
+  "author": "Quizbun",
+  "questions": [
+    {
+      "id": "tick-count-wrap-days",
+      "title": "Windows 95 counted milliseconds since boot in a 32-bit unsigned integer. After how many days of uptime does that count wrap back to zero?",
+      "description": "A 32-bit unsigned integer holds 2³² = 4,294,967,296 values, from 0 to 4,294,967,295. A day has 86,400,000 milliseconds. Answer in days, to one decimal place.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [49.7],
+        "tolerance": 0.05
+      },
+      "explanation": "4,294,967,296 ms ÷ 86,400,000 ms per day = 49.71 days. One millisecond after 4,294,967,295, the count has nowhere to carry the extra 1, so it rolls over to 0. A car odometer does the same when it goes from 99,999 to 00,000.\n\nMicrosoft's support article KB216641 is called \"Computer Hangs After 49.7 Days\" and covers Windows 95 and Windows 98. It blames \"a timing algorithm in the Vtdapi.vxd file\" and never says how wide the counter is. But 49.7 days is exactly 2³² milliseconds, so the usual explanation is a 32-bit millisecond counter wrapping to zero. Code that assumed the count only goes up could then wait forever for a moment that had already passed.",
+      "images": [
+        {
+          "src": "counter-rollover-odometer.svg",
+          "alt": "Two counters rolling over. A five-digit car odometer reading 99999 gains one kilometre and shows 00000. Below it, a 32-bit binary tick count of all ones, 4,294,967,295 milliseconds, gains one millisecond and becomes all zeros, 0 milliseconds. A note works out 4,294,967,296 ms divided by 86,400,000 ms per day as about 49.7 days of uptime.",
+          "caption": "Decimal or binary, the carry out of the top digit is lost. Diagram drawn for this Quiz.",
+          "placement": "explanation",
+          "width": 720,
+          "height": 400
+        }
+      ],
+      "references": "[Microsoft KB216641: Computer Hangs After 49.7 Days (archived)](https://web.archive.org/web/20061116104241/http://support.microsoft.com/kb/216641), [Microsoft Learn: GetTickCount function](https://learn.microsoft.com/en-us/windows/win32/api/sysinfoapi/nf-sysinfoapi-gettickcount)"
+    },
+    {
+      "id": "why-uptime-bug-hid",
+      "title": "Windows 95 shipped in 1995, and the 49.7-day hang was documented only years later. What does this bug need before it can happen at all?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "49.7 days without a single restart, because every boot sets the count back to zero",
+          "isCorrect": true
+        },
+        {
+          "text": "A particular date on the calendar, as with the Y2K bug",
+          "isCorrect": false
+        },
+        {
+          "text": "More memory than a typical 1990s PC had installed",
+          "isCorrect": false
+        },
+        {
+          "text": "A heavy workload that makes the counter tick faster",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The counter measures **uptime**, the time since the last boot. It ticks once per millisecond however busy the machine is, and any shutdown, crash or restart puts it back to zero. A PC that was switched off at night, or that crashed for some other reason, never got near day 49.7.\n\nSo every reboot hid the bug. The code was wrong from day one, but the fault needed seven weeks of nonstop running to appear, and ordinary use and testing rarely got that far.\n\nA date bug, like Y2K, hits every machine at the same moment, no matter when each one was started. Memory size and workload don't change how fast a millisecond counter moves.",
+      "references": "[Microsoft KB216641: Computer Hangs After 49.7 Days (archived)](https://web.archive.org/web/20061116104241/http://support.microsoft.com/kb/216641), [Wikipedia: Software aging](https://en.wikipedia.org/wiki/Software_aging)"
+    },
+    {
+      "id": "wrap-safe-comparison",
+      "title": "`GetTickCount()` returns the milliseconds since boot as a 32-bit unsigned `DWORD`. Which timeout check keeps working when that count wraps to zero?",
+      "description": "Both checks should call `timeOut()` once 5 seconds have passed since `start`.\n\n```c\nDWORD start = GetTickCount();\n/* ... later ... */\n\n// Check A\nif (GetTickCount() >= start + 5000) timeOut();\n\n// Check B\nif (GetTickCount() - start >= 5000) timeOut();\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Check B, which subtracts `start` from the current count",
+          "isCorrect": true
+        },
+        {
+          "text": "Check A, which adds the delay to `start`",
+          "isCorrect": false
+        },
+        {
+          "text": "Both, because unsigned arithmetic cannot overflow",
+          "isCorrect": false
+        },
+        {
+          "text": "Neither; only `GetTickCount64` can measure an interval across a wrap",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Unsigned 32-bit arithmetic wraps modulo 2³² = 4,294,967,296. That breaks Check A and saves Check B.\n\nSay `start = 4,294,965,000`, about 2.3 seconds before the wrap. In Check A, `start + 5000` wraps to 2,704. A moment later `GetTickCount()` returns 4,294,966,000, which is already `>= 2,704`, so the timeout fires almost 5 seconds early.\n\nIn Check B, 5 seconds later the count has wrapped to 2,704. `2,704 - 4,294,965,000` wraps too, and the result is exactly 5,000. Subtracting first measures the **distance** between two readings. That distance stays correct across one wrap, as long as the interval is shorter than 49.7 days.\n\nMicrosoft's documentation suggests two fixes: use `GetTickCount64`, or \"check for an overflow condition when comparing times\". Subtracting first is the simplest way to do the second.",
+      "references": "[Microsoft Learn: GetTickCount function](https://learn.microsoft.com/en-us/windows/win32/api/sysinfoapi/nf-sysinfoapi-gettickcount), [Wikipedia: Integer overflow](https://en.wikipedia.org/wiki/Integer_overflow)"
+    },
+    {
+      "id": "start-counter-near-wrap",
+      "title": "Linux starts its 32-bit `jiffies` tick counter at a value that wraps five minutes after boot, not at zero. Why?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "So wrap-around bugs show up minutes after every boot instead of after weeks of uptime",
+          "isCorrect": true
+        },
+        {
+          "text": "To reserve the first five minutes of ticks for the bootloader",
+          "isCorrect": false
+        },
+        {
+          "text": "Because the hardware timer cannot start counting from zero",
+          "isCorrect": false
+        },
+        {
+          "text": "To stop attackers from reading the machine's uptime",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The kernel source says so. Just above `INITIAL_JIFFIES` in `include/linux/jiffies.h` is the comment \"Have the 32-bit jiffies value wrap 5 minutes after boot so jiffies wrap bugs show up earlier.\"\n\nA wrap bug that needs weeks of uptime slips past most testing, because test machines get rebooted all the time. Starting the counter just below its maximum turns a rare, slow bug into one that every developer hits within minutes.\n\nWindows uses the same trick. Microsoft's documentation notes that debug (\"checked\") builds of Windows move the tick count forward by about 49 days, so these bugs show up without a long uptime. Neither trick changes the counter. Both change the testing, so the wrap happens where someone will see it.",
+      "references": "[Linux source: include/linux/jiffies.h](https://github.com/torvalds/linux/blob/master/include/linux/jiffies.h), [Microsoft Learn: GetTickCount function](https://learn.microsoft.com/en-us/windows/win32/api/sysinfoapi/nf-sysinfoapi-gettickcount)"
+    },
+    {
+      "id": "787-after-248-days",
+      "title": "In 2015 the FAA found that a Boeing 787 left powered on for 248 days straight could lose something. What?",
+      "type": "single-choice",
+      "images": [
+        {
+          "src": "boeing-787-landing.webp",
+          "alt": "A Boeing 787-8 Dreamliner in Kenya Airways livery on final approach against a clear blue sky, landing gear down.",
+          "caption": "Kenya Airways Boeing 787-8 landing at Amsterdam Schiphol. Photo by Alf van Beem, public domain, via [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:5Y-KZD_Kenya_Airways_Boeing_787-8_Dreamliner_landing_at_Schiphol_AMS-EHAM_pic1.JPG).",
+          "width": 1400,
+          "height": 1050
+        }
+      ],
+      "options": [
+        {
+          "text": "All AC electrical power, because its generator control units could all go into failsafe mode at once",
+          "isCorrect": true
+        },
+        {
+          "text": "Thrust on both engines, because the engine controllers would restart together",
+          "isCorrect": false
+        },
+        {
+          "text": "Its flight-management clock, which would reset to the aircraft's delivery date",
+          "isCorrect": false
+        },
+        {
+          "text": "Only the cabin entertainment system; the order was a precaution",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Airworthiness Directive 2015-09-07 says a 787 \"that has been powered continuously for 248 days can lose all alternating current (AC) electrical power due to the generator control units (GCUs) simultaneously going into failsafe mode.\" It gives the cause in one line: \"a software counter internal to the GCUs that will overflow after 248 days of continuous power.\" The FAA warned this \"could result in loss of control of the airplane.\"\n\nNote the word *simultaneously*. The 787 has four main GCUs so that one failure can't take out the electrics. But all four power up at the same moment, so their counters stay in step and overflow together. Redundancy protects against independent failures, and this one wasn't independent.\n\nThe FAA's fix came straight from the IT help desk: switch it off and on again. Operators had to fully power the aircraft down at least every 120 days, as a stopgap while Boeing wrote new GCU software.",
+      "references": "[Federal Register: Airworthiness Directives; The Boeing Company Airplanes (AD 2015-09-07)](https://www.federalregister.gov/documents/2015/05/01/2015-10066/airworthiness-directives-the-boeing-company-airplanes)"
+    },
+    {
+      "id": "gcu-counter-days",
+      "title": "Suppose the 787's generator counter is a signed 32-bit integer that counts hundredths of a second. After how many days does it overflow?",
+      "description": "A signed 32-bit integer overflows after 2³¹ = 2,147,483,648 counts. A day has 8,640,000 hundredths of a second. Answer in days, to one decimal place.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [248.55],
+        "tolerance": 0.06
+      },
+      "explanation": "2,147,483,648 ÷ 8,640,000 = 248.55 days, which matches the 248 days in the FAA's directive.\n\nThe match is our own inference. The directive says only that \"a software counter internal to the GCUs\" overflows after 248 days of continuous power. It gives neither the counter's width nor its unit. A signed 32-bit count of hundredths of a second is the simplest design that fits the number, so it's the usual explanation.\n\nYou can run the same check on any \"fails after N days\" report. Divide 2³¹ or 2³² by the number of ticks in a day for a few common tick sizes, and see whether one lands on N.",
+      "references": "[Federal Register: Airworthiness Directives; The Boeing Company Airplanes (AD 2015-09-07)](https://www.federalregister.gov/documents/2015/05/01/2015-10066/airworthiness-directives-the-boeing-company-airplanes)"
+    },
+    {
+      "id": "787-51-days",
+      "title": "In 2020 the FAA again ordered 787 operators to cycle the aircraft's electrical power, this time because of a 51-day limit. What could go wrong after 51 days?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The check that flags stale data could stop working, so old airspeed, altitude or attitude data could be displayed as current",
+          "isCorrect": true
+        },
+        {
+          "text": "The generator control units could fail together, as in 2015",
+          "isCorrect": false
+        },
+        {
+          "text": "The navigation database would expire and need reloading",
+          "isCorrect": false
+        },
+        {
+          "text": "The flight data recorders would run out of storage",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Airworthiness Directive 2020-06-14 says \"the stale-data monitoring function of the common core system (CCS) may be lost when continuously powered on for 51 days.\" Flight-critical data such as airspeed, altitude, attitude and engine readings travels over the 787's common data network, and the monitor checks how old each message is. If the monitor is lost and a network switch also fails, old data could be \"routed and displayed as valid data.\" Among the possible results, the FAA listed misleading attitude, altitude and airspeed on both pilots' displays.\n\nIn a way this is worse than a crash. Pilots notice a frozen display, but an old number that looks plausible can pass unnoticed. The directive requires repeated power cycling on a schedule set by a Boeing service bulletin. Unlike the 2015 directive, it doesn't say what fails inside the system at 51 days, so any specific counter explanation would be a guess.",
+      "references": "[Federal Register: Airworthiness Directives; The Boeing Company Airplanes (AD 2020-06-14)](https://www.federalregister.gov/documents/2020/03/23/2020-06092/airworthiness-directives-the-boeing-company-airplanes)"
+    },
+    {
+      "id": "patriot-what-went-wrong",
+      "title": "On 25 February 1991 a Patriot battery at Dhahran, Saudi Arabia, failed to intercept an Iraqi Scud missile, which hit a US Army barracks and killed 28 soldiers. According to the GAO's investigation, what went wrong?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Converting the system's clock to seconds lost precision, and the error grew the longer the system ran",
+          "isCorrect": true
+        },
+        {
+          "text": "The clock counter overflowed and reset to zero while the Scud was being tracked",
+          "isCorrect": false
+        },
+        {
+          "text": "The radar overheated after days of continuous operation",
+          "isCorrect": false
+        },
+        {
+          "text": "Iraqi forces jammed the battery's radar",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The GAO found \"an inaccurate tracking calculation that became worse the longer the system operated.\" The clock counted time in whole tenths of a second. To predict where a Scud would appear next, the software converted that count to seconds, and the Patriot's 24-bit registers made the conversion slightly off. The longer the system ran, the bigger the error.\n\nAfter the radar first spots a target, the Patriot looks for it again inside a \"range gate\" around the predicted position. With the clock off, the gate was in the wrong place. The Dhahran battery had been running for more than 100 hours, and the Scud wasn't where it looked.\n\nNothing overflowed. The count itself was correct; the multiplication that turned it into seconds drifted. The Patriot was designed to move often and run a few hours at a time. At Dhahran it had been defending one site for days.",
+      "references": "[GAO: Patriot Missile Defense: Software Problem Led to System Failure at Dhahran, Saudi Arabia (IMTEC-92-26, 1992)](https://www.gao.gov/products/imtec-92-26)"
+    },
+    {
+      "id": "patriot-drift-seconds",
+      "title": "Each tenth-of-a-second tick of the Patriot's clock was converted with an error of about 0.000000095 seconds. How many seconds off was the clock after 100 hours of continuous running?",
+      "description": "100 hours is 360,000 seconds, or 3,600,000 ticks. Answer in seconds, to two decimal places.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [0.34],
+        "tolerance": 0.005
+      },
+      "explanation": "3,600,000 ticks × 0.000000095 s ≈ 0.34 s. The GAO's own table gives 0.3433 seconds at 100 hours.\n\nThe tiny per-tick error comes from the number 0.1. In binary, one tenth never ends: 0.000110011001100110011… repeats forever, just as 1/3 does in decimal. The Patriot stored it in a 24-bit register, which cut the pattern short. Each time the software multiplied the tick count by that shortened 0.1, the result came out slightly low, and the gap grew with the count.\n\nA third of a second sounds small, but a Scud flies at about Mach 5. The GAO calculated that after 100 hours the range gate had shifted 687 metres. After about 20 hours of running, an incoming Scud could already fall outside the gate. The chart plots the GAO's figures.",
+      "images": [
+        {
+          "src": "patriot-clock-drift.svg",
+          "alt": "Line chart of the Patriot's timing error against hours of continuous operation, from 0 to 100 hours. The error rises in a straight line from 0 to 0.34 seconds. Points are labelled with the range-gate shift: 137 metres at 20 hours, 330 metres at 48 hours, 494 metres at 72 hours. A dashed line at about 20 hours marks where the Scud falls outside the range gate. A callout at 100 hours reads Dhahran, over 100 hours, 0.34 seconds off, gate moved 687 metres. A note says rebooting set the clock, and the error, back to zero.",
+          "caption": "Figures from GAO report IMTEC-92-26, Appendix II. Chart drawn for this Quiz.",
+          "placement": "explanation",
+          "width": 720,
+          "height": 460
+        }
+      ],
+      "references": "[GAO: Patriot Missile Defense: Software Problem Led to System Failure at Dhahran, Saudi Arabia (IMTEC-92-26, 1992)](https://www.gao.gov/products/imtec-92-26), [Robert Skeel: Roundoff Error and the Patriot Missile (SIAM News, 1992)](https://www-users.cse.umn.edu/~arnold/disasters/Patriot-dharan-skeel-siam.pdf)"
+    },
+    {
+      "id": "patriot-report-findings",
+      "title": "Which of these statements about the Dhahran failure appear in the GAO's report?",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "Rebooting the system every few hours would have reset the clock and removed the range-gate shift",
+          "isCorrect": true
+        },
+        {
+          "text": "The Army warned users that \"very long run times\" could shift the range gate, but didn't say how long that was",
+          "isCorrect": true
+        },
+        {
+          "text": "Corrected software reached Dhahran the day after the attack",
+          "isCorrect": true
+        },
+        {
+          "text": "The Army had ordered a reboot every 8 hours, and the Dhahran battery ignored the order",
+          "isCorrect": false
+        },
+        {
+          "text": "Nobody had seen the accuracy problem before 25 February 1991",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The report says the range-gate shift \"could be eliminated by rebooting the system—turning the system off and on—every few hours.\" A reboot took 60 to 90 seconds and set the clock, and the error with it, back to zero.\n\nThe problem wasn't new. Israeli users had reported a loss of accuracy after 8 hours of continuous running. The Army thought that was unusual and assumed other users didn't run their systems that long. On 21 February 1991 it warned that \"very long run times\" could shift the range gate, but it never said how long was very long. Army officials told the GAO they assumed nobody would run a battery long enough to fail, so they saw no need for more detailed guidance. Fixed software that corrected the timing error reached Dhahran on 26 February, the day after the attack.\n\nA known workaround only protects people if it says exactly when to use it. \"Very long run times\" gave the crew at Dhahran nothing to act on.",
+      "references": "[GAO: Patriot Missile Defense: Software Problem Led to System Failure at Dhahran, Saudi Arabia (IMTEC-92-26, 1992)](https://www.gao.gov/products/imtec-92-26)"
+    },
+    {
+      "id": "sixteen-bit-wrap-seconds",
+      "title": "A small embedded device counts milliseconds since power-on in an unsigned 16-bit integer. After how many seconds does the count wrap to zero?",
+      "description": "Answer in seconds, to three decimal places.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [65.536],
+        "tolerance": 0.0005
+      },
+      "explanation": "16 bits hold 2¹⁶ = 65,536 values, so the count covers 0 to 65,535 ms and wraps after 65,536 ms, or 65.536 seconds.\n\nA counter this small is almost lucky. It wraps about once a minute, so code that mishandles the wrap fails in the first bench test, and the developer fixes it. Widen the same counter to 32 bits and the wrap moves to day 49.7, well past most tests. The bug is the same; only the wait is longer.\n\nYou'll see this throughout the Quiz. A bigger counter makes a wrap bug rarer without removing it, and each reboot pushes it further away.",
+      "references": "[Wikipedia: Integer overflow](https://en.wikipedia.org/wiki/Integer_overflow)"
+    },
+    {
+      "id": "settimeout-max-delay",
+      "title": "In a browser, what does `setTimeout(sendReminder, 30 * 24 * 60 * 60 * 1000)` do?",
+      "description": "The delay is 30 days in milliseconds: 2,592,000,000.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Calls `sendReminder` almost immediately",
+          "isCorrect": true
+        },
+        {
+          "text": "Calls `sendReminder` after 30 days",
+          "isCorrect": false
+        },
+        {
+          "text": "Caps the delay at about 24.8 days and calls `sendReminder` then",
+          "isCorrect": false
+        },
+        {
+          "text": "Throws a `RangeError` because the delay is too large",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Browsers convert the delay to a signed 32-bit integer, so the longest delay they can represent is 2,147,483,647 ms, about 24.8 days. 2,592,000,000 is larger, so it wraps: 2,592,000,000 − 4,294,967,296 = −1,702,967,296. A negative delay counts as zero, so the callback runs as soon as the browser gets to it.\n\nMDN covers this under \"Maximum delay value\". In its examples, `2 ** 32 - 5000` runs immediately and `2 ** 32 + 5000` runs after about 5 seconds, because the wrap drops whole multiples of 2³². Node.js doesn't wrap at all: it runs any timeout above 2,147,483,647 ms immediately.\n\nThere's no error and no cap. To wait longer, save the target time and check it with a shorter timer, or use a scheduler outside the page.",
+      "references": "[MDN: setTimeout() — Maximum delay value](https://developer.mozilla.org/en-US/docs/Web/API/Window/setTimeout#maximum_delay_value)"
+    },
+    {
+      "id": "signed-32-bit-max",
+      "title": "In December 2014 the view count of PSY's \"Gangnam Style\" passed the largest value a signed 32-bit integer can hold. Type that value.",
+      "description": "Digits only, without commas or spaces.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [2147483647]
+      },
+      "explanation": "The value is 2³¹ − 1 = 2,147,483,647.\n\nA signed 32-bit integer uses its first bit for the sign. That leaves 31 bits and 2³¹ = 2,147,483,648 non-negative values. Zero takes one of them, so the largest positive value is one less. The negative side gets the spare value, so its minimum is −2,147,483,648.\n\nYou'll meet this number often. It's `Integer.MAX_VALUE` in Java, the longest browser `setTimeout` delay in milliseconds, and the largest value a signed 32-bit database column can hold. A counter sitting at it is one increment from trouble.",
+      "references": "[Guinness World Records: First YouTube video to require a 64-bit counter](https://www.guinnessworldrecords.com/world-records/381953-first-youtube-video-to-require-a-64-bit-counter), [Wikipedia: 2,147,483,647](https://en.wikipedia.org/wiki/2,147,483,647)"
+    },
+    {
+      "id": "gangnam-counter",
+      "title": "\"Gangnam Style\" passed 2,147,483,647 views in December 2014. What happened to YouTube's view counter?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Nothing broke: YouTube had moved the counter to a 64-bit integer months earlier",
+          "isCorrect": true
+        },
+        {
+          "text": "It showed a negative view count until engineers patched it",
+          "isCorrect": false
+        },
+        {
+          "text": "It froze at 2,147,483,647 for several days",
+          "isCorrect": false
+        },
+        {
+          "text": "The video was taken down while YouTube migrated its database",
+          "isCorrect": false
+        }
+      ],
+      "videos": [
+        {
+          "provider": "youtube",
+          "id": "9bZkp7q19f0",
+          "placement": "explanation"
+        }
+      ],
+      "explanation": "YouTube announced the milestone as a joke. Its Google+ post said: \"We never thought a video would be watched in numbers greater than a 32-bit integer (=2,147,483,647 views), but that was before we met PSY.\" Many outlets reported that the video had broken YouTube. A spokesperson then told Variety \"we updated the counter to 64-bit months ago\" and called the post an Easter egg.\n\nSo this one is a success story. Someone saw a counter nearing its limit and widened it before it overflowed. That's a real fix; a restart wouldn't have helped. Guinness World Records lists \"Gangnam Style\" as the first YouTube video to require a 64-bit counter.\n\nHere's the video that did it.",
+      "references": "[Variety: No, Psy's 'Gangnam Style' Did Not Break YouTube Video Counter (2014)](https://variety.com/2014/digital/news/no-psys-gangnam-style-did-not-break-youtube-video-counter-1201371888/), [Guinness World Records: First YouTube video to require a 64-bit counter](https://www.guinnessworldrecords.com/world-records/381953-first-youtube-video-to-require-a-64-bit-counter)"
+    },
+    {
+      "id": "overflow-goes-negative",
+      "title": "Suppose YouTube had kept a signed 32-bit view counter that wraps on overflow. What would it show after one more view past 2,147,483,647?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "−2,147,483,648",
+          "isCorrect": true
+        },
+        {
+          "text": "0",
+          "isCorrect": false
+        },
+        {
+          "text": "2,147,483,648",
+          "isCorrect": false
+        },
+        {
+          "text": "−1",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Almost all hardware stores signed integers in **two's complement**. The first bit is the sign, and a pattern with that bit set means its unsigned value minus 2³². The largest positive value is `0111…1111`. Add 1 and the carry turns it into `1000…0000`, the most negative value, −2,147,483,648. The ring in the diagram shows the jump.\n\n0 is where an *unsigned* counter goes after its maximum, like the Windows 95 tick count. −1 is the all-ones pattern, `1111…1111`, just below zero on the same ring. 2,147,483,648 would need a 33rd bit.\n\nLanguages handle this differently. Java wraps as shown. In C and C++, signed overflow is undefined behavior, so the compiler may assume it never happens, and the program can do something even stranger.",
+      "images": [
+        {
+          "src": "signed-32-bit-wrap.svg",
+          "alt": "A ring of all 2 to the 32 values of a signed 32-bit integer. 0 is at the top, with 1 just clockwise and -1 just counterclockwise. Positive values run clockwise down the right side through plus 1 billion to 2,147,483,647 near the bottom. An arrow labelled plus 1 jumps from there to its neighbour, -2,147,483,648, and negative values continue up the left side through minus 1 billion back to -1. A side panel lists the bit patterns: 0000...0001 is 1, 0111...1111 is 2,147,483,647, 1000...0000 is -2,147,483,648 and 1111...1111 is -1, noting that the first bit is the sign.",
+          "caption": "The jump from the largest value to the most negative one is a single step. Diagram drawn for this Quiz.",
+          "placement": "explanation",
+          "width": 720,
+          "height": 460
+        }
+      ],
+      "references": "[Wikipedia: Two's complement](https://en.wikipedia.org/wiki/Two%27s_complement), [Wikipedia: Integer overflow](https://en.wikipedia.org/wiki/Integer_overflow). For data that really did break software, see the Quiz \"Names that break software: NULL, True and little Bobby Tables\"."
+    },
+    {
+      "id": "years-to-fill-64-bits",
+      "title": "YouTube's counter can now reach 9,223,372,036,854,775,807, the largest signed 64-bit value. If a video gained 1 billion views every day, how many million years would it take to reach that?",
+      "description": "Use 365.25 days per year. Answer in millions of years, to one decimal place.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [25.3],
+        "tolerance": 0.5
+      },
+      "explanation": "9,223,372,036,854,775,807 ÷ 1,000,000,000 views per day ≈ 9.22 billion days. Divided by 365.25, that's about 25.3 million years.\n\nThat's what widening a counter buys you. Each extra bit doubles the range, so 32 more bits multiply it by about 4.3 billion. A limit one video reached in two and a half years now lies beyond the life of the hardware, the company and probably the human species.\n\nWindows got the same fix. `GetTickCount64` counts milliseconds in 64 bits and won't wrap for about 584 million years of uptime.",
+      "references": "[Guinness World Records: First YouTube video to require a 64-bit counter](https://www.guinnessworldrecords.com/world-records/381953-first-youtube-video-to-require-a-64-bit-counter), [Microsoft Learn: GetTickCount64 function](https://learn.microsoft.com/en-us/windows/win32/api/sysinfoapi/nf-sysinfoapi-gettickcount64)"
+    },
+    {
+      "id": "uptime-bug-symptoms",
+      "title": "A fleet of identical machines hangs now and then. Which observations point to an uptime bug, one that depends on time since the last boot?",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "Machines that were powered on at the same time fail at the same time, whatever their workload",
+          "isCorrect": true
+        },
+        {
+          "text": "After a restart, a machine runs fine for the same length of time before the fault returns",
+          "isCorrect": true
+        },
+        {
+          "text": "The time to failure matches a power of two in some unit, such as 49.7 days or 65.5 seconds",
+          "isCorrect": true
+        },
+        {
+          "text": "Every machine fails at the same moment on one calendar date, whenever it was last started",
+          "isCorrect": false
+        },
+        {
+          "text": "Failures happen only during peak traffic and stop when the load drops",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "An uptime bug runs on a stopwatch that starts at boot. Machines started together reach the limit together, which is why the 787's four generator control units could fail at once. A restart resets the stopwatch, so the fault comes back after the same interval every time. When that interval is 2ⁿ ticks of some unit, a counter is almost certainly wrapping. A quick division, like the ones earlier in this Quiz, often tells you which counter.\n\nThe other two point elsewhere. A failure that hits every machine at the same clock time, however long each has been up, is a **date** bug: it reads the calendar. Failures that follow load point to capacity limits, lock contention or timeouts under pressure.\n\nA slow memory leak also looks \"fine for a while after each restart\", but its interval changes with the workload. A wrap bug fails on a fixed schedule.",
+      "references": "[Wikipedia: Software aging](https://en.wikipedia.org/wiki/Software_aging), [Federal Register: AD 2015-09-07](https://www.federalregister.gov/documents/2015/05/01/2015-10066/airworthiness-directives-the-boeing-company-airplanes)"
+    },
+    {
+      "id": "fix-or-reset",
+      "title": "Which of these changes fix the underlying bug, rather than restart the clock on it?",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "Replacing `GetTickCount` with `GetTickCount64`",
+          "isCorrect": true
+        },
+        {
+          "text": "Measuring elapsed time as `now - start` in unsigned arithmetic, instead of testing `now >= start + delay`",
+          "isCorrect": true
+        },
+        {
+          "text": "Moving YouTube's view counter from 32 to 64 bits",
+          "isCorrect": true
+        },
+        {
+          "text": "Powering down every 787 at least every 120 days",
+          "isCorrect": false
+        },
+        {
+          "text": "Rebooting the Patriot battery every few hours",
+          "isCorrect": false
+        },
+        {
+          "text": "Scheduling a nightly restart for a server that leaks memory",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A fix changes the code so the failure can't happen, or can't happen in any realistic lifetime. `GetTickCount64` and a 64-bit view counter push the limit out by millions of years. Unsigned subtraction keeps the arithmetic correct across a wrap, so the counter can roll over as often as it likes.\n\nThe other three are **workarounds**. Each one resets the state before the bug has time to show up, and the bug stays in the code. Sometimes that's the right call. The FAA called its 120-day power-down \"interim action\" while Boeing wrote new software, and the GAO said a reboot every few hours would have kept the Patriot accurate. Engineers even have a name for planned restarts: software rejuvenation.\n\nWorkarounds have two risks. They only work if people follow them, and the Patriot's operators were never told how often was often enough. They also hide the evidence, so the next team may never learn the bug is there.\n\nCurious how long your own computer has been running? Type `uptime` on macOS or Linux, or open the Performance tab of Task Manager on Windows.",
+      "references": "[Microsoft Learn: GetTickCount64 function](https://learn.microsoft.com/en-us/windows/win32/api/sysinfoapi/nf-sysinfoapi-gettickcount64), [Wikipedia: Software aging](https://en.wikipedia.org/wiki/Software_aging). For why a reboot clears leaked memory, see the Quiz \"The IT Crowd: have you tried turning it off and on again?\"."
+    }
+  ]
+}

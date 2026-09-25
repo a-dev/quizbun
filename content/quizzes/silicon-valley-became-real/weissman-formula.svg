@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="360" viewBox="0 0 720 360">
+  <style>
+    /* An &lt;img&gt;-embedded SVG cannot see the page's `data-theme`, but it does
+       inherit the embedding document's `color-scheme`, so `prefers-color-scheme`
+       tracks the site theme including an explicit toggle. The presentation
+       attributes below stay as the light fallback for renderers without CSS. */
+    svg {
+      --panel: #f5f7fb;
+      --card: #ffffff;
+      --title: #20242c;
+      --muted: #526173;
+      --edge: #64748b;
+      --accent: #b45309;
+      --cool: #1d4ed8;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      svg {
+        --panel: #1a1f27;
+        --card: #232a35;
+        --title: #e6eaf2;
+        --muted: #9aa8bd;
+        --edge: #8b9bb4;
+        --accent: #f59e0b;
+        --cool: #60a5fa;
+      }
+    }
+
+    .panel { fill: var(--panel); }
+    .card { fill: var(--card); stroke: var(--edge); }
+    .title { fill: var(--title); }
+    .muted { fill: var(--muted); }
+    .edge { stroke: var(--edge); }
+    .accent { fill: var(--accent); }
+    .accent-stroke { stroke: var(--accent); }
+    .cool { fill: var(--cool); }
+    .arrowhead { fill: var(--edge); }
+  </style>
+
+  <rect class="panel" width="720" height="360" rx="20" fill="#f5f7fb" />
+  <text class="title" x="36" y="46" fill="#20242c" font-family="system-ui, sans-serif" font-size="20" font-weight="700">
+    The Weissman score, term by term
+  </text>
+
+  <g font-family="system-ui, sans-serif" text-anchor="middle">
+    <!-- W = α · (r / r̄) · (log T̄ / log T) -->
+    <text class="title" x="110" y="160" fill="#20242c" font-size="40" font-style="italic">W</text>
+    <text class="title" x="160" y="160" fill="#20242c" font-size="36">=</text>
+    <text class="title" x="210" y="160" fill="#20242c" font-size="40" font-style="italic">α</text>
+    <text class="title" x="250" y="160" fill="#20242c" font-size="36">·</text>
+
+    <text class="accent" x="330" y="132" fill="#b45309" font-size="34" font-style="italic">r</text>
+    <path class="accent-stroke" d="M290 148H370" stroke="#b45309" stroke-width="3" />
+    <text class="accent" x="330" y="190" fill="#b45309" font-size="34" font-style="italic">r̄</text>
+
+    <text class="title" x="410" y="160" fill="#20242c" font-size="36">·</text>
+
+    <text class="cool" x="520" y="132" fill="#1d4ed8" font-size="34">log <tspan font-style="italic">T̄</tspan></text>
+    <path class="edge" d="M455 148H585" stroke="#64748b" stroke-width="3" />
+    <text class="cool" x="520" y="190" fill="#1d4ed8" font-size="34">log <tspan font-style="italic">T</tspan></text>
+  </g>
+
+  <g font-family="system-ui, sans-serif" font-size="15">
+    <text class="muted" x="210" y="240" fill="#526173" text-anchor="middle">scaling constant</text>
+
+    <text class="accent" x="330" y="240" fill="#b45309" text-anchor="middle" font-weight="700">Ratio term</text>
+    <text class="muted" x="330" y="262" fill="#526173" text-anchor="middle">r = your compression ratio</text>
+    <text class="muted" x="330" y="282" fill="#526173" text-anchor="middle">r̄ = a standard compressor's</text>
+
+    <text class="cool" x="520" y="240" fill="#1d4ed8" text-anchor="middle" font-weight="700">Time term</text>
+    <text class="muted" x="520" y="262" fill="#526173" text-anchor="middle">T = your time to compress</text>
+    <text class="muted" x="520" y="282" fill="#526173" text-anchor="middle">T̄ = the standard's time</text>
+
+    <text class="muted" x="36" y="330" fill="#526173">Higher W is better. A bigger ratio or a shorter time raises it.</text>
+  </g>
+</svg>

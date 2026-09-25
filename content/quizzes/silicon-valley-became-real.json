@@ -1,0 +1,384 @@
+{
+  "schemaVersion": 1,
+  "id": "silicon-valley-became-real",
+  "title": "When HBO's Silicon Valley became real: Not Hotdog, the Weissman score and tabs versus spaces",
+  "description": "HBO's *Silicon Valley* hired tech consultants so its jokes would hold up, and a few of those jokes escaped into the real world: a compression metric a Stanford professor invented for the show, a hotdog-detecting app you could actually install, and a fake Google that the real Google linked to. Each Question starts from a scene and asks what happened next in real life. The Explanations cover the real tech behind the jokes: transfer learning, class imbalance, and why a score built on logarithms depends on your stopwatch.",
+  "language": "en",
+  "tags": ["compression", "statistics", "internet-culture"],
+  "author": "Quizbun",
+  "questions": [
+    {
+      "id": "where-weissman-came-from",
+      "title": "Pied Piper's compression is judged by its \"Weissman score\". Where did that metric come from?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "A Stanford professor and his PhD student invented it for the show, at the producers' request",
+          "isCorrect": true
+        },
+        {
+          "text": "It's a standard compression benchmark from the 1990s that the writers borrowed",
+          "isCorrect": false
+        },
+        {
+          "text": "The writers made up the name, and no formula behind it exists",
+          "isCorrect": false
+        },
+        {
+          "text": "Dropbox engineers used it internally, and a consultant brought it to the show",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The producers wanted Pied Piper's breakthrough to sound credible, so the show's tech adviser, Jonathan Dotan, went looking for a compression expert. He found **Tsachy Weissman**, an information theory professor at Stanford, who brought in his PhD student **Vinith Misra**. Together they designed the fictional algorithm and a metric to score it, and the metric took Weissman's name.\n\nThe show needed one number an audience could follow. Real compression researchers report at least two: how small the output gets (the **compression ratio**) and how long it takes. The Weissman score folds both into a single value, compared against a standard compressor for the same kind of data, such as FLAC for audio.\n\nThe Dropbox option gets the order backwards. Dropbox engineers did use the score, but in 2016, two years after the show invented it. A later Question covers that.",
+      "references": "[IEEE Spectrum: A Fictional Compression Metric Moves Into the Real World (2014)](https://spectrum.ieee.org/a-madefortv-compression-metric-moves-to-the-real-world), [IEEE Spectrum: A Made-For-TV Compression Algorithm (2014)](https://spectrum.ieee.org/a-madefortv-compression-algorithm), [Wikipedia: Weissman score](https://en.wikipedia.org/wiki/Weissman_score)"
+    },
+    {
+      "id": "compute-a-weissman-score",
+      "title": "Compute the Weissman score for this compressor.",
+      "description": "Take α = 1. Your compressor reaches a compression ratio of r = 4, and the standard compressor reaches r̄ = 2. Yours takes T = 10 seconds, and the standard takes T̄ = 100 seconds. Use logarithms in any base.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [4]
+      },
+      "explanation": "Work through it one term at a time.\n\n- **Ratio term:** r / r̄ = 4 / 2 = 2. Your output is half the size of the standard's.\n- **Time term:** log T̄ / log T = log 100 / log 10. In base 10 that's 2 / 1 = 2. Any base gives the same answer, because a change of base multiplies the top and bottom by the same factor.\n- **Score:** W = 1 × 2 × 2 = **4**.\n\nThe two terms treat their inputs differently. Doubling the compression ratio doubles the ratio term. Being ten times faster only moved the time term from 1 to 2, because the logarithm squashes large differences in time. That squashing also makes the score behave strangely, as the next Question shows.",
+      "references": "[Wikipedia: Weissman score](https://en.wikipedia.org/wiki/Weissman_score)",
+      "images": [
+        {
+          "src": "weissman-formula.svg",
+          "alt": "The formula W equals alpha times r over r-bar times log T-bar over log T. Alpha is labelled scaling constant. The ratio term r over r-bar is labelled: r is your compression ratio, r-bar is a standard compressor's. The time term log T-bar over log T is labelled: T is your time to compress, T-bar is the standard's time. A note says a higher W is better, and a bigger ratio or a shorter time raises it.",
+          "caption": "Formula as given in IEEE Spectrum and Wikipedia. Diagram drawn for this Quiz.",
+          "width": 720,
+          "height": 360
+        }
+      ]
+    },
+    {
+      "id": "weissman-units-problem",
+      "title": "You score the same two compressors with times in minutes, then in seconds, and get two different Weissman scores. What does that tell you?",
+      "description": "The standard compressor reaches a ratio of 2.1 in 2 minutes. Yours reaches 3.4 in 3 minutes. With α = 1:\n\n- In minutes: W = (3.4 / 2.1) × (log 2 / log 3) ≈ **1.02**\n- In seconds: W = (3.4 / 2.1) × (log 120 / log 180) ≈ **1.49**",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The score depends on the unit of time, because taking the log of a time doesn't cancel its unit",
+          "isCorrect": true
+        },
+        {
+          "text": "Seconds are more precise than minutes, so 1.49 is the correct score",
+          "isCorrect": false
+        },
+        {
+          "text": "It's a rounding error that disappears if you keep more decimal places",
+          "isCorrect": false
+        },
+        {
+          "text": "One of the two calculations must have used the wrong logarithm base",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Both calculations are correct, and the difference is real. A ratio of two times, such as 120 s / 180 s, is the same in any unit, because the units cancel. A ratio of two *logarithms* of times doesn't cancel. log 2 / log 3 and log 120 / log 180 are different numbers, even though they describe the same stopwatch readings.\n\nIt gets worse near 1. If a time comes out as exactly 1 unit, its logarithm is 0, and the score becomes 0 or infinite. Below 1 unit, the logarithm turns negative, and a faster compressor can end up with a *negative* score.\n\nThe base of the logarithm doesn't cause this. Changing the base multiplies every logarithm by the same constant, so the ratio of two logarithms stays the same. That's why the previous Question could accept any base.\n\nThe same check works on any single number that sums up performance. Change only the units, and if the number moves, be careful with it.",
+      "references": "[Wikipedia: Weissman score, Limitations](https://en.wikipedia.org/wiki/Weissman_score#Limitations), [Wikipedia: Dimensionless quantity](https://en.wikipedia.org/wiki/Dimensionless_quantity)"
+    },
+    {
+      "id": "dropbox-weissman-score",
+      "title": "In 2016, two Dropbox engineers reported a real Weissman score in a post on the company's tech blog. What had they built?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "A Brotli compressor written in Rust",
+          "isCorrect": true
+        },
+        {
+          "text": "Lepton, a tool that shrinks JPEG photos",
+          "isCorrect": false
+        },
+        {
+          "text": "A working middle-out compression algorithm",
+          "isCorrect": false
+        },
+        {
+          "text": "A video codec for Dropbox's file previews",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Daniel Reiter Horn and Mehant Baid wrote about re-implementing **Brotli**, Google's general-purpose compression format, in **Rust**. They picked Rust because a decompressor reads untrusted files from users. Rust prevents the memory errors that let a malformed file become a security hole, and it does so without the pauses of a garbage collector.\n\nThe post opens with a nod to Pied Piper. It reports that their changes raised Brotli's Weissman score by 6.5% and adds that Richard Hendricks would be gleeful. The authors also noted that the score \"favors compression speed over ratio in most cases\", one more quirk to add to the previous Questions.\n\nLepton is a tempting pick because it's also a real Dropbox compression project from 2016. It rewrites JPEG files about 22% smaller and can restore the original bit for bit. Its published results report storage saved, not a Weissman score.",
+      "references": "[Dropbox Tech Blog: Lossless compression with Brotli in Rust for a bit of Pied Piper on the backend (2016)](https://dropbox.tech/infrastructure/lossless-compression-with-brotli), [Dropbox Blog: Developing Lepton at Dropbox](https://blog.dropbox.com/topics/technology/developing-lepton-at-dropbox). For what compression ratios really mean, see the Quiz \"Compression: what actually shrinks\"."
+    },
+    {
+      "id": "hooli-in-the-alphabet-letter",
+      "title": "In August 2015, Google announced its new parent company, Alphabet, on the website abc.xyz. What was hidden in the announcement?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "A link to hooli.xyz, the website of the show's fake Google",
+          "isCorrect": true
+        },
+        {
+          "text": "A Weissman score for Google's own compression tools",
+          "isCorrect": false
+        },
+        {
+          "text": "A job advert for Pied Piper engineers",
+          "isCorrect": false
+        },
+        {
+          "text": "A countdown to the next season of Silicon Valley",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Hooli is the show's parody of Google: a giant with a campus, a guru and a founder, Gavin Belson, who talks about making the world a better place. HBO ran a real website for it at **hooli.xyz**.\n\nOn 10 August 2015, Larry Page posted a letter at abc.xyz announcing Alphabet. The period at the end of one sentence was a link, and clicking it went to hooli.xyz. The show's executive producer, Alec Berg, joked afterwards that they had founded Google as a setup for this one joke.\n\nThe joke worked because of the domain. Alphabet couldn't get alphabet.com, so it used abc.xyz, and the show had already put Hooli on the same unusual `.xyz` ending.",
+      "references": "[The Register: Google's new parent Alphabet owns abc.xyz (2015)](https://www.theregister.com/2015/08/11/google_parent_hooli/), [The Hollywood Reporter: Google's hidden 'Silicon Valley' joke, show producer responds (2015)](https://www.hollywoodreporter.com/tv/tv-news/googles-hidden-silicon-valley-joke-814375/)"
+    },
+    {
+      "id": "tabs-versus-spaces-breakup",
+      "title": "In \"Bachmanity Insanity\" (season 3, episode 6, 2016), Richard breaks up with Winnie, a developer from Facebook. What does he refuse to put up with?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "She indents her code with spaces instead of tabs",
+          "isCorrect": true
+        },
+        {
+          "text": "She prefers Emacs to Vim",
+          "isCorrect": false
+        },
+        {
+          "text": "She pushes code without tests",
+          "isCorrect": false
+        },
+        {
+          "text": "She writes JavaScript without semicolons",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Richard is a committed tabs user. Gilfoyle and Dinesh notice that Winnie uses spaces and warn her not to tell him. When they sit and code side by side, the sound of her tapping the space bar is more than he can take, and the relationship ends.\n\nThe argument is older than the show. A **tab** is one character, and each editor decides how wide to draw it, so every reader can pick their own indent width. **Spaces** look identical everywhere, which keeps aligned code aligned. Many people who \"use spaces\" still press the Tab key, and their editor inserts the spaces for them. Hardly anyone taps the space bar the way Winnie does.\n\nToday most teams let a tool settle it. Go's `gofmt` indents with tabs, Python's PEP 8 style guide recommends spaces, and Prettier uses spaces unless you set `useTabs`.\n\nA year after the episode, Stack Overflow's 2017 survey found that developers who used spaces reported higher median salaries. TheWrap ran it as a fact check headlined \"Richard is wrong\". What that data can and can't show is the subject of the Quiz \"Tabs, spaces and Vim: developer holy wars, measured\".",
+      "references": "[Wikipedia: Silicon Valley season 3](https://en.wikipedia.org/wiki/Silicon_Valley_season_3), [TheWrap: 'Silicon Valley' fact check: Richard is wrong about tabs versus spaces (2017)](https://www.thewrap.com/silicon-valley-fact-check-why-richard-is-wrong-on-tabs-versus-spaces/), [PEP 8: Tabs or Spaces?](https://peps.python.org/pep-0008/#tabs-or-spaces)"
+    },
+    {
+      "id": "not-hotdog-was-real",
+      "title": "In \"Teambuilding Exercise\" (season 4, episode 4, 2017), Jian-Yang demos SeeFood, an app meant to recognize any food. It can only say \"hotdog\" or \"not hotdog\". What happened in the real world?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "HBO released a working Not Hotdog app that did exactly that",
+          "isCorrect": true
+        },
+        {
+          "text": "Nothing: the phone screens in the scene were mock-ups added in editing",
+          "isCorrect": false
+        },
+        {
+          "text": "Google published it as an official TensorFlow demo",
+          "isCorrect": false
+        },
+        {
+          "text": "Fans built a copy, and HBO had it taken down",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The show released **Not Hotdog** as a real app. Point your phone at something and it tells you whether it's a hotdog. The show built it in-house, and it really ran a neural network trained for that one yes-or-no choice.\n\nThe joke pokes at a familiar pattern. A startup promises general-purpose AI and ships a classifier with two answers. Even those two answers took real engineering, which the next Questions follow step by step.\n\nThe app, along with the show's other interactive tie-ins, earned a 2018 Emmy nomination for Outstanding Creative Achievement in Interactive Media within a Scripted Program.",
+      "references": "[Tim Anglade: How HBO's Silicon Valley built \"Not Hotdog\" with mobile TensorFlow, Keras & React Native (2017)](https://medium.com/@timanglade/how-hbos-silicon-valley-built-not-hotdog-with-mobile-tensorflow-keras-react-native-ef03260747f3), [Television Academy: 2018 nominees, Outstanding Creative Achievement in Interactive Media within a Scripted Program](https://www.televisionacademy.com/awards/nominees-winners/2018/outstanding-creative-achievement-in-interactive-media-within-a-scripted-program)",
+      "videos": [
+        {
+          "provider": "youtube",
+          "id": "ACmydtFDTGs",
+          "placement": "explanation"
+        }
+      ]
+    },
+    {
+      "id": "who-built-not-hotdog",
+      "title": "Who built the real Not Hotdog app?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "One developer working for the show, Tim Anglade, training on a laptop with an external graphics card",
+          "isCorrect": true
+        },
+        {
+          "text": "A team from Google's TensorFlow group, on Google's cloud servers",
+          "isCorrect": false
+        },
+        {
+          "text": "A Stanford AI lab, recommended by the show's compression consultants",
+          "isCorrect": false
+        },
+        {
+          "text": "An outside app agency with a dozen engineers",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Tim Anglade built it in-house for the show. By his account, it was one developer with one laptop, a 2015 MacBook Pro, an external Nvidia GPU and hand-picked training data. The final model trained for about 80 hours on that setup.\n\nBy 2017, a useful image classifier no longer needed a research lab or a data center. One person could get one working with open frameworks such as TensorFlow and Keras, published network designs and a gaming graphics card.\n\nThe Stanford option mixes up two stories. Stanford researchers helped with the show's compression storyline, not with the app.",
+      "references": "[Tim Anglade: How HBO's Silicon Valley built \"Not Hotdog\" (2017)](https://medium.com/@timanglade/how-hbos-silicon-valley-built-not-hotdog-with-mobile-tensorflow-keras-react-native-ef03260747f3), [TechCrunch: The engineer behind the Not Hotdog app put a lot of thought into AI (2017)](https://techcrunch.com/2017/06/28/thinking-about-hotdogs/)"
+    },
+    {
+      "id": "why-run-on-the-phone",
+      "title": "Anglade's first version sent photos to a cloud vision API. Which reasons did he give for moving the neural network onto the phone?",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "It's faster, because there's no round trip to a server",
+          "isCorrect": true
+        },
+        {
+          "text": "It keeps working with no internet connection",
+          "isCorrect": true
+        },
+        {
+          "text": "Photos never leave the user's phone",
+          "isCorrect": true
+        },
+        {
+          "text": "It costs nothing to run per photo, however many people use it",
+          "isCorrect": true
+        },
+        {
+          "text": "A phone's processor classifies images more accurately than a server",
+          "isCorrect": false
+        },
+        {
+          "text": "App stores don't allow apps to upload photos to a server",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "All four reasons appear in Anglade's write-up. Running the model on the phone itself is called **on-device inference**. A cloud API means every photo travels to a server and back, which adds latency, fails without a network, sends a stranger's photos off the phone, and bills you per request. A viral app with a joke budget can't afford that last one.\n\nThe early cloud version had another problem. A general-purpose vision API wasn't accurate enough at this one narrow job. That doesn't make phones more accurate. A server can run a much bigger model than a phone can. What helped was a small model trained for exactly this task.\n\nApp stores allow photo uploads, and plenty of apps do it. The real catch with on-device inference is that the model has to fit on the phone, as the next Question shows.",
+      "references": "[Tim Anglade: How HBO's Silicon Valley built \"Not Hotdog\" (2017)](https://medium.com/@timanglade/how-hbos-silicon-valley-built-not-hotdog-with-mobile-tensorflow-keras-react-native-ef03260747f3)"
+    },
+    {
+      "id": "transfer-learning-from-inception",
+      "title": "Anglade started with only a few thousand hotdog photos, far too few to teach a network to see from nothing. How did he get a working first model?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "He took Inception, a network already trained on a huge collection of general photos, and retrained it on his hotdog data",
+          "isCorrect": true
+        },
+        {
+          "text": "He trained a brand-new network from random weights on the hotdog photos alone",
+          "isCorrect": false
+        },
+        {
+          "text": "He wrote rules by hand for the shape and color of a sausage in a bun",
+          "isCorrect": false
+        },
+        {
+          "text": "He had the show's crew label a million new photos",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "This is **transfer learning**. A network trained on a broad image collection has already learned the general parts of vision: edges, textures, curves, parts of objects. Those features are useful for almost any photo. You keep them and retrain only the final layers, which decide what the features mean for your task. A few thousand examples are enough for that.\n\nTraining from random weights would have to learn vision itself from a few thousand photos, and it would mostly memorize them. Hand-written rules break on the first hotdog photographed from above, in a different bun, or under yellow light. Neural networks took over image recognition because nobody could write those rules.\n\nMost applied machine learning works this way today. Teams rarely train from scratch. They start from a pretrained model and adapt it.",
+      "references": "[Tim Anglade: How HBO's Silicon Valley built \"Not Hotdog\" (2017)](https://medium.com/@timanglade/how-hbos-silicon-valley-built-not-hotdog-with-mobile-tensorflow-keras-react-native-ef03260747f3), [TensorFlow: Transfer learning and fine-tuning](https://www.tensorflow.org/tutorials/images/transfer_learning)",
+      "images": [
+        {
+          "src": "not-hotdog-pipeline.svg",
+          "alt": "Two-row diagram titled train on a laptop, then run on the phone. Top row, training on a laptop with an external GPU: a pretrained network that already knows edges, textures and shapes, then retraining on food photos, 3,000 hotdogs and 147,000 not hotdogs, then a small MobileNets-style model file of about 4 million parameters, which ships inside the app. Bottom row, on the phone with no server involved: a camera photo that is never uploaded goes into the neural network running on the phone, which outputs hotdog or not hotdog. A note lists the benefits: faster with no round trip, works offline, photos stay private, and no server bill per photo.",
+          "caption": "Based on Tim Anglade's 2017 write-up. Diagram drawn for this Quiz.",
+          "placement": "explanation",
+          "width": 720,
+          "height": 380
+        }
+      ]
+    },
+    {
+      "id": "why-not-ship-inception",
+      "title": "The Inception-based model worked, but it didn't ship in the app. Why not?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "It was too big for a phone: about 23 million parameters used too much memory to run reliably",
+          "isCorrect": true
+        },
+        {
+          "text": "It couldn't tell a hotdog from a plain sausage",
+          "isCorrect": false
+        },
+        {
+          "text": "Its license didn't allow use in a commercial app",
+          "isCorrect": false
+        },
+        {
+          "text": "It needed an internet connection to run",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Every parameter is a number the phone has to hold in memory and multiply on each photo. Inception has about 23 million. On a phone, that meant crashes and slow answers.\n\nAnglade tried **SqueezeNet** next, with about 1.25 million parameters. It fit, but it struggled to learn what a hotdog is. The model that shipped was his own design based on Google's **MobileNets**, with about 4 million parameters. MobileNets split each expensive convolution into two cheaper steps. That keeps much of the accuracy of a big network at a fraction of the size and compute.\n\nThis trade-off comes up all the time in mobile machine learning. You rarely ship the most accurate model. You ship the most accurate one that fits the device's memory, battery and time budget.",
+      "references": "[Tim Anglade: How HBO's Silicon Valley built \"Not Hotdog\" (2017)](https://medium.com/@timanglade/how-hbos-silicon-valley-built-not-hotdog-with-mobile-tensorflow-keras-react-native-ef03260747f3), [arXiv: MobileNets: Efficient Convolutional Neural Networks for Mobile Vision Applications (Howard et al., 2017)](https://arxiv.org/abs/1704.04861)"
+    },
+    {
+      "id": "red-sauce-shortcut",
+      "title": "One of Anglade's smaller models seemed to decide \"red sauce means hotdog\". What went wrong?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "It learned a shortcut: red sauce often appeared with hotdogs in its training photos, so it used the sauce instead of the hotdog",
+          "isCorrect": true
+        },
+        {
+          "text": "The phone camera shifted colors toward red, so everything looked like ketchup",
+          "isCorrect": false
+        },
+        {
+          "text": "It memorized the exact training photos, so it recognized only ketchup it had seen before",
+          "isCorrect": false
+        },
+        {
+          "text": "The training labels had been swapped, so hotdogs were marked as ketchup",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A classifier learns whatever separates the labels in its training data most easily. If many hotdog photos have ketchup and few other photos have red sauce, \"red sauce\" separates the classes well on that data. It's cheaper to learn than the shape of a sausage in a bun. TechCrunch described it as the model using bad heuristics as a crutch.\n\nThis is called **shortcut learning**, or learning a **spurious correlation**. The model scores well in testing if the test photos share the same bias, then fails on a plate of spaghetti. The fix is in the data: add photos that break the shortcut, such as red sauce with no hotdog and hotdogs with no sauce, so the easy feature stops working.\n\nMemorizing photos, the **overfitting** option, is a real and related problem. But a model that only memorized would fail on *every* new photo. This one did generalize. It just learned the wrong rule.",
+      "references": "[TechCrunch: The engineer behind the Not Hotdog app put a lot of thought into AI (2017)](https://techcrunch.com/2017/06/28/thinking-about-hotdogs/), [Geirhos et al.: Shortcut learning in deep neural networks (Nature Machine Intelligence, 2020)](https://arxiv.org/abs/2004.07780)"
+    },
+    {
+      "id": "always-not-hotdog-accuracy",
+      "title": "The final training set had 150,000 photos, of which 3,000 were hotdogs. A lazy model answers \"not hotdog\" for every photo. What accuracy does it score on this set, in percent?",
+      "description": "Type a number without the `%` sign.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [98]
+      },
+      "explanation": "It gets all 147,000 not-hotdogs right and all 3,000 hotdogs wrong: 147,000 / 150,000 = **98%**. That's an impressive-looking score for a model that has never found a single hotdog.\n\nAnglade chose the ratio on purpose, 49 not-hotdogs for every hotdog, because most things people point a phone at aren't hotdogs. That also makes \"not hotdog\" the hard class. It isn't one thing. It has to cover pizza, shoes, sausages without buns, and everything else in the world.\n\nWhen one class is rare, accuracy hides failure. Ask two better questions instead. Of the real hotdogs, how many did the model find? That's **recall**. Of the photos it called hotdogs, how many really were? That's **precision**. Fraud detection, disease screening and spam filters all have the same imbalance and the same trap.",
+      "references": "[Tim Anglade: How HBO's Silicon Valley built \"Not Hotdog\" (2017)](https://medium.com/@timanglade/how-hbos-silicon-valley-built-not-hotdog-with-mobile-tensorflow-keras-react-native-ef03260747f3), [Google Machine Learning Crash Course: Accuracy, precision and recall](https://developers.google.com/machine-learning/crash-course/classification/accuracy-precision-recall)",
+      "images": [
+        {
+          "src": "not-hotdog-class-balance.svg",
+          "alt": "A single bar split into two parts. Not hotdog: 147,000 photos, 98 percent, filling almost the whole bar. Hotdog: 3,000 photos, 2 percent, a thin sliver at the end. Below: a model that always answers not hotdog is right on all 147,000 not-hotdogs and wrong on all 3,000 hotdogs, giving 98 percent accuracy without ever finding a hotdog.",
+          "caption": "Counts from Tim Anglade's 2017 write-up. Chart drawn for this Quiz.",
+          "placement": "explanation",
+          "width": 720,
+          "height": 330
+        }
+      ]
+    },
+    {
+      "id": "which-became-real",
+      "title": "Which of these from Silicon Valley exist, or happened, in the real world?",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "A Not Hotdog app you could install on your phone",
+          "isCorrect": true
+        },
+        {
+          "text": "Engineers outside the show reporting Weissman scores",
+          "isCorrect": true
+        },
+        {
+          "text": "A hooli.xyz website, linked from Google's own Alphabet announcement",
+          "isCorrect": true
+        },
+        {
+          "text": "Middle-out compression, working and beating existing compressors",
+          "isCorrect": false
+        },
+        {
+          "text": "Pied Piper's record Weissman score of 5.2, measured on real software",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The app, the metric and the website all crossed over. Not Hotdog shipped, Dropbox engineers reported a Weissman score for their Rust Brotli compressor, and Larry Page's Alphabet letter hid a link to hooli.xyz.\n\n**Middle-out** stayed fiction on purpose. Vinith Misra told IEEE Spectrum that the writers needed an approach that isn't possible today, but where it isn't *obviously* impossible. The show describes it as working outward from the middle of the data to find hidden structure. That's plausible enough to sound like research, and too vague to implement.\n\nThe 5.2 score comes from the season 1 finale, when Pied Piper doubles the best score on record at TechCrunch Disrupt. It was computed for a fictional algorithm on a fictional file. And as the units Question showed, a Weissman score only means something if you know the standard compressor and the unit of time behind it.",
+      "references": "[IEEE Spectrum: A Made-For-TV Compression Algorithm (2014)](https://spectrum.ieee.org/a-madefortv-compression-algorithm), [Dropbox Tech Blog: Lossless compression with Brotli in Rust (2016)](https://dropbox.tech/infrastructure/lossless-compression-with-brotli), [Wikipedia: Optimal Tip-to-Tip Efficiency (season 1 finale)](https://en.wikipedia.org/wiki/Optimal_Tip-to-Tip_Efficiency)"
+    }
+  ]
+}

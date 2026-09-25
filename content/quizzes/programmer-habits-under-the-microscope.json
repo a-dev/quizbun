@@ -1,0 +1,497 @@
+{
+  "schemaVersion": 1,
+  "id": "programmer-habits-under-the-microscope",
+  "title": "Programmer habits under the microscope: Fridays, night owls, swearing and music",
+  "description": "Don't deploy on a Friday. Real programmers work at night. Swearing in comments means messy code. Music ruins concentration. Researchers have tested all four with commit histories, bug trackers and field experiments. Each Question takes one belief, looks at the study behind it, and asks what the study found and how far you can trust it. For developers, team leads, and anyone who has quoted a study in a code review.",
+  "language": "en",
+  "tags": [
+    "work",
+    "psychology",
+    "statistics",
+    "critical-thinking"
+  ],
+  "author": "Quizbun",
+  "questions": [
+    {
+      "id": "dont-program-on-fridays",
+      "title": "A 2005 paper was titled \"Don't Program on Fridays!\" What did it actually find?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "In Eclipse's history, changes that later needed a fix were most common on Fridays",
+          "isCorrect": true
+        },
+        {
+          "text": "Friday deployments caused more production outages at large companies",
+          "isCorrect": false
+        },
+        {
+          "text": "Programmers made more typing errors on Fridays, according to keystroke logs",
+          "isCorrect": false
+        },
+        {
+          "text": "Nothing: the title was a joke, and the data showed no weekday pattern",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Jacek Śliwerski, Thomas Zimmermann and Andreas Zeller mined the version history of **Eclipse**, the open source IDE. For each weekday they measured the share of changes that later turned out to be *fix-inducing*: a later bug fix had to touch the same lines. On Fridays that share was **12.2%**, the highest of the week. On Tuesdays it was **10.4%**, and the weekly average was 11.4%.\n\nLook at how small the gap is before you ban Friday commits. Thursday came in at 12.1%, a tenth of a point behind Friday. The paper is two pages long and calls itself \"a first investigation\" of one project. It studied commits, not deployments, and it never mentions outages.\n\nThe title did the rest, because \"Don't program on Fridays\" is easier to repeat than \"fix-inducing changes were slightly more frequent on Fridays in Eclipse\".",
+      "references": "[Śliwerski, Zimmermann, Zeller: Don't Program on Fridays! How to Locate Fix-Inducing Changes (2005, PDF)](https://thomas-zimmermann.com/publications/files/sliwerski-wsr-2005.pdf), [ACM: When do changes induce fixes? (MSR 2005)](https://doi.org/10.1145/1083142.1083147)",
+      "images": [
+        {
+          "src": "eclipse-fix-inducing-by-weekday.svg",
+          "alt": "Bar chart of the share of Eclipse changes that later needed a fix, by weekday, on an axis from 0 to 14 percent: Monday 11.3, Tuesday 10.4, Wednesday 11.1, Thursday 12.1, Friday 12.2 (highlighted), Saturday 11.7, Sunday 11.6. The bars look almost equal in height.",
+          "caption": "Numbers from Table 1 of Śliwerski, Zimmermann and Zeller (2005). Chart drawn for this Quiz.",
+          "placement": "explanation",
+          "width": 720,
+          "height": 424
+        }
+      ]
+    },
+    {
+      "id": "how-to-find-fix-inducing-changes",
+      "title": "How did the researchers decide which earlier change caused a later fix?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "They traced the lines each bug fix changed back to the change that last touched them, then dropped changes made after the bug was reported",
+          "isCorrect": true
+        },
+        {
+          "text": "They ran the test suite against every old revision and flagged the first revision where a test failed",
+          "isCorrect": false
+        },
+        {
+          "text": "They surveyed Eclipse developers and asked which of their own changes had caused bugs",
+          "isCorrect": false
+        },
+        {
+          "text": "They flagged any change whose commit message contained the word \"bug\"",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The method has two steps, and both are automatic.\n\n1. **Find the fixes.** A commit counts as a fix when its message mentions a bug number from the bug database (Bugzilla, in Eclipse's case) or keywords such as \"fixed\".\n2. **Trace back.** For every line the fix changed, ask the version control system who last touched that line and in which revision. In CVS that was `cvs annotate`. Today you would run `git blame`. Those earlier revisions are the candidates.\n\nThe bug database then removes false suspects. A change made *after* the bug was reported can't have caused it, so it drops out.\n\nThe method became known as **SZZ**, after the authors' initials, and it's still the standard way to label bug-introducing commits in research. It has one built-in weakness. The last change to a line isn't always the one that caused the bug. The authors say so, and call these changes *fix-inducing*, which is more modest than *bug-introducing*.\n\nRunning old revisions against tests is what `git bisect` does. That works for one bug you can reproduce, but not for thousands of historical bugs without tests.",
+      "references": "[Śliwerski, Zimmermann, Zeller: Don't Program on Fridays! How to Locate Fix-Inducing Changes (2005, PDF)](https://thomas-zimmermann.com/publications/files/sliwerski-wsr-2005.pdf), [ACM: When do changes induce fixes? (MSR 2005)](https://doi.org/10.1145/1083142.1083147)"
+    },
+    {
+      "id": "read-the-eclipse-table",
+      "title": "Which statements does the Eclipse table support?",
+      "description": "The paper's Table 1, in percent. `P(fix)` is the share of changes that were fixes. `P(bug)` is the share that were fix-inducing. `P(bug | fix)` is the share of *fixes* that later needed another fix, and `P(bug | ¬fix)` is the same for all other changes.\n\n| | Mon | Tue | Wed | Thu | Fri | Sat | Sun | avg |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- |\n| P(fix) | 18.4 | 20.9 | 20.0 | 22.3 | 24.0 | 14.7 | 16.9 | 20.8 |\n| P(bug) | 11.3 | 10.4 | 11.1 | 12.1 | 12.2 | 11.7 | 11.6 | 11.4 |\n| P(bug \\| fix) | 25.1 | 22.9 | 23.3 | 23.5 | 23.2 | 30.3 | 26.4 | 23.7 |\n| P(bug \\| ¬fix) | 8.2 | 7.1 | 8.1 | 8.8 | 8.7 | 8.4 | 8.6 | 8.1 |",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "Fixes were the riskiest kind of change: about 24% of them needed another fix, against about 8% of other changes",
+          "isCorrect": true
+        },
+        {
+          "text": "Friday's rate of fix-inducing changes was less than 2 percentage points above Tuesday's",
+          "isCorrect": true
+        },
+        {
+          "text": "Fixes made on Saturday were the most likely to need another fix",
+          "isCorrect": true
+        },
+        {
+          "text": "A change made on Friday was more than twice as likely to need a fix as one made on Tuesday",
+          "isCorrect": false
+        },
+        {
+          "text": "Weekend changes were the safest of the week",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The most striking row isn't about Fridays. A fix went on to need another fix **23.7%** of the time, and an ordinary change only **8.1%** of the time, so a fix was almost three times riskier. The authors point this out themselves. Fixes are often rushed and touch code that has already proved fragile.\n\nFriday versus Tuesday is 12.2% against 10.4%, a gap of 1.8 percentage points. That's about 17% more in relative terms, nowhere near double. Headlines tend to quote the relative figure because it sounds bigger.\n\nSaturday fixes had the highest follow-up rate, 30.3%, but they were also the rarest. Only 14.7% of Saturday changes were fixes, so that percentage rests on fewer changes. And weekends weren't the safest: Saturday (11.7%) and Sunday (11.6%) sat above Monday, Tuesday and Wednesday.\n\nNow compare the first two rows. Friday had the **most fixes** (24.0%) *and* the most fix-inducing changes. If fixes are three times riskier, part of the \"Friday effect\" may really be a \"fix effect\". The next Question returns to this.",
+      "references": "[Śliwerski, Zimmermann, Zeller: Don't Program on Fridays! How to Locate Fix-Inducing Changes (2005, PDF)](https://thomas-zimmermann.com/publications/files/sliwerski-wsr-2005.pdf)"
+    },
+    {
+      "id": "does-friday-cause-bugs",
+      "title": "Does the Eclipse result show that deploying on a Friday causes bugs?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "No: it's one project's commit history, it shows a correlation, and it measured commits rather than deployments",
+          "isCorrect": true
+        },
+        {
+          "text": "Yes: the pattern appeared across thousands of commits, so it can't be chance",
+          "isCorrect": false
+        },
+        {
+          "text": "Yes: the authors controlled for developer experience and the size of each change",
+          "isCorrect": false
+        },
+        {
+          "text": "No, because Eclipse developers didn't commit on Fridays",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The study is **observational**. Nobody assigned some changes to Friday and others to Tuesday. It counted what happened in one project, so anything else that differs between Fridays and other days could produce the pattern:\n\n- **What kind of work lands on Friday.** Eclipse had the most fixes on Fridays, and fixes were about three times riskier than other changes. Friday could look risky simply because it's fix day.\n- **Who commits on Friday**, and whether they're wrapping up a week's work in a hurry.\n- **One project, one era.** Eclipse's release rhythm in the early 2000s says little about your team's pipeline.\n\nA large number of commits makes chance less likely, but it doesn't fix confounding. Big data can measure a biased comparison very precisely. The authors didn't claim more than the data showed, either. They called it a first case study and listed day of week as one of many properties that *correlate* with fix-inducing changes.\n\nTo show that Fridays *cause* bugs, you'd need to compare like with like: the same developers, the same kind of change, across many projects, ideally with some changes randomly scheduled. Even then you'd have learned about committing, not deploying. Whether to deploy on Friday is mostly about who is around to respond if something breaks over the weekend.",
+      "references": "[Śliwerski, Zimmermann, Zeller: Don't Program on Fridays! How to Locate Fix-Inducing Changes (2005, PDF)](https://thomas-zimmermann.com/publications/files/sliwerski-wsr-2005.pdf)"
+    },
+    {
+      "id": "tgif-commit-times-2015-2024",
+      "title": "A study published in 2025, \"TGIF\", tracked commit times in 4,549 GitHub repositories from 2015 to 2024. What did it find?",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "The share of nighttime and weekend commits rose slightly over the decade",
+          "isCorrect": true
+        },
+        {
+          "text": "Commit activity on the five workdays stayed stable, with no statistically significant difference between individual workdays",
+          "isCorrect": true
+        },
+        {
+          "text": "Friday commits introduced more bugs than commits on any other workday",
+          "isCorrect": false
+        },
+        {
+          "text": "After 2020, commits moved back toward a strict 9-to-5, Monday-to-Friday pattern",
+          "isCorrect": false
+        },
+        {
+          "text": "Weekend commits dropped to almost zero",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Ioannis Karyotakis, Evangelos Talos and Diomidis Spinellis measured **when** commits happen, year by year. They found a subtle but consistent rise in nighttime and weekend commits, especially in the early morning hours, and read it as a gradual drift away from the 9-to-5, Monday-to-Friday week. Across the workdays themselves, nothing changed. No workday stood out from the others at a statistically significant level.\n\nThis doesn't update the 2005 Friday finding either way, because TGIF didn't measure bugs. It answers a different question: is Friday a special day for *how much* developers commit? In this sample, it wasn't.\n\nWhen a new paper seems to confirm or overturn an old one, first check whether the two measured the same thing. Here they didn't: one measured when fix-inducing changes happened, the other when any commit happened.",
+      "references": "[Empirical Software Engineering: TGIF: the evolution of developer commit times (Karyotakis, Talos, Spinellis, 2025)](https://doi.org/10.1007/s10664-025-10767-2), [Śliwerski, Zimmermann, Zeller: Don't Program on Fridays! How to Locate Fix-Inducing Changes (2005, PDF)](https://thomas-zimmermann.com/publications/files/sliwerski-wsr-2005.pdf)"
+    },
+    {
+      "id": "night-owl-study-project-count",
+      "title": "How many large open source projects did Claes and colleagues study to find out when programmers work?",
+      "description": "The 2018 ICSE paper \"Do Programmers Work at Night or During the Weekend?\" mined commit timestamps from Mozilla and Apache projects, and compared them with one Finnish company. Type a whole number.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [
+          86
+        ]
+      },
+      "explanation": "The answer is **86** open source projects: Mozilla products such as Firefox, Thunderbird and SeaMonkey, and 81 Apache projects. With the Finnish company's closed-source product, that makes 87 projects in total.\n\nThe Apache list started at 822 projects. The authors kept only those with at least 2,000 usable commits, because a small project doesn't have enough timestamps to show a weekly rhythm. They also dropped old Apache commits that had been imported from an earlier version control system without time zone information. A commit time without its time zone can't tell you whether someone worked at 03:00 or 12:00.\n\nThe Mozilla and Apache mix was deliberate. Mozilla pays many of its core Firefox developers. The Apache Software Foundation pays no developers, although some companies pay their own staff to work on Apache projects. That contrast comes back two Questions later.",
+      "references": "[arXiv: Do Programmers Work at Night or During the Weekend? (Claes, Mäntylä, Kuutila, Adams, ICSE 2018)](https://arxiv.org/abs/1802.05084)"
+    },
+    {
+      "id": "do-programmers-work-at-night",
+      "title": "What did the study find about when most of the active developers commit?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "About two thirds kept to regular office hours, roughly 10:00 to 18:00, and rarely committed at night or on weekends",
+          "isCorrect": true
+        },
+        {
+          "text": "Most of them committed mainly between 22:00 and 04:00",
+          "isCorrect": false
+        },
+        {
+          "text": "Commits were spread evenly across all 24 hours, with no daily rhythm",
+          "isCorrect": false
+        },
+        {
+          "text": "Most of them committed more on weekends, when meetings didn't interrupt them",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The authors took the top 10% of committers, **1,108** of 11,059 developers, each with at least 95 commits. For every developer they built a profile of 168 numbers, one for each hour of the week, and let a clustering algorithm (k-means) group similar profiles.\n\nTwo of the three clusters were office workers, together **66%** of the developers. Their commits rose through the morning, dipped at lunch around noon, and tailed off after 16:00. The two clusters differed mainly by about an hour, like early and late risers. The third cluster committed mostly from noon to midnight, and on weekends too.\n\nAcross projects, the median working day started at **10:03**, hardly a night-owl schedule. Weekends were quieter, and among weekdays Monday and Friday were the least active.\n\nThis kind of evidence is **descriptive**. It shows when commits happen. It says nothing about whether code written at night is better or worse.",
+      "references": "[arXiv: Do Programmers Work at Night or During the Weekend? (Claes, Mäntylä, Kuutila, Adams, ICSE 2018)](https://arxiv.org/abs/1802.05084)"
+    },
+    {
+      "id": "share-of-commits-in-office-hours",
+      "title": "For each project, the researchers found its busiest 8-hour window on weekdays. On average, what share of a project's commits fell inside that window?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "About 60%, ranging from 31% to 91% across projects",
+          "isCorrect": true
+        },
+        {
+          "text": "About 95%: almost every commit happened in office hours",
+          "isCorrect": false
+        },
+        {
+          "text": "About 80% in every project, with little variation",
+          "isCorrect": false
+        },
+        {
+          "text": "About a third, as if commits were spread evenly around the clock",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "On average only about **60%** of a project's commits landed in its own 8-hour office window, with a standard deviation of 12 percentage points. Even with an hour added on each side, the average was 68%. So two thirds of *developers* keep office hours, yet about 40% of *commits* happen outside them. Both are true, because the night and weekend group, and the long tail of occasional contributors, still add plenty of commits.\n\nThe range matters more than the average. One project committed 91% of its work in office hours, and another only 31%. The projects with the most outside-hours activity were SeaMonkey, Thunderbird and Groovy, all run by their communities by then rather than by paid teams. Projects that worked a lot in the evenings also worked a lot on weekends: the correlation between the two was 0.77.\n\nThe authors expected projects to settle into office hours as they matured. They found no support for that. Over time, 27 projects moved toward office hours by 5 points or more, 18 moved away, and most barely changed.\n\nThat spread is why the authors conclude that stress detection from timestamps needs a baseline for each person. A commit at 23:00 is ordinary for one developer and a warning sign for another.",
+      "references": "[arXiv: Do Programmers Work at Night or During the Weekend? (Claes, Mäntylä, Kuutila, Adams, ICSE 2018)](https://arxiv.org/abs/1802.05084)"
+    },
+    {
+      "id": "paid-versus-unpaid-firefox",
+      "title": "In Firefox, the researchers checked whether each top developer was paid by Mozilla or was a volunteer. What did they find?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "About half of the unpaid developers were in the evenings-and-weekends cluster, against about one in ten paid developers",
+          "isCorrect": true
+        },
+        {
+          "text": "Paid and unpaid developers had practically the same working patterns",
+          "isCorrect": false
+        },
+        {
+          "text": "Paid developers did most of the night work, because of release deadlines",
+          "isCorrect": false
+        },
+        {
+          "text": "Unpaid developers committed almost only on weekends",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The team looked up each of Firefox's top developers on LinkedIn and personal websites to find out whether they were paid to work on Firefox. They then crossed that with the three work-pattern clusters. Of the 48 unpaid developers, **23 (47.9%)** landed in the evenings-and-weekends cluster. Of the 227 paid developers, also **23**, but that's only **10.1%** of them.\n\nThe chart shows why raw counts mislead here. The same 23 people in each group mean very different things, because the groups differ in size by almost five times.\n\nThe obvious explanation is that volunteers code after their day job. That's plausible, but the data is a cross-tabulation of 275 people from one project, based on public profiles. Another obvious guess failed in the same data: seniority, measured by commit count or by job title, did *not* predict office-hours work.\n\nUnpaid developers didn't work only on weekends either. The other half were in the average or office-hours clusters.",
+      "references": "[arXiv: Do Programmers Work at Night or During the Weekend? (Claes, Mäntylä, Kuutila, Adams, ICSE 2018)](https://arxiv.org/abs/1802.05084)",
+      "images": [
+        {
+          "src": "firefox-paid-unpaid-work-patterns.svg",
+          "alt": "Two stacked bars showing how Firefox's top developers split across three work-pattern clusters. Unpaid, 48 developers: 47.9% evenings and weekends, 31.3% in between, 20.8% office hours. Paid by Mozilla, 227 developers: 10.1% evenings and weekends, 50.2% in between, 39.7% office hours. A note says both groups had 23 developers in the evenings-and-weekends cluster.",
+          "caption": "Numbers from Table 3 of Claes, Mäntylä, Kuutila and Adams (2018). Chart drawn for this Quiz.",
+          "placement": "explanation",
+          "width": 720,
+          "height": 440
+        }
+      ]
+    },
+    {
+      "id": "what-a-commit-timestamp-hides",
+      "title": "A commit's timestamp says 23:40. Which of these could make it a poor record of when the work happened?",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "The developer wrote the code during the day and only committed it late at night",
+          "isCorrect": true
+        },
+        {
+          "text": "The commit lost its time zone when it was imported from an older version control system",
+          "isCorrect": true
+        },
+        {
+          "text": "A later rebase rewrote the commit's committer date, while its author date kept the original time",
+          "isCorrect": true
+        },
+        {
+          "text": "Git stores only UTC, with no offset, so the developer's local hour can't be recovered",
+          "isCorrect": false
+        },
+        {
+          "text": "Git records when each line was typed, so there is no gap between writing and committing",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A commit timestamp records when someone ran `git commit`, not when they thought, typed or tested. Someone who works all afternoon and commits once before bed looks like a night owl.\n\nGit stores **two** timestamps per commit, each with the time zone offset of the machine that made it. The *author date* is when the change was first written. The *committer date* is when it was last applied, and a rebase, cherry-pick or amend updates it. A study that reads the wrong one can move work by days.\n\nTime zones are the other trap. The offset is only as good as the clock and settings of the machine that made the commit. History imported from older systems may have none at all. Claes and colleagues found exactly that in Apache, so they only used commits from the first one that carried a real time zone.\n\nTry it now: run `git log --format='%ad | %cd'` in a repository you've rebased, and compare the two columns.",
+      "references": "[Pro Git: Viewing the Commit History (author versus committer)](https://git-scm.com/book/en/v2/Git-Basics-Viewing-the-Commit-History), [arXiv: Do Programmers Work at Night or During the Weekend? (Claes, Mäntylä, Kuutila, Adams, ICSE 2018)](https://arxiv.org/abs/1802.05084)"
+    },
+    {
+      "id": "swearing-study-sample-size",
+      "title": "A 2023 bachelor's thesis at KIT asked whether swearing in code goes together with code quality. How large were the two groups it compared?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "About 3,800 repositories containing swearwords and about 7,600 comparison repositories",
+          "isCorrect": true
+        },
+        {
+          "text": "About 380 repositories containing swearwords and about 760 comparison repositories",
+          "isCorrect": false
+        },
+        {
+          "text": "38 hand-picked repositories in each group",
+          "isCorrect": false
+        },
+        {
+          "text": "Every public repository on GitHub, split by whether it contained a swearword",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Jan Strehmel, at the Karlsruhe Institute of Technology, used GitHub's code search to find repositories containing any of more than 300 English swearwords from a published dictionary. A regular expression then re-checked every hit, and repositories where the word wasn't really there were dropped. That produced **about 3,800 \"swear-repos\"**.\n\nThe comparison group was **about 7,600 \"star-repos\"**: repositories with 4 or more stars, found through GitHub's repository search. Keep that detail in mind. The thesis notes that these repositories *can also contain swearwords*, so the comparison is \"swearing repositories versus a general sample\", not \"swearing versus clean\".\n\nThousands of repositories per group is plenty to measure a small difference precisely. The weak points of the study lie elsewhere, as the next Questions show.",
+      "references": "[KIT: Is there a Correlation between the Use of Swearwords and Code Quality in Open Source Code? (Jan Strehmel, bachelor's thesis, 2023, PDF)](https://cme.h-its.org/exelixis/pubs/JanThesis.pdf)"
+    },
+    {
+      "id": "swearing-study-language",
+      "title": "Which programming language was every repository in the swearing study written in?",
+      "description": "Type the language's name.",
+      "type": "input",
+      "validation": {
+        "mode": "text",
+        "acceptedAnswers": [
+          "C",
+          "C language",
+          "the C language",
+          "C programming language",
+          "the C programming language"
+        ]
+      },
+      "explanation": "Every repository was written in **C**. The choice followed from the measuring tool. SoftWipe, built by the same research group, scores C and C++ code, and the thesis kept to C, leaving C++ for future work.\n\nThis limits what the result can tell you. A pattern in C repositories on GitHub, scored by one C-specific tool, says nothing yet about Python, JavaScript or your company's code base. Before you apply a finding to your own work, check that it was measured on something like it.",
+      "references": "[KIT: Is there a Correlation between the Use of Swearwords and Code Quality in Open Source Code? (Jan Strehmel, bachelor's thesis, 2023, PDF)](https://cme.h-its.org/exelixis/pubs/JanThesis.pdf)"
+    },
+    {
+      "id": "swearing-softwipe-scores",
+      "title": "SoftWipe scores code from 0 to 10 for how closely it follows coding standards. What average scores did the two groups get?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "5.87 for repositories with swearwords, and 5.41 for the comparison group",
+          "isCorrect": true
+        },
+        {
+          "text": "5.41 for repositories with swearwords, and 5.87 for the comparison group",
+          "isCorrect": false
+        },
+        {
+          "text": "8.9 for repositories with swearwords, and 3.2 for the comparison group",
+          "isCorrect": false
+        },
+        {
+          "text": "Both groups averaged 5.6, so there was no difference",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The repositories with swearwords scored **5.87** and the comparison group **5.41**. SoftWipe runs a set of static and dynamic analysers, such as the complexity checker Lizard and Clang's AddressSanitizer, and turns their findings into one score from 0 to 10. The study left out compiler warnings, because compiling thousands of unknown projects automatically is hard.\n\nThe difference is **statistically significant**. The 95% confidence intervals, 5.81–5.93 and 5.38–5.45, don't overlap, and Welch's t-test gave a p-value of about 2 × 10⁻⁶¹. With samples this large, chance is not a plausible explanation.\n\nSignificance still isn't **size**. The gap is 0.46 points on a 10-point scale, and the thesis itself warns that a small p-value doesn't mean the result matters in practice. A tiny p-value tells you the difference is probably real. It doesn't tell you the difference is large, or what caused it.",
+      "references": "[KIT: Is there a Correlation between the Use of Swearwords and Code Quality in Open Source Code? (Jan Strehmel, bachelor's thesis, 2023, PDF)](https://cme.h-its.org/exelixis/pubs/JanThesis.pdf)",
+      "images": [
+        {
+          "src": "swearing-softwipe-scores.svg",
+          "alt": "Horizontal bar chart of average SoftWipe score on a 0 to 10 scale. Repositories with swearwords, about 3,800: 5.87, 95% confidence interval 5.81 to 5.93. Comparison repositories with 4 or more stars, about 7,600: 5.41, interval 5.38 to 5.45. A note says the gap is 0.46 points and nobody was assigned to swear.",
+          "caption": "Numbers from Table 3.1 of Jan Strehmel's bachelor's thesis (KIT, 2023). Chart drawn for this Quiz.",
+          "placement": "explanation",
+          "width": 720,
+          "height": 396
+        }
+      ]
+    },
+    {
+      "id": "does-swearing-improve-code",
+      "title": "Which of these are good reasons not to read the thesis as \"swearing makes code better\"?",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "It's observational: nobody was assigned to swear, so another difference between the groups could explain the scores",
+          "isCorrect": true
+        },
+        {
+          "text": "The comparison group was repositories with 4 or more stars, which could also contain swearwords",
+          "isCorrect": true
+        },
+        {
+          "text": "SoftWipe measures how closely code follows coding standards, which stands in for quality rather than measuring it directly",
+          "isCorrect": true
+        },
+        {
+          "text": "The difference between the groups wasn't statistically significant",
+          "isCorrect": false
+        },
+        {
+          "text": "With only a few dozen repositories per group, the result could be chance",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The author makes the point directly: \"Obviously correlation does not imply causation\". Three features of the design explain why.\n\n- **No assignment.** The researcher found repositories that already swore and compared them with others. Anything that differs between the groups could be the real cause. For example, repositories found by searching code for a word may have more comments, or come from people who care about their code enough to get angry at it. These are guesses. The study can't tell them apart, and that's the problem.\n- **A muddy comparison group.** \"4 or more stars\" is not \"no swearing\". Some star-repos probably swore too, and stars bring their own selection.\n- **A proxy outcome.** Coding-standard adherence is measurable and useful, but it isn't the same as correct, maintainable or bug-free code.\n\nThe two wrong reasons are the ones people often reach for. The difference *was* statistically significant, and the samples numbered in the thousands. The problems are all in the design.\n\nThe thesis offers its own hypothesis: swearing may signal emotional involvement with hard code, or relieve stress. It's an idea for a future study. This one didn't test it.",
+      "references": "[KIT: Is there a Correlation between the Use of Swearwords and Code Quality in Open Source Code? (Jan Strehmel, bachelor's thesis, 2023, PDF)](https://cme.h-its.org/exelixis/pubs/JanThesis.pdf)"
+    },
+    {
+      "id": "music-study-participants",
+      "title": "How many software developers took part in Teresa Lesiuk's 2005 field study of music at work?",
+      "description": "The study ran for five weeks at four Canadian software companies. Type a whole number.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [
+          56
+        ]
+      },
+      "explanation": "**56** developers took part: 41 men and 15 women, aged 19 to 55, from four software companies in two Canadian cities. On average they already listened to music for about 1.7 hours a workday, although some never did and some listened nearly all day.\n\nThis is a **field study**. It ran at the developers' real desks on their real projects, not in a lab with puzzle tasks. That makes the results more realistic, but it gives the researcher less control, and the next two Questions show how the design made up for it.\n\n56 people is a modest sample. It's large enough to detect a consistent shift within the same people over time, but too small to say how the effect differs by age, job or music taste.",
+      "references": "[Psychology of Music: The effect of music listening on work performance (Teresa Lesiuk, 2005)](https://doi.org/10.1177/0305735605050650)"
+    },
+    {
+      "id": "why-take-the-music-away",
+      "title": "Lesiuk's developers worked for a week as usual, then two weeks with music, one week without, and one more week with music. Why take the music away in week 4?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "If scores drop when music is removed and recover when it returns, getting better with practice can't explain the pattern, so music becomes the likely cause",
+          "isCorrect": true
+        },
+        {
+          "text": "To give the developers a break from filling in questionnaires",
+          "isCorrect": false
+        },
+        {
+          "text": "To run a separate experiment on how much developers dislike silence",
+          "isCorrect": false
+        },
+        {
+          "text": "Because comparing week 1 with week 3 had already proved the effect, and week 4 was only a check on the questionnaires",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "This is an **interrupted time series with removal**. The same people are measured again and again, a condition is switched on, then off, then on again, and the question is whether the measurements follow the switch.\n\nWith only \"before music\" and \"after music\", many things could explain an improvement. People get used to the study, projects move to easier phases, and the weather gets better. All of these trends move in one direction over time. Removing the music tests them. A steady trend can't fall in week 4 and rise again in week 5 exactly when the music comes and goes. If the scores do follow the switch, music is the simplest explanation.\n\nLesiuk also explains why there was no separate control company: each company had its own work culture, so a control group would really compare two cultures. Each developer served as their own control.\n\nThe design can't rule everything out. The developers knew which week was which, and they rated themselves, so expectations could shape the scores. Lesiuk lists this as a challenge of the study.",
+      "references": "[Psychology of Music: The effect of music listening on work performance (Teresa Lesiuk, 2005)](https://doi.org/10.1177/0305735605050650)",
+      "images": [
+        {
+          "src": "lesiuk-five-week-design.svg",
+          "alt": "Timeline of five weekly boxes: week 1 baseline with usual habits, weeks 2 and 3 music on from a library of 65 CDs, week 4 music off and confirmed by a daily signature, week 5 music on again. Below, two dots per week mark measurements of mood, quality of work and time on task, all self-reported. A note says there is no separate control group.",
+          "caption": "Design from Lesiuk (2005), Psychology of Music 33(2). Diagram drawn for this Quiz.",
+          "width": 720,
+          "height": 382
+        }
+      ]
+    },
+    {
+      "id": "music-study-results",
+      "title": "Which results did Lesiuk report?",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "Self-rated quality of work was lowest in the no-music week and rose again when the music returned",
+          "isCorrect": true
+        },
+        {
+          "text": "Tasks overran their intended time the most in the no-music week",
+          "isCorrect": true
+        },
+        {
+          "text": "The developers' mood was lowest in the no-music week",
+          "isCorrect": true
+        },
+        {
+          "text": "Independent reviewers rated the developers' designs higher in the music weeks",
+          "isCorrect": false
+        },
+        {
+          "text": "Heavy metal improved work quality more than classical music did",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "All three measures moved with the switch.\n\n- **Quality of work** fell to its lowest average in week 4 (11.15 on a scale from 5 to 20) and rose to 11.74 when the music returned. The trend was statistically significant, but Lesiuk calls the changes \"very small\".\n- **Time on task** was worst in week 4. Developers scored each task 0, 5 or 10 for finishing faster than planned, on time or late, and week 4 averaged 6.61. The difference between week 4 and week 5 was the clearest in the study.\n- **Mood** (state positive affect) peaked in week 3 at 27.58 and hit its low in week 4 at 25.50. Within each music week, mood also rose from before listening to after.\n\nThe two wrong options mark the study's limits. Nobody outside rated the work; every number is a **self-report**, so developers who missed their music may also have rated their own work lower. The study didn't compare genres either. Developers picked their own music from a library of 65 CDs or their own collections, so it tested *choosing your own music*, not any particular style.\n\nMany developers already listened to music in the baseline week, which is why the difference between weeks 1 and 3 was small. It's also why removing music in week 4 told the researcher far more than adding it did.",
+      "references": "[Psychology of Music: The effect of music listening on work performance (Teresa Lesiuk, 2005)](https://doi.org/10.1177/0305735605050650)"
+    },
+    {
+      "id": "which-study-tested-the-habit",
+      "title": "Only one of the four studies changed a habit on purpose and measured what happened. Which one?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Lesiuk's music study, which removed the music for a week and then brought it back",
+          "isCorrect": true
+        },
+        {
+          "text": "The working-hours study by Claes and colleagues, because it covered the most commits",
+          "isCorrect": false
+        },
+        {
+          "text": "The swearing thesis, because its p-value was around 10⁻⁶¹",
+          "isCorrect": false
+        },
+        {
+          "text": "The Friday study, because it traced each fix back to the change that caused it",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Only Lesiuk **intervened**. She switched the music off and on and watched the measures follow, which is what a causal claim needs. The other three observed history, however much of it they had.\n\nHere is how far you can trust each finding.\n\n- **Fridays.** A small gap in one project in 2005, possibly explained by Friday being fix day. It's a hint, not a rule. The 2025 TGIF study found workdays indistinguishable in commit volume.\n- **Night owls.** Solid for what it claims. Commit times from 86 projects are good evidence for *when* commits happen, and most developers keep office hours. It says nothing about the quality of night-time code.\n- **Swearing.** A real and precisely measured correlation, but a small one, with a muddy comparison group and a proxy for quality. It's the weakest case for changing anything.\n- **Music.** The strongest design of the four, but 56 people, self-rated outcomes, small changes, and developers who could choose their own music.\n\nA large sample and a tiny p-value make a pattern hard to dismiss as chance. They can't show what caused it.\n\nIf one of these habits tempts you, run Lesiuk's design on yourself: two weeks with your usual music, one without, then one with again. Keep notes each afternoon, and see whether your own numbers follow the switch.",
+      "references": "[Psychology of Music: The effect of music listening on work performance (Teresa Lesiuk, 2005)](https://doi.org/10.1177/0305735605050650), [Śliwerski, Zimmermann, Zeller: Don't Program on Fridays! How to Locate Fix-Inducing Changes (2005, PDF)](https://thomas-zimmermann.com/publications/files/sliwerski-wsr-2005.pdf), [arXiv: Do Programmers Work at Night or During the Weekend? (Claes, Mäntylä, Kuutila, Adams, ICSE 2018)](https://arxiv.org/abs/1802.05084), [KIT: Is there a Correlation between the Use of Swearwords and Code Quality in Open Source Code? (Jan Strehmel, bachelor's thesis, 2023, PDF)](https://cme.h-its.org/exelixis/pubs/JanThesis.pdf)"
+    }
+  ]
+}
