@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="330" viewBox="0 0 720 330">
+  <style>
+    /* An &lt;img&gt;-embedded SVG cannot see the page's `data-theme`, but it does
+       inherit the embedding document's `color-scheme`, so `prefers-color-scheme`
+       tracks the site theme including an explicit toggle. The presentation
+       attributes below stay as the light fallback for renderers without CSS. */
+    svg {
+      --panel: #f5f7fb;
+      --card: #ffffff;
+      --title: #20242c;
+      --muted: #526173;
+      --edge: #64748b;
+      --accent: #b45309;
+      --cool: #1d4ed8;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      svg {
+        --panel: #1a1f27;
+        --card: #232a35;
+        --title: #e6eaf2;
+        --muted: #9aa8bd;
+        --edge: #8b9bb4;
+        --accent: #f59e0b;
+        --cool: #60a5fa;
+      }
+    }
+
+    .panel { fill: var(--panel); }
+    .card { fill: var(--card); stroke: var(--edge); }
+    .title { fill: var(--title); }
+    .muted { fill: var(--muted); }
+    .edge { stroke: var(--edge); }
+    .accent { fill: var(--accent); }
+    .accent-stroke { stroke: var(--accent); }
+    .cool { fill: var(--cool); }
+    .arrowhead { fill: var(--edge); }
+    .on-bar { fill: var(--panel); }
+  </style>
+
+  <rect class="panel" width="720" height="330" rx="20" fill="#f5f7fb" />
+  <text class="title" x="36" y="46" fill="#20242c" font-family="system-ui, sans-serif" font-size="20" font-weight="700">
+    150,000 training photos: 49 not-hotdogs for every hotdog
+  </text>
+
+  <g font-family="system-ui, sans-serif" font-size="15">
+    <!-- 100% bar = 600px; 98% = 588, 2% = 12 -->
+    <rect class="cool" x="60" y="92" width="588" height="56" fill="#1d4ed8" />
+    <rect class="accent" x="648" y="92" width="12" height="56" fill="#b45309" />
+    <text class="on-bar" x="354" y="126" fill="#ffffff" text-anchor="middle" font-weight="700">Not hotdog: 147,000 (98%)</text>
+    <path class="edge" d="M654 150V176" stroke="#64748b" stroke-width="2" />
+    <text class="accent" x="660" y="196" fill="#b45309" text-anchor="end" font-weight="700">Hotdog: 3,000 (2%)</text>
+
+    <text class="title" x="60" y="240" fill="#20242c" font-weight="700">A model that always answers "not hotdog":</text>
+    <text class="muted" x="60" y="264" fill="#526173">right on all 147,000 not-hotdogs, wrong on all 3,000 hotdogs</text>
+    <text class="muted" x="60" y="288" fill="#526173">98% accuracy, and it has never found a hotdog.</text>
+  </g>
+</svg>

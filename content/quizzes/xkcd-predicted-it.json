@@ -1,0 +1,442 @@
+{
+  "schemaVersion": 1,
+  "id": "xkcd-predicted-it",
+  "title": "xkcd predicted it: comics that changed real software",
+  "description": "There's an xkcd for everything, and a few of them came true. NIST came around to the password comic. Flickr answered the \"is it a bird?\" joke within a month. And a boy named `Robert'); DROP TABLE Students;--` became the unofficial face of SQL injection. Each Question describes a comic, asks what happened next in the real world, then explains the idea behind it: password entropy, image recognition, SQL injection, Heartbleed, Hyrum's Law, and the fragile open-source projects everything depends on. The comics are described in words, and each one links to the original.",
+  "language": "en",
+  "tags": [
+    "security",
+    "internet-culture"
+  ],
+  "author": "Quizbun",
+  "questions": [
+    {
+      "id": "which-password-is-stronger",
+      "title": "Under the comic's assumptions, which password is harder to guess?",
+      "description": "xkcd #936, \"Password Strength\" (2011), compares two passwords. `Tr0ub4dor&3` is built the way many sign-up forms demanded. `correct horse battery staple` is four common words in a row. The comic assumes the attacker knows exactly how each one was made.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`correct horse battery staple`",
+          "isCorrect": true
+        },
+        {
+          "text": "`Tr0ub4dor&3`, because it mixes upper case, digits and a symbol",
+          "isCorrect": false
+        },
+        {
+          "text": "About the same, because both are at least 11 characters long",
+          "isCorrect": false
+        },
+        {
+          "text": "Neither, because any password made of dictionary words is cracked instantly",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A password is as strong as the number of guesses an attacker needs, and the comic counts those guesses for an attacker who knows the recipe.\n\n`Tr0ub4dor&3` looks random, but it's one uncommon word plus the tweaks everyone makes: capitalise the first letter, swap `o` for `0` and `a` for `4`, add a symbol and a digit. Cracking tools try exactly those tweaks. The comic puts the whole recipe at about 28 bits, roughly 2²⁸ or 268 million guesses.\n\nThe passphrase is all lowercase, but it's four words, each picked at random from a big list. Every random word multiplies the number of guesses by the size of the list. The next Question does the arithmetic.\n\n\"Dictionary words are cracked instantly\" is true for *one* word. With four random words, a dictionary attack has to try every combination, and that's what the comic is about.",
+      "references": "[xkcd #936: Password Strength](https://xkcd.com/936/), [explain xkcd: 936](https://www.explainxkcd.com/wiki/index.php/936)"
+    },
+    {
+      "id": "passphrase-entropy-bits",
+      "title": "How many bits of entropy do four words picked at random from a list of 2,048 give?",
+      "description": "Each word is picked independently and at random, and the attacker knows the list. Answer in whole bits.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [
+          44
+        ]
+      },
+      "explanation": "A 2,048-word list gives 2,048 equally likely choices per word, and 2,048 = 2¹¹, so each word is worth 11 bits.\n\nThe words are picked independently, so the possibilities multiply: 2¹¹ × 2¹¹ × 2¹¹ × 2¹¹ = 2⁴⁴. In bits, that's 11 + 11 + 11 + 11 = **44**. Bits add up when possibilities multiply, which is why entropy is measured in bits.\n\nA fifth word adds another 11 bits and makes the search 2,048 times longer. That does far more than swapping letters for look-alike digits.",
+      "references": "[xkcd #936: Password Strength](https://xkcd.com/936/), [explain xkcd: 936](https://www.explainxkcd.com/wiki/index.php/936), [Wikipedia: Password strength, entropy as a measure](https://en.wikipedia.org/wiki/Password_strength#Entropy_as_a_measure_of_password_strength)"
+    },
+    {
+      "id": "passphrase-crack-time",
+      "title": "At 1,000 guesses per second, about how many years would it take to try all 2⁴⁴ passphrases?",
+      "description": "Use 2⁴⁴ ≈ 17.6 trillion and about 31.6 million seconds in a year. Anything within ten years counts.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [
+          557
+        ],
+        "tolerance": 10
+      },
+      "explanation": "17.6 trillion guesses at 1,000 per second is 17.6 billion seconds. Divide by 31.6 million seconds per year and you get about **557 years**. The comic rounds it to 550.\n\nOn average an attacker hits the right password halfway through, so expect about 280 years. That's still hopeless for the attacker. By the same arithmetic, `Tr0ub4dor&3` takes 2²⁸ guesses, or about 3 days.\n\nThe guess rate matters. 1,000 guesses per second is an attack on a live login form. An attacker who steals a database of fast, unsalted hashes can try billions per second, and then 44 bits falls in hours. Slow password hashes such as bcrypt and Argon2 exist to push that rate back down. Longer passphrases help too.",
+      "references": "[xkcd #936: Password Strength](https://xkcd.com/936/), [explain xkcd: 936](https://www.explainxkcd.com/wiki/index.php/936), [OWASP: Password Storage Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html)",
+      "images": [
+        {
+          "src": "passphrase-entropy-bars.svg",
+          "alt": "Bar chart of password strength in bits. Tr0ub4dor&3, a common word with tweaks, reaches about 28 bits, about 3 days at 1,000 guesses per second. correct horse battery staple is four equal blocks of 11 bits each, 44 bits in total, about 550 years. A note says 16 more bits means 65,536 times as many guesses.",
+          "caption": "Numbers from xkcd #936. Chart drawn for this Quiz.",
+          "placement": "explanation",
+          "width": 720,
+          "height": 400
+        }
+      ]
+    },
+    {
+      "id": "what-makes-44-bits-real",
+      "title": "What has to be true for a four-word passphrase to really have 44 bits?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Something random picks the words, such as dice or a password generator, not the person",
+          "isCorrect": true
+        },
+        {
+          "text": "The attacker must not know the password is made of English words",
+          "isCorrect": false
+        },
+        {
+          "text": "At least one word must be rare",
+          "isCorrect": false
+        },
+        {
+          "text": "The words must be separated by spaces",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Entropy measures the process that made the password, not the string you end up with. 44 bits assumes all 2⁴⁴ combinations were equally likely.\n\nPeople are bad at random. Ask someone to \"pick four words\" and you get common nouns, song lyrics and phrases that make sense. An attacker who models that searches a much smaller space first. Diceware and password managers make the choice for you.\n\nThe comic's count already assumes the attacker knows the word list and the method, so keeping the method secret adds nothing. The security comes only from the random choice. Rare words don't help either. A rare word from a 2,048-word list is worth the same 11 bits as a common one. Spaces add nothing an attacker can't guess.\n\nThe comic's own example is now a bad password, because it's published everywhere and any wordlist can include it.",
+      "references": "[xkcd #936: Password Strength](https://xkcd.com/936/), [explain xkcd: 936](https://www.explainxkcd.com/wiki/index.php/936), [EFF: Dice-generated passphrases](https://www.eff.org/dice)"
+    },
+    {
+      "id": "nist-2017-password-rules",
+      "title": "What did NIST's 2017 password guidelines, SP 800-63B, tell sites to do?",
+      "description": "The U.S. National Institute of Standards and Technology wrote the 2003 guidance behind many \"must contain a symbol, change every 90 days\" rules.",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "Stop forcing users to change passwords periodically",
+          "isCorrect": true
+        },
+        {
+          "text": "Stop imposing composition rules, such as requiring a mix of character types",
+          "isCorrect": true
+        },
+        {
+          "text": "Check new passwords against lists of common and breached passwords",
+          "isCorrect": true
+        },
+        {
+          "text": "Accept passwords of at least 64 characters, including spaces",
+          "isCorrect": true
+        },
+        {
+          "text": "Require at least one special character",
+          "isCorrect": false
+        },
+        {
+          "text": "Require a new password every 90 days",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "SP 800-63B, published in June 2017, reversed the old advice. It says verifiers \"SHOULD NOT impose other composition rules\" and \"SHOULD NOT require memorized secrets to be changed arbitrarily (e.g., periodically)\". Sites should allow at least 64 characters, accept spaces, and reject passwords that appear on lists of breached, common or dictionary passwords. A forced change still makes sense when there's evidence a password was stolen.\n\nThe old rules failed because of how people react to them. Told to add a symbol, people write `Password1!`. Told to change it every 90 days, they write `Password2!`. A University of North Carolina study, summarised by the FTC's chief technologist in 2016, found that an attacker who knew a user's old password could guess the new one for 41% of accounts, in under 3 seconds per account.\n\nBill Burr, who wrote the 2003 guidance, told the *Wall Street Journal* in 2017: \"Much of what I did I now regret.\"",
+      "references": "[NIST SP 800-63B, §5.1.1.2 Memorized Secret Verifiers](https://pages.nist.gov/800-63-3/sp800-63b.html), [FTC: Time to rethink mandatory password changes](https://www.ftc.gov/policy/advocacy-research/tech-at-ftc/2016/03/time-rethink-mandatory-password-changes), [Engadget: The man who put us through password hell regrets everything](https://www.engadget.com/2017-08-08-nist-new-password-guidelines.html)"
+    },
+    {
+      "id": "park-or-bird",
+      "title": "xkcd joked that spotting a bird in a photo needs a research team and five years. What happened next?",
+      "description": "xkcd #1425, \"Tasks\" (September 2014). A manager asks for an app that checks whether a photo was taken in a national park and whether it shows a bird. The developer says the first takes a few hours and the second needs \"a research team and five years\".",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Flickr released a working \"Park or Bird\" demo about a month later",
+          "isCorrect": true
+        },
+        {
+          "text": "It took almost exactly five years, as the comic predicted",
+          "isCorrect": false
+        },
+        {
+          "text": "Researchers showed the task can't be solved reliably from pixels alone",
+          "isCorrect": false
+        },
+        {
+          "text": "Nothing public for years, until phones got built-in AI chips",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The comic ran on 24 September 2014. On 20 October, 26 days later, Flickr's engineering blog announced Park or Bird. You upload a photo, it checks the GPS location against park boundaries, and then a classifier decides whether there's a bird in it.\n\nFlickr didn't build the classifier in 26 days. It already had a deep neural network, trained on millions of images to recognise more than a thousand objects and scenes, and Park or Bird wrapped it. A few years earlier, the comic's estimate would have been reasonable. By 2014 the research had caught up.\n\nThe demo wasn't perfect, and Flickr called it a hard problem with room to improve. Spotting a bird well enough for a demo was solved in 2014. Spotting it every time still isn't.",
+      "references": "[xkcd #1425: Tasks](https://xkcd.com/1425/), [explain xkcd: 1425](https://www.explainxkcd.com/wiki/index.php/1425), [Flickr Code: Introducing Flickr PARK or BIRD](https://code.flickr.net/2014/10/20/introducing-flickr-park-or-bird/), [PetaPixel on Park or Bird](https://petapixel.com/2014/10/21/flickr-responds-webcomic-challence-site-tells-picture-bird/)"
+    },
+    {
+      "id": "why-bird-became-easy",
+      "title": "Why was \"is it a bird?\" practical by 2014, when a few years earlier it was a research problem?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "From 2012, deep neural networks trained on GPUs with huge labelled image sets beat older methods by a wide margin",
+          "isCorrect": true
+        },
+        {
+          "text": "Cameras began storing the subject of each photo in its metadata",
+          "isCorrect": false
+        },
+        {
+          "text": "Programmers finally wrote enough rules by hand about beaks and wings",
+          "isCorrect": false
+        },
+        {
+          "text": "Crowds of human workers labelled each uploaded photo behind the scenes",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The comic's two tasks have different inputs. \"Taken in a national park?\" needs two GPS numbers and a map lookup. \"Is it a bird?\" has only pixels, and a bird can be any colour, size, pose or angle. Rules written by hand can't cover that, which kept it a research problem for decades.\n\nThe change came in 2012. AlexNet, a deep convolutional network trained on GPUs with the 1.2-million-image ImageNet dataset, won that year's ImageNet competition with a top-5 error of 15.3%. The next-best entry had 26.2%. Nobody told the network what a beak is. It learned layers of features from labelled examples, first edges, then textures, then parts, then whole objects. Within two years, companies such as Flickr were running these networks in production.\n\nCameras record where and when a photo was taken, not what's in it. And paying people to label every upload doesn't scale for a photo-sharing site.",
+      "references": "[Flickr Code: Introducing Flickr PARK or BIRD](https://code.flickr.net/2014/10/20/introducing-flickr-park-or-bird/), [Wikipedia: AlexNet](https://en.wikipedia.org/wiki/AlexNet). Related Quiz: *The internet runs on cats*, for the 2012 network that learned \"cat\" without labels.",
+      "images": [
+        {
+          "src": "park-or-bird-tasks.svg",
+          "alt": "Two cards compare the comic's tasks. Taken in a national park: the input is GPS coordinates in the photo's metadata, the method is checking whether the point is inside a park boundary, and the comic says a few hours. Is it a bird: the input is millions of pixel values, the method is learning what beaks, wings and feathers look like from millions of labelled examples, and the comic says a research team and five years. A timeline below shows xkcd #1425 on September 24 and Flickr's Park or Bird on October 20, 26 days later. A note says Park or Bird reused a deep network Flickr had already trained.",
+          "caption": "Dates from xkcd #1425 and the Flickr Code blog. Diagram drawn for this Quiz.",
+          "placement": "explanation",
+          "width": 720,
+          "height": 430
+        }
+      ]
+    },
+    {
+      "id": "bobby-tables-attack",
+      "title": "A school's database loses its student records after it enrolls a boy named `Robert'); DROP TABLE Students;--`. What kind of attack is this?",
+      "description": "xkcd #327, \"Exploits of a Mom\" (2007). His mother calls him Little Bobby Tables.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "SQL injection",
+          "isCorrect": true
+        },
+        {
+          "text": "Cross-site scripting (XSS)",
+          "isCorrect": false
+        },
+        {
+          "text": "A buffer overflow",
+          "isCorrect": false
+        },
+        {
+          "text": "A denial-of-service attack",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "SQL injection happens when a program builds an SQL query by pasting user input into the query text. The database can't tell which characters the programmer wrote and which came from the user, so any SQL syntax in the input runs as SQL.\n\nBobby's name is data, but the school's software ran it as code, and part of that code was `DROP TABLE Students`.\n\nCross-site scripting is the same mistake in HTML. Input pasted into a web page runs as JavaScript in someone's browser. A buffer overflow writes past the end of a fixed-size block of memory. Neither involves a database query. A denial-of-service attack floods a system with traffic, while deleting a table takes one precise command.\n\nThe comic became the unofficial mascot of this bug, and bobby-tables.com explains how to prevent it in dozens of languages.",
+      "references": "[xkcd #327: Exploits of a Mom](https://xkcd.com/327/), [explain xkcd: 327](https://www.explainxkcd.com/wiki/index.php/327), [OWASP: SQL Injection](https://owasp.org/www-community/attacks/SQL_Injection), [bobby-tables.com](https://bobby-tables.com/)"
+    },
+    {
+      "id": "bobby-tables-anatomy",
+      "title": "Which parts of the name make the attack work?",
+      "description": "Suppose the school's software builds its query like this, pasting the name between the quotes:\n\n```sql\nINSERT INTO Students (name) VALUES ('<name goes here>');\n```",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "The `'` after `Robert`, which closes the string the program opened",
+          "isCorrect": true
+        },
+        {
+          "text": "The `);` that finishes the `INSERT` statement early",
+          "isCorrect": true
+        },
+        {
+          "text": "The `--` at the end, which turns the program's leftover `');` into a comment",
+          "isCorrect": true
+        },
+        {
+          "text": "The first name `Robert`, which must match an existing student",
+          "isCorrect": false
+        },
+        {
+          "text": "The capital letters in `DROP TABLE`, because SQL requires capitals for commands",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Paste the name into the template and the database receives:\n\n```sql\nINSERT INTO Students (name) VALUES ('Robert'); DROP TABLE Students;--');\n```\n\nNow read it the way the parser does. `'Robert'` is a complete string, because the apostrophe in the name closed it. `);` ends the `INSERT`. The parser is now outside any string, so it reads `DROP TABLE Students;` as a second statement. The program's own closing `');` is still there and would cause a syntax error, but `--` starts a comment, so the parser ignores it.\n\n`Robert` is only there to make the first statement a valid insert, and any name works. SQL keywords are case-insensitive, so `drop table` works just as well.\n\nThere's one more condition. The database driver has to allow several statements in one call. Some drivers refuse by default, which blocks this particular payload. That doesn't stop injection in general, because an attacker can still change what a single statement does, for example by adding `OR 1=1` to a `WHERE` clause.",
+      "references": "[xkcd #327: Exploits of a Mom](https://xkcd.com/327/), [explain xkcd: 327](https://www.explainxkcd.com/wiki/index.php/327), [OWASP: SQL Injection](https://owasp.org/www-community/attacks/SQL_Injection)",
+      "images": [
+        {
+          "src": "bobby-tables-anatomy.svg",
+          "alt": "Diagram of the injection. The program's template is INSERT INTO Students (name) VALUES ('…name…');. With the name pasted in, the database receives INSERT INTO Students (name) VALUES ('Robert'); DROP TABLE Students;--'); with the injected parts highlighted. Three callouts explain them. '); closes the string and finishes the INSERT. DROP TABLE Students; is a second statement that deletes the whole table. -- comments out the template's leftover '); so nothing errors. A note says the fix is to send the SQL and the name separately.",
+          "caption": "Drawn for this Quiz from the name in xkcd #327.",
+          "placement": "explanation",
+          "width": 720,
+          "height": 440
+        }
+      ]
+    },
+    {
+      "id": "bobby-tables-real-fix",
+      "title": "Bobby's mother tells the school to sanitize its database inputs. What does OWASP recommend as the main defence?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Parameterised queries, which send the SQL and the values to the database separately",
+          "isCorrect": true
+        },
+        {
+          "text": "Escaping or removing quotes and semicolons from every input",
+          "isCorrect": false
+        },
+        {
+          "text": "Rejecting names that contain apostrophes",
+          "isCorrect": false
+        },
+        {
+          "text": "Hiding database error messages from users",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A parameterised query, also called a prepared statement, sends the query with a placeholder, then sends the name as a separate value:\n\n```py\ncursor.execute(\"INSERT INTO Students (name) VALUES (%s)\", (name,))\n```\n\nThe database parses the SQL before it sees the name, so the name can't change the query's structure. `Robert'); DROP TABLE Students;--` gets stored as an odd but harmless name.\n\nThe mother's advice is the weaker fix. OWASP's SQL Injection Prevention Cheat Sheet lists escaping user input last and calls it \"strongly discouraged\" as a primary defence, because escaping rules differ between databases and one missed case reopens the hole. Rejecting apostrophes breaks real names such as O'Brien and still leaves other syntax to exploit. Hiding error messages slows the attacker down but doesn't stop them.",
+      "references": "[OWASP: SQL Injection Prevention Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/SQL_Injection_Prevention_Cheat_Sheet.html), [bobby-tables.com](https://bobby-tables.com/)"
+    },
+    {
+      "id": "heartbleed-hat-500",
+      "title": "What was the actual bug behind Heartbleed?",
+      "description": "xkcd #1354, \"Heartbleed Explanation\" (April 2014). A user asks a server to reply with \"POTATO\" (6 letters), and it does. Then she asks for \"HAT\" (500 letters), and the server sends back HAT followed by 497 characters of other users' data.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "OpenSSL trusted the length the client claimed and copied that many bytes, reading past the real data into nearby memory",
+          "isCorrect": true
+        },
+        {
+          "text": "OpenSSL used encryption keys that were too short and could be brute-forced",
+          "isCorrect": false
+        },
+        {
+          "text": "The heartbeat messages were sent unencrypted, so anyone on the network could read them",
+          "isCorrect": false
+        },
+        {
+          "text": "Attackers flooded servers with heartbeats until they crashed",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "TLS has a heartbeat feature. One side sends a payload along with its length, and the other side echoes the payload back to show the connection is alive. Vulnerable OpenSSL versions (1.0.1 through 1.0.1f) never checked the claimed length against the payload that actually arrived. Claim 64 KB, send 3 bytes, and the server copies 64 KB of memory starting at those 3 bytes.\n\nThe extra bytes were whatever sat next to them in the server's memory: session cookies, passwords, and sometimes the server's private key. Each request leaked up to 64 KB, and an attacker could just keep asking. The fix, in OpenSSL 1.0.1g, was a bounds check.\n\nThis comic didn't predict anything. The bug was disclosed on 7 April 2014 as CVE-2014-0160, and the comic ran four days later. It became one of the most-shared explanations because \"HAT (500 letters)\" sums up the bug in one line.",
+      "references": "[xkcd #1354: Heartbleed Explanation](https://xkcd.com/1354/), [explain xkcd: 1354](https://www.explainxkcd.com/wiki/index.php/1354), [heartbleed.com](https://heartbleed.com/)"
+    },
+    {
+      "id": "spacebar-heating-law",
+      "title": "An update fixes a bug that made the CPU overheat when the spacebar was held down, and a user complains that it broke their workflow. Which named principle is this?",
+      "description": "xkcd #1172, \"Workflow\" (2013). The user had set up their editor to treat the temperature spikes as a Control key press.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Hyrum's Law",
+          "isCorrect": true
+        },
+        {
+          "text": "Conway's Law",
+          "isCorrect": false
+        },
+        {
+          "text": "Murphy's Law",
+          "isCorrect": false
+        },
+        {
+          "text": "Moore's Law",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Hyrum's Law is named after Hyrum Wright, who noticed it while working on Google's core libraries. It says: \"With a sufficient number of users of an API, it does not matter what you promise in the contract: all observable behaviors of your system will be depended on by somebody.\"\n\nThe comic's example is absurd on purpose, but real cases are mundane. Callers depend on the exact text of an error message, on the order of results a function never promised to sort, or on how long an operation takes. Change any of these and something downstream breaks, even though the documented behaviour stayed the same.\n\nSome language designers push back on purpose. Go's spec leaves map iteration order unspecified, and since Go 1 the runtime varies the order between runs so nobody can come to rely on it.\n\nConway's Law says systems mirror the communication structure of the organisations that build them. Murphy's Law is the general \"anything that can go wrong will\". Moore's Law is about transistor counts doubling.",
+      "references": "[xkcd #1172: Workflow](https://xkcd.com/1172/), [explain xkcd: 1172](https://www.explainxkcd.com/wiki/index.php/1172), [Hyrum's Law](https://www.hyrumslaw.com/), [Go 1 release notes: map iteration](https://go.dev/doc/go1#iteration)"
+    },
+    {
+      "id": "is-it-worth-the-time",
+      "title": "You can shave 5 minutes off a task you do every day. How many days can you spend automating it before you lose time over five years?",
+      "description": "xkcd #1205, \"Is It Worth the Time?\", answers this for many cases, with five years as the horizon. Count full 24-hour days and round to a whole number.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [
+          6
+        ],
+        "tolerance": 0.5
+      },
+      "explanation": "5 minutes × 365 days × 5 years = 9,125 minutes. That's about 152 hours, or **6.3 days** around the clock. The comic's table says 6 days.\n\nThose are 24-hour days. In 8-hour working days it's about 19, which is more than most people guess for a five-minute saving. The table works as a sanity check both ways. Shaving 5 seconds off a daily task is worth only about 2 hours of effort, and shaving 1 hour off a daily task is worth about 2 months.\n\nThe table leaves a few things out. Automation needs maintenance, and it can be worth more than the time it saves when it prevents mistakes or lets someone else do the task. xkcd #1319, \"Automation\", jokes about the other risk, which is that the automation itself becomes the task.",
+      "references": "[xkcd #1205: Is It Worth the Time?](https://xkcd.com/1205/), [explain xkcd: 1205](https://www.explainxkcd.com/wiki/index.php/1205), [xkcd #1319: Automation](https://xkcd.com/1319/), [explain xkcd: 1319](https://www.explainxkcd.com/wiki/index.php/1319)"
+    },
+    {
+      "id": "standards-charger-ending",
+      "title": "xkcd's \"Standards\" comic uses phone chargers as an example. What finally cut down the charger mess in the EU?",
+      "description": "xkcd #927, \"Standards\" (2011). There are 14 competing standards. Someone proposes one universal standard that covers everyone's use cases. Soon there are 15 competing standards.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "A law requiring USB-C charging ports on phones and other small devices, from the end of 2024",
+          "isCorrect": true
+        },
+        {
+          "text": "Manufacturers agreed on USB-C on their own because it was the better port",
+          "isCorrect": false
+        },
+        {
+          "text": "Wireless charging made charging ports obsolete",
+          "isCorrect": false
+        },
+        {
+          "text": "Apple licensed its Lightning connector to other manufacturers",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Directive (EU) 2022/2380 amended the EU's Radio Equipment Directive. Since 28 December 2024, phones, tablets, cameras, headphones, e-readers and other small devices sold in the EU must charge over USB-C. Laptops followed on 28 April 2026. Fast charging above 15 W must use USB Power Delivery.\n\nThe comic is about incentives. A new \"universal\" standard is just one more option unless everyone has a reason to drop their own. USB-C had been capable for years, and the voluntary 2009 agreement on micro-USB left gaps. The EU took the choice away by law.\n\nWireless charging has competing standards of its own and doesn't replace a port. Lightning stayed Apple's own connector until the law pushed iPhones to USB-C.",
+      "references": "[xkcd #927: Standards](https://xkcd.com/927/), [explain xkcd: 927](https://www.explainxkcd.com/wiki/index.php/927), [European Commission: The EU common charger](https://single-market-economy.ec.europa.eu/sectors/electrical-and-electronic-engineering-industries-eei/radio-equipment-directive-red/one-common-charging-solution-all_en)"
+    },
+    {
+      "id": "xz-backdoor-discovery",
+      "title": "How was the 2024 xz Utils backdoor discovered?",
+      "description": "xkcd #2347, \"Dependency\" (2020), draws all modern digital infrastructure as a tower of blocks balanced on one small block, \"a project some random person in Nebraska has been thanklessly maintaining since 2003\". xz Utils, a compression library used by many Linux systems, was that kind of project.",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "An engineer noticed SSH logins on his test machine taking about half a second longer and investigated",
+          "isCorrect": true
+        },
+        {
+          "text": "An automated scanner flagged the malicious code during code review",
+          "isCorrect": false
+        },
+        {
+          "text": "The attacker's account was caught bragging about it on a forum",
+          "isCorrect": false
+        },
+        {
+          "text": "Servers around the world were breached, and investigators traced the break-ins to xz",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "On 29 March 2024, Andres Freund, a Microsoft engineer and PostgreSQL developer, posted to the oss-security mailing list. SSH logins on his Debian test system were using too much CPU, producing Valgrind errors, and taking 0.8 seconds instead of about 0.3. He traced the problem to xz versions 5.6.0 and 5.6.1, which contained a backdoor aimed at the SSH server (CVE-2024-3094).\n\nThe story matches the comic. For years, one volunteer maintained xz. From 2021, an account called \"Jia Tan\" sent helpful patches while other accounts pressured the maintainer about slow releases. Jia Tan became a co-maintainer and then shipped the backdoor, hiding it in test files and release tarballs instead of the visible source.\n\nA person caught it, not an automated tool, and before most stable Linux releases shipped the affected versions. That's why it's often called a near miss. The next backdoor might not cause a half-second delay.",
+      "references": "[xkcd #2347: Dependency](https://xkcd.com/2347/), [explain xkcd: 2347](https://www.explainxkcd.com/wiki/index.php/2347), [Openwall oss-security: backdoor in upstream xz/liblzma](https://www.openwall.com/lists/oss-security/2024/03/29/4), [Wikipedia: XZ Utils backdoor](https://en.wikipedia.org/wiki/XZ_Utils_backdoor)"
+    },
+    {
+      "id": "which-comics-came-true",
+      "title": "Which of these statements about xkcd comics and the real world are true?",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "Flickr released a working bird detector less than a month after #1425 called it a five-year research problem",
+          "isCorrect": true
+        },
+        {
+          "text": "NIST's 2017 guidelines dropped the character-mix rules that #936 made fun of",
+          "isCorrect": true
+        },
+        {
+          "text": "The EU made one charging port mandatory, the kind of fix #927 said voluntary standards couldn't deliver",
+          "isCorrect": true
+        },
+        {
+          "text": "#1354 explained Heartbleed before the bug was publicly disclosed",
+          "isCorrect": false
+        },
+        {
+          "text": "The spacebar-heating bug in #1172 was a real bug in a released program",
+          "isCorrect": false
+        },
+        {
+          "text": "Hyrum's Law is named after a character in an xkcd comic",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Three had real follow-ups:\n\n- **#1425, \"Tasks\".** Flickr's Park or Bird appeared 26 days after the comic, built on a deep network Flickr already had.\n- **#936, \"Password Strength\".** NIST's SP 800-63B told sites to stop imposing composition rules and forced periodic changes. The comic didn't cause that. Research on how people actually pick passwords did, and it reached the same conclusion as the comic.\n- **#927, \"Standards\".** Directive (EU) 2022/2380 made USB-C the common charging port from the end of 2024. The comic's cycle only broke because a law took the choice away.\n\nThe other three are false. #1354 appeared four days *after* Heartbleed was disclosed, so it explained the bug instead of predicting it. The spacebar-heating bug is fiction, invented to illustrate a real pattern. Hyrum's Law is named after Hyrum Wright, a software engineer then at Google, and describes that same pattern independently of the comic.",
+      "references": "[xkcd #1425: Tasks](https://xkcd.com/1425/), [explain xkcd: 1425](https://www.explainxkcd.com/wiki/index.php/1425), [xkcd #936: Password Strength](https://xkcd.com/936/), [explain xkcd: 936](https://www.explainxkcd.com/wiki/index.php/936), [xkcd #927: Standards](https://xkcd.com/927/), [explain xkcd: 927](https://www.explainxkcd.com/wiki/index.php/927), [xkcd #1354: Heartbleed Explanation](https://xkcd.com/1354/), [explain xkcd: 1354](https://www.explainxkcd.com/wiki/index.php/1354), [Hyrum's Law](https://www.hyrumslaw.com/)"
+    }
+  ]
+}

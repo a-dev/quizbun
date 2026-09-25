@@ -1,0 +1,86 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="470" viewBox="0 0 720 470">
+  <style>
+    /* An &lt;img&gt;-embedded SVG cannot see the page's `data-theme`, but it does
+       inherit the embedding document's `color-scheme`, so `prefers-color-scheme`
+       tracks the site theme including an explicit toggle. The presentation
+       attributes below stay as the light fallback for renderers without CSS. */
+    svg {
+      --panel: #f5f7fb;
+      --title: #20242c;
+      --muted: #526173;
+      --rail: #94a3b8;
+      --a: #2563eb;
+      --a-soft: #dbeafe;
+      --a-top: #eff6ff;
+      --a-side: #bfdbfe;
+      --b: #c2410c;
+      --b-soft: #ffedd5;
+      --b-top: #fff7ed;
+      --b-side: #fed7aa;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      svg {
+        --panel: #1a1f27;
+        --title: #e6eaf2;
+        --muted: #9aa8bd;
+        --rail: #4b5a70;
+        --a: #60a5fa;
+        --a-soft: #1e3a5f;
+        --a-top: #274b75;
+        --a-side: #172d4a;
+        --b: #fb923c;
+        --b-soft: #4a2410;
+        --b-top: #5e3016;
+        --b-side: #3a1c0c;
+      }
+    }
+
+    .panel { fill: var(--panel); }
+    .title { fill: var(--title); }
+    .muted { fill: var(--muted); }
+    .rail { stroke: var(--rail); }
+    .a-front { fill: var(--a-soft); stroke: var(--a); }
+    .a-top { fill: var(--a-top); stroke: var(--a); }
+    .a-side { fill: var(--a-side); stroke: var(--a); }
+    .b-front { fill: var(--b-soft); stroke: var(--b); }
+    .b-top { fill: var(--b-top); stroke: var(--b); }
+    .b-side { fill: var(--b-side); stroke: var(--b); }
+    .dim { stroke: var(--muted); }
+    .dim-head { fill: var(--muted); }
+  </style>
+
+  <defs>
+    <marker id="dim-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path class="dim-head" d="M 0 0 L 10 5 L 0 10 z" fill="#526173" />
+    </marker>
+  </defs>
+
+  <rect class="panel" width="720" height="470" rx="20" fill="#f5f7fb" />
+  <text class="title" x="36" y="46" fill="#20242c" font-family="system-ui, sans-serif" font-size="20" font-weight="700">A pig's body: as planned, and as it loaded</text>
+  <text class="muted" x="36" y="72" fill="#526173" font-family="system-ui, sans-serif" font-size="14">Plain boxes for the body. No head, legs or textures.</text>
+
+  <line class="rail" x1="24" y1="380" x2="696" y2="380" stroke="#94a3b8" stroke-width="1" stroke-dasharray="4 4" />
+
+  <!-- As planned: long and low -->
+  <polygon class="a-top" points="60,280 300,280 340,250 100,250" fill="#eff6ff" stroke="#2563eb" stroke-width="2" stroke-linejoin="round" />
+  <polygon class="a-side" points="300,280 340,250 340,350 300,380" fill="#bfdbfe" stroke="#2563eb" stroke-width="2" stroke-linejoin="round" />
+  <rect class="a-front" x="60" y="280" width="240" height="100" fill="#dbeafe" stroke="#2563eb" stroke-width="2" />
+
+  <line class="dim" x1="60" y1="402" x2="300" y2="402" stroke="#526173" stroke-width="1.5" marker-start="url(#dim-arrow)" marker-end="url(#dim-arrow)" />
+  <text class="muted" x="180" y="422" fill="#526173" font-family="system-ui, sans-serif" font-size="13" text-anchor="middle">length</text>
+  <line class="dim" x1="44" y1="280" x2="44" y2="380" stroke="#526173" stroke-width="1.5" marker-start="url(#dim-arrow)" marker-end="url(#dim-arrow)" />
+  <text class="muted" x="32" y="330" fill="#526173" font-family="system-ui, sans-serif" font-size="13" text-anchor="middle" transform="rotate(-90 32 330)">height</text>
+  <text class="title" x="200" y="452" fill="#20242c" font-family="system-ui, sans-serif" font-size="15" font-weight="700" text-anchor="middle">As planned</text>
+
+  <!-- As loaded: short and tall -->
+  <polygon class="b-top" points="460,140 560,140 600,110 500,110" fill="#fff7ed" stroke="#c2410c" stroke-width="2" stroke-linejoin="round" />
+  <polygon class="b-side" points="560,140 600,110 600,350 560,380" fill="#fed7aa" stroke="#c2410c" stroke-width="2" stroke-linejoin="round" />
+  <rect class="b-front" x="460" y="140" width="100" height="240" fill="#ffedd5" stroke="#c2410c" stroke-width="2" />
+
+  <line class="dim" x1="460" y1="402" x2="560" y2="402" stroke="#526173" stroke-width="1.5" marker-start="url(#dim-arrow)" marker-end="url(#dim-arrow)" />
+  <text class="muted" x="510" y="422" fill="#526173" font-family="system-ui, sans-serif" font-size="13" text-anchor="middle">length</text>
+  <line class="dim" x1="444" y1="140" x2="444" y2="380" stroke="#526173" stroke-width="1.5" marker-start="url(#dim-arrow)" marker-end="url(#dim-arrow)" />
+  <text class="muted" x="432" y="260" fill="#526173" font-family="system-ui, sans-serif" font-size="13" text-anchor="middle" transform="rotate(-90 432 260)">height</text>
+  <text class="title" x="530" y="452" fill="#20242c" font-family="system-ui, sans-serif" font-size="15" font-weight="700" text-anchor="middle">As it loaded</text>
+</svg>

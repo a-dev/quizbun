@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="400" viewBox="0 0 720 400">
+  <style>
+    /* An &lt;img&gt;-embedded SVG cannot see the page's `data-theme`, but it does
+       inherit the embedding document's `color-scheme`, so `prefers-color-scheme`
+       tracks the site theme including an explicit toggle. The presentation
+       attributes below stay as the light fallback for renderers without CSS. */
+    svg {
+      --panel: #f5f7fb;
+      --card: #ffffff;
+      --title: #20242c;
+      --muted: #526173;
+      --edge: #64748b;
+      --accent: #b45309;
+      --danger: #b91c1c;
+      --ok: #15803d;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      svg {
+        --panel: #1a1f27;
+        --card: #232a35;
+        --title: #e6eaf2;
+        --muted: #9aa8bd;
+        --edge: #8b9bb4;
+        --accent: #f59e0b;
+        --danger: #f87171;
+        --ok: #4ade80;
+      }
+    }
+
+    .panel { fill: var(--panel); }
+    .card { fill: var(--card); stroke: var(--edge); }
+    .title { fill: var(--title); }
+    .muted { fill: var(--muted); }
+    .edge { stroke: var(--edge); }
+    .edge-fill { fill: var(--edge); }
+    .accent { fill: var(--accent); }
+    .accent-stroke { stroke: var(--accent); }
+    .danger { fill: var(--danger); }
+    .danger-stroke { stroke: var(--danger); }
+    .ok { fill: var(--ok); }
+    .ok-stroke { stroke: var(--ok); }
+  </style>
+
+  <rect class="panel" width="720" height="400" rx="20" fill="#f5f7fb" />
+  <text class="title" x="36" y="46" fill="#20242c" font-family="system-ui, sans-serif" font-size="20" font-weight="700">
+    Substring check vs whole-word check
+  </text>
+  <text class="muted" x="36" y="74" fill="#526173" font-family="system-ui, sans-serif" font-size="14">
+    Banned word: hell. Name typed in: Hellifield, a real village in North Yorkshire.
+  </text>
+
+  <g font-family="system-ui, sans-serif">
+    <!-- Substring -->
+    <rect class="card" x="36" y="100" width="648" height="120" rx="10" fill="#ffffff" stroke="#b91c1c" stroke-width="2" />
+    <text class="title" x="56" y="128" fill="#20242c" font-size="15" font-weight="700">Substring check</text>
+    <text class="muted" x="56" y="150" fill="#526173" font-family="ui-monospace, Menlo, Consolas, monospace" font-size="14">name.toLowerCase().includes("hell")</text>
+
+    <rect class="accent" x="56" y="164" width="64" height="38" rx="4" fill="#b45309" opacity="0.25" />
+    <text class="title" x="60" y="192" fill="#20242c" font-family="ui-monospace, Menlo, Consolas, monospace" font-size="24" letter-spacing="1">Hellifield</text>
+    <text class="danger" x="664" y="192" fill="#b91c1c" font-size="16" font-weight="700" text-anchor="end">Blocked</text>
+
+    <!-- Whole word -->
+    <rect class="card" x="36" y="240" width="648" height="120" rx="10" fill="#ffffff" stroke="#15803d" stroke-width="2" />
+    <text class="title" x="56" y="268" fill="#20242c" font-size="15" font-weight="700">Whole-word check</text>
+    <text class="muted" x="56" y="290" fill="#526173" font-family="ui-monospace, Menlo, Consolas, monospace" font-size="14">/\bhell\b/i.test(name)</text>
+
+    <text class="title" x="60" y="332" fill="#20242c" font-family="ui-monospace, Menlo, Consolas, monospace" font-size="24" letter-spacing="1">Hellifield</text>
+    <text class="muted" x="360" y="332" fill="#526173" font-size="14">"hell" is only part of a word</text>
+    <text class="ok" x="664" y="332" fill="#15803d" font-size="16" font-weight="700" text-anchor="end">Allowed</text>
+
+    <text class="muted" x="36" y="386" fill="#526173" font-size="13">Scunthorpe failed the same check in 1996, with a ruder word inside it.</text>
+  </g>
+</svg>

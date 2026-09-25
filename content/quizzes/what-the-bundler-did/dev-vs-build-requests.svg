@@ -1,0 +1,91 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="330" viewBox="0 0 720 330">
+  <style>
+    /* An &lt;img&gt;-embedded SVG cannot see the page's `data-theme`, but it does
+       inherit the embedding document's `color-scheme`, so `prefers-color-scheme`
+       tracks the site theme including an explicit toggle. The presentation
+       attributes below stay as the light fallback for renderers without CSS. */
+    svg {
+      --panel: #f5f7fb;
+      --title: #20242c;
+      --muted: #526173;
+      --edge: #64748b;
+      --card: #ffffff;
+      --app-fill: #dbeafe;
+      --app-stroke: #2563eb;
+      --vendor-fill: #fef3c7;
+      --vendor-stroke: #b45309;
+      --bad-fill: #fee2e2;
+      --bad-stroke: #b91c1c;
+      --good-fill: #dcfce7;
+      --good-stroke: #15803d;
+      --ghost-fill: #eef1f5;
+      --ghost-stroke: #b6c0cc;
+      --ghost-text: #8a96a6;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      svg {
+        --panel: #1a1f27;
+        --title: #e6eaf2;
+        --muted: #9aa8bd;
+        --edge: #8b9bb4;
+        --card: #252b35;
+        --app-fill: #1e3a5f;
+        --app-stroke: #60a5fa;
+        --vendor-fill: #4a3512;
+        --vendor-stroke: #f59e0b;
+        --bad-fill: #4c1d1d;
+        --bad-stroke: #f87171;
+        --good-fill: #14391f;
+        --good-stroke: #4ade80;
+        --ghost-fill: #20252d;
+        --ghost-stroke: #3f4855;
+        --ghost-text: #6b7686;
+      }
+    }
+
+    .panel { fill: var(--panel); }
+    .title { fill: var(--title); }
+    .muted { fill: var(--muted); }
+    .edge { stroke: var(--edge); }
+    .edge-fill { fill: var(--edge); }
+    .card { fill: var(--card); stroke: var(--edge); }
+    .app { fill: var(--app-fill); stroke: var(--app-stroke); }
+    .app-line { stroke: var(--app-stroke); }
+    .app-head { fill: var(--app-stroke); }
+    .vendor { fill: var(--vendor-fill); stroke: var(--vendor-stroke); }
+    .vendor-line { stroke: var(--vendor-stroke); }
+    .vendor-head { fill: var(--vendor-stroke); }
+    .bad { fill: var(--bad-fill); stroke: var(--bad-stroke); }
+    .bad-line { stroke: var(--bad-stroke); }
+    .bad-head { fill: var(--bad-stroke); }
+    .good { fill: var(--good-fill); stroke: var(--good-stroke); }
+    .good-line { stroke: var(--good-stroke); }
+    .good-head { fill: var(--good-stroke); }
+    .ghost { fill: var(--ghost-fill); stroke: var(--ghost-stroke); }
+    .ghost-line { stroke: var(--ghost-stroke); }
+    .ghost-head { fill: var(--ghost-stroke); }
+    .ghost-text { fill: var(--ghost-text); }
+    .bad-text { fill: var(--bad-stroke); }
+    .good-text { fill: var(--good-stroke); }
+  </style>
+
+  <rect class="panel" width="720" height="330" rx="20" fill="#f5f7fb" />
+  <text class="title" x="36" y="46" fill="#20242c" font-family="system-ui, sans-serif" font-size="20" font-weight="700" text-anchor="start">Same source, two pipelines</text>
+  <text class="muted" x="36" y="72" fill="#526173" font-family="system-ui, sans-serif" font-size="15" text-anchor="start">App.tsx imports 3 icons from src/icons/index.ts (1,400 re-exports)</text>
+  <text class="title" x="198" y="118" fill="#20242c" font-family="system-ui, sans-serif" font-size="15" font-weight="700" text-anchor="middle">vite dev: unbundled ESM</text>
+  <rect class="app" x="60" y="134" width="276" height="40" rx="10" fill="#dbeafe" stroke="#2563eb" stroke-width="2" />
+  <text class="title" x="198.0" y="159.0" fill="#20242c" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="15" font-weight="700" text-anchor="middle">App.tsx</text>
+  <rect class="card" x="60" y="184" width="276" height="40" rx="10" fill="#ffffff" stroke="#64748b" stroke-width="2" />
+  <text class="title" x="198.0" y="209.0" fill="#20242c" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="15" font-weight="700" text-anchor="middle">icons/index.ts</text>
+  <rect class="bad" x="60" y="234" width="260" height="40" rx="8" fill="#fee2e2" stroke="#b91c1c" stroke-width="2" />
+  <rect class="bad" x="68" y="242" width="260" height="40" rx="8" fill="#fee2e2" stroke="#b91c1c" stroke-width="2" />
+  <rect class="bad" x="76" y="250" width="260" height="40" rx="8" fill="#fee2e2" stroke="#b91c1c" stroke-width="2" />
+  <text class="title" x="206" y="274" fill="#20242c" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="14" font-weight="700" text-anchor="middle">1,400 icon modules</text>
+  <text class="bad-text" x="198" y="312" fill="#b91c1c" font-family="system-ui, sans-serif" font-size="13" text-anchor="middle">≈ 1,402 requests before first render</text>
+  <text class="title" x="522" y="118" fill="#20242c" font-family="system-ui, sans-serif" font-size="15" font-weight="700" text-anchor="middle">vite build: bundled + tree-shaken</text>
+  <rect class="good" x="384" y="134" width="276" height="90" rx="10" fill="#dcfce7" stroke="#15803d" stroke-width="2" />
+  <text class="title" x="522.0" y="176.0" fill="#20242c" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="15" font-weight="700" text-anchor="middle">index-4be1.js</text>
+  <text class="muted" x="522.0" y="196.0" fill="#526173" font-family="system-ui, sans-serif" font-size="13" text-anchor="middle">App + 3 icons</text>
+  <text class="good-text" x="522" y="312" fill="#15803d" font-family="system-ui, sans-serif" font-size="13" text-anchor="middle">1 request</text>
+</svg>

@@ -1,0 +1,538 @@
+{
+  "schemaVersion": 1,
+  "id": "tech-myths-that-wont-die",
+  "title": "Tech myths that won't die: 404, 640K, the space pen and Nuclear Gandhi",
+  "description": "Room 404 at CERN, Bill Gates's 640K quote, NASA's million-dollar space pen, the Gandhi bug in *Civilization*, Grace Hopper finding the first bug. They're great stories, and most of them are wrong. Each Question starts from the popular version and asks what really happened. The Explanations show where each myth came from and why it caught on.",
+  "language": "en",
+  "tags": [
+    "critical-thinking",
+    "internet-culture",
+    "everyday-life"
+  ],
+  "author": "Quizbun",
+  "questions": [
+    {
+      "id": "room-404-at-cern",
+      "title": "Is the 404 error named after Room 404 at CERN, where the web's first servers supposedly sat?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "No. Web pioneer Robert Cailliau says 404 was never linked to any room at CERN",
+          "isCorrect": true
+        },
+        {
+          "text": "Yes. Tim Berners-Lee's office was Room 404, and he was often out",
+          "isCorrect": false
+        },
+        {
+          "text": "Yes, but the room was a server closet, not an office",
+          "isCorrect": false
+        },
+        {
+          "text": "No. It's named after the fourth floor of the first web host in California",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "There was no such room. The story showed up in the early 2000s: the first web servers sat in Room 404, Tim Berners-Lee worked there, and he was often \"not found\". It's a neat story, and it's wrong.\n\nIn 2017, Wired asked Robert Cailliau, who built the web with Berners-Lee at CERN. He answered: \"404 was never linked to any room or any physical place at CERN. That's a complete myth.\" He said the codes were grouped into ranges \"according to the whims of the programmer\". Client errors went in the 400s, and \"not found\" happened to get 404.\n\nThe myth spreads well because it has a famous name, a specific detail and a punchline. None of that is evidence. Ask where the room number comes from, and you'll find no source.",
+      "references": "[Wired: Page not found — a brief history of the 404 error (2017)](https://www.wired.com/story/page-not-found-a-brief-history-of-the-404-error/)"
+    },
+    {
+      "id": "what-the-4-in-4xx-means",
+      "title": "In an HTTP status code such as 404, what does the first digit 4 tell you?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The error is on the client's side: the request can't be fulfilled as sent",
+          "isCorrect": true
+        },
+        {
+          "text": "The server crashed or failed while handling a valid request",
+          "isCorrect": false
+        },
+        {
+          "text": "The resource has moved, and the client should look elsewhere",
+          "isCorrect": false
+        },
+        {
+          "text": "The request was retried four times before failing",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "An HTTP status code has three digits, and only the first one sets the category. RFC 9110 defines five classes:\n\n| First digit | Class | Meaning |\n| --- | --- | --- |\n| 1xx | Informational | Request received, continuing |\n| 2xx | Successful | Request received, understood and accepted |\n| 3xx | Redirection | Further action needed, such as following a new URL |\n| 4xx | Client Error | The client seems to have erred |\n| 5xx | Server Error | The server failed to perform a valid request |\n\nA 404 means the server found nothing at the URL the client asked for. The server works fine; the request points at something that isn't there. That's why a typo in a URL gets a 404, while a crashed database behind a correct URL should get a 500.\n\nThe RFC also says the last two digits \"do not have any categorization role\". So 404 isn't \"error type 04\" of anything. It's just the number \"not found\" got, which fits Cailliau's account of how the codes were picked.",
+      "references": "[RFC 9110: HTTP Semantics, §15 Status Codes](https://www.rfc-editor.org/rfc/rfc9110.html#name-status-codes), [Wired: Page not found — a brief history of the 404 error (2017)](https://www.wired.com/story/page-not-found-a-brief-history-of-the-404-error/)"
+    },
+    {
+      "id": "did-gates-say-640k",
+      "title": "Did Bill Gates say that \"640K ought to be enough for anybody\"?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "There's no evidence he did, and he has denied it",
+          "isCorrect": true
+        },
+        {
+          "text": "Yes, at the IBM PC launch in 1981",
+          "isCorrect": false
+        },
+        {
+          "text": "Yes, in a 1981 interview with InfoWorld",
+          "isCorrect": false
+        },
+        {
+          "text": "Yes, but he meant it as a joke about MS-DOS",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Nobody has found a recording, transcript or article from 1981 where Gates says it. The quote usually comes with no date, or it gets \"1981\" because that's when the IBM PC shipped.\n\nGates answered it in his newspaper column in 1996. He wrote that he had said \"some stupid things and some wrong things, but not that\", and complained that the quote never comes with a citation and just \"floats like a rumor\".\n\nA denial alone proves little, since people misremember what they said. The paper trail is stronger evidence. Quote Investigator, who searches old newspapers and magazines for the first appearance of famous quotes, found the line only years after 1981, and in a different form. The next Question asks when.",
+      "references": "[Quote Investigator: 640K of computer memory is more than enough for anyone (2011)](https://quoteinvestigator.com/2011/09/08/640k-enough/)"
+    },
+    {
+      "id": "640k-quote-first-print-year",
+      "title": "In what year did a version of the 640K quote first appear in print?",
+      "description": "Answer with a four-digit year.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [
+          1985
+        ],
+        "tolerance": 1
+      },
+      "explanation": "**1985**, four years after the IBM PC launched. On 29 April 1985, InfoWorld printed a line credited to Gates about setting the PC-DOS limit at 640K and thinking \"nobody would ever need that much memory\". That's a different claim from the famous one. It says the designers underestimated demand. It doesn't say 640K would be enough forever.\n\nThe punchy version, \"640K ought to be enough for anyone\", appears in InfoWorld on 1 January 1990. By then it was a stock example in columns about bad tech predictions.\n\nMany misquotes grow this way. Someone paraphrases a real but vague remark, each retelling makes it sharper, and a date gets attached later so it sounds like a prediction. When a quote has no source from the year it was supposedly said, find its first appearance in print. The gap between the two years tells you a lot.",
+      "references": "[Quote Investigator: 640K of computer memory is more than enough for anyone (2011)](https://quoteinvestigator.com/2011/09/08/640k-enough/)",
+      "images": [
+        {
+          "src": "640k-quote-paper-trail.svg",
+          "alt": "A timeline of the 640K quote. 1981: supposedly said when the IBM PC launched, but nobody has found a source from 1981. 1985: first in print, in InfoWorld on 29 April, as a line credited to Gates about setting the PC-DOS limit at 640K and thinking nobody would ever need that much memory. 1990: the famous wording, \"640K ought to be enough for anyone\", in InfoWorld on 1 January. 1996: Gates denies it in his newspaper column, saying the quote never has a citation and floats like a rumor.",
+          "caption": "Dates and publications from Quote Investigator. Timeline drawn for this Quiz.",
+          "placement": "explanation",
+          "width": 720,
+          "height": 440
+        }
+      ]
+    },
+    {
+      "id": "8088-address-space",
+      "title": "The IBM PC's Intel 8088 processor had 20 address lines, each carrying one bit of a memory address. How many kilobytes of memory could it address?",
+      "description": "1 KB = 1,024 bytes. Answer with a whole number of kilobytes.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [
+          1024
+        ]
+      },
+      "explanation": "20 bits give 2²⁰ = 1,048,576 addresses, one byte each. Divide by 1,024 bytes per kilobyte and you get **1,024 KB**, or 1 MB.\n\nSo where does 640 KB come from? When IBM designed the PC in 1981, it had to fit more than RAM into that 1 MB of addresses. Video cards need memory the processor can write to, and the BIOS and expansion cards need ROM. IBM put all of these at the top of the address space, starting at address A0000 hex, which is 640 KB. That left 640 KB of continuous addresses for RAM, called **conventional memory**. The 384 KB above it is the **upper memory area**.\n\nDOS programs expected their memory in that one block, so adding RAM above 640 KB didn't help them. Later tricks such as expanded memory, extended memory and upper-memory loaders existed to work around this hardware layout. The limit had nothing to do with anyone's opinion of how much memory people needed.",
+      "references": "[Wikipedia: Intel 8088](https://en.wikipedia.org/wiki/Intel_8088), [Wikipedia: Conventional memory](https://en.wikipedia.org/wiki/Conventional_memory), [Wikipedia: Upper memory area](https://en.wikipedia.org/wiki/Upper_memory_area)",
+      "images": [
+        {
+          "src": "ibm-pc-memory-map-640k.svg",
+          "alt": "A bar showing the IBM PC's 1,024 KB address space. The first 640 KB, from 0 to address A0000 hex, is RAM for DOS and programs, labeled conventional memory. The remaining 384 KB, the upper area, holds video memory from 640 to 768 KB, reserved space for adapter ROMs from 768 to 960 KB, and the BIOS from 960 KB up. A note says IBM put video memory and ROMs at the top in 1981, so extra RAM above 640 KB couldn't extend the block programs used.",
+          "caption": "Simplified from the IBM PC memory map. Diagram drawn for this Quiz.",
+          "placement": "explanation",
+          "width": 720,
+          "height": 400
+        }
+      ]
+    },
+    {
+      "id": "who-paid-for-the-space-pen",
+      "title": "The story goes that NASA spent millions on a pen that writes in space, while the Soviets just used pencils. Who actually paid to develop the Fisher Space Pen?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Paul Fisher's pen company, with about $1 million of its own money",
+          "isCorrect": true
+        },
+        {
+          "text": "NASA, through a multimillion-dollar development contract",
+          "isCorrect": false
+        },
+        {
+          "text": "The U.S. Air Force, which later passed the design to NASA",
+          "isCorrect": false
+        },
+        {
+          "text": "NASA and the Soviet space agency, as a joint project",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "NASA didn't pay for it. Paul C. Fisher and his company spent about $1 million of their own money on a pressurized ink cartridge. Nitrogen gas pushes the thick ink toward the ball, so the pen writes without gravity, upside down, and across a wide range of temperatures.\n\nNASA tested the pen, then bought it. In 1968 it ordered 400 for the Apollo program at $2.39 each, a bulk discount on the $3.98 list price. In the photo, Walter Cunningham writes in orbit during Apollo 7, in October 1968.\n\nThe joke works because it confirms a common suspicion: big agencies waste money on problems a simple tool could solve. That suspicion had some basis, as the next Question shows. Here, though, the research was private and the pens were cheap.",
+      "references": "[Scientific American: Fact or fiction? NASA spent millions to develop a pen that would write in space (2006)](https://www.scientificamerican.com/article/fact-or-fiction-nasa-spen/), [Wikipedia: Space pen](https://en.wikipedia.org/wiki/Space_pen)",
+      "images": [
+        {
+          "src": "apollo-7-cunningham-writing-with-space-pen.webp",
+          "alt": "Astronaut Walter Cunningham in a white flight suit inside the cramped Apollo 7 command module, head bent, writing on a notepad with a slim pen. A camera film magazine floats in the air near his hand.",
+          "caption": "Walter Cunningham writing with a space pen on day nine of Apollo 7, 1968. NASA photo, public domain, via [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Astro-space-pen.jpg).",
+          "placement": "explanation",
+          "width": 1280,
+          "height": 1280
+        }
+      ]
+    },
+    {
+      "id": "why-not-just-use-pencils",
+      "title": "\"Why not just use a pencil?\" Which of these were real reasons to keep pencils out of a spacecraft?",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "Broken tips and graphite dust float around in weightlessness instead of falling to the floor",
+          "isCorrect": true
+        },
+        {
+          "text": "Graphite conducts electricity, so floating fragments could get into electronics",
+          "isCorrect": true
+        },
+        {
+          "text": "Wood and graphite burn, which became a serious worry after the 1967 Apollo 1 fire",
+          "isCorrect": true
+        },
+        {
+          "text": "Pencils can't leave a mark without gravity pressing the lead onto the paper",
+          "isCorrect": false
+        },
+        {
+          "text": "Pencil marks fade quickly in the cabin's radiation",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Pencils do write in orbit. Friction leaves the mark, and your hand supplies the pressure, not gravity. American and Soviet crews both used pencils early on.\n\nThe trouble was what pencils leave behind. On Earth, a snapped tip or graphite dust falls to the floor. In orbit it drifts and can end up in an astronaut's eye or in equipment. Graphite also conducts electricity, which you don't want near switches and circuit boards.\n\nThen there's fire. In January 1967, a fire in the Apollo 1 cabin killed Gus Grissom, Ed White and Roger Chaffee during a ground test in a pure-oxygen atmosphere. After that, NASA worked hard to remove flammable materials from spacecraft, and wood and graphite burn.\n\nMoney mattered too. In 1965 NASA paid $128.89 each for 34 mechanical pencils, and the public outcry pushed the agency to look for something cheaper. At $2.39, the pen was the cheap option.",
+      "references": "[Scientific American: Fact or fiction? NASA spent millions to develop a pen that would write in space (2006)](https://www.scientificamerican.com/article/fact-or-fiction-nasa-spen/), [Wikipedia: Apollo 1](https://en.wikipedia.org/wiki/Apollo_1)"
+    },
+    {
+      "id": "soviet-cosmonauts-and-the-pen",
+      "title": "In the joke, Soviet cosmonauts just used pencils. What did they actually do?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "They used pencils at first, then bought Fisher space pens in 1969",
+          "isCorrect": true
+        },
+        {
+          "text": "They used pencils throughout the Soviet space program",
+          "isCorrect": false
+        },
+        {
+          "text": "They developed their own pressurized pen before the Americans",
+          "isCorrect": false
+        },
+        {
+          "text": "They used grease pencils only, because graphite was banned",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Cosmonauts started with pencils, just like astronauts. In 1969, a year after NASA's order, the Soviet Union ordered 100 Fisher pens and 1,000 ink cartridges for its Soyuz missions, at the same bulk discount NASA got.\n\nThat kills the joke. The punchline needs the Soviets to pick the simple fix the Americans missed. In fact, both programs started with the \"simple\" fix, ran into the same problems, and bought the same pen.\n\nStories like this survive because they're easy to retell: a clever underdog, a wasteful giant and a one-line moral. The purchase records take them apart.",
+      "references": "[Scientific American: Fact or fiction? NASA spent millions to develop a pen that would write in space (2006)](https://www.scientificamerican.com/article/fact-or-fiction-nasa-spen/)"
+    },
+    {
+      "id": "unsigned-8-bit-one-minus-two",
+      "title": "If you store 1 in an unsigned 8-bit integer and subtract 2, what value do you get?",
+      "description": "A famous *Civilization* legend depends on this calculation. Answer with a whole number.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [
+          255
+        ]
+      },
+      "explanation": "An unsigned 8-bit integer holds 2⁸ = 256 values, from 0 to 255. It has no −1, so going below 0 **wraps around** to the top, like an odometer rolling backward. 1 − 1 = 0, and one more step back lands on 255. This is **integer underflow**, and many languages and processors do it for unsigned types.\n\nA **signed** 8-bit integer reads the same 8 bits differently and covers −128 to 127. The bit pattern for 255 unsigned means −1 signed. So in a signed variable, 1 − 2 = −1, as you'd expect.\n\nThis is the math behind the \"Nuclear Gandhi\" story. The legend says Gandhi's aggression in the first *Civilization* was 1, adopting democracy subtracted 2, and the value wrapped to 255. The most peaceful leader became the most aggressive one. The math checks out. The next Questions check the story.",
+      "references": "[Wikipedia: Integer overflow](https://en.wikipedia.org/wiki/Integer_overflow), [Wikipedia: Nuclear Gandhi](https://en.wikipedia.org/wiki/Nuclear_Gandhi)",
+      "images": [
+        {
+          "src": "unsigned-8-bit-underflow-wheel.svg",
+          "alt": "The 256 values of an unsigned 8-bit integer drawn as a ring, with 0 at the top, 1 and 2 clockwise from it, 64 on the right, 128 at the bottom, 192 on the left, and 254 and 255 just counterclockwise of 0. An arrow goes two steps back from 1, past 0, to 255. A panel says unsigned 8-bit covers 0 to 255, so 1 − 2 = 255. A second panel says signed 8-bit covers −128 to 127 and reads the same bits as −1, so 1 − 2 = −1.",
+          "caption": "Diagram drawn for this Quiz.",
+          "placement": "explanation",
+          "width": 720,
+          "height": 440
+        }
+      ]
+    },
+    {
+      "id": "nuclear-gandhi-real-bug",
+      "title": "Was \"Nuclear Gandhi\" a real bug in the original 1991 *Civilization*?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "No. Sid Meier and Civilization II's lead designer, Brian Reynolds, both say it never happened",
+          "isCorrect": true
+        },
+        {
+          "text": "Yes. Sid Meier confirmed it and kept it in later games as a tribute",
+          "isCorrect": false
+        },
+        {
+          "text": "Yes, but a patch fixed it before most players saw it",
+          "isCorrect": false
+        },
+        {
+          "text": "Nobody knows, because the original source code was lost",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The people who made the games say no. Brian Reynolds, lead designer of *Civilization II*, said he was \"99.99%\" sure the bug was apocryphal. Sid Meier, who created the series, took the story apart in his 2020 book, *Sid Meier's Memoir!*. The next Question covers their reasons.\n\nThe story does have a real ending, which helps keep it alive. In *Civilization V* (2010), designer Jon Shafer gave Gandhi the maximum rating for building and using nuclear weapons as a deliberate joke. Players who met a nuke-happy Gandhi took it as a nod to an old bug. It was really a nod to a myth.\n\nWhen a later game jokes about a legend, that shows the legend was popular. It doesn't show it was true.",
+      "references": "[Wikipedia: Nuclear Gandhi](https://en.wikipedia.org/wiki/Nuclear_Gandhi)"
+    },
+    {
+      "id": "why-gandhi-underflow-couldnt-happen",
+      "title": "Which of these reasons from the game's own designers rule out the Nuclear Gandhi underflow in the original *Civilization*?",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "Integer variables in the game's C code were signed by default, so 1 − 2 gives −1, not 255",
+          "isCorrect": true
+        },
+        {
+          "text": "Switching to democracy didn't change an AI leader's aggression at all",
+          "isCorrect": true
+        },
+        {
+          "text": "The game had only three aggression levels, and Gandhi shared the lowest with about a third of the leaders",
+          "isCorrect": true
+        },
+        {
+          "text": "India wasn't a playable civilization in the original game",
+          "isCorrect": false
+        },
+        {
+          "text": "The original game had no nuclear weapons",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Each of these three reasons rules out the story on its own.\n\n- **The arithmetic.** In C, `int` variables are signed unless you declare them otherwise. Meier pointed out in his memoir that 1 − 2 in a signed variable is −1. Wrapping to 255 needs an unsigned type, and the game didn't use one.\n- **The cause.** Meier also wrote that the form of government didn't affect AI aggression. Democracy never subtracted 2 from anything, so nothing could underflow.\n- **The scale.** Reynolds said there were only three aggression levels. Roughly a third of the leaders shared Gandhi's lowest level, so it wasn't special. No scale went up to 255 for Gandhi to wrap onto.\n\nThe other two Options are false: the 1991 game had India, led by Gandhi, and it had nuclear weapons.\n\nThe myth lasted because it *sounds* like real programming. Underflow is a real bug that has broken real software. That doesn't mean it happened in this game.",
+      "references": "[Wikipedia: Nuclear Gandhi](https://en.wikipedia.org/wiki/Nuclear_Gandhi), [Wikipedia: Civilization (video game)](https://en.wikipedia.org/wiki/Civilization_(video_game))"
+    },
+    {
+      "id": "where-nuclear-gandhi-started",
+      "title": "Where is the earliest known version of the Nuclear Gandhi story?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "An unsourced 2012 edit to a TV Tropes page, about 21 years after the game came out",
+          "isCorrect": true
+        },
+        {
+          "text": "A list of known bugs in the original 1991 game manual",
+          "isCorrect": false
+        },
+        {
+          "text": "A 1990s magazine interview with Sid Meier",
+          "isCorrect": false
+        },
+        {
+          "text": "The patch notes for Civilization II",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The earliest known version is a TV Tropes edit from 17 July 2012 that added the claim with no source. By then the first *Civilization* was over 20 years old.\n\nThe story took off in 2014, after a Reddit discussion about a reposted webcomic. A Kotaku article about Gandhi's aggression, published on 3 February 2014, was republished widely. From there it moved into listicles, trivia books and conference talks as an example of integer underflow.\n\nLook at that timeline. Nobody wrote about a bug in a 1991 game for two decades, and then everybody did. That points to a story that started in 2012. When you hear about a \"famous bug\", look for a source from when the software was current.",
+      "references": "[Wikipedia: Nuclear Gandhi](https://en.wikipedia.org/wiki/Nuclear_Gandhi)"
+    },
+    {
+      "id": "moth-in-the-mark-ii-year",
+      "title": "In what year did operators find a moth in the Harvard Mark II computer and tape it into the logbook?",
+      "description": "Answer with a four-digit year.",
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [
+          1947
+        ],
+        "tolerance": 1
+      },
+      "explanation": "**1947**, on 9 September. The moth was stuck between the contacts of relay #70 on panel F of the Mark II, an electromechanical computer at Harvard. At 15:45 the operators removed it, taped it into the log and wrote \"First actual case of bug being found.\"\n\nThe Mark II was built from relays: mechanical switches that clicked open and shut thousands of times. An insect caught between a relay's contacts could stop it from closing. That's a hardware fault you can see with your own eyes. Software as we know it barely existed yet.",
+      "references": "[Naval History and Heritage Command: NH 96566-KN, The first \"computer bug\"](https://www.history.navy.mil/our-collections/photography/numerical-list-of-images/nhhc-series/nh-series/NH-96000/NH-96566-KN.html)"
+    },
+    {
+      "id": "what-the-moth-log-page-shows",
+      "title": "This logbook page has a real moth taped to it. What does it show?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "A joke: engineers already called faults \"bugs\", and this time the bug was a real insect",
+          "isCorrect": true
+        },
+        {
+          "text": "The moment the word \"bug\" was invented for technical faults",
+          "isCorrect": false
+        },
+        {
+          "text": "The first software bug, found in a program's code",
+          "isCorrect": false
+        },
+        {
+          "text": "Grace Hopper's personal notebook from the day she found the moth",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Look at the note the operators wrote: \"First **actual** case of bug being found.\" The word \"actual\" is the joke. Engineers already called faults \"bugs\", and this time the fault was a real insect.\n\nThe technical meaning is at least 70 years older. In an 1878 letter, Thomas Edison described how, after an invention's first flash of success, \"'Bugs'—as such little faults and difficulties are called—show themselves\". Webster's dictionary listed \"bug\" as a defect in an apparatus in 1934, well before this page.\n\nThe page doesn't show a software bug either. The moth jammed a relay, which is a mechanical switch. And it wasn't Grace Hopper's notebook, as the next Question explains.\n\nEven official captions sometimes repeat the myth. The Navy's own photo record says the operators' remark introduced the term \"debugging\". The page itself supports a smaller claim: a moth in a relay and an engineer's pun.",
+      "references": "[Naval History and Heritage Command: NH 96566-KN, The first \"computer bug\"](https://www.history.navy.mil/our-collections/photography/numerical-list-of-images/nhhc-series/nh-series/NH-96000/NH-96566-KN.html), [JSTOR Daily: The bug in the computer bug story (2017)](https://daily.jstor.org/the-bug-in-the-computer-bug-story/), [Wikipedia: Software bug, history](https://en.wikipedia.org/wiki/Software_bug)",
+      "images": [
+        {
+          "src": "mark-ii-log-page-with-moth-1947.webp",
+          "alt": "A page of handwritten entries on graph paper, dated 9/9 at the top, with times down the left margin. Entries mention relays failing a speed test and a cosine tape starting. At 1545 a moth is stuck to the page with a strip of tape, next to the note \"Relay #70 Panel F (moth) in relay\". Below it is written \"First actual case of bug being found.\"",
+          "caption": "U.S. Naval History and Heritage Command photo NH 96566-KN, public domain, via [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:First_Computer_Bug,_1947.jpg).",
+          "width": 1920,
+          "height": 1519
+        }
+      ]
+    },
+    {
+      "id": "was-it-hoppers-logbook",
+      "title": "The moth is often called \"Grace Hopper's bug\". What was her connection to it?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "She worked on the Mark II and told the story often, but her colleagues found the moth, and the log probably wasn't hers",
+          "isCorrect": true
+        },
+        {
+          "text": "She found the moth herself and wrote the famous note",
+          "isCorrect": false
+        },
+        {
+          "text": "She had no connection to the Mark II and only heard about it years later",
+          "isCorrect": false
+        },
+        {
+          "text": "She kept the log as her private notebook and donated it to a museum",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Grace Hopper really was part of the story. She worked on the Harvard Mark II and Mark III, and in later decades she told the moth story in many talks. That's why her name stuck to it.\n\nThe log tells a smaller story. Accounts of the day say her colleagues found the moth, and the Smithsonian, which holds the page, says the log book \"was probably not Hopper's\". The operators wrote the joke.\n\nThe person who tells a story best often becomes its hero. Hopper did major work of her own, including early compilers and work that led to COBOL. Crediting her with a moth she didn't find adds nothing to her record and takes credit away from the operators.",
+      "references": "[Smithsonian National Museum of American History: Log book with computer bug](https://americanhistory.si.edu/collections/object/nmah_334663), [JSTOR Daily: The bug in the computer bug story (2017)](https://daily.jstor.org/the-bug-in-the-computer-bug-story/), [Wikipedia: Grace Hopper](https://en.wikipedia.org/wiki/Grace_Hopper)"
+    },
+    {
+      "id": "where-the-moth-log-is-now",
+      "title": "Where is the logbook page with the moth today?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "In the Smithsonian's National Museum of American History",
+          "isCorrect": true
+        },
+        {
+          "text": "In a display case at Harvard's Science Center",
+          "isCorrect": false
+        },
+        {
+          "text": "At the Computer History Museum in California",
+          "isCorrect": false
+        },
+        {
+          "text": "It was lost when the Mark II was scrapped",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The page, with the moth still taped on, belongs to the Smithsonian's National Museum of American History in Washington, D.C.\n\nIt took a detour to get there. The log stayed with the Navy, and a 1988 Navy photo record places it in the computer museum of the Naval Surface Warfare Center in Dahlgren, Virginia. The Smithsonian's catalog record is also the source of the corrections in the previous Questions: it says the log was probably not Hopper's and that the word \"bug\" was already in use.\n\nMuseum records are a good place to check a famous object's story. Curators document where the object came from and what it can and can't show.",
+      "references": "[Smithsonian National Museum of American History: Log book with computer bug](https://americanhistory.si.edu/collections/object/nmah_334663), [Naval History and Heritage Command: NH 96566-KN, The first \"computer bug\"](https://www.history.navy.mil/our-collections/photography/numerical-list-of-images/nhhc-series/nh-series/NH-96000/NH-96566-KN.html)"
+    },
+    {
+      "id": "incognito-who-can-still-see",
+      "title": "You browse in Chrome's Incognito mode. Who may still be able to see which sites you visit?",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "The websites you visit",
+          "isCorrect": true
+        },
+        {
+          "text": "Your employer or school, if they manage the network you're on",
+          "isCorrect": true
+        },
+        {
+          "text": "Your internet service provider",
+          "isCorrect": true
+        },
+        {
+          "text": "Someone who later opens Chrome's browsing history on the same computer",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Incognito mode changes what your **own browser** keeps. When you close all Incognito windows, Chrome deletes the history, cookies and site data from that session. It keeps files you downloaded and bookmarks you saved. So someone who uses your computer later won't find those sites in Chrome's history.\n\nIt doesn't hide your traffic from anyone else. Chrome's help page says so (as of 2026): the websites you visit, and whoever manages your network, such as your school, employer or internet service provider, may be able to see your activity. Your requests travel over the same network, from the same IP address, to the same servers. Sites can still recognize you if you sign in.\n\nThe name suggests invisibility. The feature is closer to \"don't keep a record on this device\", and every major browser's private mode works the same way.\n\nTry it: open an Incognito window and read the notice on the new tab page. It lists who can still see what you do.",
+      "references": "[Google Chrome Help: Browse in Incognito mode](https://support.google.com/chrome/answer/95464), [Wikipedia: Private browsing](https://en.wikipedia.org/wiki/Private_browsing)"
+    },
+    {
+      "id": "qwerty-designed-to-slow-typists",
+      "title": "Was the QWERTY keyboard layout designed to slow typists down?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "There's no good evidence for that. The layout changed over years of prototypes, and historians still argue about why",
+          "isCorrect": true
+        },
+        {
+          "text": "Yes. Christopher Sholes admitted it in his patent",
+          "isCorrect": false
+        },
+        {
+          "text": "Yes. Fast typists jammed the early machines, so the layout was made deliberately awkward",
+          "isCorrect": false
+        },
+        {
+          "text": "No. It was scientifically optimized for speed, and no layout beats it",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "\"Designed to slow typists down\" is a garbled version of one historical account, and historians dispute that account too.\n\n- **The jamming account.** On early typewriters, typebars could collide when neighboring keys were struck quickly one after another. In this version, Christopher Sholes split up some common letter pairs to reduce jams. Even if that's true, the goal was fewer jams, not slower typing.\n- **The telegraph account.** Koichi and Motoko Yasuoka of Kyoto University traced the layout through Sholes's prototypes. They argue that early users shaped it, especially telegraph operators transcribing Morse code, and that the arrangement changed often and grew into QWERTY \"among different requirements\". A layout that slowed operators down would have been useless to people keeping up with an incoming message.\n\nBoth accounts agree that nobody planned QWERTY in one step from a single principle, and neither supports a deliberate slowdown. It survives today because of path dependence: once millions of people had learned it, switching cost more than any gain was worth.\n\nThe evidence here comes from piecing history together from patents and prototypes. That's why the honest answer is \"disputed\" instead of a new, equally tidy story.",
+      "references": "[Smithsonian Magazine: Fact or fiction? The legend of the QWERTY keyboard (2013)](https://www.smithsonianmag.com/arts-culture/fact-of-fiction-the-legend-of-the-qwerty-keyboard-49863249/), [Yasuoka and Yasuoka (2011): On the prehistory of QWERTY](https://repository.kulib.kyoto-u.ac.jp/handle/2433/139379), [Wikipedia: QWERTY](https://en.wikipedia.org/wiki/QWERTY)"
+    },
+    {
+      "id": "closing-iphone-apps-battery",
+      "title": "Does swiping away your open iPhone apps save battery?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "No. Apple says to close an app only when it stops responding, and suspended apps use almost no power",
+          "isCorrect": true
+        },
+        {
+          "text": "Yes. Every app in the switcher keeps running and draining the battery until you close it",
+          "isCorrect": false
+        },
+        {
+          "text": "Yes, but only on iPhones older than five years",
+          "isCorrect": false
+        },
+        {
+          "text": "No, because iOS already quits every app the moment you leave it",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The app switcher shows apps you used recently, not apps that are running. When you leave an app, iOS usually suspends it: the app stays in memory but gets no processor time, so it uses almost no power. If the system needs the memory, it removes the app on its own.\n\nApple's support page says it directly (as of 2026): close an app only if it's unresponsive. In 2016, a customer emailed Tim Cook to ask whether he quit his apps and whether that was necessary for battery life. Craig Federighi, Apple's head of software, replied: \"No and no.\"\n\nThe last Option is wrong too, because iOS doesn't quit apps the moment you leave. Some apps keep working in the background, such as navigation, music, calls and downloads. Those can use battery, and **Settings → Battery** shows you which ones. Check that list instead of swiping everything away.",
+      "references": "[Apple Support: Close an app on your iPhone or iPod touch](https://support.apple.com/en-us/109359), [9to5Mac: Apple's software SVP says quitting multitasking apps not necessary (2016)](https://9to5mac.com/2016/03/10/should-you-quit-ios-apps-answer/)"
+    },
+    {
+      "id": "boss-which-stories-are-true",
+      "title": "Final round: which of these tech stories are true?",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "Operators taped a real moth into a Harvard Mark II logbook in 1947",
+          "isCorrect": true
+        },
+        {
+          "text": "NASA once paid $128.89 each for mechanical pencils",
+          "isCorrect": true
+        },
+        {
+          "text": "In *Civilization V*, Gandhi was deliberately given a maximum preference for nuclear weapons, as a joke",
+          "isCorrect": true
+        },
+        {
+          "text": "The 404 error is named after an office at CERN",
+          "isCorrect": false
+        },
+        {
+          "text": "Bill Gates said in 1981 that 640K ought to be enough for anybody",
+          "isCorrect": false
+        },
+        {
+          "text": "NASA spent millions developing a space pen while the Soviets used pencils",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Three are true and three are myths, and each true story sits right next to a myth.\n\n- **The moth is real.** The page exists, and the Smithsonian has it. The myth is what people add: that it gave us the word \"bug\", or that it was Hopper's log.\n- **The $128.89 pencils are real.** NASA bought 34 of them in 1965, and the outcry helped push it toward something cheaper. The myth is that NASA then spent millions on a pen. Fisher paid for the pen, and NASA bought it for $2.39.\n- **Civilization V's Gandhi is real.** Jon Shafer set Gandhi's nuke ratings to the maximum on purpose in 2010. The myth is the 1991 underflow bug people think it refers to.\n- **Room 404, the 1981 Gates quote and the millions-for-a-pen story** have no source from the time, and the people involved or the purchase records contradict them.\n\nThe myths in this Quiz didn't come from nothing. Each one started from a real object, person or mechanism and added a punchline. To tell them apart, ask for a source from the time the thing supposedly happened.",
+      "references": "[Scientific American: Fact or fiction? NASA spent millions to develop a pen that would write in space (2006)](https://www.scientificamerican.com/article/fact-or-fiction-nasa-spen/), [Wikipedia: Nuclear Gandhi](https://en.wikipedia.org/wiki/Nuclear_Gandhi), [Wired: Page not found — a brief history of the 404 error (2017)](https://www.wired.com/story/page-not-found-a-brief-history-of-the-404-error/), [Quote Investigator: 640K of computer memory is more than enough for anyone (2011)](https://quoteinvestigator.com/2011/09/08/640k-enough/)"
+    }
+  ]
+}

@@ -1,0 +1,99 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="380" viewBox="0 0 720 380">
+  <style>
+    /* An &lt;img&gt;-embedded SVG cannot see the page's `data-theme`, but it does
+       inherit the embedding document's `color-scheme`, so `prefers-color-scheme`
+       tracks the site theme including an explicit toggle. The presentation
+       attributes below stay as the light fallback for renderers without CSS. */
+    svg {
+      --panel: #f5f7fb;
+      --card: #ffffff;
+      --title: #20242c;
+      --muted: #526173;
+      --edge: #64748b;
+      --accent: #b45309;
+      --cool: #1d4ed8;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      svg {
+        --panel: #1a1f27;
+        --card: #232a35;
+        --title: #e6eaf2;
+        --muted: #9aa8bd;
+        --edge: #8b9bb4;
+        --accent: #f59e0b;
+        --cool: #60a5fa;
+      }
+    }
+
+    .panel { fill: var(--panel); }
+    .card { fill: var(--card); stroke: var(--edge); }
+    .title { fill: var(--title); }
+    .muted { fill: var(--muted); }
+    .edge { stroke: var(--edge); }
+    .accent { fill: var(--accent); }
+    .accent-stroke { stroke: var(--accent); }
+    .cool { fill: var(--cool); }
+    .arrowhead { fill: var(--edge); }
+  </style>
+
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path class="arrowhead" d="M0 0L10 5L0 10Z" fill="#64748b" />
+    </marker>
+  </defs>
+
+  <rect class="panel" width="720" height="380" rx="20" fill="#f5f7fb" />
+  <text class="title" x="36" y="46" fill="#20242c" font-family="system-ui, sans-serif" font-size="20" font-weight="700">
+    Train on a laptop, then run on the phone
+  </text>
+
+  <g font-family="system-ui, sans-serif" font-size="14">
+    <!-- Training row -->
+    <text class="muted" x="36" y="84" fill="#526173" font-weight="700">Training, on a laptop with an external GPU</text>
+
+    <rect class="card" x="36" y="98" width="190" height="76" rx="12" fill="#ffffff" stroke="#64748b" />
+    <text class="title" x="131" y="128" fill="#20242c" text-anchor="middle" font-weight="700">Pretrained network</text>
+    <text class="muted" x="131" y="150" fill="#526173" text-anchor="middle">already knows edges,</text>
+    <text class="muted" x="131" y="166" fill="#526173" text-anchor="middle">textures, shapes</text>
+
+    <path class="edge" d="M226 136H270" stroke="#64748b" stroke-width="2" marker-end="url(#arrow)" />
+
+    <rect class="card" x="274" y="98" width="190" height="76" rx="12" fill="#ffffff" stroke="#64748b" />
+    <text class="title" x="369" y="128" fill="#20242c" text-anchor="middle" font-weight="700">Retrain on food photos</text>
+    <text class="muted" x="369" y="150" fill="#526173" text-anchor="middle">3,000 hotdogs,</text>
+    <text class="muted" x="369" y="166" fill="#526173" text-anchor="middle">147,000 not hotdogs</text>
+
+    <path class="edge" d="M464 136H508" stroke="#64748b" stroke-width="2" marker-end="url(#arrow)" />
+
+    <rect class="card" x="512" y="98" width="172" height="76" rx="12" fill="#ffffff" stroke="#64748b" />
+    <text class="title" x="598" y="128" fill="#20242c" text-anchor="middle" font-weight="700">Small model file</text>
+    <text class="muted" x="598" y="150" fill="#526173" text-anchor="middle">MobileNets-style,</text>
+    <text class="muted" x="598" y="166" fill="#526173" text-anchor="middle">about 4M parameters</text>
+
+    <path class="edge" d="M598 174V222" stroke="#64748b" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#arrow)" />
+    <text class="muted" x="606" y="204" fill="#526173">ships inside the app</text>
+
+    <!-- Phone row -->
+    <text class="muted" x="36" y="216" fill="#526173" font-weight="700">On the phone, no server involved</text>
+
+    <rect class="card" x="36" y="230" width="150" height="70" rx="12" fill="#ffffff" stroke="#64748b" />
+    <text class="title" x="111" y="262" fill="#20242c" text-anchor="middle" font-weight="700">Camera photo</text>
+    <text class="muted" x="111" y="282" fill="#526173" text-anchor="middle">never uploaded</text>
+
+    <path class="edge" d="M186 265H260" stroke="#64748b" stroke-width="2" marker-end="url(#arrow)" />
+
+    <rect class="card" x="264" y="230" width="190" height="70" rx="12" fill="#ffffff" stroke="#64748b" />
+    <text class="title" x="359" y="262" fill="#20242c" text-anchor="middle" font-weight="700">Neural network</text>
+    <text class="muted" x="359" y="282" fill="#526173" text-anchor="middle">runs on the phone</text>
+
+    <path class="edge" d="M454 265H512" stroke="#64748b" stroke-width="2" marker-end="url(#arrow)" />
+
+    <rect class="card" x="512" y="230" width="172" height="70" rx="12" fill="#ffffff" stroke="#64748b" />
+    <text class="accent" x="598" y="258" fill="#b45309" text-anchor="middle" font-weight="700">Hotdog</text>
+    <text class="muted" x="598" y="276" fill="#526173" text-anchor="middle">or</text>
+    <text class="cool" x="598" y="294" fill="#1d4ed8" text-anchor="middle" font-weight="700">Not hotdog</text>
+
+    <text class="muted" x="36" y="346" fill="#526173">Faster (no round trip), works offline, photos stay private, and no server bill per photo.</text>
+  </g>
+</svg>

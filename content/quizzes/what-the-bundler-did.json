@@ -1,0 +1,787 @@
+{
+  "schemaVersion": 1,
+  "id": "what-the-bundler-did",
+  "title": "What the bundler did: tree shaking, chunks and source maps",
+  "description": "You imported one function and shipped 70 KB. Every question starts from a module graph, a bundle treemap, or a build config and asks what the bundler kept, why it kept it, and which change would make the bundle smaller. Covers tree shaking, `sideEffects`, code splitting, content hashes, and source maps. Sizes in the diagrams are rounded and illustrative.",
+  "language": "en",
+  "tags": ["javascript", "frontend", "performance", "bundlers"],
+  "author": "Quizbun",
+  "questions": [
+    {
+      "id": "lodash-commonjs-named-import",
+      "title": "You wrote `import { debounce } from 'lodash'` and use nothing else from lodash. Why does the whole library end up in the bundle?",
+      "images": [
+        {
+          "src": "treemap-lodash-whole.svg",
+          "alt": "Bundle treemap of dist/main.js, 83 KB minified. A small blue rectangle labelled src/ is 12 KB. A much larger amber rectangle labelled node_modules/lodash/lodash.js is 71 KB and is a single module.",
+          "width": 720,
+          "height": 300
+        },
+        {
+          "src": "treemap-lodash-es-after.svg",
+          "alt": "Treemap of the same bundle after switching the import to lodash-es. src/ is still 12 KB, a thin 3 KB sliver holds lodash-es debounce.js and the helpers it imports, and a large grey area marks the roughly 290 other lodash functions that were removed. Total 15 KB.",
+          "placement": "explanation",
+          "width": 720,
+          "height": 300
+        }
+      ],
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The `lodash` package is one CommonJS file, and a bundler cannot tree-shake an object that `module.exports` assembles at runtime",
+          "isCorrect": true
+        },
+        {
+          "text": "Named imports are tree-shaken only in development builds",
+          "isCorrect": false
+        },
+        {
+          "text": "`debounce` calls every other lodash function internally",
+          "isCorrect": false
+        },
+        {
+          "text": "Tree shaking removes unused code from your own source files, never from `node_modules`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The `lodash` package's entry point is `lodash.js`: one CommonJS file that builds a large object and assigns it to `module.exports`. Tree shaking needs ES modules: `import` and `export` statements that a bundler can read without running any code. A CommonJS module has none, so the bundler keeps the whole file even though you asked for one function.\n\nTwo fixes work. `lodash-es` publishes every function as its own ES module, so `import { debounce } from 'lodash-es'` brings in `debounce.js` and the few helpers it imports. The path import `import debounce from 'lodash/debounce'` also works. It loads one small CommonJS file plus its helpers and skips the big one.\n\n`node_modules` is not the obstacle. Tree shaking works on any dependency that ships ES modules.",
+      "references": "[webpack: Tree Shaking](https://webpack.js.org/guides/tree-shaking/) · [npm: lodash-es](https://www.npmjs.com/package/lodash-es)"
+    },
+    {
+      "id": "why-commonjs-resists-tree-shaking",
+      "title": "Which features of CommonJS prevent a bundler from proving that an export is unused?",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "`require()` is an ordinary function call, so it can sit inside an `if` or take a computed path",
+          "isCorrect": true
+        },
+        {
+          "text": "Exports can be added under computed names, as in `exports[name] = fn`",
+          "isCorrect": true
+        },
+        {
+          "text": "`module.exports` can be reassigned or mutated at any point while the module runs",
+          "isCorrect": true
+        },
+        {
+          "text": "CommonJS files cannot be minified",
+          "isCorrect": false
+        },
+        {
+          "text": "CommonJS modules always run in strict mode, which blocks static analysis",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "An ES module declares its imports and exports at the top level, with string-literal specifiers. A bundler can list every export and every consumer before running anything, then delete the exports nobody imports.\n\nCommonJS settles all of that at runtime. `require` is a function, so `if (legacy) require('./old')` or `require('./locale/' + lang)` can only be resolved by running the code. Exports are properties on an object, so `exports[name] = fn` or a later `module.exports = somethingElse` changes the module's public surface while it executes. So the bundler keeps the whole module. webpack 5 can tree-shake simple cases, such as `exports.format = …` read through `require('./x').format`, but any dynamic use makes it keep everything.\n\nMinifiers handle CommonJS fine. They shorten names and drop dead code inside functions, but they cannot prove another file never reads a property. Strict mode is unrelated: CommonJS modules are sloppy mode by default, and ES modules are always strict.",
+      "references": "[webpack 5 release notes: CommonJS Tree Shaking](https://webpack.js.org/blog/2020-10-10-webpack-5-release/#commonjs-tree-shaking) · [MDN: JavaScript modules](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Modules)"
+    },
+    {
+      "id": "namespace-import-escapes",
+      "title": "`utils.js` has 20 named exports and you write `import * as utils from './utils.js'`. Which uses of `utils` force the bundler to keep all 20?",
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "`utils.formatPrice(total)`",
+          "isCorrect": false
+        },
+        {
+          "text": "`utils[methodName](value)`",
+          "isCorrect": true
+        },
+        {
+          "text": "`registerHelpers(utils)`",
+          "isCorrect": true
+        },
+        {
+          "text": "`Object.keys(utils).forEach(log)`",
+          "isCorrect": true
+        }
+      ],
+      "explanation": "A namespace import does not defeat tree shaking by itself. When every use is a static property access such as `utils.formatPrice`, webpack, Rollup and esbuild treat it like `import { formatPrice }` and drop the other 19 exports.\n\nThe problem starts when you use the namespace object as a value. `utils[methodName]` can read any export, depending on a string known only at runtime. Passing `utils` to a function, or enumerating it with `Object.keys`, hands the whole object to code the bundler does not follow. In each case every export might be read, so all 20 stay.",
+      "references": "[Rollup: Tree-shaking](https://rollupjs.org/introduction/#tree-shaking)"
+    },
+    {
+      "id": "unused-class-methods",
+      "title": "`api.js` exports one class, `ApiClient`, with 40 methods. Your app creates a client and calls only `getUser()`. What does tree shaking remove from the class?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Nothing: all 40 methods ship",
+          "isCorrect": true
+        },
+        {
+          "text": "The 39 methods you never call",
+          "isCorrect": false
+        },
+        {
+          "text": "The whole class, because the app uses a method and not the class itself",
+          "isCorrect": false
+        },
+        {
+          "text": "The unused methods, but only if the class is annotated with `/*#__PURE__*/`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Tree shaking works on module exports and top-level statements. `ApiClient` is one export and you use it, so it stays, body and all.\n\nTo remove a single method, the bundler would have to prove that no code ever reads it. Methods live on the prototype, and JavaScript can reach them in ways static analysis cannot rule out: `client[action]()`, copying the prototype into a mixin, or a framework calling a method by name. Bundlers and minifiers do not attempt it.\n\n`/*#__PURE__*/` marks a *call* as removable when its result goes unused; it says nothing about which methods of a class are needed. If a large client class dominates your bundle, turn its methods into standalone exported functions such as `getUser(client, id)`, which tree shaking can drop one at a time. The Firebase SDK made this change in its modular version for the same reason.",
+      "references": "[webpack: Tree Shaking](https://webpack.js.org/guides/tree-shaking/) · [Firebase: Upgrade from the namespaced API to the modular API](https://firebase.google.com/docs/web/modular-upgrade)"
+    },
+    {
+      "id": "pure-annotation",
+      "title": "Nothing imports `store`, yet the call that creates it survives minification. Which change lets the minifier drop it?",
+      "description": "The app imports only `selectCart` from this file. `createStore` comes from a library whose code the bundler cannot prove free of side effects.\n\n```js\n// store.js\nimport { createStore } from 'tiny-store';\n\nexport const store = createStore(rootReducer);\n\nexport function selectCart(state) {\n  return state.cart;\n}\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Write `export const store = /*#__PURE__*/ createStore(rootReducer);`",
+          "isCorrect": true
+        },
+        {
+          "text": "Change `const` to `let`",
+          "isCorrect": false
+        },
+        {
+          "text": "Move the `store` line below `selectCart`",
+          "isCorrect": false
+        },
+        {
+          "text": "Make `store` the default export",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A bundler drops an unused variable, but it keeps a function call whose effects it cannot see. `createStore(rootReducer)` might write to a global, register a listener, or log something. Deleting the call would delete that behavior, so the minifier keeps it even though nothing reads `store`.\n\n`/*#__PURE__*/` is a promise from the author: this call has no side effects, so remove it if its result is unused. Terser, esbuild, Rollup and webpack all honor it. The tools trust you. If the call *does* have a side effect you need, the annotation deletes it without warning.\n\nCompilers add the annotation too. Babel's React preset marks every `React.createElement` call it emits, so unused elements get removed.",
+      "references": "[Rollup: treeshake.annotations](https://rollupjs.org/configuration-options/#treeshake-annotations) · [webpack: Tree Shaking](https://webpack.js.org/guides/tree-shaking/)"
+    },
+    {
+      "id": "barrel-without-side-effects-flag",
+      "title": "`App.js` imports only `Button` from the `ui` barrel, yet `chart-lib` and `date-lib` ship in the bundle. Which changes remove them?",
+      "description": "`ui/index.js` contains only `export * from './…'` lines. `Chart.js` and `DatePicker.js` define components and run nothing at the top level. `chart-lib` and `date-lib` do run setup code when they load.",
+      "images": [
+        {
+          "src": "barrel-module-graph.svg",
+          "alt": "Module graph. App.js imports { Button } from ui/index.js, a barrel of export-star lines. The barrel links to Button.js at 2 KB, Chart.js at 3 KB, and DatePicker.js at 4 KB. Chart.js imports chart-lib at 180 KB and DatePicker.js imports date-lib at 40 KB. The ui package.json has no sideEffects field.",
+          "width": 720,
+          "height": 440
+        },
+        {
+          "src": "barrel-graph-side-effects-false.svg",
+          "alt": "The same graph with \"sideEffects\": false in the ui package.json. Button.js is highlighted green. Chart.js, DatePicker.js, chart-lib and date-lib are greyed out behind dashed edges and marked as skipped: never evaluated, never bundled.",
+          "placement": "explanation",
+          "width": 720,
+          "height": 440
+        }
+      ],
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "Import the component file directly: `import { Button } from 'ui/Button.js'`",
+          "isCorrect": true
+        },
+        {
+          "text": "Add `\"sideEffects\": false` to the `ui` package's `package.json`",
+          "isCorrect": true
+        },
+        {
+          "text": "Replace `export * from './Chart.js'` with `export { Chart } from './Chart.js'`",
+          "isCorrect": false
+        },
+        {
+          "text": "Switch to `import * as ui from 'ui'` and use `ui.Button`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A re-export is an import too. To evaluate the barrel, the bundler must load `Chart.js`, and loading `Chart.js` means evaluating `chart-lib`. With no `sideEffects` field, the bundler has to assume that evaluating any module might do something observable, such as registering a plugin or patching a global. `chart-lib` really does run setup code, so skipping it could change behavior. It stays.\n\n`\"sideEffects\": false` tells the bundler that every module in `ui` is safe to skip when none of its exports are used. The bundler then follows the barrel only as far as `Button.js`. Importing `ui/Button.js` directly gets the same result with no flag at all, because the barrel never enters the graph.\n\nNamed re-exports and namespace imports only change the syntax. The barrel still links to `Chart.js`, and nothing tells the bundler that skipping it is safe.",
+      "references": "[webpack: Tree Shaking](https://webpack.js.org/guides/tree-shaking/)"
+    },
+    {
+      "id": "side-effects-false-drops-css",
+      "title": "After you add `\"sideEffects\": false` to your app's `package.json`, the production build loses every component's styles. What went wrong?",
+      "description": "The project builds with webpack and `css-loader`. Components load their styles like this:\n\n```js\nimport './Button.css';\n\nexport function Button(props) {\n  // …\n}\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "`import './Button.css'` imports no bindings, so under `\"sideEffects\": false` the bundler treats it as removable",
+          "isCorrect": true
+        },
+        {
+          "text": "`\"sideEffects\": false` turns off `css-loader`",
+          "isCorrect": false
+        },
+        {
+          "text": "webpack bundles CSS only in development mode",
+          "isCorrect": false
+        },
+        {
+          "text": "The flag makes webpack inline CSS into JavaScript, where the minifier strips it",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`import './Button.css'` exists only for its side effect: adding a stylesheet. It imports no names, so no code ever \"uses\" it. With `\"sideEffects\": false` you told webpack that any file in the package can be skipped when its exports go unused, and this import qualifies.\n\nThe field also accepts a list of globs for the files that do have side effects:\n\n```json\n{ \"sideEffects\": [\"*.css\", \"./src/polyfills.js\"] }\n```\n\nThe same thing happens to any import you keep only for its effect, such as a polyfill or a module that registers a custom element.",
+      "references": "[webpack: Tree Shaking](https://webpack.js.org/guides/tree-shaking/)"
+    },
+    {
+      "id": "barrel-file-dev-server-requests",
+      "title": "`vite build` produces a small bundle, but under `vite dev` the page makes about 1,400 requests before it renders. Why?",
+      "description": "`App.tsx` imports three icons from `src/icons/index.ts`, a barrel file in your own source that re-exports 1,400 icon components.",
+      "images": [
+        {
+          "src": "dev-vs-build-requests.svg",
+          "alt": "Two pipelines side by side. Under vite dev, unbundled ESM: App.tsx, then icons/index.ts, then a stack of 1,400 icon modules, about 1,402 requests before first render. Under vite build, bundled and tree-shaken: one file, index-4be1.js, holding App and 3 icons, fetched in 1 request.",
+          "placement": "explanation",
+          "width": 720,
+          "height": 330
+        }
+      ],
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The dev server serves each source module as its own file, and the browser must fetch every module the barrel re-exports before it can run the barrel",
+          "isCorrect": true
+        },
+        {
+          "text": "Vite turns off HTTP caching in development, so each icon is requested again on every import",
+          "isCorrect": false
+        },
+        {
+          "text": "In development, tree shaking runs in the browser and needs every file first",
+          "isCorrect": false
+        },
+        {
+          "text": "Hot module replacement opens one request per module to watch for changes",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Vite's dev server does not bundle your source code. It transforms each file when the browser asks for it and lets the browser's native ES module loader follow the imports. The browser cannot run `icons/index.ts` until it has fetched and linked every module that file re-exports, and it does not know you want only three of them. So one barrel costs 1,400 requests.\n\nTree shaking happens only in `vite build`, which is why production looks fine. Dependencies in `node_modules` avoid the problem because Vite pre-bundles them into a few files. Vite does not pre-bundle your own source, so your barrels stay slow. Import each icon from its own file, such as `./icons/ArrowLeft`, and the dev server serves only what you use.",
+      "references": "[Vite: Performance, Avoid Barrel Files](https://vite.dev/guide/performance#avoid-barrel-files)"
+    },
+    {
+      "id": "node-env-dead-branch",
+      "title": "What removes this development-only warning from a production build?",
+      "description": "```js\nif (process.env.NODE_ENV !== 'production') {\n  warnDev('Each child in a list needs a unique key');\n}\n```",
+      "images": [
+        {
+          "src": "define-then-minify.svg",
+          "alt": "Three code panels. Your source: if process.env.NODE_ENV is not 'production', call warnDev, then render. After define: the same code with process.env.NODE_ENV replaced by the literal 'production'. After minify: only render() remains.",
+          "placement": "explanation",
+          "width": 720,
+          "height": 360
+        }
+      ],
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The bundler replaces `process.env.NODE_ENV` with the string `'production'`, then the minifier deletes the branch as unreachable",
+          "isCorrect": true
+        },
+        {
+          "text": "Tree shaking removes `warnDev` because the module does not export it",
+          "isCorrect": false
+        },
+        {
+          "text": "The browser skips the block because `process` does not exist there",
+          "isCorrect": false
+        },
+        {
+          "text": "The bundled code reads `NODE_ENV` from the visitor's machine when the page loads",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Two build steps work together. First, a define step replaces text: webpack's `mode: 'production'` and Vite's build both replace `process.env.NODE_ENV` with the string literal `\"production\"`. The condition becomes `\"production\" !== \"production\"`.\n\nSecond, the minifier folds that constant expression to `false` and deletes the unreachable block. If nothing else calls `warnDev`, it becomes unused and disappears too.\n\nWithout the define step, the browser would not skip anything; it would throw `ReferenceError: process is not defined`, because `process` is a Node.js global. The substitution matches only that exact expression, so `const env = process.env; if (env.NODE_ENV …)` defeats it. React and many other libraries use this trick, so their development warnings add nothing to production bundles.",
+      "references": "[webpack: DefinePlugin](https://webpack.js.org/plugins/define-plugin/) · [webpack: Mode](https://webpack.js.org/configuration/mode/)"
+    },
+    {
+      "id": "polyfills-follow-browserslist",
+      "title": "Your analytics show that every visitor runs a browser released in the last two years. Which change removes most of the polyfill block?",
+      "images": [
+        {
+          "src": "treemap-core-js.svg",
+          "alt": "Treemap of dist/main.js, 300 KB minified: src/ at 96 KB, react-dom at 132 KB, and a red polyfills block from core-js at 72 KB. The .browserslistrc reads \"> 0.2%, not dead, ie 11\". @babel/preset-env uses useBuiltIns entry, and the entry file starts with import \"core-js/stable\".",
+          "width": 720,
+          "height": 330
+        }
+      ],
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Narrow `.browserslistrc` to the browsers you actually support",
+          "isCorrect": true
+        },
+        {
+          "text": "Rely on tree shaking to drop the polyfills no code calls",
+          "isCorrect": false
+        },
+        {
+          "text": "Move `core-js` from `dependencies` to `devDependencies`",
+          "isCorrect": false
+        },
+        {
+          "text": "Switch the minifier from Terser to esbuild",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "With `useBuiltIns: \"entry\"`, `@babel/preset-env` replaces `import \"core-js/stable\"` with one import for each polyfill your target browsers need. The targets come from `.browserslistrc`, and `ie 11` needs nearly everything: `Promise`, `Symbol`, `Array.prototype.includes`, and hundreds more. Target recent browsers only and most of those imports vanish, because the browsers already implement the features.\n\nTree shaking cannot help. A polyfill works by patching globals such as `Array.prototype`, a side effect the bundler must keep. The `devDependencies` list is a hint for package managers; bundlers follow imports regardless of where a package is listed. A different minifier might shave a few percent, but it keeps every polyfill.",
+      "references": "[Babel: @babel/preset-env](https://babeljs.io/docs/babel-preset-env) · [Browserslist](https://github.com/browserslist/browserslist)"
+    },
+    {
+      "id": "date-library-budget",
+      "title": "Each change below is applied on its own. Which ones bring this bundle under its 150 KB budget?",
+      "description": "The project builds with webpack.",
+      "images": [
+        {
+          "src": "treemap-moment-budget.svg",
+          "alt": "Treemap of dist/main.js, 310 KB minified, against a 150 KB budget. src/ is 80 KB, moment core is 60 KB, and a red block, moment/locale/*, holds 170 KB of more than 130 locale files. The app formats dates in English only and imports moment with import moment from 'moment'.",
+          "width": 720,
+          "height": 330
+        },
+        {
+          "src": "treemap-budget-after.svg",
+          "alt": "Two resulting bundles. Ignoring moment's locales: src/ at 80 KB plus moment at 60 KB, 140 KB in total. Swapping to date-fns: src/ at 80 KB plus about 8 KB of date-fns functions, about 88 KB in total. Both are under the 150 KB budget.",
+          "placement": "explanation",
+          "width": 720,
+          "height": 320
+        }
+      ],
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "Configure webpack's `IgnorePlugin` to skip `moment`'s `./locale` directory",
+          "isCorrect": true
+        },
+        {
+          "text": "Replace `moment` with `date-fns` and import only the functions you call",
+          "isCorrect": true
+        },
+        {
+          "text": "Change the import to `import * as moment from 'moment'`",
+          "isCorrect": false
+        },
+        {
+          "text": "Move `moment` to `devDependencies`",
+          "isCorrect": false
+        },
+        {
+          "text": "Add `\"sideEffects\": false` to your app's `package.json`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The locales are most of the problem. Moment loads a locale through a `require` whose path is only known at runtime. webpack cannot tell which locale will be requested, so it bundles every file in `moment/locale`: more than 130 of them for an app that speaks English. `IgnorePlugin` tells webpack to skip that directory. Moment's built-in English still works, and the bundle drops to 140 KB.\n\n`date-fns` avoids the problem by design. Each function is its own ES module, so `import { format, addDays } from 'date-fns'` bundles those two functions and their helpers, and a locale ships only if you import it.\n\nThe other three changes do nothing here. A namespace import of a CommonJS package still pulls in the whole package. Bundlers ignore whether a package is listed under `dependencies` or `devDependencies`. Your app's `sideEffects` flag describes your own files, not moment's, and it cannot make a runtime `require` path analyzable.",
+      "references": "[webpack: IgnorePlugin](https://webpack.js.org/plugins/ignore-plugin/) · [Moment.js: Project status](https://momentjs.com/docs/#/-project-status/)"
+    },
+    {
+      "id": "duplicate-dependency-versions",
+      "title": "Why does the bundle contain two copies of `date-fns`?",
+      "images": [
+        {
+          "src": "treemap-duplicate-date-fns.svg",
+          "alt": "Treemap of dist/main.js: src/ at 70 KB, legacy-calendar at 18 KB, date-fns 3.6.0 at 22 KB, and date-fns 2.30.0 at 20 KB highlighted in red. date-fns 3.6.0 resolves to node_modules/date-fns. date-fns 2.30.0 resolves to node_modules/legacy-calendar/node_modules/date-fns.",
+          "width": 720,
+          "height": 330
+        },
+        {
+          "src": "dependency-tree-two-versions.svg",
+          "alt": "Dependency tree. your-app depends on date-fns ^3.6.0, installed at node_modules/date-fns, and on legacy-calendar, which wants date-fns ^2.30.0. Version 2.30.0 is nested under legacy-calendar. Each import resolves to the nearest node_modules, so the bundler follows both paths and bundles both copies.",
+          "placement": "explanation",
+          "width": 720,
+          "height": 360
+        }
+      ],
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Your app requires `date-fns` 3 and `legacy-calendar` requires version 2, so both are installed and each import resolves to its own copy",
+          "isCorrect": true
+        },
+        {
+          "text": "The bundler copies a shared dependency into every package that imports it",
+          "isCorrect": false
+        },
+        {
+          "text": "Tree shaking could not merge the two copies because they export different functions",
+          "isCorrect": false
+        },
+        {
+          "text": "One copy is the ES module build and the other is the CommonJS build of the same version",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`^3.6.0` and `^2.30.0` share no version, because a caret range never crosses a major version. The package manager satisfies both by installing 3.6.0 at the top level and nesting 2.30.0 under `legacy-calendar`. Bundlers resolve packages the way Node.js does, from the nearest `node_modules` walking up from the importing file, so the two imports land on two different files. To the bundler they are unrelated modules that happen to share a name.\n\nTo fix it, upgrade `legacy-calendar` to a release that accepts date-fns 3. If you have verified that the current release works with 3, you can force one version with npm `overrides` (Yarn calls it `resolutions`). `npm ls date-fns` shows which package asks for which version.\n\nA package can also end up twice when one import gets its ES module build and another gets its CommonJS build. That is the dual package hazard, and it shows the *same* version twice.",
+      "references": "[npm: package.json overrides](https://docs.npmjs.com/cli/v10/configuring-npm/package-json#overrides) · [Node.js: Dual CommonJS/ES module packages](https://nodejs.org/api/packages.html#dual-commonjses-module-packages)"
+    },
+    {
+      "id": "parsed-versus-gzip-size",
+      "title": "A bundle analyzer reports 1,200 KB stat, 400 KB parsed and 110 KB gzip for the same file. Which number best predicts how long a phone spends parsing and compiling it?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "400 KB parsed",
+          "isCorrect": true
+        },
+        {
+          "text": "110 KB gzip",
+          "isCorrect": false
+        },
+        {
+          "text": "1,200 KB stat",
+          "isCorrect": false
+        },
+        {
+          "text": "None of them; parse time depends only on the number of modules",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The three numbers measure different stages. *Stat* is the input: the source files before minification. *Parsed* is the file the bundler actually wrote, minified. *Gzip* approximates what crosses the network.\n\nCompression only matters on the network. The browser decompresses the response and hands all 400 KB to the JavaScript engine, and parse and compile time grow with that size. Gzip size predicts download time; parsed size predicts CPU time, which hurts low-end phones most. A 110 KB download can still cost a slow phone noticeable main-thread time.\n\nStat size counts comments, whitespace and code that minification and tree shaking later removed, so it overstates what the browser sees.",
+      "references": "[webpack-bundle-analyzer: Size definitions](https://github.com/webpack/webpack-bundle-analyzer#size-definitions) · [V8: The cost of JavaScript in 2019](https://v8.dev/blog/cost-of-javascript-2019)"
+    },
+    {
+      "id": "shared-chunk-for-lazy-routes",
+      "title": "Two lazy-loaded routes both import `chart-lib`. How many copies of it does a Rollup or Vite build emit, and where?",
+      "images": [
+        {
+          "src": "lazy-routes-shared-graph.svg",
+          "alt": "Module graph. main.js dynamically imports Dashboard.js and Reports.js, drawn as dashed arrows. Dashboard.js and Reports.js both statically import chart-lib, 180 KB.",
+          "width": 720,
+          "height": 340
+        },
+        {
+          "src": "lazy-routes-chunks.svg",
+          "alt": "Emitted chunks. main-8d2e.js loads Dashboard-1c9a.js and Reports-f07b.js on demand. Both route chunks import chart-lib-5e31.js, a single 180 KB chunk emitted once. Whichever route loads first fetches the shared chunk; the other route finds it cached.",
+          "placement": "explanation",
+          "width": 720,
+          "height": 380
+        }
+      ],
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "One, in its own shared chunk that either route can load",
+          "isCorrect": true
+        },
+        {
+          "text": "Two, one inside each route's chunk",
+          "isCorrect": false
+        },
+        {
+          "text": "One, inside the entry chunk, so it loads on every page",
+          "isCorrect": false
+        },
+        {
+          "text": "One, inside whichever route chunk the bundler processes first",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Rollup assigns each module to a chunk according to which entry points can reach it, and it counts every dynamic import as an entry point. `chart-lib` is reachable from both routes and not from the static imports of `main.js`, so it gets a chunk of its own. Each route chunk imports that chunk by filename.\n\nEvery other option costs more. Copying it into both routes makes a user who visits both download 180 KB twice. Putting it in the entry charges every visitor, including those who never open a chart. Leaving it inside one route's chunk would force the other route to download that route's code as well.\n\nwebpack's `SplitChunksPlugin` reaches the same result for lazy chunks, subject to size thresholds. By default it splits out shared modules only when they are larger than about 20 KB.",
+      "references": "[Rollup: Code splitting](https://rollupjs.org/tutorial/#code-splitting) · [webpack: SplitChunksPlugin](https://webpack.js.org/plugins/split-chunks-plugin/)"
+    },
+    {
+      "id": "entry-chunk-contents",
+      "title": "In a Vite production build of this graph, which modules end up in the entry chunk?",
+      "images": [
+        {
+          "src": "entry-chunk-graph.svg",
+          "alt": "Module graph. main.js statically imports App.js and analytics.js. App.js statically imports Header.js and dynamically imports Settings.js, drawn dashed. Settings.js statically imports Header.js and forms.js.",
+          "width": 720,
+          "height": 420
+        },
+        {
+          "src": "entry-chunk-result.svg",
+          "alt": "Emitted chunks. The entry chunk main-2a7c.js contains main.js, App.js, analytics.js and Header.js. A separate lazy chunk, Settings-9f14.js, contains Settings.js and forms.js and imports Header.js from the entry chunk.",
+          "placement": "explanation",
+          "width": 720,
+          "height": 360
+        }
+      ],
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "`App.js`",
+          "isCorrect": true
+        },
+        {
+          "text": "`analytics.js`",
+          "isCorrect": true
+        },
+        {
+          "text": "`Header.js`",
+          "isCorrect": true
+        },
+        {
+          "text": "`Settings.js`",
+          "isCorrect": false
+        },
+        {
+          "text": "`forms.js`",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The entry chunk holds everything reachable from `main.js` through static imports: `App.js`, `analytics.js`, and `Header.js`, which `App.js` imports statically. The dashed edge is a split point, so `Settings.js` and the module only it needs, `forms.js`, go into a lazy chunk.\n\n`Header.js` is the interesting case. `Settings.js` imports it too, but the Settings chunk can only load after the entry chunk has run, so `Header.js` is guaranteed to be in memory already. Vite's production bundler sees this and makes the lazy chunk import `Header` from the entry chunk. It creates neither a copy nor a separate shared chunk.",
+      "references": "[Rollup: Code splitting](https://rollupjs.org/tutorial/#code-splitting)"
+    },
+    {
+      "id": "static-import-defeats-lazy-load",
+      "title": "You lazy-loaded the editor with `import('./editor.js')`, yet the analyzer still shows it inside the entry chunk. What is the most likely cause?",
+      "images": [
+        {
+          "src": "treemap-editor-in-entry.svg",
+          "alt": "Treemap after lazy-loading the editor. The entry chunk index-51d0.js is 470 KB: src/ at 60 KB, and editor.js plus codemirror at 410 KB, highlighted red. A separate EditorPage chunk is only 4 KB. EditorPage.js runs const { Editor } = await import('./editor.js').",
+          "width": 720,
+          "height": 330
+        },
+        {
+          "src": "editor-static-edge.svg",
+          "alt": "Module graph. main.js statically imports Header.js and dynamically imports EditorPage.js. EditorPage.js dynamically imports editor.js, which pulls in codemirror. Header.js also statically imports { hasUnsavedDraft } from editor.js, and that solid red edge puts editor.js in the entry chunk.",
+          "placement": "explanation",
+          "width": 720,
+          "height": 340
+        }
+      ],
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Another module in the entry's graph imports something from `editor.js` statically",
+          "isCorrect": true
+        },
+        {
+          "text": "`import()` only splits code when its specifier is a template literal",
+          "isCorrect": false
+        },
+        {
+          "text": "Vite merges any chunk smaller than 500 KB into the entry",
+          "isCorrect": false
+        },
+        {
+          "text": "Production builds inline dynamic imports so they load faster",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A dynamic import creates a split point only if the module is not already reachable through static imports. Here `Header.js` runs `import { hasUnsavedDraft } from './editor.js'` to show an unsaved-changes dot. `Header.js` is in the entry chunk, so `editor.js`, and CodeMirror with it, must be there too. The `import()` then returns a module that is already loaded.\n\nVite prints a warning for this case, saying the module *is dynamically imported by* one file *but also statically imported by* another, so the *dynamic import will not move module into another chunk*. To fix it, move `hasUnsavedDraft` into a small module of its own, so the header no longer pulls in the editor.\n\nVite's 500 KB figure is `build.chunkSizeWarningLimit`, a warning threshold for large chunks. It never merges chunks.",
+      "references": "[MDN: import()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/import) · [Vite: build.chunkSizeWarningLimit](https://vite.dev/config/build-options#build-chunksizewarninglimit)"
+    },
+    {
+      "id": "template-literal-import-globs",
+      "title": "The app only ever loads English and German, yet `dist/` contains a chunk for each of the 42 files in `locales/`. Why?",
+      "description": "```js\nexport async function loadMessages(lang) {\n  const { default: messages } = await import(`./locales/${lang}.js`);\n  return messages;\n}\n```",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The bundler cannot know `lang` at build time, so it treats the template as a file pattern and emits a chunk for every match",
+          "isCorrect": true
+        },
+        {
+          "text": "Every `import()` call preloads all sibling files in the same directory",
+          "isCorrect": false
+        },
+        {
+          "text": "Dynamic imports turn off tree shaking, so the bundler copies the whole directory",
+          "isCorrect": false
+        },
+        {
+          "text": "The bundler ran `loadMessages` during the build with every possible language",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "A bundler has to emit every file the browser might request at runtime. With ``import(`./locales/${lang}.js`)``, the fixed parts of the template, the `./locales/` directory and the `.js` extension, form a pattern. The bundler matches it against the file system and emits one chunk per match, since any of them could be requested. webpack calls this a context module; Vite handles it through its support for variables in dynamic imports.\n\nThat is usually what you want. Each visitor downloads only their own locale, and the other 40 files stay on the server unused. Keep the pattern narrow, though. ``import(`./${name}`)`` would match every file in the directory. A fully dynamic `import(path)` leaves nothing to match, so bundlers warn and the import usually fails at runtime.",
+      "references": "[webpack: Dependency Management](https://webpack.js.org/guides/dependency-management/) · [Rollup plugins: dynamic-import-vars](https://github.com/rollup/plugins/tree/master/packages/dynamic-import-vars)"
+    },
+    {
+      "id": "count-emitted-chunks",
+      "title": "How many JavaScript chunks does a default Rollup build emit for this graph?",
+      "description": "Count every `.js` file in the output, including the entry. Answer with a number.",
+      "images": [
+        {
+          "src": "chunk-count-graph.svg",
+          "alt": "Module graph. main.js statically imports a.js and dynamically imports Settings.js and Admin.js, drawn dashed. Settings.js and Admin.js both statically import shared.js. Admin.js also statically imports chart.js.",
+          "width": 720,
+          "height": 360
+        },
+        {
+          "src": "chunk-count-result.svg",
+          "alt": "Four emitted chunks. main holds main.js and a.js. Settings holds Settings.js. Admin holds Admin.js and chart.js. shared holds shared.js, because it has two dynamic importers and no static path from main.",
+          "placement": "explanation",
+          "width": 720,
+          "height": 360
+        }
+      ],
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [4]
+      },
+      "explanation": "Rollup groups modules by the set of entry points that can reach them, and every dynamic import counts as an entry point. Label each module with its set:\n\n- `main.js` and `a.js` are reached only from `main`: the entry chunk.\n- `Settings.js` is reached only from the Settings import: its own chunk.\n- `Admin.js` and `chart.js` are reached only from the Admin import: its own chunk.\n- `shared.js` is reached from both Settings and Admin: a chunk of its own.\n\nFour distinct sets make four chunks. Folding `shared.js` into either route would make the other route download that route's code. Copying it into both would ship it twice to anyone who opens both pages.",
+      "references": "[Rollup: Code splitting](https://rollupjs.org/tutorial/#code-splitting)"
+    },
+    {
+      "id": "vendor-chunk-caching",
+      "title": "Splitting `node_modules` into a separate `vendor` chunk does not reduce the total number of bytes. Why do it?",
+      "images": [
+        {
+          "src": "vendor-cache.svg",
+          "alt": "A returning visitor after Tuesday's deploy. Monday: app-71c0.js at 45 KB and vendor-b93e.js at 260 KB. Tuesday, after one line of app code changed: app-e408.js at 45 KB is downloaded, while vendor-b93e.js keeps its filename and comes from the HTTP cache.",
+          "placement": "explanation",
+          "width": 720,
+          "height": 300
+        }
+      ],
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "Dependencies change less often than app code, so the vendor file keeps its hashed name across most deploys and returning visitors load it from cache",
+          "isCorrect": true
+        },
+        {
+          "text": "Browsers parse dependency code faster when it arrives in a separate file",
+          "isCorrect": false
+        },
+        {
+          "text": "Tree shaking works only when dependencies sit in their own chunk",
+          "isCorrect": false
+        },
+        {
+          "text": "Two files download in parallel, which halves the total download time",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "With content hashes in filenames, a file's name changes only when its bytes change. If app code and dependencies share one chunk, a one-line fix renames the whole 305 KB file, and every returning visitor downloads all of it again. Split them, and a typical deploy renames only the 45 KB app chunk. The 260 KB vendor file keeps its name, and browsers serve it from cache. Served with `Cache-Control: max-age=31536000, immutable`, it is not even revalidated.\n\nThe split pays off only while dependencies change less often than your code. Upgrade a dependency and the vendor hash changes too. Parallel downloads help a little, but the same bytes still cross the same connection, so nothing is halved.",
+      "references": "[webpack: Caching](https://webpack.js.org/guides/caching/) · [MDN: Cache-Control](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Cache-Control)"
+    },
+    {
+      "id": "content-hash-cascade",
+      "title": "You changed one line in `Settings.js`. After the deploy, both `Settings-a81b.js` and the entry `main-3f2a.js` have new hashes. Why did the entry change?",
+      "images": [
+        {
+          "src": "hash-cascade.svg",
+          "alt": "Code comparison. Before the deploy, main-3f2a.js contains import('./Settings-a81b.js'). After the deploy, main-9c1d.js contains import('./Settings-77e0.js'), highlighted red. A chunk's hash comes from its bytes, and the entry's bytes include the lazy chunk's filename, so renaming the lazy chunk gives the entry a new hash too. webpack's runtimeChunk: 'single' moves the map of chunk filenames into a small file of its own.",
+          "placement": "explanation",
+          "width": 720,
+          "height": 340
+        }
+      ],
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The entry's code contains the lazy chunk's filename, so the new filename changed the entry's bytes",
+          "isCorrect": true
+        },
+        {
+          "text": "Every build derives all hashes from the build timestamp",
+          "isCorrect": false
+        },
+        {
+          "text": "The entry chunk embeds a copy of every lazy chunk's code",
+          "isCorrect": false
+        },
+        {
+          "text": "Content hashes are computed over the whole `dist/` directory",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`import('./Settings.js')` in your source becomes `import('./Settings-a81b.js')` in the output. Editing `Settings.js` changes its bytes, so its hash changes, so its filename changes. The entry has that filename written inside it, so the entry's bytes change too, and it gets a new hash of its own.\n\nThe change travels only toward importers. A chunk gets a new hash when its own code changes or when a chunk it references is renamed. The cost is that the entry chunk, which every visitor needs, is invalidated by edits to any lazy route. In webpack, `optimization.runtimeChunk: 'single'` moves the map of chunk filenames into a small runtime file, so that file absorbs the churn instead of your entry code. Hashes are deterministic, so a chunk nobody touched keeps its name.",
+      "references": "[webpack: Caching](https://webpack.js.org/guides/caching/) · [Rollup: output.chunkFileNames](https://rollupjs.org/configuration-options/#output-chunkfilenames)"
+    },
+    {
+      "id": "count-renamed-chunks",
+      "title": "In the same four-chunk build, you edit only `chart.js`. How many of the four chunk filenames change?",
+      "description": "Answer with a number.",
+      "images": [
+        {
+          "src": "chunk-count-result.svg",
+          "alt": "Four emitted chunks. main holds main.js and a.js. Settings holds Settings.js. Admin holds Admin.js and chart.js. shared holds shared.js, because it has two dynamic importers and no static path from main. main dynamically imports Settings and Admin; Settings and Admin both import shared.",
+          "width": 720,
+          "height": 360
+        },
+        {
+          "src": "hash-cascade-count.svg",
+          "alt": "After editing chart.js, main changes from 3f2a to 9c1d and Admin changes from 5d60 to e2b4, both highlighted red. Settings-a81b.js and shared-0c77.js are unchanged, highlighted green. Admin holds chart.js, so Admin gets a new hash. main names Admin's file, so main gets one too.",
+          "placement": "explanation",
+          "width": 720,
+          "height": 360
+        }
+      ],
+      "type": "input",
+      "validation": {
+        "mode": "numeric",
+        "acceptedAnswers": [2]
+      },
+      "explanation": "Follow the references upward from the edit. `chart.js` lives in the Admin chunk, so Admin's bytes change and it gets a new filename. `main` contains `import('./Admin-….js')`, so `main` changes as well. That makes two.\n\n`shared` is imported *by* Admin but holds no reference to Admin, so it keeps its name. `Settings` references only `shared`, which did not change, so it keeps its name too. A returning visitor downloads the new `main`, plus the new `Admin` if they open the admin page. The other two chunks come from cache."
+    },
+    {
+      "id": "source-map-sources-index",
+      "title": "A production error points to `app.min.js:1:1042`. Which original file contains the failing code?",
+      "description": "The error is `TypeError: price is undefined`. Your error tracker decoded the mapping segment for that position into absolute values:\n\n```text\n[generatedColumn, sourceIndex, originalLine, originalColumn]\n[1042,            1,           41,           8]\n```\n\nThe relevant part of `app.min.js.map`:\n\n```json\n{\n  \"version\": 3,\n  \"file\": \"app.min.js\",\n  \"sources\": [\"src/main.ts\", \"src/cart.ts\", \"src/price.ts\"],\n  \"names\": [\"price\", \"total\"]\n}\n```\n\nAnswer with the file name, for example `main.ts`.",
+      "images": [
+        {
+          "src": "sourcemap-segment.svg",
+          "alt": "The error app.min.js:1:1042, TypeError: price is undefined. The decoded segment for generated column 1042 has four fields: generated column 1042, index into sources 1, original line 41, original column 8. An arrow leads from index 1 to sources[1], src/cart.ts, highlighted between src/main.ts at index 0 and src/price.ts at index 2. Indexes, lines and columns in a source map all count from 0, so line 41 here is line 42 in your editor.",
+          "placement": "explanation",
+          "width": 720,
+          "height": 380
+        }
+      ],
+      "type": "input",
+      "validation": {
+        "mode": "text",
+        "acceptedAnswers": ["cart.ts", "src/cart.ts", "./src/cart.ts"]
+      },
+      "explanation": "The second field of a mapping segment is an index into `sources`, and source map indexes count from 0. Index 1 is the second entry, `src/cart.ts`. The error mentions `price`, so `price.ts` looks tempting. But the message names the undefined value. It says nothing about which file tried to use it.\n\nLines and columns are zero-based too, so original line 41 is line 42 in your editor. The real `mappings` string does not store these values plainly: it encodes each field as a Base64 VLQ offset from the previous segment, which is why you let a tool decode it.",
+      "references": "[ECMA-426: Source map format specification](https://tc39.es/ecma426/)"
+    },
+    {
+      "id": "source-map-exposure",
+      "title": "Your production site serves `app.js.map`, including `sourcesContent`, next to `app.js`. What can any visitor read from it?",
+      "type": "single-choice",
+      "options": [
+        {
+          "text": "The original source of every file in the bundle, including comments and file paths",
+          "isCorrect": true
+        },
+        {
+          "text": "Only the minified code, with the original variable names restored",
+          "isCorrect": false
+        },
+        {
+          "text": "Your server-side code and the contents of your `.env` file",
+          "isCorrect": false
+        },
+        {
+          "text": "Nothing, because browsers download source maps only for signed-in developers",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "`sourcesContent` embeds the full text of each original file in the map, so DevTools can display it without fetching anything else. Anyone who opens DevTools, or requests `app.js.map` directly, gets your TypeScript as you wrote it: comments, TODOs, internal names, and your directory layout in `sources`.\n\nThe leak has limits, though. The map covers only files that went into the bundle, so server code stays private. An environment variable appears only if the build inlined it into client code, and then it was already readable in `app.js`. Browsers fetch a map only when DevTools is open, but the file is public to anyone who asks for it.\n\nMany teams publish source maps on purpose. If you would rather not, you can keep readable stack traces without publishing the source, as the next question shows.",
+      "references": "[ECMA-426: Source map format specification](https://tc39.es/ecma426/)"
+    },
+    {
+      "id": "private-source-maps",
+      "title": "You want readable stack traces in your error tracker without letting visitors read your source. Which setups achieve that?",
+      "images": [
+        {
+          "src": "hidden-source-map-flow.svg",
+          "alt": "A build with sourcemap 'hidden' produces app-8d1f.js with no sourceMappingURL comment, deployed to the public CDN, and app-8d1f.js.map with sources and sourcesContent, uploaded privately to the error tracker. The map is deleted from dist before deploy; the tracker matches incoming stack frames to the uploaded map by release.",
+          "placement": "explanation",
+          "width": 720,
+          "height": 330
+        }
+      ],
+      "type": "multiple-choice",
+      "options": [
+        {
+          "text": "Build hidden source maps (`sourcemap: 'hidden'` in Vite, `devtool: 'hidden-source-map'` in webpack), upload them to the tracker, and leave them out of the deploy",
+          "isCorrect": true
+        },
+        {
+          "text": "Build normal source maps, upload them to the tracker, then delete the `.map` files from `dist/` before deploying",
+          "isCorrect": true
+        },
+        {
+          "text": "Use inline source maps so that no separate `.map` file exists",
+          "isCorrect": false
+        },
+        {
+          "text": "Use webpack's `devtool: 'eval-source-map'` in production",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "The error tracker needs the map; visitors do not. Both working setups deliver the map to the tracker by upload and keep it off the public server.\n\nA *hidden* source map is an ordinary map without the `//# sourceMappingURL=` comment at the end of the JavaScript, so browsers never look for it. Deleting normal maps after upload also works. The leftover comment makes DevTools request a file that returns 404, which is harmless noise.\n\nInline maps are fully public. They embed the whole map as a base64 data URL inside `app.js`, shipping your source to every visitor and bloating the file. `eval-source-map` is a development setting: it wraps each module in `eval()` with its map attached, which is slow and exposes the source the same way.",
+      "references": "[Vite: build.sourcemap](https://vite.dev/config/build-options#build-sourcemap) · [webpack: devtool](https://webpack.js.org/configuration/devtool/)"
+    }
+  ]
+}
