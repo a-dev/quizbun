@@ -54,7 +54,7 @@ export function QuizDetail({
   backLabel,
   tagHref,
   renderPlayer,
-}: QuizDetailProps) {
+}: Readonly<QuizDetailProps>) {
   const { state, surface, enter, startHref, questionHref, exit, replace } = usePlayerRoute(quiz);
   const { status, answers, error, refresh, reset } = useRunStatus(source, quiz);
   const [resetDialogOpen, setResetDialogOpen] = useState(false);

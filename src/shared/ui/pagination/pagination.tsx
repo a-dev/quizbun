@@ -1,8 +1,7 @@
 import type { AriaAttributes, MouseEvent, ReactNode } from "react";
 
-import { MoveLeft, MoveRight } from "lucide-react";
-
 import { Button, LinkAsButton } from "@/shared/ui/button";
+import { LinkArrow } from "@/shared/ui/link-arrow";
 
 import { cx } from "#styles";
 import styles from "./pagination.module.css";
@@ -29,7 +28,7 @@ export function Pagination({
   hrefForPage,
   "aria-label": ariaLabel,
   className,
-}: PaginationProps) {
+}: Readonly<PaginationProps>) {
   if (pageCount <= 1) return null;
 
   const safeCurrentPage = clampPage(currentPage, pageCount);
@@ -51,7 +50,7 @@ export function Pagination({
       <div className={styles.controls}>
         <Control
           page={safeCurrentPage - 1}
-          variant="outline"
+          variant="ghost"
           size="m"
           disabled={safeCurrentPage === 1}
           ariaLabel="Previous page"
@@ -60,7 +59,8 @@ export function Pagination({
           changePage={changePage}
           handlePageClick={handlePageClick}
         >
-          <MoveLeft size="14" /> Previous
+          <LinkArrow size="14" length={1.2} motion="wobbly" direction="left" />
+          Previous
         </Control>
         <Control
           page={safeCurrentPage + 1}
@@ -74,7 +74,7 @@ export function Pagination({
           handlePageClick={handlePageClick}
         >
           Next
-          <MoveRight size="14" />
+          <LinkArrow size="14" length={1.2} motion="wobbly" direction="right" />
         </Control>
       </div>
       <ol className={styles.pages}>
@@ -173,7 +173,7 @@ function Control({
   hrefForPage,
   changePage,
   handlePageClick,
-}: ControlProps) {
+}: Readonly<ControlProps>) {
   if (disabled || hrefForPage === undefined) {
     return (
       <Button

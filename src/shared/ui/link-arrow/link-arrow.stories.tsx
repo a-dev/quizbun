@@ -30,6 +30,7 @@ const meta = {
   },
   args: {
     size: 18,
+    length: 1,
     motion: "bounce",
     direction: "right",
   },

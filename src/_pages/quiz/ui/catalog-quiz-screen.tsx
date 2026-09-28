@@ -22,7 +22,7 @@ export function CatalogQuizScreen({ quiz }: CatalogQuizScreenProps) {
       quiz={quiz}
       source="catalog"
       backHref={withBase("quizzes/")}
-      backLabel="Back to the Catalog"
+      backLabel="Back to the catalog"
       tagHref={(tag) => tagFilterHref("quizzes/", tag)}
       renderPlayer={renderPlayer}
     />

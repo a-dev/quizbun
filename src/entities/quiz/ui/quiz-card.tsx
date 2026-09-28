@@ -99,7 +99,7 @@ export function QuizCard({
         ) : (
           <a href={href} className={cx(typography.hLink, styles.titleLink)}>
             {renderMarkdownFieldText("quizTitle", summary.title)}
-            <LinkArrow size={18} motion="bounce" className={styles.arrowLink} />
+            <LinkArrow size={18} length={1.4} motion="bounce" className={styles.arrowLink} />
           </a>
         )}
       </h3>

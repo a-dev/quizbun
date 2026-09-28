@@ -1,7 +1,7 @@
 @layer ui {
   /*
-   * `--_reach` is how far the head travels, in viewBox units. The shaft is 14
-   * units long (x 5 → 19) and is scaled from its left end by the same amount,
+   * `--_reach` is how far the head travels, in viewBox units. The shaft is
+   * `--_shaft` units long (14 by default, x 5 → 19; more with `length`) and is scaled from its left end by the same amount,
    * so its tip stays under the head through every frame of the motion.
    *
    * The line stays one shape, with no overlapping copies: where antialiased
@@ -15,11 +15,19 @@
    */
   .root {
     --_reach: 0;
+    --_shaft: 14;
     --_ease: ease-out;
     --_duration: 0.4s;
+    --size: var(--_icon-size);
+    --offset: calc((1lh - var(--_icon-height, 18px)) / 2);
 
-    /* The motions overshoot past the 24-unit viewBox. */
+    transform: translateY(var(--offset));
+
     overflow: visible;
+    flex-shrink: 0;
+    align-self: start;
+
+    text-decoration: none;
   }
 
   /* Hits the end and rebounds twice, like a dropped ball. */
@@ -110,7 +118,7 @@
   .shaft {
     transform-origin: left center;
     transform-box: fill-box;
-    scale: calc(1 + var(--_reach) / 14) 1;
+    scale: calc(1 + var(--_reach) / var(--_shaft)) 1;
     transition: scale var(--_duration) var(--_ease);
   }
 

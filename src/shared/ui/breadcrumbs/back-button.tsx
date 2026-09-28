@@ -27,7 +27,7 @@ type Props = LinkProps | ButtonProps;
 export function BackButton({ text = "Back", className, ...props }: Props) {
   const content = (
     <>
-      <LinkArrow size={16} motion="wobbly" direction="left" className={styles.icon} />
+      <LinkArrow size={16} length={1.2} motion="wobbly" direction="left" className={styles.icon} />
       <span className={styles.text}>{text}</span>
     </>
   );

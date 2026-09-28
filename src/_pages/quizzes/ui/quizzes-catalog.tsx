@@ -3,15 +3,19 @@ import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import type { PublicQuizSummary, TagCount } from "@/shared/lib/content";
 import { useClientValue } from "@/shared/lib/hydration";
 import {
+  appendListSort,
   clampPage,
+  DEFAULT_LIST_SORT,
   hasActiveListFilters,
+  isDefaultListSort,
+  parseListSort,
   parseListUrlState,
   QUIZZES_PER_PAGE,
   stringifyListUrlState,
   tagFilterHref,
   withBase,
 } from "@/shared/lib/routing";
-import type { ListUrlState } from "@/shared/lib/routing";
+import type { ListSort, ListUrlState } from "@/shared/lib/routing";
 import { Pagination } from "@/shared/ui/pagination";
 
 import { QuizCard } from "@/entities/quiz";
@@ -22,6 +26,7 @@ import {
   prepareFilterItems,
   TagFilter,
 } from "@/features/filter-by-tags";
+import { sortQuizItems, SortToggle } from "@/features/sort-quizzes";
 
 import { layout } from "#styles";
 
@@ -31,6 +36,18 @@ interface QuizzesCatalogProps {
   tags: TagCount[];
   initialPage?: number;
   syncTagsToUrl?: boolean;
+}
+
+/** The shared list state plus the Sorting toggle. */
+interface CatalogUrlState extends ListUrlState {
+  sort: ListSort;
+}
+
+function readCatalogUrlState(availableTags: readonly string[]): CatalogUrlState {
+  return {
+    ...parseListUrlState(window.location.search, availableTags, readCatalogPathPage()),
+    sort: parseListSort(window.location.search),
+  };
 }
 
 /**
@@ -51,18 +68,24 @@ export function QuizzesCatalog({
     () => Object.fromEntries(tags.map(({ tag, count }) => [tag, count])),
     [tags],
   );
-  const [navigatedState, setNavigatedState] = useState<ListUrlState | undefined>(undefined);
+  const [navigatedState, setNavigatedState] = useState<CatalogUrlState | undefined>(undefined);
   // The server-rendered HTML can't know the request URL, so the real filter
   // state comes from the address bar as soon as the client takes over. Derived
   // during render rather than written from an effect, so the server's empty
   // filters are never committed to the screen for a frame. `syncsUrl` also
   // gates the history writes below: before hydration there is nothing to sync.
   const syncsUrl = useClientValue(() => true, false) && syncTagsToUrl;
-  const readUrlState = useMemo<ListUrlState>(
+  const readUrlState = useMemo<CatalogUrlState>(
     () =>
       syncsUrl
-        ? parseListUrlState(window.location.search, availableTags, readCatalogPathPage())
-        : { selectedTags: [], tagMatchMode: "and", titleQuery: "", page: initialPage },
+        ? readCatalogUrlState(availableTags)
+        : {
+            selectedTags: [],
+            tagMatchMode: "and",
+            titleQuery: "",
+            page: initialPage,
+            sort: DEFAULT_LIST_SORT,
+          },
     [availableTags, initialPage, syncsUrl],
   );
   // Every later change — a filter edit, a page click, Back/Forward — writes the
@@ -81,9 +104,7 @@ export function QuizzesCatalog({
     if (!syncsUrl) return;
 
     const onPopState = () => {
-      setNavigatedState(
-        parseListUrlState(window.location.search, availableTags, readCatalogPathPage()),
-      );
+      setNavigatedState(readCatalogUrlState(availableTags));
     };
 
     window.addEventListener("popstate", onPopState);
@@ -91,14 +112,26 @@ export function QuizzesCatalog({
     return () => window.removeEventListener("popstate", onPopState);
   }, [availableTags, syncsUrl]);
 
+  // Sort after filtering: a title query ranks by match quality, but the
+  // explicit Sorting toggle is what the reader asked for, so it wins.
   const visibleQuizzes = useMemo(
     () =>
-      filterQuizItems(preparedSummaries, {
-        selectedTags: urlState.selectedTags,
-        tagMatchMode: urlState.tagMatchMode,
-        titleQuery: deferredTitleQuery,
-      }),
-    [deferredTitleQuery, preparedSummaries, urlState.selectedTags, urlState.tagMatchMode],
+      sortQuizItems(
+        filterQuizItems(preparedSummaries, {
+          selectedTags: urlState.selectedTags,
+          tagMatchMode: urlState.tagMatchMode,
+          titleQuery: deferredTitleQuery,
+        }),
+        urlState.sort,
+        (summary) => Date.parse(summary.addedAt),
+      ),
+    [
+      deferredTitleQuery,
+      preparedSummaries,
+      urlState.selectedTags,
+      urlState.tagMatchMode,
+      urlState.sort,
+    ],
   );
   const pageCount = Math.ceil(visibleQuizzes.length / QUIZZES_PER_PAGE);
   // A page number can arrive out of range (a deep link to `/quizzes/page/9/`
@@ -115,7 +148,7 @@ export function QuizzesCatalog({
    * refine the current view and shouldn't stack Back entries); explicit page
    * navigation `pushState`, so Back returns to the previous page.
    */
-  function applyState(nextState: ListUrlState, history: "push" | "replace") {
+  function applyState(nextState: CatalogUrlState, history: "push" | "replace") {
     setNavigatedState(nextState);
 
     if (!syncsUrl) return;
@@ -132,9 +165,11 @@ export function QuizzesCatalog({
   // Two URL shapes: a filtered view is a query string on `/quizzes/`, while an
   // unfiltered view uses the canonical static `/quizzes/page/{n}/` path that also
   // exists as a prerendered route (shareable, crawlable, no JS required).
-  function catalogUrlForState(nextState: ListUrlState): string {
-    if (hasActiveListFilters(nextState)) {
-      return `${withBase("quizzes/")}${stringifyListUrlState(nextState, availableTags)}`;
+  function catalogUrlForState(nextState: CatalogUrlState): string {
+    if (hasActiveListFilters(nextState) || !isDefaultListSort(nextState.sort)) {
+      const query = stringifyListUrlState(nextState, availableTags);
+
+      return `${withBase("quizzes/")}${appendListSort(query, nextState.sort)}`;
     }
 
     return catalogPageHref(nextState.page);
@@ -142,7 +177,7 @@ export function QuizzesCatalog({
 
   // Any filter edit resets to page 1: the old page number rarely makes sense
   // against a freshly filtered, shorter result set.
-  function updateFilters(nextFilters: Partial<Omit<ListUrlState, "page">>) {
+  function updateFilters(nextFilters: Partial<Omit<CatalogUrlState, "page">>) {
     applyState({ ...urlState, ...nextFilters, page: 1 }, "replace");
   }
 
@@ -178,6 +213,8 @@ export function QuizzesCatalog({
         onTitleQueryChange={(titleQuery) => updateFilters({ titleQuery })}
         tagCounts={tagCounts}
       />
+
+      <SortToggle sort={urlState.sort} onSortChange={(sort) => updateFilters({ sort })} />
 
       {visibleQuizzes.length === 0 ? (
         <NoFilterMatches onClearFilters={clearFilters} />

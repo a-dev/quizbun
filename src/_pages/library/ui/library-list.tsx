@@ -6,13 +6,16 @@ import { messageFromError } from "@/shared/lib/errors";
 import { downloadQuizJson } from "@/shared/lib/quiz";
 import { renderMarkdownFieldText } from "@/shared/lib/render";
 import {
+  appendListSort,
   clampPage,
+  DEFAULT_LIST_SORT,
+  parseListSort,
   parseListUrlState,
   stringifyListUrlState,
   tagFilterHref,
   withBase,
 } from "@/shared/lib/routing";
-import type { ListUrlState } from "@/shared/lib/routing";
+import type { ListSort, ListUrlState } from "@/shared/lib/routing";
 import { deleteQuiz, getQuiz, listQuizzes } from "@/shared/lib/storage";
 import type { QuizSummary } from "@/shared/lib/storage";
 import { Button, LinkAsButton } from "@/shared/ui/button";
@@ -31,6 +34,7 @@ import {
   prepareFilterItems,
   TagFilter,
 } from "@/features/filter-by-tags";
+import { sortQuizItems, SortToggle } from "@/features/sort-quizzes";
 import { StorageDurability } from "@/features/storage-durability";
 
 import { layout } from "#styles";
@@ -44,12 +48,31 @@ type LoadState =
 const EMPTY_QUIZ_SUMMARIES: QuizSummary[] = [];
 const QUIZZES_PER_PAGE = 12;
 
-const INITIAL_URL_STATE: ListUrlState = {
+/** The shared list state plus the Sorting toggle. */
+interface LibraryUrlState extends ListUrlState {
+  sort: ListSort;
+}
+
+const INITIAL_URL_STATE: LibraryUrlState = {
   selectedTags: [],
   tagMatchMode: "and",
   titleQuery: "",
   page: 1,
+  sort: DEFAULT_LIST_SORT,
 };
+
+function readLibraryUrlState(availableTags: readonly string[]): LibraryUrlState {
+  return {
+    ...parseListUrlState(window.location.search, availableTags),
+    sort: parseListSort(window.location.search),
+  };
+}
+
+function libraryHref(state: LibraryUrlState, availableTags: readonly string[]): string {
+  const query = stringifyListUrlState(state, availableTags);
+
+  return `${withBase("library/")}${appendListSort(query, state.sort)}`;
+}
 
 /**
  * Pulls a page number back into range for the filters it travels with. The
@@ -58,9 +81,9 @@ const INITIAL_URL_STATE: ListUrlState = {
  * it.
  */
 function clampToResults(
-  nextState: ListUrlState,
+  nextState: LibraryUrlState,
   preparedQuizzes: ReturnType<typeof prepareFilterItems>,
-): ListUrlState {
+): LibraryUrlState {
   const matchCount = filterQuizItems(preparedQuizzes, {
     selectedTags: nextState.selectedTags,
     tagMatchMode: nextState.tagMatchMode,
@@ -73,7 +96,7 @@ function clampToResults(
 
 export function LibraryList() {
   const [state, setState] = useState<LoadState>({ status: "loading" });
-  const [urlState, setUrlState] = useState<ListUrlState>(INITIAL_URL_STATE);
+  const [urlState, setUrlState] = useState<LibraryUrlState>(INITIAL_URL_STATE);
   const deferredTitleQuery = useDeferredValue(urlState.titleQuery);
   const [hasReadUrl, setHasReadUrl] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<QuizSummary | undefined>(undefined);
@@ -83,12 +106,22 @@ export function LibraryList() {
   const preparedQuizzes = useMemo(() => prepareFilterItems(quizzes), [quizzes]);
   const visibleQuizzes = useMemo(
     () =>
-      filterQuizItems(preparedQuizzes, {
-        selectedTags: urlState.selectedTags,
-        tagMatchMode: urlState.tagMatchMode,
-        titleQuery: deferredTitleQuery,
-      }),
-    [deferredTitleQuery, preparedQuizzes, urlState.selectedTags, urlState.tagMatchMode],
+      sortQuizItems(
+        filterQuizItems(preparedQuizzes, {
+          selectedTags: urlState.selectedTags,
+          tagMatchMode: urlState.tagMatchMode,
+          titleQuery: deferredTitleQuery,
+        }),
+        urlState.sort,
+        (quiz) => quiz.importedAt,
+      ),
+    [
+      deferredTitleQuery,
+      preparedQuizzes,
+      urlState.selectedTags,
+      urlState.tagMatchMode,
+      urlState.sort,
+    ],
   );
   const pageCount = Math.ceil(visibleQuizzes.length / QUIZZES_PER_PAGE);
   const currentPage = clampPage(urlState.page, Math.max(pageCount, 1));
@@ -101,7 +134,7 @@ export function LibraryList() {
     if (!hasReadUrl) return;
 
     const onPopState = () => {
-      setUrlState(parseListUrlState(window.location.search, availableTags));
+      setUrlState(readLibraryUrlState(availableTags));
     };
 
     window.addEventListener("popstate", onPopState);
@@ -127,7 +160,7 @@ export function LibraryList() {
       // The server-rendered shell can't know the request URL, and the URL's Tag
       // slugs only resolve against the Tags that exist — so the first read has
       // to wait for the Library to load.
-      const parsedState = parseListUrlState(window.location.search, collectTags(loadedQuizzes));
+      const parsedState = readLibraryUrlState(collectTags(loadedQuizzes));
       const nextState = clampToResults(parsedState, loadedPrepared);
 
       setUrlState(nextState);
@@ -157,18 +190,18 @@ export function LibraryList() {
         // slugs only resolve against the Tags that exist — so the first read has
         // to wait for the Library to load.
         const loadedPrepared = prepareFilterItems(loadedQuizzes);
-        const parsedState = parseListUrlState(window.location.search, collectTags(loadedQuizzes));
+        const parsedState = readLibraryUrlState(collectTags(loadedQuizzes));
         const nextState = clampToResults(parsedState, loadedPrepared);
 
         setUrlState(nextState);
         setHasReadUrl(true);
 
         if (nextState.page !== parsedState.page) {
-          const href = `${withBase("library/")}${stringifyListUrlState(
-            nextState,
-            collectTags(loadedQuizzes),
-          )}`;
-          window.history.replaceState(window.history.state, "", href);
+          window.history.replaceState(
+            window.history.state,
+            "",
+            libraryHref(nextState, collectTags(loadedQuizzes)),
+          );
         }
       })
       .catch((error: unknown) => {
@@ -225,8 +258,8 @@ export function LibraryList() {
     });
   }
 
-  function libraryUrlForState(nextState: ListUrlState): string {
-    return `${withBase("library/")}${stringifyListUrlState(nextState, availableTags)}`;
+  function libraryUrlForState(nextState: LibraryUrlState): string {
+    return libraryHref(nextState, availableTags);
   }
 
   /**
@@ -234,7 +267,7 @@ export function LibraryList() {
    * refine the current view and shouldn't stack Back entries); explicit page
    * navigation `pushState`, so Back returns to the previous page.
    */
-  function applyState(nextState: ListUrlState, history: "push" | "replace") {
+  function applyState(nextState: LibraryUrlState, history: "push" | "replace") {
     setUrlState(nextState);
 
     if (!hasReadUrl) return;
@@ -248,7 +281,7 @@ export function LibraryList() {
     }
   }
 
-  function updateFilters(nextFilters: Partial<Omit<ListUrlState, "page">>) {
+  function updateFilters(nextFilters: Partial<Omit<LibraryUrlState, "page">>) {
     applyState({ ...urlState, ...nextFilters, page: 1 }, "replace");
   }
 
@@ -295,6 +328,9 @@ export function LibraryList() {
           titleQuery={urlState.titleQuery}
           onTitleQueryChange={(titleQuery) => updateFilters({ titleQuery })}
         />
+      )}
+      {state.quizzes.length > 2 && (
+        <SortToggle sort={urlState.sort} onSortChange={(sort) => updateFilters({ sort })} />
       )}
 
       {actionError !== undefined && <Note type="error">{actionError}</Note>}
