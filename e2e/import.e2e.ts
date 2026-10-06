@@ -1,6 +1,12 @@
 import { expect, test, type Page } from "@playwright/test";
 
-import { changedContentHashQuiz, contentHashQuiz, singleChoiceQuiz } from "./fixtures/quizzes";
+import { pasteQuizJson, quizLinkPath } from "./fixtures/quiz-link";
+import {
+  changedContentHashQuiz,
+  contentHashQuiz,
+  makeQuiz,
+  singleChoiceQuiz,
+} from "./fixtures/quizzes";
 import { questionGroup } from "./fixtures/player";
 import { seedQuiz } from "./fixtures/seed";
 
@@ -108,4 +114,63 @@ test("Import invalidates only changed Questions when Content hashes differ", asy
   await expect(editedQuestion).toContainText("Which letter follows A");
   await expect(editedQuestion.getByRole("radio").first()).toBeEnabled();
   await expect(editedQuestion.getByRole("button", { name: "Submit" })).toBeDisabled();
+});
+
+test("A Quiz link opens in Import, saves, and plays", async ({ page }) => {
+  await page.goto(await quizLinkPath(singleChoiceQuiz));
+
+  await expect(page.getByRole("article", { name: singleChoiceQuiz.title })).toBeVisible();
+  // The fragment is cleared right away; nothing is saved until the explicit click.
+  expect(page.url()).not.toContain("qos");
+
+  await page.getByRole("button", { name: "Save to Library" }).click();
+
+  await expect(page).toHaveURL(/\/library\/quiz\/\?id=e2e-single-choice$/);
+
+  await page.getByRole("button", { name: "Start" }).click();
+  await page.getByRole("radio", { name: "0" }).check();
+  await page.getByRole("button", { name: "Submit" }).click();
+
+  await expect(questionGroup(page, 1).getByRole("status")).toContainText("Correct!");
+});
+
+test("Back after saving a linked Quiz does not bring the link payload back", async ({ page }) => {
+  await page.goto(await quizLinkPath(singleChoiceQuiz));
+  await page.getByRole("button", { name: "Save to Library" }).click();
+  await expect(page).toHaveURL(/\/library\/quiz\/\?id=e2e-single-choice$/);
+
+  await page.goBack();
+
+  await expect(page).toHaveURL(/\/import\/$/);
+  expect(page.url()).not.toContain("qos");
+});
+
+test("A link to a 200-Question Quiz previews and saves", async ({ page }) => {
+  const quiz = makeQuiz(200);
+
+  await page.goto(await quizLinkPath(quiz));
+
+  await expect(page.getByRole("article", { name: quiz.title })).toBeVisible();
+
+  await page.getByRole("button", { name: "Save to Library" }).click();
+
+  await expect(page).toHaveURL(new RegExp(`/library/quiz/\\?id=${quiz.id}$`));
+});
+
+test("A 201-Question Quiz gets the same Question-count report from a link and from a paste", async ({
+  page,
+}) => {
+  const quiz = makeQuiz(201);
+  const report = page.getByRole("alert");
+
+  await page.goto(await quizLinkPath(quiz));
+  await expect(report).toContainText("201 Questions; Quizbun imports up to 200");
+  const reportFromLink = (await report.textContent()) ?? "";
+
+  await page.goto("/import/");
+  await pasteQuizJson(page, quiz);
+  await page.getByRole("button", { name: "Validate" }).click();
+
+  await expect(report).toContainText("201 Questions; Quizbun imports up to 200");
+  await expect(report).toHaveText(reportFromLink);
 });

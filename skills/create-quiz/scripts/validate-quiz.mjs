@@ -1127,9 +1127,9 @@ class DomHandler {
         lastNode.endIndex = this.parser.endIndex;
       }
     } else {
-      const node2 = new Text2(data);
-      this.addNode(node2);
-      this.lastNode = node2;
+      const node = new Text2(data);
+      this.addNode(node);
+      this.lastNode = node;
     }
   }
   oncomment(data) {
@@ -1137,26 +1137,26 @@ class DomHandler {
       this.lastNode.data += data;
       return;
     }
-    const node2 = new Comment2(data);
-    this.addNode(node2);
-    this.lastNode = node2;
+    const node = new Comment2(data);
+    this.addNode(node);
+    this.lastNode = node;
   }
   oncommentend() {
     this.lastNode = null;
   }
   oncdatastart() {
     const text = new Text2("");
-    const node2 = new CDATA2([text]);
-    this.addNode(node2);
-    text.parent = node2;
+    const node = new CDATA2([text]);
+    this.addNode(node);
+    text.parent = node;
     this.lastNode = text;
   }
   oncdataend() {
     this.lastNode = null;
   }
   onprocessinginstruction(name, data) {
-    const node2 = new ProcessingInstruction(name, data);
-    this.addNode(node2);
+    const node = new ProcessingInstruction(name, data);
+    this.addNode(node);
   }
   handleCallback(error) {
     if (typeof this.callback === "function") {
@@ -1165,21 +1165,21 @@ class DomHandler {
       throw error;
     }
   }
-  addNode(node2) {
+  addNode(node) {
     const parent = this.tagStack[this.tagStack.length - 1];
     const previousSibling = parent.children[parent.children.length - 1];
     if (this.options.withStartIndices && this.parser) {
-      node2.startIndex = this.parser.startIndex;
+      node.startIndex = this.parser.startIndex;
     }
     if (this.options.withEndIndices && this.parser) {
-      node2.endIndex = this.parser.endIndex;
+      node.endIndex = this.parser.endIndex;
     }
-    parent.children.push(node2);
+    parent.children.push(node);
     if (previousSibling) {
-      node2.prev = previousSibling;
-      previousSibling.next = node2;
+      node.prev = previousSibling;
+      previousSibling.next = node;
     }
-    node2.parent = parent;
+    node.parent = parent;
     this.lastNode = null;
   }
 }
@@ -11980,716 +11980,6 @@ var mn = k.walkTokens;
 var xn = k.parseInline;
 var Rn = T.parse;
 var Tn = R.lex;
-
-// src/shared/lib/render/markdown.ts
-init_dist3();
-init_dist4();
-init_dist6();
-
-// stub-prismjs:prismjs
-var prismjs_default = { highlight: (code) => code, languages: {} };
-
-// src/shared/lib/render/markdown.ts
-var import_sanitize_html = __toESM(require_sanitize_html(), 1);
-var MARKDOWN_OPTIONS = {
-  async: false,
-  breaks: false,
-  gfm: true
-};
-var INLINE_TAGS = ["a", "br", "code", "em", "strong"];
-var BLOCK_TAGS = [
-  "blockquote",
-  "h1",
-  "h2",
-  "h3",
-  "h4",
-  "li",
-  "ol",
-  "p",
-  "pre",
-  "table",
-  "tbody",
-  "td",
-  "th",
-  "thead",
-  "tr",
-  "ul"
-];
-var PLAIN_TEXT_BLOCK_TAGS = new Set(BLOCK_TAGS);
-var LANGUAGE_CLASS_PATTERN = /^language-[a-z0-9-]+$/;
-var TOKEN_CLASS_PATTERN = /^[a-z][a-z0-9-]*$/;
-var PRISM_LANGUAGE_BY_MARKDOWN_LANGUAGE = {
-  bash: "bash",
-  css: "css",
-  html: "markup",
-  javascript: "javascript",
-  js: "javascript",
-  json: "json",
-  jsx: "jsx",
-  py: "python",
-  python: "python",
-  sh: "bash",
-  shell: "bash",
-  sql: "sql",
-  ts: "typescript",
-  tsx: "tsx",
-  typescript: "typescript"
-};
-var transformAnchor = (_tagName, attribs) => {
-  const href = attribs.href?.trim();
-  if (!href) {
-    return {
-      attribs: {},
-      tagName: "a"
-    };
-  }
-  const transformedAttribs = { href };
-  if (/^https?:\/\//i.test(href)) {
-    transformedAttribs.rel = "noreferrer";
-  }
-  return {
-    attribs: transformedAttribs,
-    tagName: "a"
-  };
-};
-var INLINE_SANITIZE_OPTIONS = {
-  allowedAttributes: {
-    a: ["href", "rel"]
-  },
-  allowedSchemes: ["http", "https", "mailto"],
-  allowedTags: [...INLINE_TAGS],
-  allowProtocolRelative: false,
-  transformTags: {
-    a: transformAnchor
-  }
-};
-var SANITIZE_OPTIONS = {
-  allowedAttributes: {
-    a: ["href", "rel"],
-    code: ["class"]
-  },
-  allowedClasses: {
-    code: [LANGUAGE_CLASS_PATTERN]
-  },
-  allowedSchemes: ["http", "https", "mailto"],
-  allowedTags: [...INLINE_TAGS, ...BLOCK_TAGS],
-  allowProtocolRelative: false,
-  transformTags: {
-    a: transformAnchor,
-    h1: (_tagName, attribs) => ({
-      attribs,
-      tagName: "h2"
-    })
-  }
-};
-var HIGHLIGHTED_SANITIZE_OPTIONS = {
-  ...SANITIZE_OPTIONS,
-  allowedAttributes: {
-    a: ["href", "rel"],
-    code: ["class"],
-    pre: ["class"],
-    span: ["class"]
-  },
-  allowedClasses: {
-    code: [LANGUAGE_CLASS_PATTERN],
-    pre: [LANGUAGE_CLASS_PATTERN],
-    span: [TOKEN_CLASS_PATTERN]
-  },
-  allowedTags: [...INLINE_TAGS, "span", ...BLOCK_TAGS]
-};
-function markdownToSafeHtml(markdown) {
-  if (markdown.trim().length === 0) {
-    return "";
-  }
-  const safeHtml = import_sanitize_html.default(k.parse(markdown, MARKDOWN_OPTIONS), SANITIZE_OPTIONS);
-  return highlightCodeBlocks(safeHtml);
-}
-function renderMarkdown(markdown) {
-  return addHeadingIds(markdownToSafeHtml(markdown));
-}
-function renderInlineMarkdown(markdown) {
-  if (markdown.trim().length === 0) {
-    return "";
-  }
-  return import_sanitize_html.default(k.parseInline(markdown, MARKDOWN_OPTIONS), INLINE_SANITIZE_OPTIONS);
-}
-function highlightCodeBlocks(html) {
-  if (!html.includes("<pre")) {
-    return html;
-  }
-  const nodes = parseHtmlFragment(html);
-  highlightCodeBlocksInNodes(nodes);
-  return import_sanitize_html.default(renderHtmlFragment(nodes), HIGHLIGHTED_SANITIZE_OPTIONS);
-}
-function highlightCodeBlocksInNodes(nodes) {
-  for (const node of nodes) {
-    if (!isTag2(node)) {
-      continue;
-    }
-    if (node.name === "pre") {
-      highlightPreCodeBlock(node);
-      continue;
-    }
-    if (hasChildren(node)) {
-      highlightCodeBlocksInNodes(node.children);
-    }
-  }
-}
-function highlightPreCodeBlock(pre) {
-  const code = pre.children.find((child) => isTag2(child) && child.name === "code");
-  if (code === undefined) {
-    return;
-  }
-  const markdownLanguage = getMarkdownCodeLanguage(code.attribs.class);
-  if (markdownLanguage === undefined) {
-    return;
-  }
-  const prismLanguage = PRISM_LANGUAGE_BY_MARKDOWN_LANGUAGE[markdownLanguage];
-  const grammar = prismjs_default.languages[prismLanguage];
-  if (grammar === undefined) {
-    return;
-  }
-  const languageClass = `language-${markdownLanguage}`;
-  const highlightedHtml = prismjs_default.highlight(extractText(code.children, { separateBlocks: false }), grammar, prismLanguage);
-  pre.attribs.class = languageClass;
-  code.attribs.class = languageClass;
-  code.children = parseHtmlFragment(highlightedHtml);
-}
-function getMarkdownCodeLanguage(className) {
-  const language = className?.split(/\s+/).map((part) => part.match(/^language-([a-z0-9-]+)$/)?.[1]).find((part) => part !== undefined && (part in PRISM_LANGUAGE_BY_MARKDOWN_LANGUAGE));
-  return language;
-}
-function createHeadingSlug(text) {
-  const baseSlug = text.replace(/<[^<>]+>/g, " ").toLowerCase().trim().replace(/&[a-z0-9#]+;/gi, " ").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-  return baseSlug.length > 0 ? baseSlug : "section";
-}
-function addHeadingIds(html) {
-  const seenHeadings = new Map;
-  return html.replace(/<h([1-6])>(.*?)<\/h\1>/g, (_match, level, content) => {
-    const baseSlug = createHeadingSlug(content);
-    const duplicateCount = seenHeadings.get(baseSlug) ?? 0;
-    const nextCount = duplicateCount + 1;
-    seenHeadings.set(baseSlug, nextCount);
-    const slug = nextCount === 1 ? baseSlug : `${baseSlug}-${nextCount}`;
-    return `<h${level} id="${slug}">${content}</h${level}>`;
-  });
-}
-function parseHtmlFragment(html) {
-  return parseDocument(html, { decodeEntities: true }).children;
-}
-function renderHtmlFragment(nodes) {
-  return dist_default(nodes, { encodeEntities: "utf8" });
-}
-function extractText(nodes, options) {
-  let text = "";
-  for (const node of nodes) {
-    if (isText(node)) {
-      text += node.data;
-      continue;
-    }
-    if (isTag2(node) && node.name === "br") {
-      text += `
-`;
-      continue;
-    }
-    if (!hasChildren(node)) {
-      continue;
-    }
-    const inner = extractText(node.children, options);
-    text += options.separateBlocks && isTag2(node) && PLAIN_TEXT_BLOCK_TAGS.has(node.name) ? `
-${inner}
-` : inner;
-  }
-  return text;
-}
-// src/shared/lib/render/tiers.ts
-var MARKDOWN_FIELD_TIERS = {
-  acceptedAnswerDisplay: "inline",
-  explanation: "full",
-  imageCaption: "inline",
-  optionText: "inline",
-  questionDescription: "full",
-  questionReferences: "full",
-  questionTitle: "inline",
-  quizDescription: "full",
-  quizTitle: "inline",
-  tag: "plain"
-};
-function escapeHtml(text) {
-  return text.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;");
-}
-function renderMarkdownField(field, value) {
-  switch (MARKDOWN_FIELD_TIERS[field]) {
-    case "full":
-      return renderMarkdown(value);
-    case "inline":
-      return renderInlineMarkdown(value);
-    case "plain":
-      return escapeHtml(value);
-  }
-}
-// src/shared/lib/content/catalog-profile.ts
-function checkCatalogProfile(quiz) {
-  const issues = [];
-  if (quiz.description === undefined) {
-    issues.push({
-      severity: "error",
-      path: "description",
-      problem: "The Public catalog profile requires a `description`.",
-      fix: "Add a short `description` explaining what the quiz covers and who it is for."
-    });
-  }
-  if (quiz.language === undefined) {
-    issues.push({
-      severity: "error",
-      path: "language",
-      problem: "The Public catalog profile requires a `language`.",
-      fix: 'Add a BCP-47 `language` tag such as `"en"`.'
-    });
-  }
-  if (quiz.tags.length === 0) {
-    issues.push({
-      severity: "error",
-      path: "tags",
-      problem: "The Public catalog profile requires at least one Tag.",
-      fix: "Add one or more kebab-case Tags so the quiz is discoverable in the Catalog filter."
-    });
-  }
-  issues.push(...checkRepeatedImageCaptions(quiz));
-  for (const entry of listMarkdownFields(quiz)) {
-    issues.push(...checkMarkdownField(entry));
-  }
-  return issues;
-}
-function checkRepeatedImageCaptions(quiz) {
-  const issues = [];
-  const firstPathByCaption = new Map;
-  for (const [questionIndex, question] of quiz.questions.entries()) {
-    for (const [imageIndex, image] of (question.images ?? []).entries()) {
-      if (image.caption === undefined)
-        continue;
-      const path = `questions[${questionIndex}].images[${imageIndex}].caption`;
-      const firstPath = firstPathByCaption.get(image.caption);
-      if (firstPath === undefined) {
-        firstPathByCaption.set(image.caption, path);
-        continue;
-      }
-      issues.push({
-        severity: "error",
-        path,
-        problem: `The Image caption repeats the caption at \`${firstPath}\`.`,
-        fix: "Use a different Image, or rewrite this caption to explain what the learner should notice here."
-      });
-    }
-  }
-  return issues;
-}
-function formatProfileIssues(fileLabel, issues) {
-  const reports = issues.map((issue, index) => [
-    `${index + 1}. ${issue.severity === "warning" ? "Warning" : "Problem"} at path: \`${issue.path}\``,
-    `   Problem: ${issue.problem}`,
-    `   Fix: ${issue.fix}`
-  ].join(`
-`));
-  return [
-    `Public quiz does not satisfy the Public catalog profile in ${fileLabel}:`,
-    "",
-    ...reports
-  ].join(`
-`);
-}
-function checkMarkdownField(entry) {
-  const issues = [];
-  const tokens = k.lexer(entry.value);
-  if (containsRawHtml(tokens)) {
-    issues.push({
-      severity: "error",
-      path: entry.path,
-      problem: "Raw HTML in the source text. The renderer always strips it.",
-      fix: "Rewrite the HTML as Markdown (e.g. `**bold**`, `` `code` ``, `[text](url)`)."
-    });
-  }
-  if (MARKDOWN_FIELD_TIERS[entry.field] === "inline" && containsBlockMarkdown(tokens)) {
-    issues.push({
-      severity: "warning",
-      path: entry.path,
-      problem: "Block Markdown (headings, lists, code blocks, or multiple paragraphs) in a short field. It degrades to literal text.",
-      fix: "Keep short fields to one line of inline Markdown, or move the long content to `description` / `explanation`."
-    });
-  }
-  if (renderMarkdownField(entry.field, entry.value).trim().length === 0) {
-    issues.push({
-      severity: "error",
-      path: entry.path,
-      problem: "The field is empty after Markdown rendering and sanitization.",
-      fix: "Replace the content with text that survives sanitization (no raw-HTML-only values)."
-    });
-  }
-  return issues;
-}
-function* listMarkdownFields(quiz) {
-  yield { field: "quizTitle", path: "title", value: quiz.title };
-  if (quiz.description !== undefined) {
-    yield { field: "quizDescription", path: "description", value: quiz.description };
-  }
-  for (const [index, question] of quiz.questions.entries()) {
-    const questionPath = `questions[${index}]`;
-    yield { field: "questionTitle", path: `${questionPath}.title`, value: question.title };
-    if (question.description !== undefined) {
-      yield {
-        field: "questionDescription",
-        path: `${questionPath}.description`,
-        value: question.description
-      };
-    }
-    yield {
-      field: "explanation",
-      path: `${questionPath}.explanation`,
-      value: question.explanation
-    };
-    if (question.type === "single-choice" || question.type === "multiple-choice") {
-      for (const [optionIndex, option] of question.options.entries()) {
-        yield {
-          field: "optionText",
-          path: `${questionPath}.options[${optionIndex}].text`,
-          value: option.text
-        };
-      }
-    }
-    if (question.type === "input" && question.validation.mode === "text") {
-      for (const [answerIndex, answer] of question.validation.acceptedAnswers.entries()) {
-        yield {
-          field: "acceptedAnswerDisplay",
-          path: `${questionPath}.validation.acceptedAnswers[${answerIndex}]`,
-          value: answer
-        };
-      }
-    }
-  }
-}
-function containsRawHtml(tokens) {
-  return tokens.some((token) => {
-    if (token.type === "html") {
-      return true;
-    }
-    if ("tokens" in token && token.tokens !== undefined && containsRawHtml(token.tokens)) {
-      return true;
-    }
-    return "items" in token && containsRawHtml(token.items);
-  });
-}
-var INLINE_SAFE_BLOCK_TOKEN_TYPES = new Set(["paragraph", "space", "text"]);
-function containsBlockMarkdown(tokens) {
-  const blockTokens = tokens.filter((token) => token.type !== "space");
-  if (blockTokens.length > 1) {
-    return true;
-  }
-  return blockTokens.some((token) => !INLINE_SAFE_BLOCK_TOKEN_TYPES.has(token.type));
-}
-// src/shared/lib/content/image-dimensions.ts
-import { readFileSync } from "node:fs";
-import { extname } from "node:path";
-var SUPPORTED_EXTENSIONS = [".avif", ".gif", ".jpeg", ".jpg", ".png", ".svg", ".webp"];
-var PIXELS_PER_UNIT = {
-  "": 1,
-  cm: 96 / 2.54,
-  in: 96,
-  mm: 96 / 25.4,
-  pc: 16,
-  pt: 96 / 72,
-  px: 1,
-  q: 96 / 25.4 / 4
-};
-function isSupportedImageExtension(fileName) {
-  return SUPPORTED_EXTENSIONS.includes(extname(fileName).toLowerCase());
-}
-function readImageDimensions(filePath) {
-  const extension = extname(filePath).toLowerCase();
-  if (!isSupportedImageExtension(filePath)) {
-    throw new Error(`Cannot measure "${extension || filePath}": supported formats are ${SUPPORTED_EXTENSIONS.join(", ")}.`);
-  }
-  const bytes = readFileSync(filePath);
-  if (extension === ".svg") {
-    return parseSvgDimensions(bytes.toString("utf8"));
-  }
-  if (extension === ".png")
-    return parsePngDimensions(bytes);
-  if (extension === ".gif")
-    return parseGifDimensions(bytes);
-  if (extension === ".webp")
-    return parseWebpDimensions(bytes);
-  if (extension === ".avif")
-    return parseAvifDimensions(bytes);
-  return parseJpegDimensions(bytes);
-}
-function parseSvgDimensions(source) {
-  const rootTag = findSvgRootTag(source);
-  if (rootTag === undefined) {
-    throw new Error("SVG has no root `<svg>` element.");
-  }
-  const width = parseSvgLength(readAttribute(rootTag, "width"));
-  const height = parseSvgLength(readAttribute(rootTag, "height"));
-  if (width !== undefined && height !== undefined) {
-    return toDimensions(width, height);
-  }
-  const viewBox = readAttribute(rootTag, "viewBox");
-  const viewBoxNumbers = viewBox?.trim().split(/[\s,]+/).map(Number);
-  if (viewBoxNumbers?.length === 4 && viewBoxNumbers.every((value) => Number.isFinite(value))) {
-    const [, , viewBoxWidth, viewBoxHeight] = viewBoxNumbers;
-    if (viewBoxWidth > 0 && viewBoxHeight > 0) {
-      return toDimensions(viewBoxWidth, viewBoxHeight);
-    }
-  }
-  throw new Error("SVG has no intrinsic size: add a `viewBox`, or `width` and `height` in absolute units.");
-}
-var PNG_SIGNATURE = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
-function parsePngDimensions(bytes) {
-  const hasSignature = bytes.length >= 24 && bytes.subarray(0, 8).equals(PNG_SIGNATURE);
-  if (!hasSignature || bytes.subarray(12, 16).toString("latin1") !== "IHDR") {
-    throw new Error("PNG is missing its signature or IHDR header chunk.");
-  }
-  return toDimensions(bytes.readUInt32BE(16), bytes.readUInt32BE(20));
-}
-function parseGifDimensions(bytes) {
-  const header = bytes.length >= 10 ? bytes.subarray(0, 6).toString("latin1") : "";
-  if (header !== "GIF87a" && header !== "GIF89a") {
-    throw new Error("GIF is missing its `GIF87a`/`GIF89a` header.");
-  }
-  return toDimensions(bytes.readUInt16LE(6), bytes.readUInt16LE(8));
-}
-function parseJpegDimensions(bytes) {
-  if (bytes.length < 4 || bytes.readUInt16BE(0) !== 65496) {
-    throw new Error("JPEG is missing its Start-of-Image marker.");
-  }
-  let offset = 2;
-  while (offset < bytes.length) {
-    const next = readNextMarker(bytes, offset);
-    if (next === undefined)
-      break;
-    const { marker } = next;
-    offset = next.offset;
-    if (isStandaloneMarker(marker))
-      continue;
-    if (offset + 2 > bytes.length)
-      break;
-    if (marker === 218)
-      break;
-    if (isStartOfFrameMarker(marker))
-      return readStartOfFrame(bytes, offset);
-    offset += bytes.readUInt16BE(offset);
-  }
-  throw new Error("JPEG has no Start-of-Frame segment.");
-}
-function parseWebpDimensions(bytes) {
-  const isRiffWebp = bytes.length >= 16 && bytes.subarray(0, 4).toString("latin1") === "RIFF" && bytes.subarray(8, 12).toString("latin1") === "WEBP";
-  if (!isRiffWebp) {
-    throw new Error("WebP is missing its RIFF/WEBP header.");
-  }
-  let offset = 12;
-  while (offset + 8 <= bytes.length) {
-    const chunkType = bytes.subarray(offset, offset + 4).toString("latin1");
-    const chunkSize = bytes.readUInt32LE(offset + 4);
-    const data = offset + 8;
-    const dimensions = readWebpImageChunk(bytes, chunkType, data);
-    if (dimensions !== undefined)
-      return dimensions;
-    offset = data + chunkSize + chunkSize % 2;
-  }
-  throw new Error("WebP has no `VP8X`, `VP8 `, or `VP8L` chunk.");
-}
-function readWebpImageChunk(bytes, chunkType, data) {
-  if (chunkType === "VP8X" && data + 10 <= bytes.length) {
-    return toDimensions(readUInt24LE(bytes, data + 4) + 1, readUInt24LE(bytes, data + 7) + 1);
-  }
-  if (chunkType === "VP8 " && data + 10 <= bytes.length) {
-    const hasKeyFrameSignature = bytes[data + 3] === 157 && bytes[data + 4] === 1 && bytes[data + 5] === 42;
-    if (!hasKeyFrameSignature) {
-      throw new Error("WebP `VP8 ` chunk has no key-frame header.");
-    }
-    return toDimensions(bytes.readUInt16LE(data + 6) & 16383, bytes.readUInt16LE(data + 8) & 16383);
-  }
-  if (chunkType === "VP8L" && data + 5 <= bytes.length) {
-    if (bytes[data] !== 47) {
-      throw new Error("WebP `VP8L` chunk has no lossless signature byte.");
-    }
-    const header = bytes.readUInt32LE(data + 1);
-    return toDimensions((header & 16383) + 1, (header >>> 14 & 16383) + 1);
-  }
-  return;
-}
-function parseAvifDimensions(bytes) {
-  const meta = findBox(bytes, 0, bytes.length, "meta");
-  if (meta === undefined) {
-    throw new Error("AVIF has no `meta` box.");
-  }
-  const metaChildrenStart = meta.contentStart + 4;
-  const properties = findBox(bytes, metaChildrenStart, meta.contentEnd, "iprp");
-  const propertyContainer = properties && findBox(bytes, properties.contentStart, properties.contentEnd, "ipco");
-  if (!properties || !propertyContainer) {
-    throw new Error("AVIF has no `iprp`/`ipco` property boxes.");
-  }
-  const propertyBoxes = listBoxes(bytes, propertyContainer.contentStart, propertyContainer.contentEnd);
-  const primaryItemId = readPrimaryItemId(bytes, metaChildrenStart, meta.contentEnd);
-  const association = findBox(bytes, properties.contentStart, properties.contentEnd, "ipma");
-  const associatedIndexes = association && primaryItemId !== undefined ? readPropertyIndexes(bytes, association, primaryItemId) : undefined;
-  const spatialExtents = associatedIndexes?.map((index) => propertyBoxes[index - 1]).find((box) => box?.type === "ispe") ?? propertyBoxes.find((box) => box.type === "ispe");
-  if (spatialExtents === undefined || spatialExtents.contentStart + 12 > bytes.length) {
-    throw new Error("AVIF has no `ispe` box for its primary item.");
-  }
-  return toDimensions(bytes.readUInt32BE(spatialExtents.contentStart + 4), bytes.readUInt32BE(spatialExtents.contentStart + 8));
-}
-function listBoxes(bytes, start, end) {
-  const boxes = [];
-  let offset = start;
-  while (offset + 8 <= end) {
-    const box = readBox(bytes, offset, end);
-    if (box === undefined)
-      break;
-    boxes.push(box);
-    offset = box.end;
-  }
-  return boxes;
-}
-function findBox(bytes, start, end, type) {
-  return listBoxes(bytes, start, end).find((box) => box.type === type);
-}
-function readBox(bytes, offset, end) {
-  const declaredSize = bytes.readUInt32BE(offset);
-  const type = bytes.subarray(offset + 4, offset + 8).toString("latin1");
-  let contentStart = offset + 8;
-  let size = declaredSize;
-  if (declaredSize === 1) {
-    if (offset + 16 > end)
-      return;
-    const high = bytes.readUInt32BE(offset + 8);
-    if (high !== 0)
-      return;
-    size = bytes.readUInt32BE(offset + 12);
-    contentStart = offset + 16;
-  } else if (declaredSize === 0) {
-    size = end - offset;
-  }
-  const boxEnd = offset + size;
-  if (size < contentStart - offset || boxEnd > end)
-    return;
-  return { contentEnd: boxEnd, contentStart, end: boxEnd, type };
-}
-function readPrimaryItemId(bytes, start, end) {
-  const primaryItem = findBox(bytes, start, end, "pitm");
-  if (primaryItem === undefined)
-    return;
-  const version = bytes[primaryItem.contentStart];
-  const idStart = primaryItem.contentStart + 4;
-  if (version === 0) {
-    return idStart + 2 <= end ? bytes.readUInt16BE(idStart) : undefined;
-  }
-  return idStart + 4 <= end ? bytes.readUInt32BE(idStart) : undefined;
-}
-function readPropertyIndexes(bytes, association, itemId) {
-  const version = bytes[association.contentStart] ?? 0;
-  const flags = readUInt24BE(bytes, association.contentStart + 1);
-  const usesWideIndexes = (flags & 1) === 1;
-  let offset = association.contentStart + 4;
-  if (offset + 4 > association.contentEnd)
-    return;
-  const entryCount = bytes.readUInt32BE(offset);
-  offset += 4;
-  for (let entry = 0;entry < entryCount; entry += 1) {
-    if (offset + 3 > association.contentEnd)
-      return;
-    const entryItemId = version < 1 ? bytes.readUInt16BE(offset) : bytes.readUInt32BE(offset);
-    offset += version < 1 ? 2 : 4;
-    const associationCount = bytes[offset] ?? 0;
-    offset += 1;
-    const entryIndexes = readAssociationIndexes(bytes, association.contentEnd, offset, associationCount, usesWideIndexes);
-    if (entryIndexes === undefined)
-      return;
-    offset = entryIndexes.end;
-    if (entryItemId === itemId)
-      return entryIndexes.indexes;
-  }
-  return;
-}
-function readAssociationIndexes(bytes, contentEnd, start, count, usesWideIndexes) {
-  const indexes = [];
-  let offset = start;
-  for (let index = 0;index < count; index += 1) {
-    if (offset >= contentEnd)
-      return;
-    if (usesWideIndexes) {
-      indexes.push(bytes.readUInt16BE(offset) & 32767);
-      offset += 2;
-    } else {
-      indexes.push((bytes[offset] ?? 0) & 127);
-      offset += 1;
-    }
-  }
-  return { end: offset, indexes };
-}
-function readNextMarker(bytes, start) {
-  if (bytes[start] !== 255) {
-    throw new Error(`JPEG marker segment expected at byte ${start}.`);
-  }
-  let offset = start;
-  while (offset < bytes.length && bytes[offset] === 255)
-    offset += 1;
-  const marker = bytes[offset];
-  return marker === undefined ? undefined : { marker, offset: offset + 1 };
-}
-function isStandaloneMarker(marker) {
-  return marker === 1 || marker >= 208 && marker <= 217;
-}
-function readStartOfFrame(bytes, offset) {
-  const segmentLength = bytes.readUInt16BE(offset);
-  if (segmentLength < 7 || offset + 7 > bytes.length) {
-    throw new Error("JPEG Start-of-Frame segment is truncated.");
-  }
-  return toDimensions(bytes.readUInt16BE(offset + 5), bytes.readUInt16BE(offset + 3));
-}
-function isStartOfFrameMarker(marker) {
-  return marker >= 192 && marker <= 207 && marker !== 196 && marker !== 200 && marker !== 204;
-}
-function readUInt24LE(bytes, offset) {
-  return (bytes[offset] ?? 0) | (bytes[offset + 1] ?? 0) << 8 | (bytes[offset + 2] ?? 0) << 16;
-}
-function readUInt24BE(bytes, offset) {
-  return (bytes[offset] ?? 0) << 16 | (bytes[offset + 1] ?? 0) << 8 | (bytes[offset + 2] ?? 0);
-}
-function findSvgRootTag(source) {
-  const withoutComments = source.replaceAll(/<!--[\S\s]*?-->/g, "");
-  return /<svg\b[^>]*>/i.exec(withoutComments)?.[0];
-}
-function readAttribute(tag, name) {
-  const pattern = new RegExp(`\\b${name}\\s*=\\s*("([^"]*)"|'([^']*)')`, "i");
-  const match = pattern.exec(tag);
-  return match?.[2] ?? match?.[3];
-}
-function parseSvgLength(value) {
-  if (value === undefined)
-    return;
-  const match = /^([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?)\s*([a-z%]*)$/i.exec(value.trim());
-  if (match === null)
-    return;
-  const amount = Number(match[1]);
-  const pixelsPerUnit = PIXELS_PER_UNIT[(match[2] ?? "").toLowerCase()];
-  if (!Number.isFinite(amount) || amount <= 0 || pixelsPerUnit === undefined)
-    return;
-  return amount * pixelsPerUnit;
-}
-function toDimensions(width, height) {
-  const rounded = {
-    height: Math.max(1, Math.round(height)),
-    width: Math.max(1, Math.round(width))
-  };
-  if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) {
-    throw new Error(`Read a non-positive image size (${width}×${height}).`);
-  }
-  return rounded;
-}
-// src/shared/lib/content/public-quizzes.ts
-import { execFileSync } from "node:child_process";
-import { lstatSync, readdirSync, readFileSync as readFileSync2 } from "node:fs";
-import { basename, relative, resolve } from "node:path";
 // src/shared/lib/quiz/format-errors.ts
 function formatQuizValidationErrors(error) {
   const issueReports = error.issues.map(formatIssueReport);
@@ -12873,6 +12163,12 @@ function isIdLikePath(path) {
 }
 function isVideoIdPath(path) {
   return path.at(-1) === "id" && path.at(-3) === "videos";
+}
+// src/shared/lib/quiz/import-limits.ts
+var MAX_IMPORT_QUESTIONS = 200;
+var MAX_IMPORT_BYTES = 1048576;
+function utf8ByteLength(text) {
+  return new TextEncoder().encode(text).byteLength;
 }
 // src/shared/lib/quiz/parse-quiz-json.ts
 function parseQuizJson(rawText, sourceLabel) {
@@ -13596,7 +12892,7 @@ var $ZodError = $constructor("$ZodError", initializer);
 var $ZodRealError = $constructor("$ZodError", initializer, undefined, {
   Parent: Error
 });
-function node2(obj, key, make) {
+function node(obj, key, make) {
   if (!Object.prototype.hasOwnProperty.call(obj, key)) {
     if (key === "__proto__") {
       Object.defineProperty(obj, key, { value: make(), writable: true, enumerable: true, configurable: true });
@@ -13611,7 +12907,7 @@ function flattenError(error, mapper = (issue) => issue.message) {
   const formErrors = [];
   for (const sub of error.issues) {
     if (sub.path.length > 0) {
-      node2(fieldErrors, sub.path[0], () => []).push(mapper(sub));
+      node(fieldErrors, sub.path[0], () => []).push(mapper(sub));
     } else {
       formErrors.push(mapper(sub));
     }
@@ -18613,7 +17909,736 @@ var quizSchema = strictObject({
     seenQuestionIds.add(question.id);
   }
 });
+// src/shared/lib/render/markdown.ts
+init_dist3();
+init_dist4();
+init_dist6();
+
+// stub-prismjs:prismjs
+var prismjs_default = { highlight: (code) => code, languages: {} };
+
+// src/shared/lib/render/markdown.ts
+var import_sanitize_html = __toESM(require_sanitize_html(), 1);
+var MARKDOWN_OPTIONS = {
+  async: false,
+  breaks: false,
+  gfm: true
+};
+var INLINE_TAGS = ["a", "br", "code", "em", "strong"];
+var BLOCK_TAGS = [
+  "blockquote",
+  "h1",
+  "h2",
+  "h3",
+  "h4",
+  "li",
+  "ol",
+  "p",
+  "pre",
+  "table",
+  "tbody",
+  "td",
+  "th",
+  "thead",
+  "tr",
+  "ul"
+];
+var PLAIN_TEXT_BLOCK_TAGS = new Set(BLOCK_TAGS);
+var LANGUAGE_CLASS_PATTERN = /^language-[a-z0-9-]+$/;
+var TOKEN_CLASS_PATTERN = /^[a-z][a-z0-9-]*$/;
+var PRISM_LANGUAGE_BY_MARKDOWN_LANGUAGE = {
+  bash: "bash",
+  css: "css",
+  html: "markup",
+  javascript: "javascript",
+  js: "javascript",
+  json: "json",
+  jsx: "jsx",
+  py: "python",
+  python: "python",
+  sh: "bash",
+  shell: "bash",
+  sql: "sql",
+  ts: "typescript",
+  tsx: "tsx",
+  typescript: "typescript"
+};
+var transformAnchor = (_tagName, attribs) => {
+  const href = attribs.href?.trim();
+  if (!href) {
+    return {
+      attribs: {},
+      tagName: "a"
+    };
+  }
+  const transformedAttribs = { href };
+  if (/^https?:\/\//i.test(href)) {
+    transformedAttribs.rel = "noreferrer";
+  }
+  return {
+    attribs: transformedAttribs,
+    tagName: "a"
+  };
+};
+var INLINE_SANITIZE_OPTIONS = {
+  allowedAttributes: {
+    a: ["href", "rel"]
+  },
+  allowedSchemes: ["http", "https", "mailto"],
+  allowedTags: [...INLINE_TAGS],
+  allowProtocolRelative: false,
+  transformTags: {
+    a: transformAnchor
+  }
+};
+var SANITIZE_OPTIONS = {
+  allowedAttributes: {
+    a: ["href", "rel"],
+    code: ["class"]
+  },
+  allowedClasses: {
+    code: [LANGUAGE_CLASS_PATTERN]
+  },
+  allowedSchemes: ["http", "https", "mailto"],
+  allowedTags: [...INLINE_TAGS, ...BLOCK_TAGS],
+  allowProtocolRelative: false,
+  transformTags: {
+    a: transformAnchor,
+    h1: (_tagName, attribs) => ({
+      attribs,
+      tagName: "h2"
+    })
+  }
+};
+var HIGHLIGHTED_SANITIZE_OPTIONS = {
+  ...SANITIZE_OPTIONS,
+  allowedAttributes: {
+    a: ["href", "rel"],
+    code: ["class"],
+    pre: ["class"],
+    span: ["class"]
+  },
+  allowedClasses: {
+    code: [LANGUAGE_CLASS_PATTERN],
+    pre: [LANGUAGE_CLASS_PATTERN],
+    span: [TOKEN_CLASS_PATTERN]
+  },
+  allowedTags: [...INLINE_TAGS, "span", ...BLOCK_TAGS]
+};
+function markdownToSafeHtml(markdown) {
+  if (markdown.trim().length === 0) {
+    return "";
+  }
+  const safeHtml = import_sanitize_html.default(k.parse(markdown, MARKDOWN_OPTIONS), SANITIZE_OPTIONS);
+  return highlightCodeBlocks(safeHtml);
+}
+function renderMarkdown(markdown) {
+  return addHeadingIds(markdownToSafeHtml(markdown));
+}
+function renderInlineMarkdown(markdown) {
+  if (markdown.trim().length === 0) {
+    return "";
+  }
+  return import_sanitize_html.default(k.parseInline(markdown, MARKDOWN_OPTIONS), INLINE_SANITIZE_OPTIONS);
+}
+function highlightCodeBlocks(html) {
+  if (!html.includes("<pre")) {
+    return html;
+  }
+  const nodes = parseHtmlFragment(html);
+  highlightCodeBlocksInNodes(nodes);
+  return import_sanitize_html.default(renderHtmlFragment(nodes), HIGHLIGHTED_SANITIZE_OPTIONS);
+}
+function highlightCodeBlocksInNodes(nodes) {
+  for (const node of nodes) {
+    if (!isTag2(node)) {
+      continue;
+    }
+    if (node.name === "pre") {
+      highlightPreCodeBlock(node);
+      continue;
+    }
+    if (hasChildren(node)) {
+      highlightCodeBlocksInNodes(node.children);
+    }
+  }
+}
+function highlightPreCodeBlock(pre) {
+  const code = pre.children.find((child) => isTag2(child) && child.name === "code");
+  if (code === undefined) {
+    return;
+  }
+  const markdownLanguage = getMarkdownCodeLanguage(code.attribs.class);
+  if (markdownLanguage === undefined) {
+    return;
+  }
+  const prismLanguage = PRISM_LANGUAGE_BY_MARKDOWN_LANGUAGE[markdownLanguage];
+  const grammar = prismjs_default.languages[prismLanguage];
+  if (grammar === undefined) {
+    return;
+  }
+  const languageClass = `language-${markdownLanguage}`;
+  const highlightedHtml = prismjs_default.highlight(extractText(code.children, { separateBlocks: false }), grammar, prismLanguage);
+  pre.attribs.class = languageClass;
+  code.attribs.class = languageClass;
+  code.children = parseHtmlFragment(highlightedHtml);
+}
+function getMarkdownCodeLanguage(className) {
+  const language = className?.split(/\s+/).map((part) => part.match(/^language-([a-z0-9-]+)$/)?.[1]).find((part) => part !== undefined && (part in PRISM_LANGUAGE_BY_MARKDOWN_LANGUAGE));
+  return language;
+}
+function createHeadingSlug(text) {
+  const baseSlug = text.replace(/<[^<>]+>/g, " ").toLowerCase().trim().replace(/&[a-z0-9#]+;/gi, " ").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  return baseSlug.length > 0 ? baseSlug : "section";
+}
+function addHeadingIds(html) {
+  const seenHeadings = new Map;
+  return html.replace(/<h([1-6])>(.*?)<\/h\1>/g, (_match, level, content) => {
+    const baseSlug = createHeadingSlug(content);
+    const duplicateCount = seenHeadings.get(baseSlug) ?? 0;
+    const nextCount = duplicateCount + 1;
+    seenHeadings.set(baseSlug, nextCount);
+    const slug = nextCount === 1 ? baseSlug : `${baseSlug}-${nextCount}`;
+    return `<h${level} id="${slug}">${content}</h${level}>`;
+  });
+}
+function parseHtmlFragment(html) {
+  return parseDocument(html, { decodeEntities: true }).children;
+}
+function renderHtmlFragment(nodes) {
+  return dist_default(nodes, { encodeEntities: "utf8" });
+}
+function extractText(nodes, options) {
+  let text = "";
+  for (const node of nodes) {
+    if (isText(node)) {
+      text += node.data;
+      continue;
+    }
+    if (isTag2(node) && node.name === "br") {
+      text += `
+`;
+      continue;
+    }
+    if (!hasChildren(node)) {
+      continue;
+    }
+    const inner = extractText(node.children, options);
+    text += options.separateBlocks && isTag2(node) && PLAIN_TEXT_BLOCK_TAGS.has(node.name) ? `
+${inner}
+` : inner;
+  }
+  return text;
+}
+// src/shared/lib/render/tiers.ts
+var MARKDOWN_FIELD_TIERS = {
+  acceptedAnswerDisplay: "inline",
+  explanation: "full",
+  imageCaption: "inline",
+  optionText: "inline",
+  questionDescription: "full",
+  questionReferences: "full",
+  questionTitle: "inline",
+  quizDescription: "full",
+  quizTitle: "inline",
+  tag: "plain"
+};
+function escapeHtml(text) {
+  return text.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;");
+}
+function renderMarkdownField(field, value) {
+  switch (MARKDOWN_FIELD_TIERS[field]) {
+    case "full":
+      return renderMarkdown(value);
+    case "inline":
+      return renderInlineMarkdown(value);
+    case "plain":
+      return escapeHtml(value);
+  }
+}
+// src/shared/lib/content/catalog-profile.ts
+function checkCatalogProfile(quiz) {
+  const issues = [];
+  if (quiz.description === undefined) {
+    issues.push({
+      severity: "error",
+      path: "description",
+      problem: "The Public catalog profile requires a `description`.",
+      fix: "Add a short `description` explaining what the quiz covers and who it is for."
+    });
+  }
+  if (quiz.language === undefined) {
+    issues.push({
+      severity: "error",
+      path: "language",
+      problem: "The Public catalog profile requires a `language`.",
+      fix: 'Add a BCP-47 `language` tag such as `"en"`.'
+    });
+  }
+  if (quiz.tags.length === 0) {
+    issues.push({
+      severity: "error",
+      path: "tags",
+      problem: "The Public catalog profile requires at least one Tag.",
+      fix: "Add one or more kebab-case Tags so the quiz is discoverable in the Catalog filter."
+    });
+  }
+  issues.push(...checkImportLimits(quiz), ...checkRepeatedImageCaptions(quiz));
+  for (const entry of listMarkdownFields(quiz)) {
+    issues.push(...checkMarkdownField(entry));
+  }
+  return issues;
+}
+function checkImportLimits(quiz) {
+  const issues = [];
+  if (quiz.questions.length > MAX_IMPORT_QUESTIONS) {
+    issues.push({
+      severity: "error",
+      path: "questions",
+      problem: `The Public catalog profile enforces Quizbun's Import limits: ${quiz.questions.length} Questions; at most ${MAX_IMPORT_QUESTIONS}.`,
+      fix: "Split the Quiz into two or more Quizzes, for example by subtopic."
+    });
+  }
+  const bytes = utf8ByteLength(JSON.stringify(quiz, null, 2));
+  if (bytes > MAX_IMPORT_BYTES) {
+    issues.push({
+      severity: "error",
+      path: "root",
+      problem: `The Public catalog profile enforces Quizbun's Import limits: ${bytes} bytes of JSON; at most ${MAX_IMPORT_BYTES}.`,
+      fix: "Split the Quiz into smaller Quizzes or shorten long Explanations."
+    });
+  }
+  return issues;
+}
+function checkRepeatedImageCaptions(quiz) {
+  const issues = [];
+  const firstPathByCaption = new Map;
+  for (const [questionIndex, question] of quiz.questions.entries()) {
+    for (const [imageIndex, image] of (question.images ?? []).entries()) {
+      if (image.caption === undefined)
+        continue;
+      const path = `questions[${questionIndex}].images[${imageIndex}].caption`;
+      const firstPath = firstPathByCaption.get(image.caption);
+      if (firstPath === undefined) {
+        firstPathByCaption.set(image.caption, path);
+        continue;
+      }
+      issues.push({
+        severity: "error",
+        path,
+        problem: `The Image caption repeats the caption at \`${firstPath}\`.`,
+        fix: "Use a different Image, or rewrite this caption to explain what the learner should notice here."
+      });
+    }
+  }
+  return issues;
+}
+function formatProfileIssues(fileLabel, issues) {
+  const reports = issues.map((issue, index) => [
+    `${index + 1}. ${issue.severity === "warning" ? "Warning" : "Problem"} at path: \`${issue.path}\``,
+    `   Problem: ${issue.problem}`,
+    `   Fix: ${issue.fix}`
+  ].join(`
+`));
+  return [
+    `Public quiz does not satisfy the Public catalog profile in ${fileLabel}:`,
+    "",
+    ...reports
+  ].join(`
+`);
+}
+function checkMarkdownField(entry) {
+  const issues = [];
+  const tokens = k.lexer(entry.value);
+  if (containsRawHtml(tokens)) {
+    issues.push({
+      severity: "error",
+      path: entry.path,
+      problem: "Raw HTML in the source text. The renderer always strips it.",
+      fix: "Rewrite the HTML as Markdown (e.g. `**bold**`, `` `code` ``, `[text](url)`)."
+    });
+  }
+  if (MARKDOWN_FIELD_TIERS[entry.field] === "inline" && containsBlockMarkdown(tokens)) {
+    issues.push({
+      severity: "warning",
+      path: entry.path,
+      problem: "Block Markdown (headings, lists, code blocks, or multiple paragraphs) in a short field. It degrades to literal text.",
+      fix: "Keep short fields to one line of inline Markdown, or move the long content to `description` / `explanation`."
+    });
+  }
+  if (renderMarkdownField(entry.field, entry.value).trim().length === 0) {
+    issues.push({
+      severity: "error",
+      path: entry.path,
+      problem: "The field is empty after Markdown rendering and sanitization.",
+      fix: "Replace the content with text that survives sanitization (no raw-HTML-only values)."
+    });
+  }
+  return issues;
+}
+function* listMarkdownFields(quiz) {
+  yield { field: "quizTitle", path: "title", value: quiz.title };
+  if (quiz.description !== undefined) {
+    yield { field: "quizDescription", path: "description", value: quiz.description };
+  }
+  for (const [index, question] of quiz.questions.entries()) {
+    const questionPath = `questions[${index}]`;
+    yield { field: "questionTitle", path: `${questionPath}.title`, value: question.title };
+    if (question.description !== undefined) {
+      yield {
+        field: "questionDescription",
+        path: `${questionPath}.description`,
+        value: question.description
+      };
+    }
+    yield {
+      field: "explanation",
+      path: `${questionPath}.explanation`,
+      value: question.explanation
+    };
+    if (question.type === "single-choice" || question.type === "multiple-choice") {
+      for (const [optionIndex, option] of question.options.entries()) {
+        yield {
+          field: "optionText",
+          path: `${questionPath}.options[${optionIndex}].text`,
+          value: option.text
+        };
+      }
+    }
+    if (question.type === "input" && question.validation.mode === "text") {
+      for (const [answerIndex, answer] of question.validation.acceptedAnswers.entries()) {
+        yield {
+          field: "acceptedAnswerDisplay",
+          path: `${questionPath}.validation.acceptedAnswers[${answerIndex}]`,
+          value: answer
+        };
+      }
+    }
+  }
+}
+function containsRawHtml(tokens) {
+  return tokens.some((token) => {
+    if (token.type === "html") {
+      return true;
+    }
+    if ("tokens" in token && token.tokens !== undefined && containsRawHtml(token.tokens)) {
+      return true;
+    }
+    return "items" in token && containsRawHtml(token.items);
+  });
+}
+var INLINE_SAFE_BLOCK_TOKEN_TYPES = new Set(["paragraph", "space", "text"]);
+function containsBlockMarkdown(tokens) {
+  const blockTokens = tokens.filter((token) => token.type !== "space");
+  if (blockTokens.length > 1) {
+    return true;
+  }
+  return blockTokens.some((token) => !INLINE_SAFE_BLOCK_TOKEN_TYPES.has(token.type));
+}
+// src/shared/lib/content/image-dimensions.ts
+import { readFileSync } from "node:fs";
+import { extname } from "node:path";
+var SUPPORTED_EXTENSIONS = [".avif", ".gif", ".jpeg", ".jpg", ".png", ".svg", ".webp"];
+var PIXELS_PER_UNIT = {
+  "": 1,
+  cm: 96 / 2.54,
+  in: 96,
+  mm: 96 / 25.4,
+  pc: 16,
+  pt: 96 / 72,
+  px: 1,
+  q: 96 / 25.4 / 4
+};
+function isSupportedImageExtension(fileName) {
+  return SUPPORTED_EXTENSIONS.includes(extname(fileName).toLowerCase());
+}
+function readImageDimensions(filePath) {
+  const extension = extname(filePath).toLowerCase();
+  if (!isSupportedImageExtension(filePath)) {
+    throw new Error(`Cannot measure "${extension || filePath}": supported formats are ${SUPPORTED_EXTENSIONS.join(", ")}.`);
+  }
+  const bytes = readFileSync(filePath);
+  if (extension === ".svg") {
+    return parseSvgDimensions(bytes.toString("utf8"));
+  }
+  if (extension === ".png")
+    return parsePngDimensions(bytes);
+  if (extension === ".gif")
+    return parseGifDimensions(bytes);
+  if (extension === ".webp")
+    return parseWebpDimensions(bytes);
+  if (extension === ".avif")
+    return parseAvifDimensions(bytes);
+  return parseJpegDimensions(bytes);
+}
+function parseSvgDimensions(source) {
+  const rootTag = findSvgRootTag(source);
+  if (rootTag === undefined) {
+    throw new Error("SVG has no root `<svg>` element.");
+  }
+  const width = parseSvgLength(readAttribute(rootTag, "width"));
+  const height = parseSvgLength(readAttribute(rootTag, "height"));
+  if (width !== undefined && height !== undefined) {
+    return toDimensions(width, height);
+  }
+  const viewBox = readAttribute(rootTag, "viewBox");
+  const viewBoxNumbers = viewBox?.trim().split(/[\s,]+/).map(Number);
+  if (viewBoxNumbers?.length === 4 && viewBoxNumbers.every((value) => Number.isFinite(value))) {
+    const [, , viewBoxWidth, viewBoxHeight] = viewBoxNumbers;
+    if (viewBoxWidth > 0 && viewBoxHeight > 0) {
+      return toDimensions(viewBoxWidth, viewBoxHeight);
+    }
+  }
+  throw new Error("SVG has no intrinsic size: add a `viewBox`, or `width` and `height` in absolute units.");
+}
+var PNG_SIGNATURE = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
+function parsePngDimensions(bytes) {
+  const hasSignature = bytes.length >= 24 && bytes.subarray(0, 8).equals(PNG_SIGNATURE);
+  if (!hasSignature || bytes.subarray(12, 16).toString("latin1") !== "IHDR") {
+    throw new Error("PNG is missing its signature or IHDR header chunk.");
+  }
+  return toDimensions(bytes.readUInt32BE(16), bytes.readUInt32BE(20));
+}
+function parseGifDimensions(bytes) {
+  const header = bytes.length >= 10 ? bytes.subarray(0, 6).toString("latin1") : "";
+  if (header !== "GIF87a" && header !== "GIF89a") {
+    throw new Error("GIF is missing its `GIF87a`/`GIF89a` header.");
+  }
+  return toDimensions(bytes.readUInt16LE(6), bytes.readUInt16LE(8));
+}
+function parseJpegDimensions(bytes) {
+  if (bytes.length < 4 || bytes.readUInt16BE(0) !== 65496) {
+    throw new Error("JPEG is missing its Start-of-Image marker.");
+  }
+  let offset = 2;
+  while (offset < bytes.length) {
+    const next = readNextMarker(bytes, offset);
+    if (next === undefined)
+      break;
+    const { marker } = next;
+    offset = next.offset;
+    if (isStandaloneMarker(marker))
+      continue;
+    if (offset + 2 > bytes.length)
+      break;
+    if (marker === 218)
+      break;
+    if (isStartOfFrameMarker(marker))
+      return readStartOfFrame(bytes, offset);
+    offset += bytes.readUInt16BE(offset);
+  }
+  throw new Error("JPEG has no Start-of-Frame segment.");
+}
+function parseWebpDimensions(bytes) {
+  const isRiffWebp = bytes.length >= 16 && bytes.subarray(0, 4).toString("latin1") === "RIFF" && bytes.subarray(8, 12).toString("latin1") === "WEBP";
+  if (!isRiffWebp) {
+    throw new Error("WebP is missing its RIFF/WEBP header.");
+  }
+  let offset = 12;
+  while (offset + 8 <= bytes.length) {
+    const chunkType = bytes.subarray(offset, offset + 4).toString("latin1");
+    const chunkSize = bytes.readUInt32LE(offset + 4);
+    const data = offset + 8;
+    const dimensions = readWebpImageChunk(bytes, chunkType, data);
+    if (dimensions !== undefined)
+      return dimensions;
+    offset = data + chunkSize + chunkSize % 2;
+  }
+  throw new Error("WebP has no `VP8X`, `VP8 `, or `VP8L` chunk.");
+}
+function readWebpImageChunk(bytes, chunkType, data) {
+  if (chunkType === "VP8X" && data + 10 <= bytes.length) {
+    return toDimensions(readUInt24LE(bytes, data + 4) + 1, readUInt24LE(bytes, data + 7) + 1);
+  }
+  if (chunkType === "VP8 " && data + 10 <= bytes.length) {
+    const hasKeyFrameSignature = bytes[data + 3] === 157 && bytes[data + 4] === 1 && bytes[data + 5] === 42;
+    if (!hasKeyFrameSignature) {
+      throw new Error("WebP `VP8 ` chunk has no key-frame header.");
+    }
+    return toDimensions(bytes.readUInt16LE(data + 6) & 16383, bytes.readUInt16LE(data + 8) & 16383);
+  }
+  if (chunkType === "VP8L" && data + 5 <= bytes.length) {
+    if (bytes[data] !== 47) {
+      throw new Error("WebP `VP8L` chunk has no lossless signature byte.");
+    }
+    const header = bytes.readUInt32LE(data + 1);
+    return toDimensions((header & 16383) + 1, (header >>> 14 & 16383) + 1);
+  }
+  return;
+}
+function parseAvifDimensions(bytes) {
+  const meta = findBox(bytes, 0, bytes.length, "meta");
+  if (meta === undefined) {
+    throw new Error("AVIF has no `meta` box.");
+  }
+  const metaChildrenStart = meta.contentStart + 4;
+  const properties = findBox(bytes, metaChildrenStart, meta.contentEnd, "iprp");
+  const propertyContainer = properties && findBox(bytes, properties.contentStart, properties.contentEnd, "ipco");
+  if (!properties || !propertyContainer) {
+    throw new Error("AVIF has no `iprp`/`ipco` property boxes.");
+  }
+  const propertyBoxes = listBoxes(bytes, propertyContainer.contentStart, propertyContainer.contentEnd);
+  const primaryItemId = readPrimaryItemId(bytes, metaChildrenStart, meta.contentEnd);
+  const association = findBox(bytes, properties.contentStart, properties.contentEnd, "ipma");
+  const associatedIndexes = association && primaryItemId !== undefined ? readPropertyIndexes(bytes, association, primaryItemId) : undefined;
+  const spatialExtents = associatedIndexes?.map((index) => propertyBoxes[index - 1]).find((box) => box?.type === "ispe") ?? propertyBoxes.find((box) => box.type === "ispe");
+  if (spatialExtents === undefined || spatialExtents.contentStart + 12 > bytes.length) {
+    throw new Error("AVIF has no `ispe` box for its primary item.");
+  }
+  return toDimensions(bytes.readUInt32BE(spatialExtents.contentStart + 4), bytes.readUInt32BE(spatialExtents.contentStart + 8));
+}
+function listBoxes(bytes, start, end) {
+  const boxes = [];
+  let offset = start;
+  while (offset + 8 <= end) {
+    const box = readBox(bytes, offset, end);
+    if (box === undefined)
+      break;
+    boxes.push(box);
+    offset = box.end;
+  }
+  return boxes;
+}
+function findBox(bytes, start, end, type) {
+  return listBoxes(bytes, start, end).find((box) => box.type === type);
+}
+function readBox(bytes, offset, end) {
+  const declaredSize = bytes.readUInt32BE(offset);
+  const type = bytes.subarray(offset + 4, offset + 8).toString("latin1");
+  let contentStart = offset + 8;
+  let size = declaredSize;
+  if (declaredSize === 1) {
+    if (offset + 16 > end)
+      return;
+    const high = bytes.readUInt32BE(offset + 8);
+    if (high !== 0)
+      return;
+    size = bytes.readUInt32BE(offset + 12);
+    contentStart = offset + 16;
+  } else if (declaredSize === 0) {
+    size = end - offset;
+  }
+  const boxEnd = offset + size;
+  if (size < contentStart - offset || boxEnd > end)
+    return;
+  return { contentEnd: boxEnd, contentStart, end: boxEnd, type };
+}
+function readPrimaryItemId(bytes, start, end) {
+  const primaryItem = findBox(bytes, start, end, "pitm");
+  if (primaryItem === undefined)
+    return;
+  const version = bytes[primaryItem.contentStart];
+  const idStart = primaryItem.contentStart + 4;
+  if (version === 0) {
+    return idStart + 2 <= end ? bytes.readUInt16BE(idStart) : undefined;
+  }
+  return idStart + 4 <= end ? bytes.readUInt32BE(idStart) : undefined;
+}
+function readPropertyIndexes(bytes, association, itemId) {
+  const version = bytes[association.contentStart] ?? 0;
+  const flags = readUInt24BE(bytes, association.contentStart + 1);
+  const usesWideIndexes = (flags & 1) === 1;
+  let offset = association.contentStart + 4;
+  if (offset + 4 > association.contentEnd)
+    return;
+  const entryCount = bytes.readUInt32BE(offset);
+  offset += 4;
+  for (let entry = 0;entry < entryCount; entry += 1) {
+    if (offset + 3 > association.contentEnd)
+      return;
+    const entryItemId = version < 1 ? bytes.readUInt16BE(offset) : bytes.readUInt32BE(offset);
+    offset += version < 1 ? 2 : 4;
+    const associationCount = bytes[offset] ?? 0;
+    offset += 1;
+    const entryIndexes = readAssociationIndexes(bytes, association.contentEnd, offset, associationCount, usesWideIndexes);
+    if (entryIndexes === undefined)
+      return;
+    offset = entryIndexes.end;
+    if (entryItemId === itemId)
+      return entryIndexes.indexes;
+  }
+  return;
+}
+function readAssociationIndexes(bytes, contentEnd, start, count, usesWideIndexes) {
+  const indexes = [];
+  let offset = start;
+  for (let index = 0;index < count; index += 1) {
+    if (offset >= contentEnd)
+      return;
+    if (usesWideIndexes) {
+      indexes.push(bytes.readUInt16BE(offset) & 32767);
+      offset += 2;
+    } else {
+      indexes.push((bytes[offset] ?? 0) & 127);
+      offset += 1;
+    }
+  }
+  return { end: offset, indexes };
+}
+function readNextMarker(bytes, start) {
+  if (bytes[start] !== 255) {
+    throw new Error(`JPEG marker segment expected at byte ${start}.`);
+  }
+  let offset = start;
+  while (offset < bytes.length && bytes[offset] === 255)
+    offset += 1;
+  const marker = bytes[offset];
+  return marker === undefined ? undefined : { marker, offset: offset + 1 };
+}
+function isStandaloneMarker(marker) {
+  return marker === 1 || marker >= 208 && marker <= 217;
+}
+function readStartOfFrame(bytes, offset) {
+  const segmentLength = bytes.readUInt16BE(offset);
+  if (segmentLength < 7 || offset + 7 > bytes.length) {
+    throw new Error("JPEG Start-of-Frame segment is truncated.");
+  }
+  return toDimensions(bytes.readUInt16BE(offset + 5), bytes.readUInt16BE(offset + 3));
+}
+function isStartOfFrameMarker(marker) {
+  return marker >= 192 && marker <= 207 && marker !== 196 && marker !== 200 && marker !== 204;
+}
+function readUInt24LE(bytes, offset) {
+  return (bytes[offset] ?? 0) | (bytes[offset + 1] ?? 0) << 8 | (bytes[offset + 2] ?? 0) << 16;
+}
+function readUInt24BE(bytes, offset) {
+  return (bytes[offset] ?? 0) << 16 | (bytes[offset + 1] ?? 0) << 8 | (bytes[offset + 2] ?? 0);
+}
+function findSvgRootTag(source) {
+  const withoutComments = source.replaceAll(/<!--[\S\s]*?-->/g, "");
+  return /<svg\b[^>]*>/i.exec(withoutComments)?.[0];
+}
+function readAttribute(tag, name) {
+  const pattern = new RegExp(`\\b${name}\\s*=\\s*("([^"]*)"|'([^']*)')`, "i");
+  const match = pattern.exec(tag);
+  return match?.[2] ?? match?.[3];
+}
+function parseSvgLength(value) {
+  if (value === undefined)
+    return;
+  const match = /^([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?)\s*([a-z%]*)$/i.exec(value.trim());
+  if (match === null)
+    return;
+  const amount = Number(match[1]);
+  const pixelsPerUnit = PIXELS_PER_UNIT[(match[2] ?? "").toLowerCase()];
+  if (!Number.isFinite(amount) || amount <= 0 || pixelsPerUnit === undefined)
+    return;
+  return amount * pixelsPerUnit;
+}
+function toDimensions(width, height) {
+  const rounded = {
+    height: Math.max(1, Math.round(height)),
+    width: Math.max(1, Math.round(width))
+  };
+  if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) {
+    throw new Error(`Read a non-positive image size (${width}×${height}).`);
+  }
+  return rounded;
+}
 // src/shared/lib/content/public-quizzes.ts
+import { execFileSync } from "node:child_process";
+import { lstatSync, readdirSync, readFileSync as readFileSync2 } from "node:fs";
+import { basename, relative, resolve } from "node:path";
 var PUBLIC_QUIZZES_DIR = "content/quizzes";
 var MAX_ASSET_FILE_SIZE_BYTES = 512000;
 function loadPublicQuizzes(contentDir = PUBLIC_QUIZZES_DIR, options = {}) {

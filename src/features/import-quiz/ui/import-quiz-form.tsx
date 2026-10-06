@@ -12,6 +12,7 @@ import { CodeTextarea } from "@/shared/ui/textarea";
 
 import { QuizCard } from "@/entities/quiz";
 
+import { useQuizLink } from "../model/use-quiz-link";
 import { validateQuizJson } from "../model/validate-quiz-json";
 import type { QuizJsonValidationResult } from "../model/validate-quiz-json";
 
@@ -33,6 +34,21 @@ export function ImportQuizForm() {
   function validate() {
     setResult(validateQuizJson(text));
   }
+
+  // Show the linked Quiz as a paste would look, so the Creator can repair the
+  // JSON in place, then check it right away. Saving stays an explicit click.
+  const { isOpening } = useQuizLink({
+    onLoaded(json) {
+      const pretty = prettyPrintJson(json);
+
+      updateText(pretty);
+      setResult(validateQuizJson(pretty));
+    },
+    onFailed(report) {
+      updateText("");
+      setResult({ status: "invalid", report });
+    },
+  });
 
   async function fillFromFile(file: File | undefined) {
     if (file === undefined) return;
@@ -111,6 +127,7 @@ export function ImportQuizForm() {
             Validate
           </Button>
         </div>
+        <output aria-live="polite">{isOpening ? "Opening the quiz from the link…" : ""}</output>
         <div className={styles.reports}>
           {result?.status === "invalid" && <ValidationReport report={result.report} />}
           {result?.status === "valid" && (
@@ -219,6 +236,15 @@ function ValidationReport({ report }: { report: string }) {
       </Button>
     </section>
   );
+}
+
+/** Falls back to the raw text so Validate reports the syntax error with a line and column. */
+function prettyPrintJson(json: string): string {
+  try {
+    return JSON.stringify(JSON.parse(json), null, 2);
+  } catch {
+    return json;
+  }
 }
 
 function openQuizDetail(id: string) {

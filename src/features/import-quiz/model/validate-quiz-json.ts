@@ -1,5 +1,10 @@
 import { messageFromError } from "@/shared/lib/errors";
-import { formatQuizValidationErrors, quizSchema } from "@/shared/lib/quiz";
+import {
+  checkImportQuestionCount,
+  checkImportSize,
+  formatQuizValidationErrors,
+  quizSchema,
+} from "@/shared/lib/quiz";
 import type { Quiz } from "@/shared/lib/quiz";
 
 /**
@@ -11,6 +16,10 @@ export type QuizJsonValidationResult =
   | { status: "invalid"; report: string };
 
 export function validateQuizJson(text: string): QuizJsonValidationResult {
+  const sizeReport = checkImportSize(text);
+
+  if (sizeReport !== undefined) return { status: "invalid", report: sizeReport };
+
   let parsed: unknown;
 
   try {
@@ -18,6 +27,10 @@ export function validateQuizJson(text: string): QuizJsonValidationResult {
   } catch (error) {
     return { status: "invalid", report: formatJsonSyntaxError(text, error) };
   }
+
+  const countReport = checkImportQuestionCount(parsed);
+
+  if (countReport !== undefined) return { status: "invalid", report: countReport };
 
   const result = quizSchema.safeParse(parsed);
 

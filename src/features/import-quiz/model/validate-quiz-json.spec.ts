@@ -1,4 +1,4 @@
-import { describe, expect, test } from "vitest";
+import { describe, expect, test, vi } from "vitest";
 
 import validQuiz from "@/shared/lib/quiz/fixtures/valid/all-question-types.json";
 
@@ -75,5 +75,36 @@ describe("validateQuizJson", () => {
     expect(result.report).toContain("Quiz Object Standard");
     expect(result.report).toContain("Path: `title`");
     expect(result.report).toContain("`bogus`");
+  });
+
+  test("rejects a Quiz over the Import size limit without parsing it", () => {
+    const parse = vi.spyOn(JSON, "parse");
+    const result = validateQuizJson(" ".repeat(1_048_577));
+
+    assertInvalidResult(result);
+
+    expect(result.report).toContain("This is a Quizbun limit, not a Standard error.");
+    expect(parse).not.toHaveBeenCalled();
+    parse.mockRestore();
+  });
+
+  test("rejects 201 Questions before schema validation, accepts 200", () => {
+    const [question] = validQuiz.questions;
+    const withCount = (count: number) =>
+      JSON.stringify({
+        ...validQuiz,
+        questions: Array.from({ length: count }, (_, index) => ({
+          ...question,
+          id: `question-${index}`,
+        })),
+      });
+
+    expect(validateQuizJson(withCount(200)).status).toBe("valid");
+
+    const result = validateQuizJson(withCount(201));
+
+    assertInvalidResult(result);
+
+    expect(result.report).toContain("201 Questions; Quizbun imports up to 200");
   });
 });
