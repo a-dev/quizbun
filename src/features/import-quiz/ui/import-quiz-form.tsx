@@ -105,7 +105,8 @@ export function ImportQuizForm() {
     <section aria-label="Import a quiz" className={styles.root}>
       <div className={styles.actions}>
         <label htmlFor="quiz-json" className={styles.label}>
-          Paste quiz JSON (or pick a file / drop it onto the text area):
+          Paste quiz JSON (or pick a file / drop it onto the text area). Up to 200 questions and 1
+          MB:
         </label>
         <div className={styles.buttons}>
           <Button

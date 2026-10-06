@@ -1,4 +1,4 @@
-import { formatImportSizeReport, MAX_IMPORT_BYTES } from "../quiz";
+import { formatImportSizeReport, MAX_IMPORT_BYTES } from "../quiz/import-limits";
 
 /**
  * The Quiz link codec: one Quiz in a URL fragment, `qos=1.<base64url(zlib

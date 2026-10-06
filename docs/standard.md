@@ -252,7 +252,7 @@ A Renderer may prevent empty submissions for usability. The Standard defines cor
 
 ## Renderer rules
 
-Renderer behavior must preserve the Standard's content identity rules.
+Renderer behavior must preserve the Standard's content identity rules. A Renderer may refuse Quizzes above its own size limits; this does not make the Quiz invalid.
 
 1. Saved choice answers reference Option indexes in the original JSON order, never the displayed order. If a Renderer shuffles Options, it must translate displayed positions back to original indexes before saving or checking answers.
 2. Progress is keyed by Quiz `id` and Question `id`, and each saved Question answer is invalidated by a Content hash. If a Question's content changes during re-import, the saved answer for that Question is discarded while unchanged Questions may keep Progress.

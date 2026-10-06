@@ -1,9 +1,17 @@
 ---
 import { listDocExamples } from "@/shared/lib/docs";
+import { encodeQuizLink, QUIZ_LINK_PARAM } from "@/shared/lib/quiz-link";
 import { withBase } from "@/shared/lib/routing";
 import DocsLayout from "@/app/docs-layout.astro";
 
-const examples = listDocExamples();
+const examples = await Promise.all(
+  listDocExamples().map(async (example) => ({
+    ...example,
+    importHref: `${withBase("import/")}#${QUIZ_LINK_PARAM}=${await encodeQuizLink(
+      JSON.stringify(JSON.parse(example.json)),
+    )}`,
+  })),
+);
 ---
 
 <DocsLayout
@@ -32,6 +40,8 @@ const examples = listDocExamples();
           <a href={withBase(`docs/examples/${example.fileName}`)} download>
             Download {example.fileName}
           </a>
+          {" "}
+          <a href={example.importHref}>Open {example.fileName} in Import</a>
         </p>
         <pre tabindex="0">
           <code>{example.json}</code>

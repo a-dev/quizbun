@@ -2,10 +2,10 @@
 name: create-quiz
 description: >
   Create, validate, repair, or review one explanation-first Quiz as strict JSON
-  in the Quiz Object Standard v1. Use when the user explicitly invokes this
-  skill to author Quizbun-compatible quiz content. Topic- and repo-agnostic
-  unless the user asks for a Quiz about the surrounding project.
-disable-model-invocation: true
+  in the Quiz Object Standard v1. Use only when the user explicitly asks for a
+  Quiz in the Quiz Object Standard or invokes create-quiz, or when the quizbun
+  skill delegates to it. Never start it for general questions about quizzes,
+  tests, or learning.
 ---
 
 # Create a Quiz
@@ -66,3 +66,5 @@ The machine-readable schema is also available at [references/quiz.v1.schema.json
 ## Quality review
 
 Schema validity is the floor. Before returning the Quiz, verify each answer, make every Explanation teach why the answer is correct, keep distractors plausible, and remove references to Option positions because Renderers may shuffle Options. Check the bundled authoring contract for the complete quality bar.
+
+To open the finished Quiz in Quizbun, use the `quizbun` skill.

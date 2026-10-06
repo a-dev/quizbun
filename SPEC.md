@@ -134,9 +134,12 @@ Shuffling, Option labels, pagination, Page size, keyboard controls, and layout n
 ### Published artifacts and Catalog profile
 
 - `z.toJSONSchema()` generates [public/schema/quiz.v1.json](public/schema/quiz.v1.json). CI rejects drift from the Zod schema. Zod remains the final authority for cross-field rules that JSON Schema cannot fully express.
+- Two Agent Skills ship from `skills/`. `create-quiz` writes and validates a Quiz in the Standard and stays Renderer-neutral. Its generated files are `scripts/validate-quiz.mjs` and `references/quiz.v1.schema.json`. `quizbun` opens a Quiz in Quizbun and requires `create-quiz`. Its generated file is `scripts/open-quiz.mjs`. `bun run skill:create-quiz:check` and `bun run skill:quizbun:check` reject drift in CI.
 - The `create-quiz` skill owns the [AI generation prompt](skills/create-quiz/references/quiz-generation-prompt.md). The site renders that source with a short introduction.
 - CI validates every file in [docs/examples](docs/examples) with the Zod schema.
 - The Public catalog profile adds repository-only rules. It requires `description`, `language`, at least one Tag, repository-wide Quiz id uniqueness, and a filename that matches the Quiz id. Every Catalog Image also requires generated `width` and `height` that match the vendored file.
+- The Public catalog profile also enforces the Import limits: at most 200 Questions and 1 MB of JSON.
+- The Import limits and the Quiz link are Renderer behavior. They never belong in the schema, and the Standard stays at `schemaVersion: 1`.
 - Catalog titles use sentence case: only the first word and words that are always capitalized, such as names and acronyms, start with a capital. Human review and the PR checklist enforce it.
 
 ## 3. Architecture
@@ -157,6 +160,10 @@ The code follows Feature-Sliced Design:
 - `src/shared/` contains cross-cutting code, styles, and UI components.
 
 There is no `widgets/` layer. Add it only for a reusable multi-feature block that is not a page.
+
+### Import limits and Quiz link code
+
+`src/shared/lib/quiz/import-limits.ts` holds the Import limits (`MAX_IMPORT_QUESTIONS`, `MAX_IMPORT_BYTES`) and their reports. `src/shared/lib/quiz-link/` holds the Quiz link codec. Both use only web-platform APIs. `scripts/quizbun-skill-cli.ts` bundles them into `skills/quizbun/scripts/open-quiz.mjs`, so the site, CI and the skill share one implementation.
 
 ### Catalog Images
 
@@ -264,7 +271,9 @@ The Catalog and Library use the same player with different Quiz sources.
 
 ### Import, Library, and Quiz detail
 
-Import uses one textarea. Paste, file selection, and drag and drop all fill it. The app parses and validates JSON, shows an editable error report or a preview, then saves the Quiz. An id collision requires an explicit replace or cancel choice.
+Import uses one textarea. Paste, file selection, drag and drop, and a Quiz link all fill it. Import runs its checks in this order: text size (1 MB of UTF-8), JSON parse, Question count (200), then the schema. It then shows an editable error report or a preview, and saves the Quiz only after an explicit click. An id collision requires an explicit replace or cancel choice.
+
+A Quiz link is `/import/#qos=1.<base64url(zlib deflate(UTF-8 JSON))>`. The `1.` versions the encoding, not the Standard. Import reads the fragment once and calls `history.replaceState` to clear it, so the large URL stays out of history and a reload is safe. The decoder stops reading once the unpacked JSON passes 1 MB, which also defends against decompression bombs. A link never saves a Quiz by itself.
 
 Library lists, opens, exports, and deletes Quizzes from IndexedDB. Deleting a Quiz also deletes its Run. The Library and Catalog use the same Tag-filter feature with different data sources.
 
@@ -340,8 +349,7 @@ When the repository becomes public, restore automatic CI, deploy `main`, publish
 - Offline routing and caching.
 - Interface localization.
 - Option ids, presentation hints, and a richer taxonomy.
-- Hard field-length limits.
-- Documentation links that load an example directly into the player.
+- Per-field length limits. The whole-Quiz Import limits already exist.
 - Read aloud for non-English Voices.
 - More media sources, presentation fields, and Video providers.
 - Direct AI loading through an explicit local integration and permission model.

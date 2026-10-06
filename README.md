@@ -15,6 +15,14 @@ npx skills add a-dev/quizbun --skill create-quiz
 
 The installed skill includes the Quiz Object Standard authoring contract and a dependency-free Node.js validator. It does not require the Quizbun application or Bun.
 
+Add the `quizbun` skill to open a finished Quiz in Quizbun. It writes a launcher file that loads the Quiz on the Import page, and it requires `create-quiz`:
+
+```sh
+npx skills add a-dev/quizbun --skill create-quiz --skill quizbun
+```
+
+Quizbun imports Quizzes of at most 200 Questions and 1 MB of JSON. See [the quizbun skill](docs/quizbun-skill.md).
+
 ## Check Explanations against marked answers
 
 Validation proves that a Question is well-formed, never that its Explanation

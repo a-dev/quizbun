@@ -76,6 +76,14 @@ _Avoid_: my quizzes, collection, private catalog
 Bringing Quiz JSON into the Library after it passes validation.
 _Avoid_: upload, load, add
 
+**Import limits**:
+The maximum Quiz size Quizbun imports: 200 Questions and 1 MB of JSON. A Renderer limit, not part of the Standard.
+_Avoid_: schema limits, max length (when referring to the Standard)
+
+**Quiz link**:
+A URL that carries one Quiz in its fragment and opens it in Import.
+_Avoid_: share link, deep link (deep links already mean player routes)
+
 **Export**:
 Saving a Catalog or Library Quiz as JSON. Export never includes Progress.
 _Avoid_: download, backup

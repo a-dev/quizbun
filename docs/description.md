@@ -15,7 +15,7 @@ Quizbun helps people learn rather than merely testing them. After submitting an 
 The main workflow is short:
 
 1. Ask an AI tool to generate a Quiz from the published prompt and JSON Schema.
-2. Save the generated JSON file and choose or drop it on the Import page, or paste the JSON from the chat.
+2. Save the generated JSON file and choose or drop it on the Import page, paste the JSON from the chat, or open the Quiz link the AI made.
 3. Fix any validation errors or save the Quiz.
 4. Start learning.
 
@@ -91,9 +91,13 @@ The Library stores imported Quizzes on the current device. Learners can Import, 
 
 Importing a Quiz with an `id` already present in the Library requires the Learner to replace it or cancel. Replacing a Quiz preserves Progress only for Questions whose Content hashes still match.
 
+The Import limits apply on Import and on Replace. Quizzes already in the Library are not checked again.
+
 ### Import page
 
-The Import page centers on one large textarea. Pasting JSON, choosing a file, and dropping a file all feed the same flow: parse, validate, preview, then save.
+The Import page centers on one large textarea. Pasting JSON, choosing a file, dropping a file, and opening a Quiz link all feed the same flow: parse, validate, preview, then save. A Quiz link carries the Quiz in the URL fragment, so the server never receives it. Opening a link fills the textarea and validates it. The Learner still saves explicitly.
+
+Quizbun imports Quizzes of at most 200 Questions and 1 MB of JSON. A Quiz should stay a learnable unit, and a larger topic works better as several Quizzes. These Import limits belong to Quizbun as a Renderer, not to the Standard.
 
 The textarea supports the main AI workflow and lets Creators repair invalid JSON in place. Validation errors must help both humans and AI tools correct the file.
 

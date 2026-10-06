@@ -12,6 +12,7 @@ Full walkthrough: https://quizbun.fyi/docs/contributing/
 ## Checklist
 
 - [ ] The quiz validates on the [import page](https://quizbun.fyi/import/) and I completed a full run of it there.
+- [ ] The quiz has at most 200 questions and 1 MB of JSON.
 - [ ] `description` and `language` are set, and there is at least one tag.
 - [ ] The file is `content/quizzes/{id}.json`, where `{id}` is the quiz's `id`.
 - [ ] Every Explanation teaches the concept — none of them just restate the correct answer.
