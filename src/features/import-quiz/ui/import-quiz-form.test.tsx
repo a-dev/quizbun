@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { page } from "vitest/browser";
 
 import type { Quiz } from "@/shared/lib/quiz";
+import { MAX_IMPORT_BYTES } from "@/shared/lib/quiz";
 import { encodeQuizLink } from "@/shared/lib/quiz-link";
 import { saveQuiz } from "@/shared/lib/storage";
 
@@ -46,10 +47,33 @@ describe("ImportQuizForm Quiz link", () => {
       .toBeVisible();
     await expect.element(screen.getByRole("button", { name: "Save to Library" })).toBeVisible();
     expect(window.location.hash).toBe("");
-    // The textarea shows pretty-printed JSON, as a paste would.
+    // The textarea preserves the received JSON, as a paste would.
     await expect
       .element(screen.getByRole("textbox"))
-      .toHaveValue(JSON.stringify(makeQuiz("link-valid"), null, 2));
+      .toHaveValue(JSON.stringify(makeQuiz("link-valid")));
+  });
+
+  it("previews and revalidates a link whose JSON exactly meets the Import size limit", async () => {
+    const quiz = makeQuiz("link-size-limit");
+    quiz.description = "";
+    quiz.description = "x".repeat(
+      MAX_IMPORT_BYTES - new TextEncoder().encode(JSON.stringify(quiz)).byteLength,
+    );
+    const json = JSON.stringify(quiz);
+
+    expect(new TextEncoder().encode(json).byteLength).toBe(MAX_IMPORT_BYTES);
+    expect(new TextEncoder().encode(JSON.stringify(quiz, null, 2)).byteLength).toBeGreaterThan(
+      MAX_IMPORT_BYTES,
+    );
+    window.location.hash = await linkTo(quiz);
+
+    const screen = await page.render(<ImportQuizForm />);
+    const saveButton = screen.getByRole("button", { name: "Save to Library" });
+
+    await expect.element(saveButton).toBeVisible();
+    await expect.element(screen.getByRole("textbox")).toHaveValue(json);
+    await screen.getByRole("button", { name: "Validate", exact: true }).click();
+    await expect.element(saveButton).toBeVisible();
   });
 
   it("reports a damaged link and leaves the textarea empty", async () => {

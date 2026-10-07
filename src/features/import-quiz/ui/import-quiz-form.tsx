@@ -35,14 +35,12 @@ export function ImportQuizForm() {
     setResult(validateQuizJson(text));
   }
 
-  // Show the linked Quiz as a paste would look, so the Creator can repair the
-  // JSON in place, then check it right away. Saving stays an explicit click.
+  // Preserve the received JSON so formatting cannot push it over the Import
+  // size limit. Saving stays an explicit click.
   const { isOpening } = useQuizLink({
     onLoaded(json) {
-      const pretty = prettyPrintJson(json);
-
-      updateText(pretty);
-      setResult(validateQuizJson(pretty));
+      updateText(json);
+      setResult(validateQuizJson(json));
     },
     onFailed(report) {
       updateText("");
@@ -237,15 +235,6 @@ function ValidationReport({ report }: { report: string }) {
       </Button>
     </section>
   );
-}
-
-/** Falls back to the raw text so Validate reports the syntax error with a line and column. */
-function prettyPrintJson(json: string): string {
-  try {
-    return JSON.stringify(JSON.parse(json), null, 2);
-  } catch {
-    return json;
-  }
 }
 
 function openQuizDetail(id: string) {
