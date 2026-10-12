@@ -63,7 +63,9 @@ const browserProject = defineProject({
     exclude: [...defaultExclude],
     setupFiles: ["./vitest.browser-setup.ts"],
     globals: true,
-    testTimeout: 2000,
+    // Browser actions share the test's remaining deadline. CI needs headroom
+    // for Chromium startup and large import fixtures on shared runners.
+    testTimeout: process.env.CI ? 10_000 : 5_000,
     css: {
       modules: {
         classNameStrategy: "non-scoped",

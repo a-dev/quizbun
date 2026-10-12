@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import { renderDocMarkdown } from "./render-doc";
 
 describe("renderDocMarkdown", () => {
-  it("renders the committed standard document with heading ids and a readable status banner", () => {
+  it("renders the committed standard document with heading ids", () => {
     const source = readFileSync(resolve(process.cwd(), "docs/standard.md"), "utf8");
     const html = renderDocMarkdown(source, {
       base: "/quizbun/",
@@ -13,7 +13,17 @@ describe("renderDocMarkdown", () => {
     });
 
     expect(html).toContain('<h1 id="quiz-object-standard">');
+    expect(html).toContain('<h2 id="compatibility-and-strictness">');
+  });
+
+  it("renders an important alert with a readable label", () => {
+    const html = renderDocMarkdown("> [!IMPORTANT]\n> Keep the schema and examples in sync.", {
+      base: "/",
+      sourceRepoPath: "docs/standard.md",
+    });
+
     expect(html).toContain("<strong>Important:</strong>");
+    expect(html).toContain("Keep the schema and examples in sync.");
     expect(html).not.toContain("[!IMPORTANT]");
   });
 
