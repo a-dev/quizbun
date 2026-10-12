@@ -1,6 +1,6 @@
 # Contributing to Quizbun
 
-The most valuable contribution is a quiz for the public Catalog. The complete walkthrough — generating a quiz with the published AI prompt, validating it locally, meeting the Public catalog profile, and reading CI feedback — lives in the published contributor guide:
+The most valuable contribution is a quiz for the public catalog. The complete walkthrough — generating a quiz with the published AI prompt, validating it locally, meeting the public catalog profile, and reading CI feedback — lives in the published contributor guide:
 
 **<https://quizbun.fyi/docs/contributing/>**
 
@@ -8,7 +8,7 @@ The most valuable contribution is a quiz for the public Catalog. The complete wa
 
 The short version:
 
-1. Generate or write a quiz that satisfies [the Quiz Object Standard](https://quizbun.fyi/docs/standard/).
+1. Generate or write a quiz that satisfies [the quiz Object standard](https://quizbun.fyi/docs/standard/).
 2. Validate it by pasting the JSON into the [import page](https://quizbun.fyi/import/).
 3. Add it as `content/quizzes/{id}.json` and open a pull request — one quiz (or one coherent cluster) per PR.
 
