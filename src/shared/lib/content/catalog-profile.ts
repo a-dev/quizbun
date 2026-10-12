@@ -1,5 +1,6 @@
 import { marked, type Token } from "marked";
 
+import { MAX_IMPORT_BYTES, MAX_IMPORT_QUESTIONS, utf8ByteLength } from "../quiz";
 import type { Quiz } from "../quiz";
 import { MARKDOWN_FIELD_TIERS, type MarkdownField, renderMarkdownField } from "../render";
 
@@ -54,10 +55,38 @@ export function checkCatalogProfile(quiz: Quiz): ProfileIssue[] {
     });
   }
 
-  issues.push(...checkRepeatedImageCaptions(quiz));
+  issues.push(...checkImportLimits(quiz), ...checkRepeatedImageCaptions(quiz));
 
   for (const entry of listMarkdownFields(quiz)) {
     issues.push(...checkMarkdownField(entry));
+  }
+
+  return issues;
+}
+
+/** A Catalog Quiz must be importable by Quizbun itself, so the Import limits are errors here. */
+function checkImportLimits(quiz: Quiz): ProfileIssue[] {
+  const issues: ProfileIssue[] = [];
+
+  if (quiz.questions.length > MAX_IMPORT_QUESTIONS) {
+    issues.push({
+      severity: "error",
+      path: "questions",
+      problem: `The Public catalog profile enforces Quizbun's Import limits: ${quiz.questions.length} Questions; at most ${MAX_IMPORT_QUESTIONS}.`,
+      fix: "Split the Quiz into two or more Quizzes, for example by subtopic.",
+    });
+  }
+
+  // The pretty-printed form is what a contributor commits and Import receives.
+  const bytes = utf8ByteLength(JSON.stringify(quiz, null, 2));
+
+  if (bytes > MAX_IMPORT_BYTES) {
+    issues.push({
+      severity: "error",
+      path: "root",
+      problem: `The Public catalog profile enforces Quizbun's Import limits: ${bytes} bytes of JSON; at most ${MAX_IMPORT_BYTES}.`,
+      fix: "Split the Quiz into smaller Quizzes or shorten long Explanations.",
+    });
   }
 
   return issues;

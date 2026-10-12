@@ -26,8 +26,16 @@ describe("extractPromptText", () => {
   const promptText = extractPromptText(promptDocSource);
 
   it("starts with the prompt instructions, not the document intro", () => {
-    expect(promptText.startsWith("Create one explanation-first Quiz")).toBe(true);
+    expect(promptText.startsWith("Create one explanation-first quiz")).toBe(true);
     expect(promptText).not.toContain("## Prompt");
+  });
+
+  it("excludes introductory text before the prompt heading", () => {
+    expect(
+      extractPromptText(
+        "# Generation guide\n\nIntroductory text.\n\n## Prompt\n\nCreate a quiz.\n",
+      ),
+    ).toBe("Create a quiz.");
   });
 
   it("contains the published JSON Schema verbatim", () => {

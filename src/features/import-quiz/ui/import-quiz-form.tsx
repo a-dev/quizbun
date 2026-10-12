@@ -12,6 +12,7 @@ import { CodeTextarea } from "@/shared/ui/textarea";
 
 import { QuizCard } from "@/entities/quiz";
 
+import { useQuizLink } from "../model/use-quiz-link";
 import { validateQuizJson } from "../model/validate-quiz-json";
 import type { QuizJsonValidationResult } from "../model/validate-quiz-json";
 
@@ -33,6 +34,19 @@ export function ImportQuizForm() {
   function validate() {
     setResult(validateQuizJson(text));
   }
+
+  // Preserve the received JSON so formatting cannot push it over the Import
+  // size limit. Saving stays an explicit click.
+  const { isOpening } = useQuizLink({
+    onLoaded(json) {
+      updateText(json);
+      setResult(validateQuizJson(json));
+    },
+    onFailed(report) {
+      updateText("");
+      setResult({ status: "invalid", report });
+    },
+  });
 
   async function fillFromFile(file: File | undefined) {
     if (file === undefined) return;
@@ -89,7 +103,8 @@ export function ImportQuizForm() {
     <section aria-label="Import a quiz" className={styles.root}>
       <div className={styles.actions}>
         <label htmlFor="quiz-json" className={styles.label}>
-          Paste quiz JSON (or pick a file / drop it onto the text area):
+          Paste quiz JSON (or pick a file / drop it onto the text area). Up to 200 questions and 1
+          MB:
         </label>
         <div className={styles.buttons}>
           <Button
@@ -111,6 +126,7 @@ export function ImportQuizForm() {
             Validate
           </Button>
         </div>
+        <output aria-live="polite">{isOpening ? "Opening the quiz from the link…" : ""}</output>
         <div className={styles.reports}>
           {result?.status === "invalid" && <ValidationReport report={result.report} />}
           {result?.status === "valid" && (

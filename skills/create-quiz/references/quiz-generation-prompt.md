@@ -1,69 +1,69 @@
 ## Prompt
 
-Create one explanation-first Quiz that follows the Quiz Object Standard v1 below. Help the Learner understand each concept through the Explanation shown after answering.
+Create one explanation-first quiz that follows the Quiz Object Standard v1 below. Help the learner understand each concept through the explanation shown after answering.
 
 ### 1. Resolve missing details
 
-Use the user's request and conversation. Do not ask again for details already provided. If the request is complete, generate the Quiz immediately.
+Use the user's request and conversation. Do not ask again for details already provided. If the request is complete, generate the quiz immediately.
 
 Ask only for missing details that affect the content:
 
 - Topic and scope. If the topic is broad or ambiguous, suggest concrete subtopics and ask which to cover.
-- Learner level or learning goal. Ask when you cannot infer it and it would change the Questions or Explanations.
-- Question count. Once the scope and level are clear, recommend counts with specific coverage for each. For example, a JavaScript array Quiz might use 10 Questions on indexing and common methods, 30 adding mutation, callbacks, and method selection, or 60 adding sparse arrays, shallow copies, and edge cases. Adapt the counts to the topic. More Questions do not guarantee greater depth; avoid repetition or padding.
-- Media preference, only when Images or Videos would help teach this topic. Explain what they would add and ask whether to include them. Respect an existing preference. If the user delegates the choice, default to text-only.
+- Learner level or learning goal. Ask when you cannot infer it and it would change the questions or explanations.
+- Question count. Once the scope and level are clear, recommend counts with specific coverage for each. For example, a JavaScript array quiz might use 10 questions on indexing and common methods, 30 adding mutation, callbacks, and method selection, or 60 adding sparse arrays, shallow copies, and edge cases. Adapt the counts to the topic. More questions do not guarantee greater depth; avoid repetition or padding.
+- Media preference, only when images or videos would help teach this topic. Explain what they would add and ask whether to include them. Respect an existing preference. If the user delegates the choice, default to text-only.
 
-Recommend suitable Question types alongside the count options. Use `single-choice` for one best answer, `multiple-choice` for several independently correct statements, and `input` for short text or numeric answers with predictable accepted forms. Choose the mix unless the user specifies one. Do not force every type into every Quiz.
+Recommend suitable question types alongside the count options. Use `single-choice` for one best answer, `multiple-choice` for several independently correct statements, and `input` for short text or numeric answers with predictable accepted forms. Choose the mix unless the user specifies one. Do not force every type into every quiz.
 
 Group independent questions into one short message and wait for the answers. If scope is unclear, resolve it before suggesting counts. Use the conversation's language unless the user requests another. If the user asks you to choose all missing details, proceed with reasonable assumptions instead of interviewing them. Do not require a separate plan approval.
 
 ### 2. Write, review, and deliver
 
-Cover the agreed scope and count. Write distinct Questions with plausible distractors based on common mistakes. Avoid trick wording, accidental clues, and ambiguous accepted answers.
+Cover the agreed scope and count. Write distinct questions with plausible distractors based on common mistakes. Avoid trick wording, accidental clues, and ambiguous accepted answers.
 
 #### Write natural teaching text
 
-- Put the actual ask in each Question's `title`. Use `description` only for supporting context, code, data, or answer-format hints. Omit it when it adds nothing.
-- Make each `explanation` teach why the answer holds. Address a likely misconception or explain a tempting distractor when useful. Do not merely restate the answer or describe what the Question teaches.
+- Put the actual ask in each question's `title`. Use `description` only for supporting context, code, data, or answer-format hints. Omit it when it adds nothing.
+- Make each `explanation` teach why the answer holds. Address a likely misconception or explain a tempting distractor when useful. Do not merely restate the answer or describe what the question teaches.
 - Use plain words, active voice, and concrete examples. Keep technical terms precise and consistent. Split dense sentences without dropping necessary reasoning.
 - Remove filler such as "It is important to note", inflated claims, vague attributions such as "experts say", and stock contrasts such as "not just X, but Y".
-- Let the concept determine the length and structure. Avoid repeating the same opener, conclusion, or list template across Explanations. Skip decorative emojis, excessive emphasis, and ornamental punctuation.
-- Edit all learner-facing text before delivery. Preserve facts, terminology, code, accepted answers, and which Options are correct. Recheck correctness after editing. This pass is built in; it does not require another skill.
+- Let the concept determine the length and structure. Avoid repeating the same opener, conclusion, or list template across explanations. Skip decorative emojis, excessive emphasis, and ornamental punctuation.
+- Edit all learner-facing text before delivery. Preserve facts, terminology, code, accepted answers, and which options are correct. Recheck correctness after editing. This pass is built in; it does not require another skill.
 
-#### Follow the Standard
+#### Follow the standard
 
-- Return exactly one Quiz object. Set `schemaVersion` to the number `1`. Use stable kebab-case Quiz and Question ids, with unique Question ids within the Quiz.
-- Include every required field in the schema. Omit empty optional text and arrays. Add no unknown fields or presentation settings, including difficulty, page size, Option ids, or Option labels.
-- Options contain only `text` and `isCorrect`. Both choice types require at least 2 Options. `single-choice` requires exactly 1 correct Option. `multiple-choice` requires at least 1 and permits all to be correct; scoring is all-or-nothing.
+- Return exactly one quiz object. Set `schemaVersion` to the number `1`. Use stable kebab-case quiz and question ids, with unique question ids within the quiz.
+- Include every required field in the schema. Omit empty optional text and arrays. Add no unknown fields or presentation settings, including difficulty, page size, option ids, or option labels.
+- Options contain only `text` and `isCorrect`. Both choice types require at least 2 options. `single-choice` requires exactly 1 correct option. `multiple-choice` requires at least 1 and permits all to be correct; scoring is all-or-nothing.
 - For `input`, include `validation` with `mode: "text"` or `mode: "numeric"` and a non-empty `acceptedAnswers` array. Text answers are case-insensitive, trimmed, and whitespace-normalized by default. Set `caseSensitive` only when exact casing is the learning goal. Numeric answers must be JSON numbers; use `tolerance` only when rounding should be accepted.
-- Include an `explanation` for every Question. Renderers shuffle Options, so never identify an Option by its JSON position or an invented label such as "option B". Quote or paraphrase its text. Labels defined within the Question itself, such as code comments, are allowed.
-- Never write how many Options to select. Renderers state that from `type`, so "(Select all that apply.)", "Select every true statement.", and "Your answer must include every correct choice." all render twice. Write the criterion when it is part of the ask — "Select every commit `git log main..feature` lists" names what to look for — and omit the bare instruction.
-- Use Markdown for learner-facing text. Titles, Option text, and Image captions are inline-only. Descriptions, Explanations, and References support full Markdown. Never use raw HTML or Markdown image syntax; structured `images` is the only Image channel.
+- Include an `explanation` for every question. Renderers shuffle options, so never identify an option by its JSON position or an invented label such as "option B". Quote or paraphrase its text. Labels defined within the question itself, such as code comments, are allowed.
+- Never write how many options to select. Renderers state that from `type`, so "(Select all that apply.)", "Select every true statement.", and "Your answer must include every correct choice." all render twice. Write the criterion when it is part of the ask — "Select every commit `git log main..feature` lists" names what to look for — and omit the bare instruction.
+- Use Markdown for learner-facing text. Titles, option text, and image captions are inline-only. Descriptions, explanations, and references support full Markdown. Never use raw HTML or Markdown image syntax; structured `images` is the only image channel.
 - Tag every fenced code block with its language. Supported highlighting includes `js`, `ts`, `jsx`, `tsx`, `json`, `html`, `css`, `py`, `bash`, `sh`, and `sql`. Other languages render without highlighting.
 - Add `references` when source material or further reading helps. Prefer links naming the publication and topic, such as `[MDN: Array.prototype.sort()](...)`. Never invent citations or URLs. Verify factual claims and use primary sources when research is needed. Do not present uncertain claims as settled facts.
 
 #### Include media only when useful and agreed
 
 - Add `images` or `videos` only when they teach something the text cannot. Each is a non-empty array when present.
-- An Image is `{ src, alt, caption?, placement? }`. Write meaningful `alt` text and put attribution in `caption`. Always omit `width` and `height`; repository tooling fills in intrinsic dimensions for vendored Images.
-- For a standalone Quiz file, use verified `https://` Image URLs. The Standard also permits bare kebab-case filenames ending in `png`, `jpg`, `jpeg`, `webp`, `avif`, `gif`, or `svg`, but these resolve to Catalog assets and are not bundled with an imported JSON file. Use filenames only when those assets will exist in the target Catalog. Directory paths, `http://`, protocol-relative URLs, and `data:` URLs are invalid.
-- A Video is `{ provider: "youtube", id, start?, placement? }`. Use the bare 11-character YouTube id. Optional `start` is a non-negative whole number of seconds.
+- An image is `{ src, alt, caption?, placement? }`. Write meaningful `alt` text and put attribution in `caption`. Always omit `width` and `height`; repository tooling fills in intrinsic dimensions for vendored images.
+- For a standalone quiz file, use verified `https://` image URLs. The standard also permits bare kebab-case filenames ending in `png`, `jpg`, `jpeg`, `webp`, `avif`, `gif`, or `svg`, but these resolve to catalog assets and are not bundled with an imported JSON file. Use filenames only when those assets will exist in the target catalog. Directory paths, `http://`, protocol-relative URLs, and `data:` URLs are invalid.
+- A video is `{ provider: "youtube", id, start?, placement? }`. Use the bare 11-character YouTube id. Optional `start` is a non-negative whole number of seconds.
 - `placement` is `"question"` or `"explanation"`. Omit the default `"question"`. Put answer-revealing media under `"explanation"` and avoid revealing the answer through question-side alt text or captions.
-- Verify every Image source and YouTube id exists and matches the intended content. You may create a diagram if you can supply it through a supported source. Never invent media identifiers. Omit unverified media; if this prevents the agreed coverage, explain the limitation before generating.
+- Verify every image source and YouTube id exists and matches the intended content. You may create a diagram if you can supply it through a supported source. Never invent media identifiers. Omit unverified media; if this prevents the agreed coverage, explain the limitation before generating.
 
 #### Check the result
 
-Before delivery, check JSON syntax, required fields, unknown fields, unique kebab-case ids, Option correctness counts, and input validation. Check factual accuracy, agreed coverage and count, clear Question titles, useful Explanations, and verified media. Remove any references to shuffled Option positions, and any instruction about how many Options to select.
+Before delivery, check JSON syntax, required fields, unknown fields, unique kebab-case ids, option correctness counts, and input validation. Check factual accuracy, agreed coverage and count, clear question titles, useful explanations, and verified media. Remove any references to shuffled option positions, and any instruction about how many options to select.
 
-Use a compatible validator when available and fix its errors. The schema below does not enforce every rule, including unique Question ids and correct Option counts. Do not claim you ran validation unless you did.
+Use a compatible validator when available and fix its errors. The schema below does not enforce every rule, including unique question ids and correct option counts. Do not claim you ran validation unless you did.
 
 #### Deliver a JSON file
 
-If your tools can create files, save the complete Quiz as UTF-8 `<quiz-id>.json`. The file must contain only the Quiz JSON object, without Markdown fences or commentary. Provide the actual download link, attachment, or accessible file link with a short instruction to import it into Quizbun.
+If your tools can create files, save the complete quiz as UTF-8 `<quiz-id>.json`. The file must contain only the quiz JSON object, without Markdown fences or commentary. Provide the actual download link, attachment, or accessible file link with a short instruction to import it into Quizbun.
 
 If you cannot create a file, say to save the code block's contents as `<quiz-id>.json` and import that file into Quizbun. Then provide the complete object in one `json` code block. Do not invent a download link or claim a file was created. Honor an explicit request for raw JSON instead.
 
-Never return a partial Quiz, placeholders, or multiple JSON objects as the final artifact. If the requested count exceeds your output capacity, explain the limit and agree on a smaller count before generating.
+Never return a partial quiz, placeholders, or multiple JSON objects as the final artifact. If the requested count exceeds your output capacity, explain the limit and agree on a smaller count before generating.
 
 JSON Schema:
 

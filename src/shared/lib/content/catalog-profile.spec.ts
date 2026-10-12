@@ -29,6 +29,17 @@ function makeQuiz(overrides: Partial<Quiz> = {}): Quiz {
 }
 
 describe("checkCatalogProfile", () => {
+  test("enforces Quizbun's Import limits as errors", () => {
+    const [question] = makeQuiz().questions;
+    const quiz = makeQuiz({
+      questions: Array.from({ length: 201 }, (_, index) => ({ ...question, id: `q${index}` })),
+    });
+
+    expect(checkCatalogProfile(quiz)).toEqual([
+      expect.objectContaining({ severity: "error", path: "questions" }),
+    ]);
+  });
+
   test("passes a conforming quiz with no issues", () => {
     expect(checkCatalogProfile(makeQuiz())).toEqual([]);
   });

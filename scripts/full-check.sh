@@ -33,6 +33,7 @@ STEPS=(
   "quiz:sizes:check	ci	Check Quiz Image dimensions	bun run quiz:sizes:check"
   "schema:check	ci	Check JSON Schema drift	bun run schema:check"
   "skill:create-quiz:check	ci	Check create-quiz skill drift	bun run skill:create-quiz:check"
+  "skill:quizbun:check	ci	Check quizbun skill drift	bun run skill:quizbun:check"
   "build	ci	Build static site	bun run build"
   "dist:base-paths	ci	Check dist for base-path regressions	bash scripts/check-dist-base-paths.sh"
   "e2e	ci	E2E tests	bun run e2e"

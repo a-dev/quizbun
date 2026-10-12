@@ -54,6 +54,37 @@ describe("create-quiz standalone validation", () => {
   });
 });
 
+describe("Quizbun Import limits", () => {
+  function makeLargeQuiz(questionCount: number) {
+    const quiz = readFixture();
+    const [question] = quiz.questions;
+    quiz.questions = Array.from({ length: questionCount }, (_, index) => ({
+      ...question,
+      id: `question-${index}`,
+    }));
+    return quiz;
+  }
+
+  test("keeps the Standard profile Renderer-neutral: 201 Questions still pass, silently", async () => {
+    const result = await validateStandardInput(JSON.stringify(makeLargeQuiz(201)), {
+      checkMedia: false,
+    });
+
+    expect(result.output).not.toMatch(/quizbun/i);
+    expect(result.warnings).toEqual([]);
+  });
+
+  test("rejects 201 Questions in the Catalog profile", async () => {
+    const directory = makeTemporaryDirectory();
+    const quiz = makeLargeQuiz(201);
+    writeFileSync(join(directory, `${quiz.id}.json`), JSON.stringify(quiz));
+
+    await expect(
+      validateTarget(directory, { checkMedia: false, profile: "catalog" }),
+    ).rejects.toThrow(/Import limits[\s\S]*201 Questions/);
+  });
+});
+
 describe("Standard profile targets", () => {
   test("validates a single Quiz file", async () => {
     const result = await validateTarget(fixturePath, { checkMedia: false, profile: "standard" });

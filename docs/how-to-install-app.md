@@ -1,6 +1,6 @@
 # Install Quizbun as an app
 
-You can install Quizbun on your phone, tablet, or computer. It opens in its own window and helps protect the Quizzes and Progress stored on your device.
+You can install Quizbun on your phone, tablet, or computer. It opens in its own window and helps protect the quizzes and progress stored on your device.
 
 ## iPhone or iPad using Safari
 

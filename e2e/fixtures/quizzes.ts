@@ -135,3 +135,26 @@ export const changedContentHashQuiz: Quiz = {
     },
   ],
 };
+
+/** A valid single-choice Quiz with `questionCount` Questions, for the Import limit journeys. */
+export function makeQuiz(questionCount: number, id = `e2e-generated-${questionCount}`): Quiz {
+  return {
+    schemaVersion: 1,
+    id,
+    title: `E2E — ${questionCount} Questions`,
+    description: "A generated Quiz for the Import limit journeys.",
+    language: "en",
+    tags: ["e2e", "generated"],
+    questions: Array.from({ length: questionCount }, (_, index) => ({
+      id: `question-${index + 1}`,
+      type: "single-choice" as const,
+      title: `Question ${index + 1}: which value is falsy in JavaScript?`,
+      explanation: "`0` is one of JavaScript's built-in falsy values.",
+      options: [
+        { text: "`[]`", isCorrect: false },
+        { text: "`0`", isCorrect: true },
+        { text: "`{}`", isCorrect: false },
+      ],
+    })),
+  };
+}

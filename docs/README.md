@@ -1,6 +1,6 @@
-# Public Quiz Author Docs
+# Public quiz author Docs
 
-Public documentation for quiz authors, learners, and Catalog contributors. These files are rendered on the site under `/docs/` or consumed as public authoring artifacts.
+Public documentation for quiz authors, learners, and catalog contributors. These files are rendered on the site under `/docs/` or consumed as public authoring artifacts.
 
 Keep this directory focused on:
 

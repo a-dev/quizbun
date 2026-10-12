@@ -2,6 +2,15 @@ export { checkAnswer, parseNumericInput } from "./check-answer";
 export { computeContentHash } from "./content-hash";
 export { downloadQuizJson } from "./export-quiz";
 export { formatQuizValidationErrors } from "./format-errors";
+export {
+  checkImportQuestionCount,
+  checkImportSize,
+  formatImportQuestionCountReport,
+  formatImportSizeReport,
+  MAX_IMPORT_BYTES,
+  MAX_IMPORT_QUESTIONS,
+  utf8ByteLength,
+} from "./import-limits";
 export { parseQuizJson } from "./parse-quiz-json";
 
 export {
