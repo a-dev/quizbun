@@ -6,6 +6,7 @@ import {
   validateStandardInput,
   validateTarget,
 } from "./create-quiz-validator";
+import { restoreNpmCallerWorkingDirectory } from "./create-quiz-validator-npm-alias";
 
 try {
   const options = parseCliArguments(process.argv.slice(2));
@@ -29,19 +30,4 @@ try {
 } catch (error) {
   console.error(error instanceof Error ? error.message : String(error));
   process.exitCode = 1;
-}
-
-/**
- * `npm run` executes a script from its package directory, so the bundled
- * `npm --prefix <skill> run validate -- quiz.json` alias would otherwise
- * resolve relative targets inside the skill instead of where the caller stood.
- * npm records that directory in INIT_CWD; restore it before any target is
- * resolved. Node invocations set neither variable and are left alone.
- */
-function restoreNpmCallerWorkingDirectory(): void {
-  const npmCallerDirectory = process.env.INIT_CWD;
-
-  if (process.env.npm_package_name === "create-quiz-skill" && npmCallerDirectory !== undefined) {
-    process.chdir(npmCallerDirectory);
-  }
 }

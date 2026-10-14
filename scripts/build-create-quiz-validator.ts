@@ -11,6 +11,8 @@ import type { BunPlugin } from "bun";
  * the Markdown and sanitization stack, which is most of the full bundle. The
  * Claude plugin directory holds any non-image file over 256 KiB for manual
  * review, and the plugin only validates single Quizzes against the standard.
+ * It also drops the npm alias, whose INIT_CWD read the directory flags as a
+ * credential read.
  */
 export async function buildCreateQuizValidator(options: {
   catalog: boolean;
@@ -28,7 +30,7 @@ export async function buildCreateQuizValidator(options: {
       outdir: temporaryDirectory,
       plugins: [
         stubSyntaxHighlighterPlugin,
-        ...(options.catalog ? [] : [stubCatalogProfilePlugin]),
+        ...(options.catalog ? [] : [stubCatalogProfilePlugin, stubNpmAliasPlugin]),
       ],
       sourcemap: "none",
       target: "node",
@@ -98,6 +100,22 @@ const stubCatalogProfilePlugin: BunPlugin = {
         `export function checkCatalogQuizzes() { ${CATALOG_UNAVAILABLE} }`,
         `export function formatCatalogProfileSummary() { ${CATALOG_UNAVAILABLE} }`,
       ].join("\n"),
+      loader: "js",
+    }));
+  },
+};
+
+/** The plugin ships no npm alias, so it has no npm caller directory to restore. */
+const stubNpmAliasPlugin: BunPlugin = {
+  name: "stub-npm-alias",
+  setup(build) {
+    build.onResolve({ filter: /\/create-quiz-validator-npm-alias$/ }, (args) => ({
+      path: args.path,
+      namespace: "stub-npm-alias",
+    }));
+
+    build.onLoad({ filter: /.*/, namespace: "stub-npm-alias" }, () => ({
+      contents: "export function restoreNpmCallerWorkingDirectory() {}",
       loader: "js",
     }));
   },

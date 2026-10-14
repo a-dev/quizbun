@@ -6225,6 +6225,9 @@ function formatMediaProblem(check, problem, fix) {
 `);
 }
 
+// stub-npm-alias:./create-quiz-validator-npm-alias
+function restoreNpmCallerWorkingDirectory() {}
+
 // scripts/create-quiz-validator-cli.ts
 try {
   const options = parseCliArguments(process.argv.slice(2));
@@ -6242,10 +6245,4 @@ try {
 } catch (error) {
   console.error(error instanceof Error ? error.message : String(error));
   process.exitCode = 1;
-}
-function restoreNpmCallerWorkingDirectory() {
-  const npmCallerDirectory = process.env.INIT_CWD;
-  if (process.env.npm_package_name === "create-quiz-skill" && npmCallerDirectory !== undefined) {
-    process.chdir(npmCallerDirectory);
-  }
 }
