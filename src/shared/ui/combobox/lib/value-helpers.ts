@@ -51,13 +51,20 @@ export function toRootValue<T extends ComboboxOptionValue>(
   return value ?? [];
 }
 
+// `Array.isArray` does not narrow `readonly` arrays out of a union.
+function isOptionList<T extends ComboboxOptionValue>(
+  value: readonly ComboboxOption<T>[] | ComboboxOption<T> | null | undefined,
+): value is readonly ComboboxOption<T>[] {
+  return Array.isArray(value);
+}
+
 /**
  * Converts Base UI root value shape to app-facing combobox value.
  */
 export function fromRootValue<T extends ComboboxOptionValue>(
-  value: ComboboxOption<T>[] | ComboboxOption<T> | null | undefined,
+  value: readonly ComboboxOption<T>[] | ComboboxOption<T> | null | undefined,
 ): ComboboxValue<T> {
-  if (Array.isArray(value)) return value;
+  if (isOptionList(value)) return [...value];
 
   return value ? [value] : undefined;
 }

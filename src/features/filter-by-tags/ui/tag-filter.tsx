@@ -1,5 +1,3 @@
-import { useMemo } from "react";
-
 import { Button } from "@/shared/ui/button";
 import { Combobox } from "@/shared/ui/combobox";
 import type { ComboboxOption, ComboboxValue } from "@/shared/ui/combobox";
@@ -36,18 +34,13 @@ export function TagFilter({
   onTitleQueryChange,
   tagCounts,
 }: TagFilterProps) {
-  const options = useMemo<ComboboxOption<string>[]>(
-    () =>
-      availableTags.map((tag) => ({
-        value: tag,
-        label: tagCounts?.[tag] === undefined ? tag : `${tag} (${tagCounts[tag]})`,
-      })),
-    [availableTags, tagCounts],
-  );
+  const options: ComboboxOption<string>[] = availableTags.map((tag) => ({
+    value: tag,
+    label: tagCounts?.[tag] === undefined ? tag : `${tag} (${tagCounts[tag]})`,
+  }));
 
-  const value = useMemo<ComboboxValue<string>>(
-    () => options.filter((option) => selectedTags.includes(option.value)),
-    [options, selectedTags],
+  const value: ComboboxValue<string> = options.filter((option) =>
+    selectedTags.includes(option.value),
   );
 
   function handleSelectedTagsChange(nextValue: ComboboxValue<string>) {

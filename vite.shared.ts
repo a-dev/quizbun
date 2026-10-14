@@ -16,3 +16,8 @@ export const sharedViteConfig = {
     },
   },
 } satisfies UserConfig;
+
+// React Compiler auto-memoizes components and hooks. Every pipeline that
+// renders islands (Astro, Storybook, the browser test lane) compiles the same
+// way, so tests and stories exercise the code that ships.
+export const reactCompiler = true;

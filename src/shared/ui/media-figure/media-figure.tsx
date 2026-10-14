@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useState } from "react";
 
 import { MarkdownRender } from "@/shared/ui/markdown";
 
@@ -39,16 +39,13 @@ export function MediaFigure({
   // React then never fires `onLoad` for an event that already happened. Ask the
   // element itself on attach so a settled Image is never stuck in either
   // pending or unresolved state.
-  const settleOnAttach = useCallback(
-    (image: HTMLImageElement | null) => {
-      if (image === null || !image.complete) return;
+  const settleOnAttach = (image: HTMLImageElement | null) => {
+    if (image === null || !image.complete) return;
 
-      // A complete Image with no intrinsic width never decoded.
-      if (image.naturalWidth === 0) setFailedSrc(src);
-      else setLoadedSrc(src);
-    },
-    [src],
-  );
+    // A complete Image with no intrinsic width never decoded.
+    if (image.naturalWidth === 0) setFailedSrc(src);
+    else setLoadedSrc(src);
+  };
 
   return (
     <figure className={cx(styles.root, className)}>

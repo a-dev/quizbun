@@ -1,4 +1,4 @@
-import { useMemo, type Ref } from "react";
+import { type Ref } from "react";
 
 import { ThumbsDown, ThumbsUp } from "lucide-react";
 
@@ -30,21 +30,12 @@ export function QuestionResult({ quizId, question, isCorrect, id, ref }: Questio
   const voice = useSelectedVoice();
   // Render once: the HTML for display, and the flattened text the speech engine
   // reads — speaking the rendered Markdown would voice `**`, links, code fences.
-  const explanationHtml = useMemo(
-    () => renderMarkdownField("explanation", question.explanation),
-    [question.explanation],
-  );
-  const explanationText = useMemo(
-    () => renderMarkdownFieldText("explanation", question.explanation),
-    [question.explanation],
-  );
-  const referencesHtml = useMemo(
-    () =>
-      question.references === undefined
-        ? undefined
-        : renderMarkdownField("questionReferences", question.references),
-    [question.references],
-  );
+  const explanationHtml = renderMarkdownField("explanation", question.explanation);
+  const explanationText = renderMarkdownFieldText("explanation", question.explanation);
+  const referencesHtml =
+    question.references === undefined
+      ? undefined
+      : renderMarkdownField("questionReferences", question.references);
 
   return (
     <output id={id} ref={ref} tabIndex={-1} className={styles.root}>

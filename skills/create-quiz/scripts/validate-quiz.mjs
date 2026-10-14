@@ -2912,7 +2912,7 @@ var require_picocolors = __commonJS(function(exports, module) {
   module.exports.createColors = createColors;
 });
 
-// node_modules/postcss/lib/tokenize.js
+// node_modules/sanitize-html/node_modules/postcss/lib/tokenize.js
 var require_tokenize = __commonJS(function(exports, module) {
   var SINGLE_QUOTE = 39;
   var DOUBLE_QUOTE = 34;
@@ -3130,7 +3130,7 @@ var require_tokenize = __commonJS(function(exports, module) {
   };
 });
 
-// node_modules/postcss/lib/terminal-highlight.js
+// node_modules/sanitize-html/node_modules/postcss/lib/terminal-highlight.js
 var require_terminal_highlight = __commonJS(function(exports, module) {
   var pico = require_picocolors();
   var tokenizer = require_tokenize();
@@ -3191,7 +3191,7 @@ var require_terminal_highlight = __commonJS(function(exports, module) {
   module.exports = terminalHighlight;
 });
 
-// node_modules/postcss/lib/css-syntax-error.js
+// node_modules/sanitize-html/node_modules/postcss/lib/css-syntax-error.js
 var require_css_syntax_error = __commonJS(function(exports, module) {
   var pico = require_picocolors();
   var terminalHighlight = require_terminal_highlight();
@@ -3291,18 +3291,9 @@ var require_css_syntax_error = __commonJS(function(exports, module) {
   CssSyntaxError.default = CssSyntaxError;
 });
 
-// node_modules/postcss/lib/stringifier.js
+// node_modules/sanitize-html/node_modules/postcss/lib/stringifier.js
 var require_stringifier = __commonJS(function(exports, module) {
-  var STYLE_TAG = /(<)(\/?style\b)/gi;
-  var COMMENT_OPEN = /(<)(!--)/g;
   var AT_NAME_END = /[\t\n\f\r "#'()/;[\\\]{}]/;
-  function escapeHTMLInCSS(str) {
-    if (typeof str !== "string")
-      return str;
-    if (!str.includes("<"))
-      return str;
-    return str.replace(STYLE_TAG, "\\3c $2").replace(COMMENT_OPEN, "\\3c $2");
-  }
   var DEFAULT_RAW = {
     after: `
 `,
@@ -3340,7 +3331,7 @@ var require_stringifier = __commonJS(function(exports, module) {
     if (!node.prop.startsWith("--"))
       return false;
     let before = node.raws.before;
-    return typeof before === "undefined" || !/\S$/.test(before);
+    return typeof before === "undefined" || !/[^\s;]$/.test(before);
   }
   function pushBody(str, stack, node) {
     let nodes = node.nodes;
@@ -3367,15 +3358,15 @@ var require_stringifier = __commonJS(function(exports, module) {
   }
   function pushBlock(str, stack, node, start) {
     let between = str.raw(node, "between", "beforeOpen");
-    str.builder(escapeHTMLInCSS(start + between) + "{", node, "start");
+    str.builder(start + between + "{", node, "start");
     let hasNodes = node.nodes && node.nodes.length;
     let close = () => {
       let after = hasNodes ? str.raw(node, "after") : str.raw(node, "after", "emptyBody");
       if (after)
-        str.builder(escapeHTMLInCSS(after));
+        str.builder(after);
       str.builder("}", node, "end");
       if (node.type === "rule" && node.raws.ownSemicolon) {
-        str.builder(escapeHTMLInCSS(node.raws.ownSemicolon), node, "end");
+        str.builder(node.raws.ownSemicolon, node, "end");
       }
     };
     if (hasNodes) {
@@ -3396,7 +3387,7 @@ var require_stringifier = __commonJS(function(exports, module) {
         this.block(node, start);
       } else {
         let end = (node.raws.between || "") + (semicolon ? ";" : "");
-        this.builder(escapeHTMLInCSS(start + end), node);
+        this.builder(start + end, node);
       }
     }
     beforeAfter(node, detect) {
@@ -3428,7 +3419,7 @@ var require_stringifier = __commonJS(function(exports, module) {
     }
     block(node, start) {
       let between = this.raw(node, "between", "beforeOpen");
-      this.builder(escapeHTMLInCSS(start + between) + "{", node, "start");
+      this.builder(start + between + "{", node, "start");
       let after;
       if (node.nodes && node.nodes.length) {
         this.body(node);
@@ -3437,7 +3428,7 @@ var require_stringifier = __commonJS(function(exports, module) {
         after = this.raw(node, "after", "emptyBody");
       }
       if (after)
-        this.builder(escapeHTMLInCSS(after));
+        this.builder(after);
       this.builder("}", node, "end");
     }
     body(node) {
@@ -3454,7 +3445,7 @@ var require_stringifier = __commonJS(function(exports, module) {
         let child = entry.node;
         let before = this.raw(child, "before");
         if (before) {
-          this.builder(entry.document ? before : escapeHTMLInCSS(before));
+          this.builder(before);
         }
         if (expandable && child.type === "rule") {
           pushBlock(this, stack, child, this.rawValue(child, "selector"));
@@ -3468,7 +3459,7 @@ var require_stringifier = __commonJS(function(exports, module) {
     comment(node) {
       let left = this.raw(node, "left", "commentLeft");
       let right = this.raw(node, "right", "commentRight");
-      this.builder(escapeHTMLInCSS("/*" + left + node.text + right + "*/"), node);
+      this.builder("/*" + left + node.text + right + "*/", node);
     }
     decl(node, semicolon) {
       let raws = node.raws;
@@ -3479,7 +3470,7 @@ var require_stringifier = __commonJS(function(exports, module) {
       }
       if (semicolon)
         string += ";";
-      this.builder(escapeHTMLInCSS(string), node);
+      this.builder(string, node);
     }
     document(node) {
       this.body(node);
@@ -3672,20 +3663,19 @@ var require_stringifier = __commonJS(function(exports, module) {
       return value;
     }
     root(node) {
-      if (node.source && node.source.input.hasBOM) {
+      let inDocument = node.parent && node.parent.type === "document";
+      if (!inDocument && node.source && node.source.input.hasBOM) {
         this.builder("\uFEFF", node, "start");
       }
       this.body(node);
       if (node.raws.after) {
-        let after = node.raws.after;
-        let isDocument = node.parent && node.parent.type === "document";
-        this.builder(isDocument ? after : escapeHTMLInCSS(after));
+        this.builder(node.raws.after);
       }
     }
     rule(node) {
       this.block(node, this.rawValue(node, "selector"));
       if (node.raws.ownSemicolon) {
-        this.builder(escapeHTMLInCSS(node.raws.ownSemicolon), node, "end");
+        this.builder(node.raws.ownSemicolon, node, "end");
       }
     }
     stringify(node, semicolon) {
@@ -3699,24 +3689,74 @@ var require_stringifier = __commonJS(function(exports, module) {
   Stringifier.default = Stringifier;
 });
 
-// node_modules/postcss/lib/stringify.js
+// node_modules/sanitize-html/node_modules/postcss/lib/stringify.js
 var require_stringify = __commonJS(function(exports, module) {
   var Stringifier = require_stringifier();
+  var STYLE_TAG = /(<)(\/?style\b)/gi;
+  var COMMENT_OPEN = /(<)(!--)/g;
+  function escapeHTMLInCSS(str) {
+    if (!str.includes("<"))
+      return str;
+    return str.replace(STYLE_TAG, "\\3c $2").replace(COMMENT_OPEN, "\\3c $2");
+  }
+
+  class SafeStringifier extends Stringifier {
+    escapeHTML(node, print) {
+      let builder = this.builder;
+      let chunks, css;
+      this.builder = (str, child, type) => {
+        if (chunks) {
+          css += str;
+          chunks.push(str, child, type);
+        } else if (str.includes("<")) {
+          css = str;
+          chunks = [str, child, type];
+        } else {
+          builder(str, child, type);
+        }
+      };
+      print();
+      this.builder = builder;
+      if (!chunks)
+        return;
+      let escaped = escapeHTMLInCSS(css);
+      if (escaped === css) {
+        for (let i = 0;i < chunks.length; i += 3) {
+          builder(chunks[i], chunks[i + 1], chunks[i + 2]);
+        }
+      } else {
+        builder(escaped, node, "start");
+      }
+    }
+    root(node) {
+      if (node.parent && node.parent.type === "document") {
+        this.escapeHTML(node, () => this.body(node));
+        if (node.raws.after)
+          this.builder(node.raws.after);
+      } else {
+        this.escapeHTML(node, () => super.root(node));
+      }
+    }
+  }
   function stringify(node, builder) {
-    let str = new Stringifier(builder);
-    str.stringify(node);
+    let str = new SafeStringifier(builder);
+    if (node.type === "root" || node.type === "document") {
+      str.stringify(node);
+    } else {
+      str.escapeHTML(node, () => str.stringify(node));
+    }
   }
   module.exports = stringify;
   stringify.default = stringify;
 });
 
-// node_modules/postcss/lib/symbols.js
+// node_modules/sanitize-html/node_modules/postcss/lib/symbols.js
 var require_symbols = __commonJS(function(exports, module) {
   exports.isClean = Symbol("isClean");
   exports.my = Symbol("my");
 });
 
-// node_modules/postcss/lib/node.js
+// node_modules/sanitize-html/node_modules/postcss/lib/node.js
 var require_node = __commonJS(function(exports, module) {
   var CssSyntaxError = require_css_syntax_error();
   var Stringifier = require_stringifier();
@@ -4119,7 +4159,7 @@ var require_node = __commonJS(function(exports, module) {
   Node.default = Node;
 });
 
-// node_modules/postcss/lib/comment.js
+// node_modules/sanitize-html/node_modules/postcss/lib/comment.js
 var require_comment = __commonJS(function(exports, module) {
   var Node = require_node();
 
@@ -4133,7 +4173,7 @@ var require_comment = __commonJS(function(exports, module) {
   Comment.default = Comment;
 });
 
-// node_modules/postcss/lib/declaration.js
+// node_modules/sanitize-html/node_modules/postcss/lib/declaration.js
 var require_declaration = __commonJS(function(exports, module) {
   var Node = require_node();
 
@@ -4153,7 +4193,7 @@ var require_declaration = __commonJS(function(exports, module) {
   Declaration.default = Declaration;
 });
 
-// node_modules/postcss/lib/container.js
+// node_modules/sanitize-html/node_modules/postcss/lib/container.js
 var require_container = __commonJS(function(exports, module) {
   var Comment = require_comment();
   var Declaration = require_declaration();
@@ -4593,7 +4633,7 @@ var require_container = __commonJS(function(exports, module) {
   };
 });
 
-// node_modules/postcss/lib/at-rule.js
+// node_modules/sanitize-html/node_modules/postcss/lib/at-rule.js
 var require_at_rule = __commonJS(function(exports, module) {
   var Container = require_container();
 
@@ -4618,7 +4658,7 @@ var require_at_rule = __commonJS(function(exports, module) {
   Container.registerAtRule(AtRule);
 });
 
-// node_modules/postcss/lib/document.js
+// node_modules/sanitize-html/node_modules/postcss/lib/document.js
 var require_document = __commonJS(function(exports, module) {
   var Container = require_container();
   var LazyResult;
@@ -4646,7 +4686,7 @@ var require_document = __commonJS(function(exports, module) {
   Document.default = Document;
 });
 
-// node_modules/nanoid/non-secure/index.cjs
+// node_modules/sanitize-html/node_modules/postcss/node_modules/nanoid/non-secure/index.cjs
 var require_non_secure = __commonJS(function(exports, module) {
   var urlAlphabet = "useandom-26T198340PX75pxJACKVERYMINDBUSHWOLF_GQZbfghjklqvwyzrict";
   var customAlphabet = (alphabet, defaultSize = 21) => {
@@ -4670,7 +4710,7 @@ var require_non_secure = __commonJS(function(exports, module) {
   module.exports = { nanoid, customAlphabet };
 });
 
-// node_modules/source-map-js/lib/base64.js
+// node_modules/sanitize-html/node_modules/postcss/node_modules/source-map-js/lib/base64.js
 var require_base64 = __commonJS(function(exports) {
   var intToCharMap = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/".split("");
   exports.encode = function(number) {
@@ -4709,7 +4749,7 @@ var require_base64 = __commonJS(function(exports) {
   };
 });
 
-// node_modules/source-map-js/lib/base64-vlq.js
+// node_modules/sanitize-html/node_modules/postcss/node_modules/source-map-js/lib/base64-vlq.js
 var require_base64_vlq = __commonJS(function(exports) {
   var base64 = require_base64();
   var VLQ_BASE_SHIFT = 5;
@@ -4761,7 +4801,7 @@ var require_base64_vlq = __commonJS(function(exports) {
   };
 });
 
-// node_modules/source-map-js/lib/util.js
+// node_modules/sanitize-html/node_modules/postcss/node_modules/source-map-js/lib/util.js
 var require_util = __commonJS(function(exports) {
   function getArg(aArgs, aName, aDefaultValue) {
     if (aName in aArgs) {
@@ -5139,7 +5179,7 @@ var require_util = __commonJS(function(exports) {
   exports.computeSourceURL = computeSourceURL;
 });
 
-// node_modules/source-map-js/lib/array-set.js
+// node_modules/sanitize-html/node_modules/postcss/node_modules/source-map-js/lib/array-set.js
 var require_array_set = __commonJS(function(exports) {
   var util = require_util();
   var has = Object.prototype.hasOwnProperty;
@@ -5207,7 +5247,7 @@ var require_array_set = __commonJS(function(exports) {
   exports.ArraySet = ArraySet;
 });
 
-// node_modules/source-map-js/lib/mapping-list.js
+// node_modules/sanitize-html/node_modules/postcss/node_modules/source-map-js/lib/mapping-list.js
 var require_mapping_list = __commonJS(function(exports) {
   var util = require_util();
   function generatedPositionAfter(mappingA, mappingB) {
@@ -5244,7 +5284,7 @@ var require_mapping_list = __commonJS(function(exports) {
   exports.MappingList = MappingList;
 });
 
-// node_modules/source-map-js/lib/source-map-generator.js
+// node_modules/sanitize-html/node_modules/postcss/node_modules/source-map-js/lib/source-map-generator.js
 var require_source_map_generator = __commonJS(function(exports) {
   var base64VLQ = require_base64_vlq();
   var util = require_util();
@@ -5465,10 +5505,9 @@ var require_source_map_generator = __commonJS(function(exports) {
       next = "";
       if (mapping.generatedLine !== previousGeneratedLine) {
         previousGeneratedColumn = 0;
-        while (mapping.generatedLine !== previousGeneratedLine) {
-          next += ";";
-          previousGeneratedLine++;
-        }
+        var lineDelta = mapping.generatedLine - previousGeneratedLine;
+        next += lineDelta === 1 ? ";" : ";".repeat(lineDelta);
+        previousGeneratedLine = mapping.generatedLine;
       } else {
         if (i > 0) {
           if (!util.compareByGeneratedPositionsInflated(mapping, mappings[i - 1])) {
@@ -5533,7 +5572,7 @@ var require_source_map_generator = __commonJS(function(exports) {
   exports.SourceMapGenerator = SourceMapGenerator;
 });
 
-// node_modules/source-map-js/lib/binary-search.js
+// node_modules/sanitize-html/node_modules/postcss/node_modules/source-map-js/lib/binary-search.js
 var require_binary_search = __commonJS(function(exports) {
   exports.GREATEST_LOWER_BOUND = 1;
   exports.LEAST_UPPER_BOUND = 2;
@@ -5580,7 +5619,7 @@ var require_binary_search = __commonJS(function(exports) {
   };
 });
 
-// node_modules/source-map-js/lib/quick-sort.js
+// node_modules/sanitize-html/node_modules/postcss/node_modules/source-map-js/lib/quick-sort.js
 var require_quick_sort = __commonJS(function(exports) {
   function SortTemplate(comparator) {
     function swap(ary, x, y) {
@@ -5616,9 +5655,17 @@ var require_quick_sort = __commonJS(function(exports) {
     let templateFn = new Function(`return ${template}`)();
     return templateFn(comparator);
   }
+  var isEvalAllowed = function() {
+    try {
+      new Function("return 0")();
+      return true;
+    } catch {
+      return false;
+    }
+  }();
   var sortCache = new WeakMap;
   exports.quickSort = function(ary, comparator, start = 0) {
-    let doQuickSort = sortCache.get(comparator);
+    let doQuickSort = isEvalAllowed ? sortCache.get(comparator) : SortTemplate(comparator);
     if (doQuickSort === undefined) {
       doQuickSort = cloneSort(comparator);
       sortCache.set(comparator, doQuickSort);
@@ -5627,13 +5674,14 @@ var require_quick_sort = __commonJS(function(exports) {
   };
 });
 
-// node_modules/source-map-js/lib/source-map-consumer.js
+// node_modules/sanitize-html/node_modules/postcss/node_modules/source-map-js/lib/source-map-consumer.js
 var require_source_map_consumer = __commonJS(function(exports) {
   var util = require_util();
   var binarySearch = require_binary_search();
   var ArraySet = require_array_set().ArraySet;
   var base64VLQ = require_base64_vlq();
   var quickSort = require_quick_sort().quickSort;
+  var MAX_SECTION_OFFSET_LINE = 1e7;
   function SourceMapConsumer(aSourceMap, aSourceMapURL) {
     var sourceMap = aSourceMap;
     if (typeof aSourceMap === "string") {
@@ -6102,6 +6150,7 @@ var require_source_map_consumer = __commonJS(function(exports) {
       line: -1,
       column: 0
     };
+    var maxOffsetLine = 0;
     this._sections = sections.map(function(s) {
       if (s.url) {
         throw new Error("Support for url field in sections not implemented.");
@@ -6109,18 +6158,36 @@ var require_source_map_consumer = __commonJS(function(exports) {
       var offset = util.getArg(s, "offset");
       var offsetLine = util.getArg(offset, "line");
       var offsetColumn = util.getArg(offset, "column");
+      if (!isValidOffset(offsetLine) || !isValidOffset(offsetColumn)) {
+        throw new Error("Section offset line and column must be non-negative integers.");
+      }
+      if (offsetLine > MAX_SECTION_OFFSET_LINE) {
+        throw new Error("Section offset line must not exceed " + MAX_SECTION_OFFSET_LINE + ".");
+      }
       if (offsetLine < lastOffset.line || offsetLine === lastOffset.line && offsetColumn < lastOffset.column) {
         throw new Error("Section offsets must be ordered and non-overlapping.");
       }
       lastOffset = offset;
+      var consumer = new SourceMapConsumer(util.getArg(s, "map"), aSourceMapURL);
+      var totalOffsetLine = offsetLine + (consumer._maxOffsetLine || 0);
+      if (totalOffsetLine > MAX_SECTION_OFFSET_LINE) {
+        throw new Error("Section offset line must not exceed " + MAX_SECTION_OFFSET_LINE + ", including offsets of nested sections.");
+      }
+      if (totalOffsetLine > maxOffsetLine) {
+        maxOffsetLine = totalOffsetLine;
+      }
       return {
         generatedOffset: {
           generatedLine: offsetLine + 1,
           generatedColumn: offsetColumn + 1
         },
-        consumer: new SourceMapConsumer(util.getArg(s, "map"), aSourceMapURL)
+        consumer
       };
     });
+    this._maxOffsetLine = maxOffsetLine;
+  }
+  function isValidOffset(aValue) {
+    return typeof aValue === "number" && aValue >= 0 && aValue <= 9007199254740991 && Math.floor(aValue) === aValue;
   }
   IndexedSourceMapConsumer.prototype = Object.create(SourceMapConsumer.prototype);
   IndexedSourceMapConsumer.prototype.constructor = SourceMapConsumer;
@@ -6129,8 +6196,9 @@ var require_source_map_consumer = __commonJS(function(exports) {
     get: function() {
       var sources = [];
       for (var i = 0;i < this._sections.length; i++) {
-        for (var j = 0;j < this._sections[i].consumer.sources.length; j++) {
-          sources.push(this._sections[i].consumer.sources[j]);
+        var sectionSources = this._sections[i].consumer.sources;
+        for (var j = 0;j < sectionSources.length; j++) {
+          sources.push(sectionSources[j]);
         }
       }
       return sources;
@@ -6242,7 +6310,7 @@ var require_source_map_consumer = __commonJS(function(exports) {
   exports.IndexedSourceMapConsumer = IndexedSourceMapConsumer;
 });
 
-// node_modules/source-map-js/lib/source-node.js
+// node_modules/sanitize-html/node_modules/postcss/node_modules/source-map-js/lib/source-node.js
 var require_source_node = __commonJS(function(exports) {
   var SourceMapGenerator = require_source_map_generator().SourceMapGenerator;
   var util = require_util();
@@ -6291,6 +6359,10 @@ var require_source_node = __commonJS(function(exports) {
         }
       }
       while (lastGeneratedLine < mapping.generatedLine) {
+        if (remainingLinesIndex >= remainingLines.length) {
+          lastGeneratedLine = mapping.generatedLine;
+          break;
+        }
         node.add(shiftNextLine());
         lastGeneratedLine++;
       }
@@ -6496,14 +6568,14 @@ var require_source_node = __commonJS(function(exports) {
   exports.SourceNode = SourceNode;
 });
 
-// node_modules/source-map-js/source-map.js
+// node_modules/sanitize-html/node_modules/postcss/node_modules/source-map-js/source-map.js
 var require_source_map = __commonJS(function(exports) {
   exports.SourceMapGenerator = require_source_map_generator().SourceMapGenerator;
   exports.SourceMapConsumer = require_source_map_consumer().SourceMapConsumer;
   exports.SourceNode = require_source_node().SourceNode;
 });
 
-// node_modules/postcss/lib/previous-map.js
+// node_modules/sanitize-html/node_modules/postcss/lib/previous-map.js
 var require_previous_map = __commonJS(function(exports, module) {
   var { existsSync, readFileSync, realpathSync } = __require("fs");
   var { dirname, isAbsolute, join, relative, sep } = __require("path");
@@ -6653,7 +6725,7 @@ var require_previous_map = __commonJS(function(exports, module) {
   PreviousMap.default = PreviousMap;
 });
 
-// node_modules/postcss/lib/input.js
+// node_modules/sanitize-html/node_modules/postcss/lib/input.js
 var require_input = __commonJS(function(exports, module) {
   var { nanoid } = require_non_secure();
   var { isAbsolute, resolve } = __require("path");
@@ -6877,7 +6949,7 @@ var require_input = __commonJS(function(exports, module) {
   }
 });
 
-// node_modules/postcss/lib/root.js
+// node_modules/sanitize-html/node_modules/postcss/lib/root.js
 var require_root = __commonJS(function(exports, module) {
   var Container = require_container();
   var LazyResult;
@@ -6938,7 +7010,7 @@ var require_root = __commonJS(function(exports, module) {
   Container.registerRoot(Root);
 });
 
-// node_modules/postcss/lib/list.js
+// node_modules/sanitize-html/node_modules/postcss/lib/list.js
 var require_list = __commonJS(function(exports, module) {
   var list = {
     comma(string) {
@@ -6959,7 +7031,18 @@ var require_list = __commonJS(function(exports, module) {
       let inQuote = false;
       let prevQuote = "";
       let escape = false;
-      for (let letter of string) {
+      let inComment = false;
+      for (let i = 0;i < string.length; i++) {
+        let letter = string[i];
+        if (inComment) {
+          current += letter;
+          if (letter === "*" && string[i + 1] === "/") {
+            current += "/";
+            i += 1;
+            inComment = false;
+          }
+          continue;
+        }
         if (escape) {
           escape = false;
         } else if (letter === "\\") {
@@ -6971,6 +7054,11 @@ var require_list = __commonJS(function(exports, module) {
         } else if (letter === '"' || letter === "'") {
           inQuote = true;
           prevQuote = letter;
+        } else if (letter === "/" && string[i + 1] === "*") {
+          current += "/*";
+          i += 1;
+          inComment = true;
+          continue;
         } else if (letter === "(") {
           func += 1;
         } else if (letter === ")") {
@@ -7000,7 +7088,7 @@ var require_list = __commonJS(function(exports, module) {
   list.default = list;
 });
 
-// node_modules/postcss/lib/rule.js
+// node_modules/sanitize-html/node_modules/postcss/lib/rule.js
 var require_rule = __commonJS(function(exports, module) {
   var Container = require_container();
   var list = require_list();
@@ -7026,7 +7114,7 @@ var require_rule = __commonJS(function(exports, module) {
   Container.registerRule(Rule);
 });
 
-// node_modules/postcss/lib/fromJSON.js
+// node_modules/sanitize-html/node_modules/postcss/lib/fromJSON.js
 var require_fromJSON = __commonJS(function(exports, module) {
   var AtRule = require_at_rule();
   var Comment = require_comment();
@@ -7116,7 +7204,7 @@ var require_fromJSON = __commonJS(function(exports, module) {
   fromJSON.default = fromJSON;
 });
 
-// node_modules/postcss/lib/map-generator.js
+// node_modules/sanitize-html/node_modules/postcss/lib/map-generator.js
 var require_map_generator = __commonJS(function(exports, module) {
   var { dirname, relative, resolve, sep } = __require("path");
   var { SourceMapConsumer, SourceMapGenerator } = require_source_map();
@@ -7188,17 +7276,22 @@ var require_map_generator = __commonJS(function(exports, module) {
         }
       } else if (this.css) {
         let annotation = "/*# sourceMappingURL=";
+        let css = "";
+        let cursor = 0;
         let startIndex;
-        while ((startIndex = this.css.lastIndexOf(annotation)) !== -1) {
+        while ((startIndex = this.css.indexOf(annotation, cursor)) !== -1) {
           let endIndex = this.css.indexOf("*/", startIndex + annotation.length);
           if (endIndex === -1)
             break;
-          while (startIndex > 0 && this.css[startIndex - 1] === `
+          while (startIndex > cursor && this.css[startIndex - 1] === `
 `) {
             startIndex--;
           }
-          this.css = this.css.slice(0, startIndex) + this.css.slice(endIndex + 2);
+          css += this.css.slice(cursor, startIndex);
+          cursor = endIndex + 2;
         }
+        if (cursor > 0)
+          this.css = css + this.css.slice(cursor);
       }
     }
     generate() {
@@ -7457,7 +7550,7 @@ var require_map_generator = __commonJS(function(exports, module) {
   module.exports = MapGenerator;
 });
 
-// node_modules/postcss/lib/parser.js
+// node_modules/sanitize-html/node_modules/postcss/lib/parser.js
 var require_parser = __commonJS(function(exports, module) {
   var AtRule = require_at_rule();
   var Comment = require_comment();
@@ -7888,6 +7981,7 @@ var require_parser = __commonJS(function(exports, module) {
       let token, type;
       let length = tokens.length;
       let value = "";
+      let last = "";
       let clean = true;
       let next, prev;
       for (let i = 0;i < length; i += 1) {
@@ -7899,16 +7993,18 @@ var require_parser = __commonJS(function(exports, module) {
           prev = tokens[i - 1] ? tokens[i - 1][0] : "empty";
           next = tokens[i + 1] ? tokens[i + 1][0] : "empty";
           if (!SAFE_COMMENT_NEIGHBOR[prev] && !SAFE_COMMENT_NEIGHBOR[next]) {
-            if (value.slice(-1) === ",") {
+            if (last === ",") {
               clean = false;
             } else {
               value += token[1];
+              last = token[1].slice(-1);
             }
           } else {
             clean = false;
           }
         } else {
           value += token[1];
+          last = token[1].slice(-1);
         }
       }
       if (!clean) {
@@ -7986,7 +8082,7 @@ var require_parser = __commonJS(function(exports, module) {
   module.exports = Parser;
 });
 
-// node_modules/postcss/lib/parse.js
+// node_modules/sanitize-html/node_modules/postcss/lib/parse.js
 var require_parse = __commonJS(function(exports, module) {
   var Container = require_container();
   var Input = require_input();
@@ -8020,7 +8116,7 @@ You tried to parse Less with ` + "the standard CSS parser; " + "try again with t
   Container.registerParse(parse);
 });
 
-// node_modules/postcss/lib/warning.js
+// node_modules/sanitize-html/node_modules/postcss/lib/warning.js
 var require_warning = __commonJS(function(exports, module) {
   var Container = require_container();
   var { my } = require_symbols();
@@ -8060,7 +8156,7 @@ var require_warning = __commonJS(function(exports, module) {
   Warning.default = Warning;
 });
 
-// node_modules/postcss/lib/result.js
+// node_modules/sanitize-html/node_modules/postcss/lib/result.js
 var require_result = __commonJS(function(exports, module) {
   var Warning = require_warning();
 
@@ -8097,7 +8193,7 @@ var require_result = __commonJS(function(exports, module) {
   Result.default = Result;
 });
 
-// node_modules/postcss/lib/warn-once.js
+// node_modules/sanitize-html/node_modules/postcss/lib/warn-once.js
 var require_warn_once = __commonJS(function(exports, module) {
   var printed = {};
   module.exports = function warnOnce(message) {
@@ -8110,7 +8206,7 @@ var require_warn_once = __commonJS(function(exports, module) {
   };
 });
 
-// node_modules/postcss/lib/lazy-result.js
+// node_modules/sanitize-html/node_modules/postcss/lib/lazy-result.js
 var require_lazy_result = __commonJS(function(exports, module) {
   var Container = require_container();
   var Document = require_document();
@@ -8641,7 +8737,7 @@ var require_lazy_result = __commonJS(function(exports, module) {
   Document.registerLazyResult(LazyResult);
 });
 
-// node_modules/postcss/lib/no-work-result.js
+// node_modules/sanitize-html/node_modules/postcss/lib/no-work-result.js
 var require_no_work_result = __commonJS(function(exports, module) {
   var MapGenerator = require_map_generator();
   var parse = require_parse();
@@ -8754,7 +8850,7 @@ var require_no_work_result = __commonJS(function(exports, module) {
   NoWorkResult.default = NoWorkResult;
 });
 
-// node_modules/postcss/lib/processor.js
+// node_modules/sanitize-html/node_modules/postcss/lib/processor.js
 var require_processor = __commonJS(function(exports, module) {
   var Document = require_document();
   var LazyResult = require_lazy_result();
@@ -8763,7 +8859,7 @@ var require_processor = __commonJS(function(exports, module) {
 
   class Processor {
     constructor(plugins = []) {
-      this.version = "8.5.28";
+      this.version = "8.5.30";
       this.plugins = this.normalize(plugins);
     }
     normalize(plugins) {
@@ -8808,7 +8904,7 @@ var require_processor = __commonJS(function(exports, module) {
   Document.registerProcessor(Processor);
 });
 
-// node_modules/postcss/lib/postcss.js
+// node_modules/sanitize-html/node_modules/postcss/lib/postcss.js
 var require_postcss = __commonJS(function(exports, module) {
   var AtRule = require_at_rule();
   var Comment = require_comment();
@@ -9576,6 +9672,15 @@ var require_sanitize_html = __commonJS(function(exports, module) {
     "set"
   ];
   var alwaysUrlAttributes = ["href"];
+  var severities = ["debug", "info", "warn", "error"];
+  function loggerFor(options) {
+    const source = options && options.logger || console;
+    const logger = {};
+    for (const severity of severities) {
+      logger[severity] = typeof source[severity] === "function" ? (...args) => source[severity](...args) : (...args) => console[severity](...args);
+    }
+    return logger;
+  }
   function each(obj, cb) {
     if (obj) {
       Object.keys(obj).forEach(function(key) {
@@ -9645,19 +9750,13 @@ var require_sanitize_html = __commonJS(function(exports, module) {
     }
     options = Object.assign({}, sanitizeHtml.defaults, options);
     options.parser = Object.assign({}, htmlParserDefaults, options.parser);
+    const logger = loggerFor(options);
     const tagAllowed = function(name) {
       return options.allowedTags === false || (options.allowedTags || []).indexOf(name) > -1;
     };
     vulnerableTags.forEach(function(tag) {
       if (tagAllowed(tag) && !options.allowVulnerableTags) {
-        console.warn(`
-
-⚠️ Your \`allowedTags\` option includes, \`${tag}\`, which is inherently
-vulnerable to XSS attacks. Please remove it from \`allowedTags\`.
-Or, to disable this warning, add the \`allowVulnerableTags\` option
-and ensure you are accounting for this risk.
-
-`);
+        logger.warn(`Your \`allowedTags\` option includes \`${tag}\`, which is inherently ` + "vulnerable to XSS attacks. Please remove it from `allowedTags`, or, " + "to disable this warning, add the `allowVulnerableTags` option and " + "ensure you are accounting for this risk.");
       }
     });
     const nonTextTagsArray = options.nonTextTags || [
@@ -9737,6 +9836,8 @@ and ensure you are accounting for this risk.
     let transformMap;
     let skipText;
     let skipTextDepth;
+    let rawTextEnd;
+    let skipRawText;
     let addedText = false;
     initializeState();
     const parser = new Parser({
@@ -9744,8 +9845,12 @@ and ensure you are accounting for this risk.
         if (options.onOpenTag) {
           options.onOpenTag(name, attribs);
         }
+        updateRawTextRegion();
         if (options.enforceHtmlBoundary && name === "html") {
           initializeState();
+        }
+        if (skipRawText) {
+          return;
         }
         if (skipText) {
           skipTextDepth++;
@@ -9782,6 +9887,9 @@ and ensure you are accounting for this risk.
             if (nonTextTagsArray.indexOf(name) !== -1) {
               skipText = true;
               skipTextDepth = 1;
+              if (frame.tag.toLowerCase() === "noscript") {
+                rawTextEnd = findRawTextEnd("noscript", parser.endIndex + 1);
+              }
             }
           }
         }
@@ -9857,6 +9965,10 @@ and ensure you are accounting for this risk.
                   return;
                 }
               }
+              if (name === "meta" && a.toLowerCase() === "content" && isRefresh(attribs) && naughtyRefresh(value)) {
+                delete frame.attribs[a];
+                return;
+              }
               if (name === "script" && a === "src") {
                 let allowed = true;
                 try {
@@ -9905,7 +10017,7 @@ and ensure you are accounting for this risk.
                 try {
                   let parsed = parseSrcset(value);
                   parsed.forEach(function(value) {
-                    if (naughtyHref(a, value.url)) {
+                    if (naughtyHref(name, value.url)) {
                       value.evil = true;
                     }
                   });
@@ -9961,7 +10073,7 @@ and ensure you are accounting for this risk.
                     }
                   } catch (e) {
                     if (typeof window !== "undefined") {
-                      console.warn('Failed to parse "' + name + " {" + value + "}" + `", If you're running this in a browser, we recommend to disable style parsing: options.parseStyleAttributes: false, since this only works in a node environment due to a postcss dependency, More info: https://github.com/apostrophecms/sanitize-html/issues/547`);
+                      logger.warn(`Failed to parse "${name} {${value}}". If you are ` + "running this in a browser, we recommend disabling " + "style parsing with the parseStyleAttributes option, " + "since it only works in a node environment due to a " + "postcss dependency. More info: " + "https://github.com/apostrophecms/sanitize-html/issues/547");
                     }
                     delete frame.attribs[a];
                     return;
@@ -10002,7 +10114,8 @@ and ensure you are accounting for this risk.
         frame.openingTagLength = result.length - frame.tagPosition;
       },
       ontext: function(text) {
-        if (skipText) {
+        updateRawTextRegion();
+        if (skipText || skipRawText) {
           return;
         }
         const lastFrame = stack[stack.length - 1];
@@ -10021,6 +10134,8 @@ and ensure you are accounting for this risk.
           } else {
             result += escapeHtml(text, false);
           }
+        } else if (tag === "iframe" && !tagAllowed(tag) && options.disallowedTagsMode === "discard") {
+          result += sanitizeHtml(text, options);
         } else if (!addedText) {
           const escaped = escapeHtml(text, false);
           if (options.textFilter) {
@@ -10038,10 +10153,19 @@ and ensure you are accounting for this risk.
         if (options.onCloseTag) {
           options.onCloseTag(name, isImplied);
         }
-        if (skipText) {
+        updateRawTextRegion();
+        if (skipRawText) {
+          const lastFrame = stack[stack.length - 1];
+          if (!lastFrame || lastFrame.tag !== name) {
+            return;
+          }
+        } else if (skipText) {
           skipTextDepth--;
           if (!skipTextDepth) {
             skipText = false;
+            if (rawTextEnd !== null) {
+              skipRawText = true;
+            }
           } else {
             return;
           }
@@ -10121,6 +10245,20 @@ and ensure you are accounting for this risk.
       transformMap = {};
       skipText = false;
       skipTextDepth = 0;
+      rawTextEnd = null;
+      skipRawText = false;
+    }
+    function updateRawTextRegion() {
+      if (rawTextEnd !== null && parser.startIndex >= rawTextEnd) {
+        rawTextEnd = null;
+        skipRawText = false;
+      }
+    }
+    function findRawTextEnd(tagName, from) {
+      const re = new RegExp("</" + tagName + "[\\t\\n\\f\\r />]", "ig");
+      re.lastIndex = from;
+      const match = re.exec(html);
+      return match ? match.index : Infinity;
     }
     function escapeHtml(s, quote) {
       if (typeof s !== "string") {
@@ -10145,19 +10283,94 @@ and ensure you are accounting for this risk.
         allowProtocolRelative: options.allowProtocolRelative
       });
     }
+    function isRefresh(attribs) {
+      return Object.keys(attribs).some(function(a) {
+        return a.toLowerCase() === "http-equiv" && String(attribs[a]).trim().toLowerCase() === "refresh";
+      });
+    }
+    function naughtyRefresh(content) {
+      const input = String(content);
+      const isWhitespace = function(c) {
+        return c === " " || c === "\t" || c === `
+` || c === "\f" || c === "\r";
+      };
+      let position = 0;
+      const skipWhitespace = function() {
+        while (position < input.length && isWhitespace(input[position])) {
+          position++;
+        }
+      };
+      const lowerAt = function(i) {
+        return (input[i] || "").toLowerCase();
+      };
+      skipWhitespace();
+      const timeStart = position;
+      while (position < input.length && /[0-9.]/.test(input[position])) {
+        position++;
+      }
+      if (position === timeStart) {
+        return true;
+      }
+      if (position < input.length) {
+        const c = input[position];
+        if (c !== ";" && c !== "," && !isWhitespace(c)) {
+          return true;
+        }
+        skipWhitespace();
+        if (input[position] === ";" || input[position] === ",") {
+          position++;
+        }
+        skipWhitespace();
+      }
+      if (position >= input.length) {
+        return false;
+      }
+      let url = input.slice(position);
+      let quoted = true;
+      if (lowerAt(position) === "u") {
+        quoted = false;
+        if (lowerAt(position + 1) === "r" && lowerAt(position + 2) === "l") {
+          position += 3;
+          skipWhitespace();
+          if (input[position] === "=") {
+            position++;
+            skipWhitespace();
+            quoted = true;
+          }
+        }
+      }
+      if (quoted) {
+        const quote = input[position];
+        if (quote === '"' || quote === "'") {
+          position++;
+        }
+        url = input.slice(position);
+        if (quote === '"' || quote === "'") {
+          const end = url.indexOf(quote);
+          if (end !== -1) {
+            url = url.slice(0, end);
+          }
+        }
+      }
+      return naughtyHref("meta", url);
+    }
     function animatesUrlAttribute(name, attribs) {
-      if (svgAnimationTags.indexOf(name.toLowerCase()) === -1) {
+      if (svgAnimationTags.indexOf(localPart(name)) === -1) {
         return false;
       }
       const schemeCheckedAttributes = options.allowedSchemesAppliedToAttributes || [];
       return Object.keys(attribs || {}).some(function(attributeName) {
-        if (attributeName.toLowerCase() !== "attributename") {
+        if (localPart(attributeName) !== "attributename") {
           return false;
         }
         const target = (attribs[attributeName] || "").trim().toLowerCase();
         const localName = target.slice(target.lastIndexOf(":") + 1);
         return alwaysUrlAttributes.indexOf(localName) !== -1 || schemeCheckedAttributes.indexOf(target) !== -1 || schemeCheckedAttributes.indexOf(localName) !== -1;
       });
+    }
+    function localPart(name) {
+      const lower = name.toLowerCase();
+      return lower.slice(lower.lastIndexOf(":") + 1);
     }
     function parseUrl(value) {
       value = value.replace(/^(\w+:)?\s*[\\/]\s*[\\/]/, "$1//");
@@ -10556,260 +10769,261 @@ import { existsSync as existsSync2, statSync as statSync2 } from "node:fs";
 import { resolve as resolve4 } from "node:path";
 
 // node_modules/marked/lib/marked.esm.js
-function I() {
+function B() {
   return { async: false, breaks: false, extensions: null, gfm: true, hooks: null, pedantic: false, renderer: null, silent: false, tokenizer: null, walkTokens: null };
 }
-var y = I();
-function W(l) {
-  y = l;
+var y = B();
+function V(a) {
+  y = a;
 }
-var A = { exec: () => null };
-function C(l) {
+var M = { exec: () => null };
+function D(a) {
   let e = [];
   return (t) => {
-    let n = Math.max(0, Math.min(3, t - 1)), s = e[n];
-    return s || (s = l(n), e[n] = s), s;
+    let n = Math.max(0, Math.min(3, t - 1)), i = e[n];
+    return i || (i = a(n), e[n] = i), i;
   };
 }
-function h(l, e = "") {
-  let t = typeof l == "string" ? l : l.source, n = { replace: (s, r) => {
+function h(a, e = "") {
+  let t = typeof a == "string" ? a : a.source, n = { replace: (i, r) => {
     let o = typeof r == "string" ? r : r.source;
-    return o = o.replace(x.caret, "$1"), t = t.replace(s, o), n;
+    return o = o.replace(x.caret, "$1"), t = t.replace(i, o), n;
   }, getRegex: () => new RegExp(t, e) };
   return n;
 }
-var _e = ((l = "") => {
+var ze = ((a = "") => {
   try {
-    return !!new RegExp("(?<=1)(?<!1)" + l);
+    return !!new RegExp("(?<=1)(?<!1)" + a);
   } catch {
     return false;
   }
 })();
-var x = { codeRemoveIndent: /^(?: {0,3}\t| {1,4})/gm, outputLinkReplace: /\\([\[\]])/g, indentCodeCompensation: /^(\s+)(?:```)/, beginningSpace: /^\s+/, endingHash: /#$/, startingSpaceChar: /^ /, endingSpaceChar: / $/, endingSpaceTabChar: /[ \t]$/, nonSpaceChar: /[^ ]/, newLineCharGlobal: /\n/g, tabCharGlobal: /\t/g, leadingSpaceTab: /^[ \t]+/, multipleSpaceGlobal: /\s+/g, blankLine: /^[ \t]*$/, doubleBlankLine: /\n[ \t]*\n[ \t]*$/, blockquoteStart: /^ {0,3}>/, blockquoteSetextReplace: /\n {0,3}((?:=+|-+) *)(?=\n|$)/g, blockquoteSetextReplace2: /^ {0,3}>[ \t]?/gm, listReplaceNesting: /^ {1,4}(?=( {4})*[^ ])/g, listIsTask: /^\[[ xX]\] +\S/, listReplaceTask: /^\[[ xX]\] +/, listTaskCheckbox: /\[[ xX]\]/, anyLine: /\n.*\n/, hrefBrackets: /^<(.*)>$/, tableDelimiter: /[:|]/, tableAlignChars: /^\||\| *$/g, tableRowBlankLine: /\n[ \t]*$/, tableAlignRight: /^ *-+: *$/, tableAlignCenter: /^ *:-+: *$/, tableAlignLeft: /^ *:-+ *$/, startATag: /^<a /i, endATag: /^<\/a>/i, startPreScriptTag: /^<(pre|code|kbd|script)(\s|>)/i, endPreScriptTag: /^<\/(pre|code|kbd|script)(\s|>)/i, startAngleBracket: /^</, endAngleBracket: />$/, pedanticHrefTitle: /^([^'"]*[^\s])\s+(['"])(.*)\2/, unicodeAlphaNumeric: /[\p{L}\p{N}]/u, numericCharacterReference: /&#(?:(\d{1,7})|[Xx]([A-Fa-f0-9]{1,6}));/g, escapeTest: /[&<>"']/, escapeReplace: /[&<>"']/g, escapeTestNoEncode: /[<>"']|&(?!(#\d{1,7}|#[Xx][a-fA-F0-9]{1,6}|\w+);)/, escapeReplaceNoEncode: /[<>"']|&(?!(#\d{1,7}|#[Xx][a-fA-F0-9]{1,6}|\w+);)/g, caret: /(^|[^\[])\^/g, percentDecode: /%25/g, findPipe: /\|/g, splitPipe: / \|/, slashPipe: /\\\|/g, carriageReturn: /\r\n|\r/g, spaceLine: /^ +$/gm, notSpaceStart: /^\S*/, endingNewline: /\n$/, listItemRegex: (l) => new RegExp(`^( {0,3}${l})((?:[	 ][^\\n]*)?(?:\\n|$))`), nextBulletRegex: C((l) => new RegExp(`^ {0,${l}}(?:[*+-]|\\d{1,9}[.)])((?:[ 	][^\\n]*)?(?:\\n|$))`)), hrRegex: C((l) => new RegExp(`^ {0,${l}}((?:-[ 	]*){3,}|(?:_[ 	]*){3,}|(?:\\*[ 	]*){3,})(?:\\n+|$)`)), fencesBeginRegex: C((l) => new RegExp(`^ {0,${l}}(?:\`\`\`|~~~)`)), headingBeginRegex: C((l) => new RegExp(`^ {0,${l}}#`)), htmlBeginRegex: C((l) => new RegExp(`^ {0,${l}}(?:</?(?:${N})(?: +|$|/?>)|<(?:script|pre|style|textarea|!--))`, "i")), blockquoteBeginRegex: C((l) => new RegExp(`^ {0,${l}}>`)) };
-var $e = /^(?:[ \t]*(?:\n|$))+/;
-var Le = /^((?: {4}| {0,3}\t)[^\n]+(?:\n(?:[ \t]*(?:\n|$))*)?)+/;
-var ze = /^ {0,3}(`{3,}(?=[^`\n]*(?:\n|$))|~{3,})([^\n]*)(?:\n|$)(?:|([\s\S]*?)(?:\n|$))(?: {0,3}\1[~`]* *(?=\n|$)|$)/;
-var G = /^ {0,3}((?:-[\t ]*){3,}|(?:_[ \t]*){3,}|(?:\*[ \t]*){3,})(?:\n+|$)/;
-var Ae = /^ {0,3}(#{1,6})(?=\s|$)(.*)(?:\n+|$)/;
-var J = / {0,3}(?:[*+-]|\d{1,9}[.)])/;
-var ce = /^(?!bull |blockCode|fences|blockquote|heading|html|table)((?:.|\n(?!\s*?\n|bull |fences|blockquote|heading|hr|html|table))+?)\n {0,3}(=+|-+) *(?:\n+|$)/;
-var he = h(ce).replace(/bull/g, J).replace(/blockCode/g, /(?: {4}| {0,3}\t)/).replace(/fences/g, / {0,3}(?:`{3,}|~{3,})/).replace(/blockquote/g, / {0,3}>/).replace(/heading/g, / {0,3}#{1,6}(?:\s|$)/).replace(/hr/g, / {0,3}(?:(?:-[\t ]*){3,}|(?:_[ \t]*){3,}|(?:\*[ \t]*){3,})(?:\n+|$)/).replace(/html/g, / {0,3}<[^\n>]+>\n/).replace(/\|table/g, "").getRegex();
-var Ee = h(ce).replace(/bull/g, J).replace(/blockCode/g, /(?: {4}| {0,3}\t)/).replace(/fences/g, / {0,3}(?:`{3,}|~{3,})/).replace(/blockquote/g, / {0,3}>/).replace(/heading/g, / {0,3}#{1,6}(?:\s|$)/).replace(/hr/g, / {0,3}(?:(?:-[\t ]*){3,}|(?:_[ \t]*){3,}|(?:\*[ \t]*){3,})(?:\n+|$)/).replace(/html/g, / {0,3}<[^\n>]+>\n/).replace(/table/g, / {0,3}\|?(?:[:\- ]*\|)+[\:\- ]*\n/).getRegex();
-var V = /^([^\n]+(?:\n(?!hr|heading|lheading|blockquote|fences|list|html|table|[ \t]+\n)[^\n]+)*)/;
-var Me = /^[^\n]+/;
-var Y = /(?!\s*\])(?:\\[\s\S]|[^\[\]\\])+/;
-var Ie = h(/^ {0,3}\[(label)\]: *(?:\n[ \t]*)?([^<\s][^\s]*|<.*?>)(?:(?: +(?:\n[ \t]*)?| *\n[ \t]*)(title))? *(?:\n+|$)/).replace("label", Y).replace("title", /(?:"(?:\\"?|[^"\\])*"|'[^'\n]*(?:\n[^'\n]+)*\n?'|\([^()]*\))/).getRegex();
-var Ce = h(/^(bull)([ \t][^\n]*?)?(?:\n|$)/).replace(/bull/g, J).getRegex();
-var N = "address|article|aside|base|basefont|blockquote|body|caption|center|col|colgroup|dd|details|dialog|dir|div|dl|dt|fieldset|figcaption|figure|footer|form|frame|frameset|h[1-6]|head|header|hr|html|iframe|legend|li|link|main|menu|menuitem|meta|nav|noframes|ol|optgroup|option|p|param|search|section|summary|table|tbody|td|tfoot|th|thead|title|tr|track|ul";
-var ee = /<!--(?:-?>|[\s\S]*?(?:-->|$))/;
-var Be = h("^ {0,3}(?:<(script|pre|style|textarea)[\\s>][\\s\\S]*?(?:</\\1>[^\\n]*\\n*|$)|comment[^\\n]*(\\n+|$)|<\\?[\\s\\S]*?(?:\\?>[^\\n]*\\n*|$)|<![A-Z][\\s\\S]*?(?:>[^\\n]*\\n*|$)|<!\\[CDATA\\[[\\s\\S]*?(?:\\]\\]>[^\\n]*\\n*|$)|</?(tag)(?: +|\\n|/?>)[\\s\\S]*?(?:(?:\\n[ \t]*)+\\n|$)|<(?!script|pre|style|textarea)([a-z][a-z0-9-]*)(?:attribute)*? */?>(?=[ \\t]*(?:\\n|$))[\\s\\S]*?(?:(?:\\n[ \t]*)+\\n|$)|</(?!script|pre|style|textarea)[a-z][a-z0-9-]*\\s*>(?=[ \\t]*(?:\\n|$))[\\s\\S]*?(?:(?:\\n[ \t]*)+\\n|$))", "i").replace("comment", ee).replace("tag", N).replace("attribute", / +[a-zA-Z:_][\w.:-]*(?: *= *"[^"\n]*"| *= *'[^'\n]*'| *= *[^\s"'=<>`]+)?/).getRegex();
-var de = (l) => h(V).replace("hr", G).replace("heading", " {0,3}#{1,6}(?:\\s|$)").replace("|lheading", "").replace("|table", "").replace("blockquote", " {0,3}>").replace("fences", " {0,3}(?:`{3,}(?=[^`\\n]*(?:\\n|$))|~~~)[^\\n]*(?:\\n|$)").replace("list", l).replace("html", "</?(?:tag)(?: +|\\n|/?>)|<(?:script|pre|style|textarea|!--)").replace("tag", N).getRegex();
-var De = de(/ {0,3}(?:[*+-]|1[.)])[ \t]+[^ \t\n]/);
-var qe = de(/ {0,3}(?:[*+-]|\d{1,9}[.)])(?:[ \t]|\n|$)/);
-var ve = h(/^( {0,3}> ?(paragraph|[^\n]*)(?:\n|$))+/).replace("paragraph", qe).getRegex();
-var te = { blockquote: ve, code: Le, def: Ie, fences: ze, heading: Ae, hr: G, html: Be, lheading: he, list: Ce, newline: $e, paragraph: De, table: A, text: Me };
-var le = h("^ *([^\\n ].*)\\n {0,3}((?:\\| *)?:?-+:? *(?:\\| *:?-+:? *)*(?:\\| *)?)(?:\\n((?:(?! *\\n|hr|heading|blockquote|code|fences|list|html).*(?:\\n|$))*)\\n*|$)").replace("hr", G).replace("heading", " {0,3}#{1,6}(?:\\s|$)").replace("blockquote", " {0,3}>").replace("code", "(?: {4}| {0,3}\t)[^\\n]").replace("fences", " {0,3}(?:`{3,}(?=[^`\\n]*(?:\\n|$))|~~~)[^\\n]*(?:\\n|$)").replace("list", " {0,3}(?:[*+-]|1[.)])[ \\t]").replace("html", "</?(?:tag)(?: +|\\n|/?>)|<(?:script|pre|style|textarea|!--)").replace("tag", N).getRegex();
-var Ze = { ...te, lheading: Ee, table: le, paragraph: h(V).replace("hr", G).replace("heading", " {0,3}#{1,6}(?:\\s|$)").replace("|lheading", "").replace("table", le).replace("blockquote", " {0,3}>").replace("fences", " {0,3}(?:`{3,}(?=[^`\\n]*(?:\\n|$))|~~~)[^\\n]*(?:\\n|$)").replace("list", " {0,3}(?:[*+-]|1[.)])[ \\t]+[^ \\t\\n]").replace("html", "</?(?:tag)(?: +|\\n|/?>)|<(?:script|pre|style|textarea|!--)").replace("tag", N).getRegex() };
-var He = { ...te, html: h(`^ *(?:comment *(?:\\n|\\s*$)|<(tag)[\\s\\S]+?</\\1> *(?:\\n{2,}|\\s*$)|<tag(?:"[^"]*"|'[^']*'|\\s[^'"/>\\s]*)*?/?> *(?:\\n{2,}|\\s*$))`).replace("comment", ee).replace(/tag/g, "(?!(?:a|em|strong|small|s|cite|q|dfn|abbr|data|time|code|var|samp|kbd|sub|sup|i|b|u|mark|ruby|rt|rp|bdi|bdo|span|br|wbr|ins|del|img)\\b)\\w+(?!:|[^\\w\\s@]*@)\\b").getRegex(), def: /^ *\[([^\]]+)\]: *<?([^\s>]+)>?(?: +(["(][^\n]+[")]))? *(?:\n+|$)/, heading: /^(#{1,6})(.*)(?:\n+|$)/, fences: A, lheading: /^(.+?)\n {0,3}(=+|-+) *(?:\n+|$)/, paragraph: h(V).replace("hr", G).replace("heading", ` *#{1,6} *[^
-]`).replace("lheading", he).replace("|table", "").replace("blockquote", " {0,3}>").replace("|fences", "").replace("|list", "").replace("|html", "").replace("|tag", "").getRegex() };
-var Ge = /^\\([!"#$%&'()*+,\-./:;<=>?@\[\]\\^_`{|}~])/;
-var Ne = /^(`+)([^`]|[^`][\s\S]*?[^`])\1(?!`)/;
-var ke = /^( {2,}|\\)\n(?!\s*$)[ \t]*/;
-var Qe = /^(`+|[^`])(?:(?= {2,}\n)|[\s\S]*?(?:(?=[\\<!\[`*_]|\b_|$)|[^ ](?= {2,}\n)))/;
-var $ = /[\p{P}\p{S}]/u;
-var B = /[\s\p{P}\p{S}]/u;
-var Q = /[^\s\p{P}\p{S}]/u;
-var je = h(/^((?![*_])punctSpace)/, "u").replace(/punctSpace/g, B).getRegex();
-var Fe = /[\p{Pi}\p{Ps}"']/u;
-var ge = /(?!~)[\p{P}\p{S}]/u;
-var Ue = /(?!~)[\s\p{P}\p{S}]/u;
-var Ke = /(?:[^\s\p{P}\p{S}]|~)/u;
-var We = h(/link|precode-code|html/, "g").replace("link", /\[(?:[^\[\]`]|(?<a>`+)[^`]+\k<a>(?!`))*?\]\((?:\\[\s\S]|[^\\\(\)]|\((?:\\[\s\S]|[^\\\(\)])*\))*\)/).replace("precode-", _e ? "(?<!`)()" : "(^^|[^`])").replace("code", /(?<b>`+)[^`]+\k<b>(?!`)/).replace("html", /<(?! )[^<>]*?>/).getRegex();
-var fe = /^(?:\*+(?:((?!\*)punct)|([^\s*]))?)|^_+(?:((?!_)punct)|([^\s_]))?/;
-var Xe = h(fe, "u").replace(/punct/g, $).getRegex();
-var Je = h(fe, "u").replace(/punct/g, ge).getRegex();
-var Ve = /^(?:\*+(?:((?!\*)(?!openQuote)punct)|([^\s*]))?)|^_+(?:((?!_)(?!openQuote)punct)|([^\s_]))?/;
-var Ye = h(Ve, "u").replace(/openQuote/g, Fe).replace(/punct/g, $).getRegex();
-var me = "^[^_*]*?__[^_*]*?\\*[^_*]*?(?=__)|[^*]+(?=[^*])|(?!\\*)punct(\\*+)(?=[\\s]|$)|notPunctSpace(\\*+)(?!\\*)(?=punctSpace|$)|(?!\\*)punctSpace(\\*+)(?=notPunctSpace)|[\\s](\\*+)(?!\\*)(?=punct)|(?!\\*)punct(\\*+)(?!\\*)(?=punct)|notPunctSpace(\\*+)(?=notPunctSpace)";
-var et = h(me, "gu").replace(/notPunctSpace/g, Q).replace(/punctSpace/g, B).replace(/punct/g, $).getRegex();
-var tt = h(me, "gu").replace(/notPunctSpace/g, Ke).replace(/punctSpace/g, Ue).replace(/punct/g, ge).getRegex();
-var nt = "^[^_*]*?__[^_*]*?\\*[^_*]*?(?=__)|[^*]+(?=[^*])|(?!\\*)punct(\\*+)(?=[\\s]|$)|notPunctSpace(\\*+)(?!\\*)(?=punctSpace|$)|(?!\\*)[\\s](\\*+)(?=notPunctSpace)|[\\s](\\*+)(?!\\*)(?=punct)|(?!\\*)punct(\\*+)(?!\\*)(?=punct)|(?:(?!\\*)punct|notPunctSpace)(\\*+)(?!\\*)(?=notPunctSpace)";
-var rt = h(nt, "gu").replace(/notPunctSpace/g, Q).replace(/punctSpace/g, B).replace(/punct/g, $).getRegex();
-var st = h("^[^_*]*?\\*\\*[^_*]*?_[^_*]*?(?=\\*\\*)|[^_]+(?=[^_])|(?!_)punct(_+)(?=[\\s]|$)|notPunctSpace(_+)(?!_)(?=punctSpace|$)|(?!_)punctSpace(_+)(?=notPunctSpace)|[\\s](_+)(?!_)(?=punct)|(?!_)punct(_+)(?!_)(?=punct)", "gu").replace(/notPunctSpace/g, Q).replace(/punctSpace/g, B).replace(/punct/g, $).getRegex();
-var it = "^[^_*]*?\\*\\*[^_*]*?_[^_*]*?(?=\\*\\*)|[^_]+(?=[^_])|(?!_)punct(_+)(?=[\\s]|$)|notPunctSpace(_+)(?!_)(?=punctSpace|$)|(?!_)[\\s](_+)(?=notPunctSpace)|[\\s](_+)(?!_)(?=punct)|(?!_)punct(_+)(?!_)(?=punct)|(?:(?!_)punct|notPunctSpace)(_+)(?!_)(?=notPunctSpace)";
-var ot = h(it, "gu").replace(/notPunctSpace/g, Q).replace(/punctSpace/g, B).replace(/punct/g, $).getRegex();
-var at = h(/^~~?(?:((?!~)punct)|[^\s~])/, "u").replace(/punct/g, $).getRegex();
-var lt = "^[^~]+(?=[^~])|(?!~)punct(~~?)(?=[\\s]|$)|notPunctSpace(~~?)(?!~)(?=punctSpace|$)|(?!~)punctSpace(~~?)(?=notPunctSpace)|[\\s](~~?)(?!~)(?=punct)|(?!~)punct(~~?)(?!~)(?=punct)|notPunctSpace(~~?)(?=notPunctSpace)";
-var ut = h(lt, "gu").replace(/notPunctSpace/g, Q).replace(/punctSpace/g, B).replace(/punct/g, $).getRegex();
-var pt = h(/\\(punct)/, "gu").replace(/punct/g, $).getRegex();
-var ct = h(/^<(scheme:[^\s\x00-\x1f<>]*|email)>/).replace("scheme", /[a-zA-Z][a-zA-Z0-9+.-]{1,31}/).replace("email", /[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+(@)[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+(?![-_])/).getRegex();
-var ht = h(ee).replace("(?:-->|$)", "-->").getRegex();
-var dt = h("^comment|^</[a-zA-Z][a-zA-Z0-9-]*\\s*>|^<[a-zA-Z][a-zA-Z0-9-]*(?:attribute)*?\\s*/?>|^<\\?[\\s\\S]*?\\?>|^<![a-zA-Z]+\\s[\\s\\S]*?>|^<!\\[CDATA\\[[\\s\\S]*?\\]\\]>").replace("comment", ht).replace("attribute", /\s+[a-zA-Z:_][\w.:-]*(?:\s*=\s*"[^"]*"|\s*=\s*'[^']*'|\s*=\s*[^\s"'=<>`]+)?/).getRegex();
-var xe = /\[(?:\\[\s\S]|[^\[\]\\])*\]/;
-var U = h(/(?:\[(?:brackets|\\[\s\S]|[^\[\]\\])*\]|\\[\s\S]|`+(?!`)[^`]*?`+(?!`)|``+(?=\])|[^\[\]\\`])*?/).replace("brackets", xe).getRegex();
-var kt = h(/^!?\[(label)\]\(\s*(href)(?:(?:[ \t]+(?:\n[ \t]*)?|\n[ \t]*)(title))?\s*\)/).replace("label", U).replace("href", /<(?:\\.|[^\n<>\\])+>|[^ \t\n\x00-\x1f]+|(?=\))/).replace("title", /"(?:\\"?|[^"\\])*"|'(?:\\'?|[^'\\])*'|\((?:\\\)?|[^)\\])*\)/).getRegex();
-var gt = h(/^!?\[(label)\]\[(ref)\]/).replace("label", U).replace("ref", Y).getRegex();
-var ft = h(/^!?\[(ref)\](?:\[\])?/).replace("ref", Y).getRegex();
-var ue = /(?!\s*\])(?:\\[\s\S]|[^\[\]\\]){1,999}/;
-var mt = h(/(?:[^\[\]\\`]*(?:\[(?:brackets|\\[\s\S]|[^\[\]\\])*\]|\\[\s\S]|`+(?!`)[^`]*?`+(?!`)|``+(?=\]))){0,999}?[^\[\]\\`]*?/).replace("brackets", xe).getRegex();
-var xt = h("reflink|nolink(?!\\()", "g").replace("reflink", h(/^!?\[(label)\]\[(ref)\]/).replace("label", mt).replace("ref", ue).getRegex()).replace("nolink", h(/^!?\[(ref)\](?:\[\])?/).replace("ref", ue).getRegex()).getRegex();
-var pe = /[hH][tT][tT][pP][sS]?|[fF][tT][pP]/;
-var bt = /[A-Za-z0-9._+-]+@[a-zA-Z0-9-_]+(?:\.[a-zA-Z0-9-_]*[a-zA-Z0-9])+(?![\w-])/;
-var Rt = h(/(?:mailto:email|xmpp:email(?:\/[A-Za-z0-9@.]+)?)/).replace(/email/g, bt).getRegex();
-var ne = { _backpedal: A, anyPunctuation: pt, autolink: ct, blockSkip: We, br: ke, code: Ne, del: A, delLDelim: A, delRDelim: A, emStrongLDelim: Xe, emStrongRDelimAst: et, emStrongRDelimUnd: st, escape: Ge, link: kt, nolink: ft, punctuation: je, reflink: gt, reflinkSearch: xt, tag: dt, text: Qe, url: A };
-var Tt = { ...ne, emStrongLDelim: Ye, emStrongRDelimAst: rt, emStrongRDelimUnd: ot, link: h(/^!?\[(label)\]\((.*?)\)/).replace("label", U).getRegex(), reflink: h(/^!?\[(label)\]\s*\[([^\]]*)\]/).replace("label", U).getRegex() };
-var X = { ...ne, emStrongRDelimAst: tt, emStrongLDelim: Je, delLDelim: at, delRDelim: ut, url: h(/^emailProtocol|^((?:protocol):\/\/|www\.)(?:[a-zA-Z0-9\-]+\.?)+[^\s<]*|^email/).replace("emailProtocol", Rt).replace("protocol", pe).replace("email", /[A-Za-z0-9._+-]+(@)[a-zA-Z0-9-_]+(?:\.[a-zA-Z0-9-_]*[a-zA-Z0-9])+(?![\w-])/).getRegex(), _backpedal: /(?:[^?!.,:;*_'"~()&]+|\([^)]*\)|&(?![a-zA-Z0-9]+;$)|[?!.,:;*_'"~)]+(?!$))+/, del: /^(~~?)(?=[^\s~])((?:\\[\s\S]|[^\\])*?(?:\\[\s\S]|[^\s~\\]))\1(?=[^~]|$)/, text: h(/^(?:[^a-zA-Z0-9](?=emailProtocol)|(`+|~+|[^`~])(?:(?=[`~])|(?= {2,}\n)|(?=[a-zA-Z0-9.!#$%&'*+\/=?_`{\|}~-]+@)|[\s\S]*?(?:(?=[\\<!\[`*~_]|\b_|protocol:\/\/|www\.|$)|[^ ](?= {2,}\n)|[^a-zA-Z0-9](?=emailProtocol)|[^a-zA-Z0-9.!#$%&'*+\/=?_`{\|}~-](?=[a-zA-Z0-9.!#$%&'*+\/=?_`{\|}~-]+@))))/).replace("protocol", pe).replace(/emailProtocol/g, /(?:mailto|xmpp):/).getRegex() };
-var Ot = { ...X, br: h(ke).replace("{2,}", "*").getRegex(), text: h(X.text).replace("\\b_", "\\b_| {2,}\\n").replace(/\{2,\}/g, "*").getRegex() };
-var j = { normal: te, gfm: Ze, pedantic: He };
-var D = { normal: ne, gfm: X, breaks: Ot, pedantic: Tt };
-var wt = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
-var be = (l) => wt[l];
-function O(l, e) {
+var x = { codeRemoveIndent: /^(?: {0,3}\t| {1,4})/gm, outputLinkReplace: /\\([\[\]])/g, indentCodeCompensation: /^(\s+)(?:```)/, beginningSpace: /^\s+/, endingHash: /#$/, startingSpaceChar: /^ /, endingSpaceChar: / $/, endingSpaceTabChar: /[ \t]$/, nonSpaceChar: /[^ ]/, newLineCharGlobal: /\n/g, tabCharGlobal: /\t/g, leadingSpaceTab: /^[ \t]+/, multipleSpaceGlobal: /\s+/g, blankLine: /^[ \t]*$/, doubleBlankLine: /\n[ \t]*\n[ \t]*$/, blockquoteStart: /^ {0,3}>/, blockquoteSetextReplace: /\n {0,3}((?:=+|-+) *)(?=\n|$)/g, blockquoteSetextReplace2: /^ {0,3}>[ \t]?/gm, listReplaceNesting: /^ {1,4}(?=( {4})*[^ ])/g, listIsTask: /^\[[ xX]\] +\S/, listReplaceTask: /^\[[ xX]\] +/, listTaskCheckbox: /\[[ xX]\]/, anyLine: /\n.*\n/, hrefBrackets: /^<(.*)>$/, tableDelimiter: /[:|]/, tableAlignChars: /^\||\| *$/g, tableRowBlankLine: /\n[ \t]*$/, tableAlignRight: /^ *-+: *$/, tableAlignCenter: /^ *:-+: *$/, tableAlignLeft: /^ *:-+ *$/, startATag: /^<a /i, endATag: /^<\/a>/i, startPreScriptTag: /^<(pre|code|kbd|script)(\s|>)/i, endPreScriptTag: /^<\/(pre|code|kbd|script)(\s|>)/i, startAngleBracket: /^</, endAngleBracket: />$/, pedanticHrefTitle: /^([^'"]*[^\s])\s+(['"])(.*)\2/, unicodeAlphaNumeric: /[\p{L}\p{N}]/u, numericCharacterReference: /&#(?:(\d{1,7})|[Xx]([A-Fa-f0-9]{1,6}));/, numericCharacterReferenceOrAmpersand: /&#(?:(\d{1,7})|[Xx]([A-Fa-f0-9]{1,6}));|&(?!(#\d{1,7}|#[Xx][a-fA-F0-9]{1,6}|\w+);)/g, escapeTest: /[&<>"']/, escapeReplace: /[&<>"']/g, escapeTestNoEncode: /[<>"']|&(?!(#\d{1,7}|#[Xx][a-fA-F0-9]{1,6}|\w+);)/, escapeReplaceNoEncode: /[<>"']|&(?!(#\d{1,7}|#[Xx][a-fA-F0-9]{1,6}|\w+);)/g, caret: /(^|[^\[])\^/g, percentDecode: /%25/g, findPipe: /\|/g, splitPipe: / \|/, slashPipe: /\\\|/g, carriageReturn: /\r\n|\r/g, spaceLine: /^ +$/gm, notSpaceStart: /^\S*/, endingNewline: /\n$/, listItemRegex: (a) => new RegExp(`^( {0,3}${a})((?:[	 ][^\\n]*)?(?:\\n|$))`), nextBulletRegex: D((a) => new RegExp(`^ {0,${a}}(?:[*+-]|\\d{1,9}[.)])((?:[ 	][^\\n]*)?(?:\\n|$))`)), hrRegex: D((a) => new RegExp(`^ {0,${a}}((?:-[ 	]*){3,}|(?:_[ 	]*){3,}|(?:\\*[ 	]*){3,})(?:\\n+|$)`)), fencesBeginRegex: D((a) => new RegExp(`^ {0,${a}}(?:\`\`\`|~~~)`)), headingBeginRegex: D((a) => new RegExp(`^ {0,${a}}#`)), htmlBeginRegex: D((a) => new RegExp(`^ {0,${a}}(?:</?(?:${Q})(?: +|$|/?>)|<(?:(?:script|pre|style|textarea)(?:[\\s>]|$)|!--)|<\\?|<![A-Za-z]|<!\\[CDATA\\[)`, "i")), blockquoteBeginRegex: D((a) => new RegExp(`^ {0,${a}}>`)) };
+var Ee = /^(?:[ \t]*(?:\n|$))+/;
+var Me = /^((?: {4}| {0,3}\t)[^\n]+(?:\n(?:[ \t]*(?:\n|$))*)?)+/;
+var Ce = /^ {0,3}(`{3,}(?=[^`\n]*(?:\n|$))|~{3,})([^\n]*)(?:\n|$)(?:|([\s\S]*?)(?:\n|$))(?: {0,3}\1[~`]* *(?=\n|$)|$)/;
+var N = /^ {0,3}((?:-[\t ]*){3,}|(?:_[ \t]*){3,}|(?:\*[ \t]*){3,})(?:\n+|$)/;
+var Ie = /^ {0,3}(#{1,6})(?=\s|$)(.*)(?:\n+|$)/;
+var Y = / {0,3}(?:[*+-]|\d{1,9}[.)])/;
+var fe = /^(?!bull |blockCode|fences|blockquote|heading|html|table)((?:.|\n(?!\s*?\n|bull |fences|blockquote|heading|hr|html|table))+?)\n {0,3}(=+|-+) *(?:\n+|$)/;
+var me = h(fe).replace(/bull/g, Y).replace(/blockCode/g, /(?: {4}| {0,3}\t)/).replace(/fences/g, / {0,3}(?:`{3,}|~{3,})/).replace(/blockquote/g, / {0,3}>/).replace(/heading/g, / {0,3}#{1,6}(?:\s|$)/).replace(/hr/g, / {0,3}(?:(?:-[\t ]*){3,}|(?:_[ \t]*){3,}|(?:\*[ \t]*){3,})(?:\n+|$)/).replace(/html/g, / {0,3}<[^\n>]+>\n/).replace(/\|table/g, "").getRegex();
+var Be = h(fe).replace(/bull/g, Y).replace(/blockCode/g, /(?: {4}| {0,3}\t)/).replace(/fences/g, / {0,3}(?:`{3,}|~{3,})/).replace(/blockquote/g, / {0,3}>/).replace(/heading/g, / {0,3}#{1,6}(?:\s|$)/).replace(/hr/g, / {0,3}(?:(?:-[\t ]*){3,}|(?:_[ \t]*){3,}|(?:\*[ \t]*){3,})(?:\n+|$)/).replace(/html/g, / {0,3}<[^\n>]+>\n/).replace(/table/g, / {0,3}\|?(?:[:\- ]*\|)+[\:\- ]*\n/).getRegex();
+var ee = /^([^\n]+(?:\n(?!hr|heading|lheading|blockquote|fences|list|html|table|[ \t]+\n)[^\n]+)*)/;
+var De = /^[^\n]+/;
+var te = /(?!\s*\])(?:\\[\s\S]|[^\[\]\\])+/;
+var qe = h(/^ {0,3}\[(label)\]: *(?:\n[ \t]*)?([^<\s][^\s]*|<.*?>)(?:(?: +(?:\n[ \t]*)?| *\n[ \t]*)(title))? *(?:\n+|$)/).replace("label", te).replace("title", /(?:"(?:\\"?|[^"\\])*"|'[^'\n]*(?:\n[^'\n]+)*\n?'|\([^()]*\))/).getRegex();
+var Ze = h(/^(bull)([ \t][^\n]*?)?(?:\n|$)/).replace(/bull/g, Y).getRegex();
+var Q = "address|article|aside|base|basefont|blockquote|body|caption|center|col|colgroup|dd|details|dialog|dir|div|dl|dt|fieldset|figcaption|figure|footer|form|frame|frameset|h[1-6]|head|header|hr|html|iframe|legend|li|link|main|menu|menuitem|meta|nav|noframes|ol|optgroup|option|p|param|search|section|summary|table|tbody|td|tfoot|th|thead|title|tr|track|ul";
+var ne = /<!--(?:-?>|[\s\S]*?(?:-->|$))/;
+var ve = h("^ {0,3}(?:<(script|pre|style|textarea)[\\s>][\\s\\S]*?(?:</\\1>[^\\n]*\\n*|$)|comment[^\\n]*(\\n+|$)|<\\?[\\s\\S]*?(?:\\?>[^\\n]*\\n*|$)|<![A-Z][\\s\\S]*?(?:>[^\\n]*\\n*|$)|<!\\[CDATA\\[[\\s\\S]*?(?:\\]\\]>[^\\n]*\\n*|$)|</?(tag)(?: +|\\n|/?>)[\\s\\S]*?(?:(?:\\n[ \t]*)+\\n|$)|<(?!(?:script|pre|style|textarea)(?![a-z0-9-]))([a-z][a-z0-9-]*)(?:attribute)*? */?>(?=[ \\t]*(?:\\n|$))[\\s\\S]*?(?:(?:\\n[ \t]*)+\\n|$)|</[a-z][a-z0-9-]*\\s*>(?=[ \\t]*(?:\\n|$))[\\s\\S]*?(?:(?:\\n[ \t]*)+\\n|$))", "i").replace("comment", ne).replace("tag", Q).replace("attribute", / +[a-zA-Z:_][\w.:-]*(?: *= *"[^"\n]*"| *= *'[^'\n]*'| *= *[^\s"'=<>`]+)?/).getRegex();
+var xe = (a) => h(ee).replace("hr", N).replace("heading", " {0,3}#{1,6}(?:\\s|$)").replace("|lheading", "").replace("|table", "").replace("blockquote", " {0,3}>").replace("fences", " {0,3}(?:`{3,}(?=[^`\\n]*(?:\\n|$))|~~~)[^\\n]*(?:\\n|$)").replace("list", a).replace("html", " {0,3}(?:</?(?:tag)(?: +|\\n|/?>)|<(?:(?:script|pre|style|textarea)(?:[\\s>]|$)|!--)|<\\?|<![A-Za-z]|<!\\[CDATA\\[)").replace("tag", Q).getRegex();
+var He = xe(/ {0,3}(?:[*+-]|1[.)])[ \t]+[^ \t\n]/);
+var Ge = xe(/ {0,3}(?:[*+-]|\d{1,9}[.)])(?:[ \t]|\n|$)/);
+var Ne = h(/^( {0,3}> ?(paragraph|[^\n]*)(?:\n|$))+/).replace("paragraph", Ge).getRegex();
+var re = { blockquote: Ne, code: Me, def: qe, fences: Ce, heading: Ie, hr: N, html: ve, lheading: me, list: Ze, newline: Ee, paragraph: He, table: M, text: De };
+var de = h("^ *([^\\n ].*)\\n {0,3}((?:\\| *)?:?-+:? *(?:\\| *:?-+:? *)*(?:\\| *)?)(?:\\n((?:(?! *\\n|hr|heading|blockquote|code|fences|list|html).*(?:\\n|$))*)\\n*|$)").replace("hr", N).replace("heading", " {0,3}#{1,6}(?:\\s|$)").replace("blockquote", " {0,3}>").replace("code", "(?: {4}| {0,3}\t)[^\\n]").replace("fences", " {0,3}(?:`{3,}(?=[^`\\n]*(?:\\n|$))|~~~)[^\\n]*(?:\\n|$)").replace("list", " {0,3}(?:[*+-]|1[.)])[ \\t]").replace("html", " {0,3}(?:</?(?:tag)(?: +|\\n|/?>)|<(?:(?:script|pre|style|textarea)(?:[\\s>]|$)|!--)|<\\?|<![A-Za-z]|<!\\[CDATA\\[)").replace("tag", Q).getRegex();
+var Qe = { ...re, lheading: Be, table: de, paragraph: h(ee).replace("hr", N).replace("heading", " {0,3}#{1,6}(?:\\s|$)").replace("|lheading", "").replace("table", de).replace("blockquote", " {0,3}>").replace("fences", " {0,3}(?:`{3,}(?=[^`\\n]*(?:\\n|$))|~~~)[^\\n]*(?:\\n|$)").replace("list", " {0,3}(?:[*+-]|1[.)])[ \\t]+[^ \\t\\n]").replace("html", " {0,3}(?:</?(?:tag)(?: +|\\n|/?>)|<(?:(?:script|pre|style|textarea)(?:[\\s>]|$)|!--)|<\\?|<![A-Za-z]|<!\\[CDATA\\[)").replace("tag", Q).getRegex() };
+var je = { ...re, html: h(`^ *(?:comment *(?:\\n|\\s*$)|<(tag)[\\s\\S]+?</\\1> *(?:\\n{2,}|\\s*$)|<tag(?:"[^"]*"|'[^']*'|\\s[^'"/>\\s]*)*?/?> *(?:\\n{2,}|\\s*$))`).replace("comment", ne).replace(/tag/g, "(?!(?:a|em|strong|small|s|cite|q|dfn|abbr|data|time|code|var|samp|kbd|sub|sup|i|b|u|mark|ruby|rt|rp|bdi|bdo|span|br|wbr|ins|del|img)\\b)\\w+(?!:|[^\\w\\s@]*@)\\b").getRegex(), def: /^ *\[([^\]]+)\]: *<?([^\s>]+)>?(?: +(["(][^\n]+[")]))? *(?:\n+|$)/, heading: /^(#{1,6})(.*)(?:\n+|$)/, fences: M, lheading: /^(.+?)\n {0,3}(=+|-+) *(?:\n+|$)/, paragraph: h(ee).replace("hr", N).replace("heading", ` *#{1,6} *[^
+]`).replace("lheading", me).replace("|table", "").replace("blockquote", " {0,3}>").replace("|fences", "").replace("|list", "").replace("|html", "").replace("|tag", "").getRegex() };
+var Fe = /^\\([!"#$%&'()*+,\-./:;<=>?@\[\]\\^_`{|}~])/;
+var Ue = /^(`+)([^`]|[^`][\s\S]*?[^`])\1(?!`)/;
+var be = /^( {2,}|\\)\n(?!\s*$)[ \t]*/;
+var Ke = /^(`+|[^`])(?:(?= {2,}\n)|[\s\S]*?(?:(?=[\\<!\[`*_]|\b_|$)|[^ ](?= {2,}\n)))/;
+var S = /[\p{P}\p{S}]/u;
+var q = /[\s\p{P}\p{S}]/u;
+var j = /[^\s\p{P}\p{S}]/u;
+var Xe = h(/^((?![*_])punctSpace)/, "u").replace(/punctSpace/g, q).getRegex();
+var We = /[\p{Pi}\p{Ps}"']/u;
+var Re = /(?!~)[\p{P}\p{S}]/u;
+var Ve = /(?!~)[\s\p{P}\p{S}]/u;
+var Je = /(?:[^\s\p{P}\p{S}]|~)/u;
+var Ye = h(/link|precode-code|html/, "g").replace("link", /\[(?:[^\[\]`]|(?<a>`+)[^`]+\k<a>(?!`))*?\]\((?:\\[\s\S]|[^\\\(\)]|\((?:\\[\s\S]|[^\\\(\)])*\))*\)/).replace("precode-", ze ? "(?<!`)()" : "(^^|[^`])").replace("code", /(?<b>`+)[^`]+\k<b>(?!`)/).replace("html", /<(?! )[^<>]*?>/).getRegex();
+var Te = /^(?:\*+(?:((?!\*)punct)|([^\s*]))?)|^_+(?:((?!_)punct)|([^\s_]))?/;
+var et = h(Te, "u").replace(/punct/g, S).getRegex();
+var tt = h(Te, "u").replace(/punct/g, Re).getRegex();
+var nt = /^(?:\*+(?:((?!\*)(?!openQuote)punct)|([^\s*]))?)|^_+(?:((?!_)(?!openQuote)punct)|([^\s_]))?/;
+var rt = h(nt, "u").replace(/openQuote/g, We).replace(/punct/g, S).getRegex();
+var Oe = "^[^_*]*?__[^_*]*?\\*[^_*]*?(?=__)|[^*]+(?=[^*])|(?!\\*)punct(\\*+)(?=[\\s]|$)|notPunctSpace(\\*+)(?!\\*)(?=punctSpace|$)|(?!\\*)punctSpace(\\*+)(?=notPunctSpace)|[\\s](\\*+)(?!\\*)(?=punct)|(?!\\*)punct(\\*+)(?!\\*)(?=punct)|notPunctSpace(\\*+)(?=notPunctSpace)";
+var st = h(Oe, "gu").replace(/notPunctSpace/g, j).replace(/punctSpace/g, q).replace(/punct/g, S).getRegex();
+var it = h(Oe, "gu").replace(/notPunctSpace/g, Je).replace(/punctSpace/g, Ve).replace(/punct/g, Re).getRegex();
+var ot = "^[^_*]*?__[^_*]*?\\*[^_*]*?(?=__)|[^*]+(?=[^*])|(?!\\*)punct(\\*+)(?=[\\s]|$)|notPunctSpace(\\*+)(?!\\*)(?=punctSpace|$)|(?!\\*)[\\s](\\*+)(?=notPunctSpace)|[\\s](\\*+)(?!\\*)(?=punct)|(?!\\*)punct(\\*+)(?!\\*)(?=punct)|(?:(?!\\*)punct|notPunctSpace)(\\*+)(?!\\*)(?=notPunctSpace)";
+var at = h(ot, "gu").replace(/notPunctSpace/g, j).replace(/punctSpace/g, q).replace(/punct/g, S).getRegex();
+var lt = h("^[^_*]*?\\*\\*[^_*]*?_[^_*]*?(?=\\*\\*)|[^_]+(?=[^_])|(?!_)punct(_+)(?=[\\s]|$)|notPunctSpace(_+)(?!_)(?=punctSpace|$)|(?!_)punctSpace(_+)(?=notPunctSpace)|[\\s](_+)(?!_)(?=punct)|(?!_)punct(_+)(?!_)(?=punct)", "gu").replace(/notPunctSpace/g, j).replace(/punctSpace/g, q).replace(/punct/g, S).getRegex();
+var ut = "^[^_*]*?\\*\\*[^_*]*?_[^_*]*?(?=\\*\\*)|[^_]+(?=[^_])|(?!_)punct(_+)(?=[\\s]|$)|notPunctSpace(_+)(?!_)(?=punctSpace|$)|(?!_)[\\s](_+)(?=notPunctSpace)|[\\s](_+)(?!_)(?=punct)|(?!_)punct(_+)(?!_)(?=punct)|(?:(?!_)punct|notPunctSpace)(_+)(?!_)(?=notPunctSpace)";
+var pt = h(ut, "gu").replace(/notPunctSpace/g, j).replace(/punctSpace/g, q).replace(/punct/g, S).getRegex();
+var ct = h(/^~~?(?:((?!~)punct)|[^\s~])/, "u").replace(/punct/g, S).getRegex();
+var ht = "^[^~]+(?=[^~])|(?!~)punct(~~?)(?=[\\s]|$)|notPunctSpace(~~?)(?!~)(?=punctSpace|$)|(?!~)punctSpace(~~?)(?=notPunctSpace)|[\\s](~~?)(?!~)(?=punct)|(?!~)punct(~~?)(?!~)(?=punct)|notPunctSpace(~~?)(?=notPunctSpace)";
+var dt = h(ht, "gu").replace(/notPunctSpace/g, j).replace(/punctSpace/g, q).replace(/punct/g, S).getRegex();
+var kt = h(/\\(punct)/, "gu").replace(/punct/g, S).getRegex();
+var gt = h(/(`+)(?:[^`]|[^`][\s\S]*?[^`])\1(?!`)|`+|\\(punct)/, "gu").replace(/punct/g, S).getRegex();
+var ft = h(/^<(scheme:[^\s\x00-\x1f<>]*|email)>/).replace("scheme", /[a-zA-Z][a-zA-Z0-9+.-]{1,31}/).replace("email", /[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+(@)[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+(?![-_])/).getRegex();
+var mt = h(ne).replace("(?:-->|$)", "-->").getRegex();
+var xt = h("^comment|^</[a-zA-Z][a-zA-Z0-9-]*\\s*>|^<[a-zA-Z][a-zA-Z0-9-]*(?:attribute)*?\\s*/?>|^<\\?[\\s\\S]*?\\?>|^<![a-zA-Z]+\\s[\\s\\S]*?>|^<!\\[CDATA\\[[\\s\\S]*?\\]\\]>").replace("comment", mt).replace("attribute", /\s+[a-zA-Z:_][\w.:-]*(?:\s*=\s*"[^"]*"|\s*=\s*'[^']*'|\s*=\s*[^\s"'=<>`]+)?/).getRegex();
+var we = /\[(?:\\[\s\S]|[^\[\]\\])*\]/;
+var K = h(/(?:\[(?:brackets|\\[\s\S]|[^\[\]\\])*\]|\\[\s\S]|`+(?!`)[^`]*?`+(?!`)|``+(?=\])|[^\[\]\\`])*?/).replace("brackets", we).getRegex();
+var bt = h(/^!?\[(label)\]\([ \t\n]*(href)(?:(?:[ \t]+(?:\n[ \t]*)?|\n[ \t]*)(title))?[ \t\n]*\)/).replace("label", K).replace("href", /<(?:\\.|[^\n<>\\])+>|[^ \t\n\x00-\x1f]+|(?=\))/).replace("title", /"(?:\\"?|[^"\\])*"|'(?:\\'?|[^'\\])*'|\((?:\\\)?|[^)\\])*\)/).getRegex();
+var Rt = h(/^!?\[(label)\]\[(ref)\]/).replace("label", K).replace("ref", te).getRegex();
+var Tt = h(/^!?\[(ref)\](?:\[\])?/).replace("ref", te).getRegex();
+var ke = /(?!\s*\])(?:\\[\s\S]|[^\[\]\\]){1,999}/;
+var Ot = h(/(?:[^\[\]\\`]*(?:\[(?:brackets|\\[\s\S]|[^\[\]\\])*\]|\\[\s\S]|`+(?!`)[^`]*?`+(?!`)|``+(?=\]))){0,999}?[^\[\]\\`]*?/).replace("brackets", we).getRegex();
+var wt = h("reflink|nolink(?!\\()", "g").replace("reflink", h(/^!?\[(label)\]\[(ref)\]/).replace("label", Ot).replace("ref", ke).getRegex()).replace("nolink", h(/^!?\[(ref)\](?:\[\])?/).replace("ref", ke).getRegex()).getRegex();
+var ge = /[hH][tT][tT][pP][sS]?|[fF][tT][pP]/;
+var Pt = /[A-Za-z0-9._+-]+@[a-zA-Z0-9-_]+(?:\.[a-zA-Z0-9-_]*[a-zA-Z0-9])+(?![\w-])/;
+var yt = h(/(?:mailto:email|xmpp:email(?:\/[A-Za-z0-9@.]+)?)/).replace(/email/g, Pt).getRegex();
+var se = { _backpedal: M, anyPunctuation: kt, anyPunctuationOutsideCode: gt, autolink: ft, blockSkip: Ye, br: be, code: Ue, del: M, delLDelim: M, delRDelim: M, emStrongLDelim: et, emStrongRDelimAst: st, emStrongRDelimUnd: lt, escape: Fe, link: bt, nolink: Tt, punctuation: Xe, reflink: Rt, reflinkSearch: wt, tag: xt, text: Ke, url: M };
+var St = { ...se, emStrongLDelim: rt, emStrongRDelimAst: at, emStrongRDelimUnd: pt, link: h(/^!?\[(label)\]\((.*?)\)/).replace("label", K).getRegex(), reflink: h(/^!?\[(label)\]\s*\[([^\]]*)\]/).replace("label", K).getRegex() };
+var J = { ...se, emStrongRDelimAst: it, emStrongLDelim: tt, delLDelim: ct, delRDelim: dt, url: h(/^emailProtocol|^((?:protocol):\/\/|www\.)(?:[a-zA-Z0-9\-]+\.?)+[^\s<]*|^email/).replace("emailProtocol", yt).replace("protocol", ge).replace("email", /[A-Za-z0-9._+-]+(@)[a-zA-Z0-9-_]+(?:\.[a-zA-Z0-9-_]*[a-zA-Z0-9])+(?![\w-])/).getRegex(), _backpedal: /(?:[^?!.,:;*_'"~()&]+|\([^)]*\)|&(?![a-zA-Z0-9]+;$)|[?!.,:;*_'"~)]+(?!$))+/, del: /^(~~?)(?=[^\s~])((?:\\[\s\S]|[^\\])*?(?:\\[\s\S]|[^\s~\\]))\1(?=[^~]|$)/, text: h(/^(?:[^a-zA-Z0-9](?=emailProtocol)|(`+|~+|[^`~])(?:(?=[`~])|(?= {2,}\n)|(?=[a-zA-Z0-9.!#$%&'*+\/=?_`{\|}~-]+@)|[\s\S]*?(?:(?=[\\<!\[`*~_]|\b_|protocol:\/\/|www\.|$)|[^ ](?= {2,}\n)|[^a-zA-Z0-9](?=emailProtocol)|[^a-zA-Z0-9.!#$%&'*+\/=?_`{\|}~-](?=[a-zA-Z0-9.!#$%&'*+\/=?_`{\|}~-]+@))))/).replace("protocol", ge).replace(/emailProtocol/g, /(?:mailto|xmpp):/).getRegex() };
+var _t = { ...J, br: h(be).replace("{2,}", "*").getRegex(), text: h(J.text).replace("\\b_", "\\b_| {2,}\\n").replace(/\{2,\}/g, "*").getRegex() };
+var F = { normal: re, gfm: Qe, pedantic: je };
+var Z = { normal: se, gfm: J, breaks: _t, pedantic: St };
+var $t = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
+var Pe = (a) => $t[a];
+function w(a, e) {
   if (e) {
-    if (x.escapeTest.test(l))
-      return l.replace(x.escapeReplace, be);
-  } else if (x.escapeTestNoEncode.test(l))
-    return l.replace(x.escapeReplaceNoEncode, be);
-  return l;
+    if (x.escapeTest.test(a))
+      return a.replace(x.escapeReplace, Pe);
+  } else if (x.escapeTestNoEncode.test(a))
+    return a.replace(x.escapeReplaceNoEncode, Pe);
+  return a;
 }
-function Re(l) {
-  return l.replace(x.numericCharacterReference, (e, t, n) => {
-    let s = t === undefined ? Number.parseInt(n, 16) : Number.parseInt(t, 10);
-    return s === 0 || s > 1114111 || s >= 55296 && s <= 57343 ? "�" : String.fromCodePoint(s);
-  });
+function ye(a) {
+  return x.numericCharacterReference.test(a) ? a.replace(x.numericCharacterReferenceOrAmpersand, (e, t, n) => {
+    if (t === undefined && n === undefined)
+      return "&amp;";
+    let i = t === undefined ? Number.parseInt(n, 16) : Number.parseInt(t, 10);
+    return i === 0 || i > 1114111 || i >= 55296 && i <= 57343 ? "�" : i === 38 ? "&amp;" : String.fromCodePoint(i);
+  }) : a;
 }
-function re(l) {
+function ie(a) {
   try {
-    l = encodeURI(l).replace(x.percentDecode, "%");
+    a = encodeURI(a).replace(x.percentDecode, "%");
   } catch {
     return null;
   }
-  return l;
+  return a;
 }
-function se(l, e) {
-  let t = l.replace(x.findPipe, (r, o, i) => {
-    let u = false, a = o;
-    for (;--a >= 0 && i[a] === "\\"; )
-      u = !u;
-    return u ? "|" : " |";
-  }), n = t.split(x.splitPipe), s = 0;
+function oe(a, e) {
+  let t = a.replace(x.findPipe, (r, o, s) => {
+    let l = false, u = o;
+    for (;--u >= 0 && s[u] === "\\"; )
+      l = !l;
+    return l ? "|" : " |";
+  }), n = t.split(x.splitPipe), i = 0;
   if (n[0].trim() || n.shift(), n.length > 0 && !n.at(-1)?.trim() && n.pop(), e)
     if (n.length > e)
       n.splice(e);
     else
       for (;n.length < e; )
         n.push("");
-  for (;s < n.length; s++)
-    n[s] = n[s].trim().replace(x.slashPipe, "|");
+  for (;i < n.length; i++)
+    n[i] = n[i].trim().replace(x.slashPipe, "|");
   return n;
 }
-function L(l, e, t) {
-  let n = l.length;
+function A(a, e, t) {
+  let n = a.length;
   if (n === 0)
     return "";
-  let s = 0;
-  for (;s < n; ) {
-    let r = l.charAt(n - s - 1);
+  let i = 0;
+  for (;i < n; ) {
+    let r = a.charAt(n - i - 1);
     if (r === e && !t)
-      s++;
+      i++;
     else if (r !== e && t)
-      s++;
+      i++;
     else
       break;
   }
-  return l.slice(0, n - s);
+  return a.slice(0, n - i);
 }
-function ie(l) {
-  let e = l.split(`
+function ae(a) {
+  let e = a.split(`
 `), t = e.length - 1;
   for (;t >= 0 && x.blankLine.test(e[t]); )
     t--;
-  return e.length - t <= 2 ? l : e.slice(0, t + 1).join(`
+  return e.length - t <= 2 ? a : e.slice(0, t + 1).join(`
 `);
 }
-function q(l) {
-  return l.trim().toLowerCase().toUpperCase().toLowerCase();
+function v(a) {
+  return a.trim().toLowerCase().toUpperCase().toLowerCase();
 }
-function Te(l, e) {
-  if (l.indexOf(e[1]) === -1)
+function le(a, e) {
+  if (a.indexOf(e[0]) === -1 && a.indexOf(e[1]) === -1)
     return -1;
   let t = 0;
-  for (let n = 0;n < l.length; n++)
-    if (l[n] === "\\")
+  for (let n = 0;n < a.length; n++)
+    if (a[n] === "\\")
       n++;
-    else if (l[n] === e[0])
+    else if (a[n] === e[0])
       t++;
-    else if (l[n] === e[1] && (t--, t < 0))
+    else if (a[n] === e[1] && (t--, t < 0))
       return n;
   return t > 0 ? -2 : -1;
 }
-function oe(l, e = 0) {
+function X(a, e = 0) {
   let t = e, n = "";
-  for (let s of l)
-    if (s === "\t") {
+  for (let i of a)
+    if (i === "\t") {
       let r = 4 - t % 4;
       n += " ".repeat(r), t += r;
     } else
-      n += s, t++;
+      n += i, t++;
   return n;
 }
-function Oe(l, e, t, n, s) {
-  let r = e.href, o = e.title || null, i = l[1].replace(s.other.outputLinkReplace, "$1"), u = l[0].charAt(0) === "!";
-  n.state.inLink = true;
-  let a = n.state.linkEmitted, p = n.state.inRawBlock;
-  n.state.linkEmitted = false;
-  let c = n.inlineTokens(i), d = n.state.linkEmitted;
-  if (n.state.linkEmitted = a, n.state.inLink = false, !u) {
-    if (d) {
+function Se(a, e, t, n, i) {
+  let r = e.href, o = e.title || null, s = a[1].replace(i.other.outputLinkReplace, "$1"), l = a[0].charAt(0) === "!", u = n.state.inLink, c = n.state.linkEmitted, p = n.state.inRawBlock;
+  n.state.inLink = true, n.state.linkEmitted = false;
+  let d = n.inlineTokens(s), g = n.state.linkEmitted;
+  if (n.state.linkEmitted = c, n.state.inLink = u, !l) {
+    if (g) {
       n.state.inRawBlock = p;
       return;
     }
     n.state.linkEmitted = true;
   }
-  return { type: u ? "image" : "link", raw: t, href: r, title: o, text: i, tokens: c };
+  return { type: l ? "image" : "link", raw: t, href: r, title: o, text: s, tokens: d };
 }
-function yt(l, e, t) {
-  let n = l.match(t.other.indentCodeCompensation);
+function Lt(a, e, t) {
+  let n = a.match(t.other.indentCodeCompensation);
   if (n === null)
     return e;
-  let s = n[1];
+  let i = n[1];
   return e.split(`
 `).map((r) => {
     let o = r.match(t.other.beginningSpace);
     if (o === null)
       return r;
-    let [i] = o;
-    return r.slice(Math.min(i.length, s.length));
+    let [s] = o;
+    return r.slice(Math.min(s.length, i.length));
   }).join(`
 `);
 }
-function we(l, e, t, n) {
+function _e(a, e, t, n) {
   if (!e.includes("<"))
     return false;
-  for (let s = 0;s < e.length; s++) {
-    if (e[s] === "\\") {
-      s++;
+  for (let i = 0;i < e.length; i++) {
+    if (e[i] === "\\") {
+      i++;
       continue;
     }
-    if (e[s] === "`") {
-      let i = n.inline.code.exec(e.slice(s));
-      if (i) {
-        s += i[0].length - 1;
+    if (e[i] === "`") {
+      let s = n.inline.code.exec(e.slice(i));
+      if (s) {
+        i += s[0].length - 1;
         continue;
       }
     }
-    if (e[s] !== "<")
+    if (e[i] !== "<")
       continue;
-    let r = l.slice(t + s), o = n.inline.tag.exec(r) || n.inline.autolink.exec(r);
+    let r = a.slice(t + i), o = n.inline.tag.exec(r) || n.inline.autolink.exec(r);
     if (o) {
-      if (o[0].length > e.length - s)
+      if (o[0].length > e.length - i)
         return true;
-      s += o[0].length - 1;
+      i += o[0].length - 1;
     }
   }
   return false;
 }
-var P = class {
+var _ = class {
   options;
   rules;
   lexer;
@@ -10824,15 +11038,15 @@ var P = class {
   code(e) {
     let t = this.rules.block.code.exec(e);
     if (t) {
-      let n = this.options.pedantic ? t[0] : ie(t[0]), s = n.replace(this.rules.other.codeRemoveIndent, "");
-      return { type: "code", raw: n, codeBlockStyle: "indented", text: s };
+      let n = this.options.pedantic ? t[0] : ae(t[0]), i = n.replace(this.rules.other.codeRemoveIndent, "");
+      return { type: "code", raw: n, codeBlockStyle: "indented", text: i };
     }
   }
   fences(e) {
     let t = this.rules.block.fences.exec(e);
     if (t) {
-      let n = t[0], s = yt(n, t[3] || "", this.rules);
-      return { type: "code", raw: n, lang: t[2] ? t[2].trim().replace(this.rules.inline.anyPunctuation, "$1") : t[2], text: s };
+      let n = t[0], i = Lt(n, t[3] || "", this.rules);
+      return { type: "code", raw: n, lang: t[2] ? t[2].trim().replace(this.rules.inline.anyPunctuation, "$1") : t[2], text: i };
     }
   }
   heading(e) {
@@ -10840,173 +11054,175 @@ var P = class {
     if (t) {
       let n = t[2].trim();
       if (this.rules.other.endingHash.test(n)) {
-        let s = L(n, "#");
-        (this.options.pedantic || !s || this.rules.other.endingSpaceTabChar.test(s)) && (n = s.trim());
+        let i = A(n, "#");
+        (this.options.pedantic || !i || this.rules.other.endingSpaceTabChar.test(i)) && (n = i.trim());
       }
-      return { type: "heading", raw: L(t[0], `
+      return { type: "heading", raw: A(t[0], `
 `), depth: t[1].length, text: n, tokens: this.lexer.inline(n) };
     }
   }
   hr(e) {
     let t = this.rules.block.hr.exec(e);
     if (t)
-      return { type: "hr", raw: L(t[0], `
+      return { type: "hr", raw: A(t[0], `
 `) };
   }
   blockquote(e) {
     let t = this.rules.block.blockquote.exec(e);
     if (t) {
-      let n = L(t[0], `
+      let n = A(t[0], `
 `).split(`
-`), s = "", r = "", o = [];
+`), i = "", r = "", o = [];
       for (;n.length > 0; ) {
-        let i = false, u = [], a;
-        for (a = 0;a < n.length; a++)
-          if (this.rules.other.blockquoteStart.test(n[a]))
-            u.push(n[a]), i = true;
-          else if (!i)
-            u.push(n[a]);
+        let s = false, l = [], u;
+        for (u = 0;u < n.length; u++)
+          if (this.rules.other.blockquoteStart.test(n[u]))
+            l.push(n[u]), s = true;
+          else if (!s)
+            l.push(n[u]);
           else
             break;
-        n = n.slice(a);
-        let p = u.join(`
-`), c = p.replace(this.rules.other.blockquoteSetextReplace, `
+        n = n.slice(u);
+        let c = l.join(`
+`), p = c.replace(this.rules.other.blockquoteSetextReplace, `
     $1`).replace(this.rules.other.blockquoteSetextReplace2, "");
-        s = s ? `${s}
-${p}` : p, r = r ? `${r}
-${c}` : c;
+        i = i ? `${i}
+${c}` : c, r = r ? `${r}
+${p}` : p;
         let d = this.lexer.state.top;
-        if (this.lexer.state.top = true, this.lexer.blockTokens(c, o, true), this.lexer.state.top = d, n.length === 0)
+        if (this.lexer.state.top = true, this.lexer.blockTokens(p, o, true), this.lexer.state.top = d, n.length === 0)
           break;
-        let m = o.at(-1);
-        if (m?.type === "code")
+        let g = o.at(-1);
+        if (g?.type === "code" || g?.type === "heading" || g?.type === "hr" || g?.type === "html")
           break;
-        if (m?.type === "blockquote") {
-          let b = m, g = n.join(`
-`), w = b.raw + `
-` + g.replace(this.rules.other.blockquoteSetextReplace2, ""), f = this.blockquote(w);
-          o[o.length - 1] = f;
-          let M = w.substring(f.raw.length).replace(/^\n/, ""), v = M ? M.split(`
-`).length : 0, Z = v ? n.slice(0, -v) : n;
-          Z.length > 0 && (s = `${s}
-${Z.join(`
-`)}`), r = r.substring(0, r.length - b.text.length) + f.text;
+        if (g?.type === "blockquote") {
+          let k = g, P = n.join(`
+`), R = k.raw + `
+` + P.replace(this.rules.other.blockquoteSetextReplace2, ""), m = this.blockquote(R);
+          o[o.length - 1] = m;
+          let E = R.substring(m.raw.length).replace(/^\n/, ""), b = E ? E.split(`
+`).length : 0, H = b ? n.slice(0, -b) : n;
+          H.length > 0 && (i = `${i}
+${H.join(`
+`)}`), r = r.substring(0, r.length - k.text.length) + m.text;
           break;
-        } else if (m?.type === "list") {
-          let b = m, g = b.raw + `
+        } else if (g?.type === "list") {
+          let k = g, P = k.raw + `
 ` + n.join(`
-`), w = this.list(g);
-          o[o.length - 1] = w, s = s.substring(0, s.length - m.raw.length) + w.raw, r = r.substring(0, r.length - b.raw.length) + w.raw, n = g.substring(o.at(-1).raw.length).split(`
+`), R = this.list(P);
+          o[o.length - 1] = R, i = i.substring(0, i.length - g.raw.length) + R.raw, r = r.substring(0, r.length - k.raw.length) + R.raw, n = P.substring(o.at(-1).raw.length).split(`
 `);
           continue;
         }
       }
-      return { type: "blockquote", raw: s, tokens: o, text: r };
+      return { type: "blockquote", raw: i, tokens: o, text: r };
     }
   }
   list(e) {
     let t = this.rules.block.list.exec(e);
     if (t) {
-      let n = t[1].trim(), s = n.length > 1, r = { type: "list", raw: "", ordered: s, start: s ? +n.slice(0, -1) : "", loose: false, items: [] };
-      n = s ? `\\d{1,9}\\${n.slice(-1)}` : `\\${n}`, this.options.pedantic && (n = s ? n : "[*+-]");
-      let o = this.rules.other.listItemRegex(n), i = false;
+      let n = e, i = () => n.length - e.length, r = t[1].trim(), o = r.length > 1, s = { type: "list", raw: "", ordered: o, start: o ? +r.slice(0, -1) : "", loose: false, items: [] };
+      r = o ? `\\d{1,9}\\${r.slice(-1)}` : `\\${r}`, this.options.pedantic && (r = o ? r : "[*+-]");
+      let l = this.rules.other.listItemRegex(r), u = false;
       for (;e; ) {
-        let a = false, p = "", c = "";
-        if (!(t = o.exec(e)) || this.rules.block.hr.test(e))
+        let p = false, d = "";
+        if (!(t = l.exec(e)) || this.rules.block.hr.test(e))
           break;
-        p = t[0], e = e.substring(p.length);
-        let d = t[2].split(`
-`, 1)[0], m = t[1].length, b = this.options.pedantic ? oe(d, m) : d.replace(this.rules.other.leadingSpaceTab, (M) => oe(M, m)), g = e.split(`
-`, 1)[0], w = !b.trim(), f = 0;
-        if (this.options.pedantic ? (f = 2, c = b.trimStart()) : w ? f = m + 1 : (f = b.search(this.rules.other.nonSpaceChar), f = f > 4 ? 1 : f, c = b.slice(f), f += m), w && this.rules.other.blankLine.test(g) && (p += g + `
-`, e = e.substring(g.length + 1), a = true), !a) {
-          let M = this.rules.other.nextBulletRegex(f), v = this.rules.other.hrRegex(f), Z = this.rules.other.fencesBeginRegex(f), ae = this.rules.other.headingBeginRegex(f), ye = this.rules.other.htmlBeginRegex(f), Pe = this.rules.other.blockquoteBeginRegex(f);
+        let g = i();
+        e = e.substring(t[0].length);
+        let k = t[2].split(`
+`, 1)[0], P = t[1].length, R = this.options.pedantic ? X(k, P) : k.replace(this.rules.other.leadingSpaceTab, (W) => X(W, P)), m = e.split(`
+`, 1)[0], E = !R.trim(), b = 0;
+        if (this.options.pedantic ? (b = 2, d = R.trimStart()) : E ? b = P + 1 : (b = R.search(this.rules.other.nonSpaceChar), b = b > 4 ? 1 : b, d = R.slice(b), b += P), E && this.rules.other.blankLine.test(m) && (e = e.substring(m.length + 1), p = true), !p) {
+          let W = this.rules.other.nextBulletRegex(b), ue = this.rules.other.hrRegex(b), pe = this.rules.other.fencesBeginRegex(b), ce = this.rules.other.headingBeginRegex(b), $e = this.rules.other.htmlBeginRegex(b), Le = this.rules.other.blockquoteBeginRegex(b);
           for (;e; ) {
-            let K = e.split(`
-`, 1)[0], H;
-            if (g = K, this.options.pedantic ? (g = g.replace(this.rules.other.listReplaceNesting, "  "), H = g) : H = g.replace(this.rules.other.leadingSpaceTab, (Se) => Se.replace(this.rules.other.tabCharGlobal, "    ")), Z.test(g) || ae.test(g) || ye.test(g) || Pe.test(g) || M.test(g) || v.test(g))
+            let he = e.split(`
+`, 1)[0], G;
+            if (m = he, this.options.pedantic ? (m = m.replace(this.rules.other.listReplaceNesting, "  "), G = m) : G = m.replace(this.rules.other.leadingSpaceTab, (Ae) => X(Ae)), pe.test(m) || ce.test(m) || $e.test(m) || Le.test(m) || W.test(m) || ue.test(m))
               break;
-            if (H.search(this.rules.other.nonSpaceChar) >= f || !g.trim())
-              c += `
-` + H.slice(f);
+            if (G.search(this.rules.other.nonSpaceChar) >= b || !m.trim())
+              d += `
+` + G.slice(b);
             else {
-              if (w || b.replace(this.rules.other.tabCharGlobal, "    ").search(this.rules.other.nonSpaceChar) >= 4 || Z.test(b) || ae.test(b) || v.test(b))
+              if (E || R.replace(this.rules.other.tabCharGlobal, "    ").search(this.rules.other.nonSpaceChar) >= 4 || pe.test(R) || ce.test(R) || ue.test(R))
                 break;
-              c += `
-` + g;
+              d += `
+` + m;
             }
-            w = !g.trim(), p += K + `
-`, e = e.substring(K.length + 1), b = H.slice(f);
+            E = !m.trim(), e = e.substring(he.length + 1), R = G.slice(b);
           }
         }
-        r.loose || (i ? r.loose = true : this.rules.other.doubleBlankLine.test(p) && (i = true)), r.items.push({ type: "list_item", raw: p, task: !!this.options.gfm && this.rules.other.listIsTask.test(c), loose: false, text: c, tokens: [] }), r.raw += p;
+        let H = n.slice(g, i());
+        s.loose || (u ? s.loose = true : this.rules.other.doubleBlankLine.test(H) && (u = true)), s.items.push({ type: "list_item", raw: H, task: !!this.options.gfm && this.rules.other.listIsTask.test(d), loose: false, text: d, tokens: [] });
       }
-      let u = r.items.at(-1);
-      if (u)
-        u.raw = u.raw.trimEnd(), u.text = u.text.trimEnd();
+      let c = s.items.at(-1);
+      if (c)
+        c.raw = c.raw.trimEnd(), c.text = c.text.trimEnd();
       else
         return;
-      r.raw = r.raw.trimEnd();
-      for (let a of r.items)
-        if (this.lexer.state.top = false, a.tokens = this.lexer.blockTokens(a.text, []), !r.loose) {
-          let p = a.tokens.filter((d) => d.type === "space"), c = p.length > 0 && p.some((d) => this.rules.other.anyLine.test(d.raw));
-          r.loose = c;
+      s.raw = n.slice(0, i()).trimEnd();
+      for (let p of s.items)
+        if (this.lexer.state.top = false, p.tokens = this.lexer.blockTokens(p.text, []), !s.loose) {
+          let d = p.tokens.filter((k) => k.type === "space"), g = d.length > 0 && d.some((k) => this.rules.other.anyLine.test(k.raw));
+          s.loose = g;
         }
-      for (let a of r.items) {
-        let p = a.tokens[0];
-        if (a.task && (p?.type === "text" || p?.type === "paragraph")) {
-          a.text = a.text.replace(this.rules.other.listReplaceTask, ""), p.raw = p.raw.replace(this.rules.other.listReplaceTask, ""), p.text = p.text.replace(this.rules.other.listReplaceTask, "");
-          for (let d = this.lexer.inlineQueue.length - 1;d >= 0; d--)
-            if (this.rules.other.listIsTask.test(this.lexer.inlineQueue[d].src)) {
-              this.lexer.inlineQueue[d].src = this.lexer.inlineQueue[d].src.replace(this.rules.other.listReplaceTask, "");
+      for (let p of s.items) {
+        let d = p.tokens[0];
+        if (p.task && (d?.type === "text" || d?.type === "paragraph")) {
+          p.text = p.text.replace(this.rules.other.listReplaceTask, ""), d.raw = d.raw.replace(this.rules.other.listReplaceTask, ""), d.text = d.text.replace(this.rules.other.listReplaceTask, "");
+          for (let k = this.lexer.inlineQueue.length - 1;k >= 0; k--)
+            if (this.rules.other.listIsTask.test(this.lexer.inlineQueue[k].src)) {
+              this.lexer.inlineQueue[k].src = this.lexer.inlineQueue[k].src.replace(this.rules.other.listReplaceTask, "");
               break;
             }
-          let c = this.rules.other.listTaskCheckbox.exec(a.raw);
-          if (c) {
-            let d = { type: "checkbox", raw: c[0] + " ", checked: c[0] !== "[ ]" };
-            a.checked = d.checked, r.loose ? a.tokens[0] && ["paragraph", "text"].includes(a.tokens[0].type) && "tokens" in a.tokens[0] && a.tokens[0].tokens ? (a.tokens[0].raw = d.raw + a.tokens[0].raw, a.tokens[0].text = d.raw + a.tokens[0].text, a.tokens[0].tokens.unshift(d)) : a.tokens.unshift({ type: "paragraph", raw: d.raw, text: d.raw, tokens: [d] }) : a.tokens.unshift(d);
+          let g = this.rules.other.listTaskCheckbox.exec(p.raw);
+          if (g) {
+            let k = { type: "checkbox", raw: g[0] + " ", checked: g[0] !== "[ ]" };
+            p.checked = k.checked, s.loose ? p.tokens[0] && ["paragraph", "text"].includes(p.tokens[0].type) && "tokens" in p.tokens[0] && p.tokens[0].tokens ? (p.tokens[0].raw = k.raw + p.tokens[0].raw, p.tokens[0].text = k.raw + p.tokens[0].text, p.tokens[0].tokens.unshift(k)) : p.tokens.unshift({ type: "paragraph", raw: k.raw, text: k.raw, tokens: [k] }) : p.tokens.unshift(k);
           }
         } else
-          a.task && (a.task = false);
+          p.task && (p.task = false);
       }
-      if (r.loose)
-        for (let a of r.items) {
-          a.loose = true;
-          for (let p of a.tokens)
-            p.type === "text" && (p.type = "paragraph");
+      if (s.loose)
+        for (let p of s.items) {
+          p.loose = true;
+          for (let d of p.tokens)
+            d.type === "text" && (d.type = "paragraph");
         }
-      return r;
+      return s;
     }
   }
   html(e) {
     let t = this.rules.block.html.exec(e);
     if (t) {
-      let n = ie(t[0]);
+      let n = ae(t[0]);
       return { type: "html", block: true, raw: n, pre: t[1] === "pre" || t[1] === "script" || t[1] === "style", text: n };
     }
   }
   def(e) {
     let t = this.rules.block.def.exec(e);
     if (t) {
-      let n = q(t[1]).replace(this.rules.other.multipleSpaceGlobal, " "), s = t[2] ? t[2].replace(this.rules.other.hrefBrackets, "$1").replace(this.rules.inline.anyPunctuation, "$1") : "", r = t[3] ? t[3].substring(1, t[3].length - 1).replace(this.rules.inline.anyPunctuation, "$1") : t[3];
-      return { type: "def", tag: n, raw: L(t[0], `
-`), href: s, title: r };
+      if (!this.rules.other.startAngleBracket.test(t[2]) && le(t[2], "()") !== -1)
+        return;
+      let n = v(t[1]).replace(this.rules.other.multipleSpaceGlobal, " "), i = t[2] ? t[2].replace(this.rules.other.hrefBrackets, "$1").replace(this.rules.inline.anyPunctuation, "$1") : "", r = t[3] ? t[3].substring(1, t[3].length - 1).replace(this.rules.inline.anyPunctuation, "$1") : t[3];
+      return { type: "def", tag: n, raw: A(t[0], `
+`), href: i, title: r };
     }
   }
   table(e) {
     let t = this.rules.block.table.exec(e);
     if (!t || !this.rules.other.tableDelimiter.test(t[2]))
       return;
-    let n = se(t[1]), s = t[2].replace(this.rules.other.tableAlignChars, "").split("|"), r = t[3]?.trim() ? t[3].replace(this.rules.other.tableRowBlankLine, "").split(`
-`) : [], o = { type: "table", raw: L(t[0], `
+    let n = oe(t[1]), i = t[2].replace(this.rules.other.tableAlignChars, "").split("|"), r = t[3]?.trim() ? t[3].replace(this.rules.other.tableRowBlankLine, "").split(`
+`) : [], o = { type: "table", raw: A(t[0], `
 `), header: [], align: [], rows: [] };
-    if (n.length === s.length) {
-      for (let i of s)
-        this.rules.other.tableAlignRight.test(i) ? o.align.push("right") : this.rules.other.tableAlignCenter.test(i) ? o.align.push("center") : this.rules.other.tableAlignLeft.test(i) ? o.align.push("left") : o.align.push(null);
-      for (let i = 0;i < n.length; i++)
-        o.header.push({ text: n[i], tokens: this.lexer.inline(n[i]), header: true, align: o.align[i] });
-      for (let i of r)
-        o.rows.push(se(i, o.header.length).map((u, a) => ({ text: u, tokens: this.lexer.inline(u), header: false, align: o.align[a] })));
+    if (n.length === i.length) {
+      for (let s of i)
+        this.rules.other.tableAlignRight.test(s) ? o.align.push("right") : this.rules.other.tableAlignCenter.test(s) ? o.align.push("center") : this.rules.other.tableAlignLeft.test(s) ? o.align.push("left") : o.align.push(null);
+      for (let s = 0;s < n.length; s++)
+        o.header.push({ text: n[s], tokens: this.lexer.inline(n[s]), header: true, align: o.align[s] });
+      for (let s of r)
+        o.rows.push(oe(s, o.header.length).map((l, u) => ({ text: l, tokens: this.lexer.inline(l), header: false, align: o.align[u] })));
       return o;
     }
   }
@@ -11014,7 +11230,7 @@ ${Z.join(`
     let t = this.rules.block.lheading.exec(e);
     if (t) {
       let n = t[1].trim();
-      return { type: "heading", raw: L(t[0], `
+      return { type: "heading", raw: A(t[0], `
 `), depth: t[2].charAt(0) === "=" ? 1 : 2, text: n, tokens: this.lexer.inline(n) };
     }
   }
@@ -11042,88 +11258,90 @@ ${Z.join(`
       return !this.lexer.state.inLink && this.rules.other.startATag.test(t[0]) ? this.lexer.state.inLink = true : this.lexer.state.inLink && this.rules.other.endATag.test(t[0]) && (this.lexer.state.inLink = false), !this.lexer.state.inRawBlock && this.rules.other.startPreScriptTag.test(t[0]) ? this.lexer.state.inRawBlock = true : this.lexer.state.inRawBlock && this.rules.other.endPreScriptTag.test(t[0]) && (this.lexer.state.inRawBlock = false), { type: "html", raw: t[0], inLink: this.lexer.state.inLink, inRawBlock: this.lexer.state.inRawBlock, block: false, text: t[0] };
   }
   link(e) {
+    if (this.lexer.state.linkParenPossible === false)
+      return;
     let t = this.rules.inline.link.exec(e);
     if (t) {
       let n = t[0].charAt(0) === "!" ? 2 : 1;
-      if (!this.options.pedantic && we(e, t[1], n, this.rules))
+      if (!this.options.pedantic && _e(e, t[1], n, this.rules))
         return;
-      let s = t[2].trim();
-      if (!this.options.pedantic && this.rules.other.startAngleBracket.test(s)) {
-        if (!this.rules.other.endAngleBracket.test(s))
+      let i = t[2].trim();
+      if (!this.options.pedantic && this.rules.other.startAngleBracket.test(i)) {
+        if (!this.rules.other.endAngleBracket.test(i))
           return;
-        let i = L(s.slice(0, -1), "\\");
-        if ((s.length - i.length) % 2 === 0)
+        let s = A(i.slice(0, -1), "\\");
+        if ((i.length - s.length) % 2 === 0)
           return;
       } else {
-        let i = Te(t[2], "()");
-        if (i === -2)
+        let s = le(t[2], "()");
+        if (s === -2)
           return;
-        if (i > -1) {
-          let a = (t[0].indexOf("!") === 0 ? 5 : 4) + t[1].length + i;
-          t[2] = t[2].substring(0, i), t[0] = t[0].substring(0, a).trim(), t[3] = "";
+        if (s > -1) {
+          let u = (t[0].indexOf("!") === 0 ? 5 : 4) + t[1].length + s;
+          t[2] = t[2].substring(0, s), t[0] = t[0].substring(0, u).trim(), t[3] = "";
         }
       }
       let r = t[2], o = "";
       if (this.options.pedantic) {
-        let i = this.rules.other.pedanticHrefTitle.exec(r);
-        i && (r = i[1], o = i[3]);
+        let s = this.rules.other.pedanticHrefTitle.exec(r);
+        s && (r = s[1], o = s[3]);
       } else
         o = t[3] ? t[3].slice(1, -1) : "";
-      return r = r.trim(), this.rules.other.startAngleBracket.test(r) && (this.options.pedantic && !this.rules.other.endAngleBracket.test(s) ? r = r.slice(1) : r = r.slice(1, -1)), Oe(t, { href: r && r.replace(this.rules.inline.anyPunctuation, "$1"), title: o && o.replace(this.rules.inline.anyPunctuation, "$1") }, t[0], this.lexer, this.rules);
+      return r = r.trim(), this.rules.other.startAngleBracket.test(r) && (this.options.pedantic && !this.rules.other.endAngleBracket.test(i) ? r = r.slice(1) : r = r.slice(1, -1)), Se(t, { href: r && r.replace(this.rules.inline.anyPunctuation, "$1"), title: o && o.replace(this.rules.inline.anyPunctuation, "$1") }, t[0], this.lexer, this.rules);
     }
   }
   reflink(e, t) {
     let n;
     if ((n = this.rules.inline.reflink.exec(e)) || (n = this.rules.inline.nolink.exec(e))) {
-      let s = n[0].charAt(0) === "!" ? 2 : 1;
-      if (!this.options.pedantic && we(e, n[1], s, this.rules))
+      let i = n[0].charAt(0) === "!" ? 2 : 1;
+      if (!this.options.pedantic && _e(e, n[1], i, this.rules))
         return;
-      let r = (n[2] || n[1]).replace(this.rules.other.multipleSpaceGlobal, " "), o = t[q(r)];
+      let r = (n[2] || n[1]).replace(this.rules.other.multipleSpaceGlobal, " "), o = t[v(r)];
       if (!o) {
-        let i = n[0].charAt(0);
-        return { type: "text", raw: i, text: i };
+        let s = n[0].charAt(0);
+        return { type: "text", raw: s, text: s };
       }
-      return Oe(n, o, n[0], this.lexer, this.rules);
+      return Se(n, o, n[0], this.lexer, this.rules);
     }
   }
   emStrong(e, t, n = "") {
-    let s = this.rules.inline.emStrongLDelim.exec(e);
-    if (!s || !s[1] && !s[2] && !s[3] && !s[4] || s[4] && n.match(this.rules.other.unicodeAlphaNumeric))
+    let i = this.rules.inline.emStrongLDelim.exec(e);
+    if (!i || !i[1] && !i[2] && !i[3] && !i[4] || i[4] && n.match(this.rules.other.unicodeAlphaNumeric))
       return;
-    if (!(s[1] || s[3] || "") || !n || this.rules.inline.punctuation.exec(n)) {
-      let o = [...s[0]].length - 1, i, u, a = o, p = 0, c = s[0][0], d = n === c, m = c === "*" ? this.rules.inline.emStrongRDelimAst : this.rules.inline.emStrongRDelimUnd;
-      for (m.lastIndex = 0, t = t.slice(-1 * e.length + o);(s = m.exec(t)) !== null; ) {
-        if (i = s[1] || s[2] || s[3] || s[4] || s[5] || s[6], !i)
+    if (!(i[1] || i[3] || "") || !n || this.rules.inline.punctuation.exec(n)) {
+      let o = [...i[0]].length - 1, s, l, u = o, c = 0, p = i[0][0], d = n === p, g = p === "*" ? this.rules.inline.emStrongRDelimAst : this.rules.inline.emStrongRDelimUnd;
+      for (g.lastIndex = 0, t = t.slice(-1 * e.length + o);(i = g.exec(t)) !== null; ) {
+        if (s = i[1] || i[2] || i[3] || i[4] || i[5] || i[6], !s)
           continue;
-        if (u = [...i].length, s[3] || s[4]) {
-          a += u;
+        if (l = [...s].length, i[3] || i[4]) {
+          u += l;
           continue;
-        } else if (s[5] || s[6]) {
-          if (o % 3 && !((o + u) % 3)) {
-            p += u;
+        } else if (i[5] || i[6]) {
+          if (o % 3 && !((o + l) % 3)) {
+            c += l;
             continue;
           }
           if (d)
             break;
         }
-        if (a -= u, a > 0)
+        if (u -= l, u > 0)
           continue;
-        u = Math.min(u, u + a + p);
-        let b = [...s[0]][0].length, g = e.slice(0, o + s.index + b + u);
-        if (Math.min(o, u) % 2) {
-          let f = g.slice(1, -1);
-          return { type: "em", raw: g, text: f, tokens: this.lexer.inlineTokens(f) };
+        l = Math.min(l, l + u + c);
+        let k = [...i[0]][0].length, P = e.slice(0, o + i.index + k + l);
+        if (Math.min(o, l) % 2) {
+          let m = P.slice(1, -1);
+          return { type: "em", raw: P, text: m, tokens: this.lexer.inlineTokens(m) };
         }
-        let w = g.slice(2, -2);
-        return { type: "strong", raw: g, text: w, tokens: this.lexer.inlineTokens(w) };
+        let R = P.slice(2, -2);
+        return { type: "strong", raw: P, text: R, tokens: this.lexer.inlineTokens(R) };
       }
     }
   }
   codespan(e) {
     let t = this.rules.inline.code.exec(e);
     if (t) {
-      let n = t[2].replace(this.rules.other.newLineCharGlobal, " "), s = this.rules.other.nonSpaceChar.test(n), r = this.rules.other.startingSpaceChar.test(n) && this.rules.other.endingSpaceChar.test(n);
-      return s && r && (n = n.substring(1, n.length - 1)), { type: "codespan", raw: t[0], text: n };
+      let n = t[2].replace(this.rules.other.newLineCharGlobal, " "), i = this.rules.other.nonSpaceChar.test(n), r = this.rules.other.startingSpaceChar.test(n) && this.rules.other.endingSpaceChar.test(n);
+      return i && r && (n = n.substring(1, n.length - 1)), { type: "codespan", raw: t[0], text: n };
     }
   }
   br(e) {
@@ -11132,76 +11350,76 @@ ${Z.join(`
       return { type: "br", raw: t[0] };
   }
   del(e, t, n = "") {
-    let s = this.rules.inline.delLDelim.exec(e);
-    if (!s)
+    let i = this.rules.inline.delLDelim.exec(e);
+    if (!i)
       return;
-    if (!(s[1] || "") || !n || this.rules.inline.punctuation.exec(n)) {
-      let o = [...s[0]].length - 1, i, u, a = o, p = this.rules.inline.delRDelim;
-      for (p.lastIndex = 0, t = t.slice(-1 * e.length + o);(s = p.exec(t)) !== null; ) {
-        if (i = s[1] || s[2] || s[3] || s[4] || s[5] || s[6], !i || (u = [...i].length, u !== o))
+    if (!(i[1] || "") || !n || this.rules.inline.punctuation.exec(n)) {
+      let o = [...i[0]].length - 1, s, l, u = o, c = this.rules.inline.delRDelim;
+      for (c.lastIndex = 0, t = t.slice(-1 * e.length + o);(i = c.exec(t)) !== null; ) {
+        if (s = i[1] || i[2] || i[3] || i[4] || i[5] || i[6], !s || (l = [...s].length, l !== o))
           continue;
-        if (s[3] || s[4]) {
-          a += u;
+        if (i[3] || i[4]) {
+          u += l;
           continue;
         }
-        if (a -= u, a > 0)
+        if (u -= l, u > 0)
           continue;
-        u = Math.min(u, u + a);
-        let c = [...s[0]][0].length, d = e.slice(0, o + s.index + c + u), m = d.slice(o, -o);
-        return { type: "del", raw: d, text: m, tokens: this.lexer.inlineTokens(m) };
+        l = Math.min(l, l + u);
+        let p = [...i[0]][0].length, d = e.slice(0, o + i.index + p + l), g = d.slice(o, -o);
+        return { type: "del", raw: d, text: g, tokens: this.lexer.inlineTokens(g) };
       }
     }
   }
   autolink(e) {
     let t = this.rules.inline.autolink.exec(e);
     if (t) {
-      let n, s;
-      return t[2] === "@" ? (n = t[1], s = "mailto:" + n) : (n = t[1], s = n), { type: "link", raw: t[0], text: n, href: s, autolink: true, tokens: [{ type: "text", raw: n, text: n }] };
+      let n, i;
+      return t[2] === "@" ? (n = t[1], i = "mailto:" + n) : (n = t[1], i = n), { type: "link", raw: t[0], text: n, href: i, autolink: true, tokens: [{ type: "text", raw: n, text: n }] };
     }
   }
   url(e) {
     let t;
     if (t = this.rules.inline.url.exec(e)) {
-      let n, s;
+      let n, i;
       if (t[2] === "@")
-        n = t[0], s = "mailto:" + n;
+        n = t[0], i = "mailto:" + n;
       else {
         let r;
         do
           r = t[0], t[0] = this.rules.inline._backpedal.exec(t[0])?.[0] ?? "";
         while (r !== t[0]);
-        n = t[0], t[1] === "www." ? s = "http://" + t[0] : s = t[0];
+        n = t[0], t[1] === "www." ? i = "http://" + t[0] : i = t[0];
       }
-      return { type: "link", raw: t[0], text: n, href: s, autolink: true, tokens: [{ type: "text", raw: n, text: n }] };
+      return { type: "link", raw: t[0], text: n, href: i, autolink: true, tokens: [{ type: "text", raw: n, text: n }] };
     }
   }
   inlineText(e) {
     let t = this.rules.inline.text.exec(e);
     if (t) {
       let n = this.lexer.state.inRawBlock;
-      return { type: "text", raw: t[0], text: n ? t[0] : Re(t[0]), escaped: n };
+      return { type: "text", raw: t[0], text: n ? t[0] : ye(t[0]), escaped: n };
     }
   }
 };
-var R = class l {
+var T = class a {
   tokens;
   options;
   state;
   inlineQueue;
   tokenizer;
   constructor(e) {
-    this.tokens = [], this.tokens.links = Object.create(null), this.options = e || y, this.options.tokenizer = this.options.tokenizer || new P, this.tokenizer = this.options.tokenizer, this.tokenizer.options = this.options, this.tokenizer.lexer = this, this.inlineQueue = [], this.state = { inLink: false, inRawBlock: false, linkEmitted: false, top: true };
-    let t = { other: x, block: j.normal, inline: D.normal };
-    this.options.pedantic ? (t.block = j.pedantic, t.inline = D.pedantic) : this.options.gfm && (t.block = j.gfm, this.options.breaks ? t.inline = D.breaks : t.inline = D.gfm), this.tokenizer.rules = t;
+    this.tokens = [], this.tokens.links = Object.create(null), this.options = e || y, this.options.tokenizer = this.options.tokenizer || new _, this.tokenizer = this.options.tokenizer, this.tokenizer.options = this.options, this.tokenizer.lexer = this, this.inlineQueue = [], this.state = { inLink: false, inRawBlock: false, linkEmitted: false, linkParenPossible: true, top: true };
+    let t = { other: x, block: F.normal, inline: Z.normal };
+    this.options.pedantic ? (t.block = F.pedantic, t.inline = Z.pedantic) : this.options.gfm && (t.block = F.gfm, this.options.breaks ? t.inline = Z.breaks : t.inline = Z.gfm), this.tokenizer.rules = t;
   }
   static get rules() {
-    return { block: j, inline: D };
+    return { block: F, inline: Z };
   }
   static lex(e, t) {
-    return new l(t).lex(e);
+    return new a(t).lex(e);
   }
   static lexInline(e, t) {
-    return new l(t).inlineTokens(e);
+    return new a(t).inlineTokens(e);
   }
   lex(e) {
     e = e.replace(x.carriageReturn, `
@@ -11214,31 +11432,31 @@ var R = class l {
   }
   blockTokens(e, t = [], n = false) {
     this.tokenizer.lexer = this, this.options.pedantic && (e = e.replace(x.tabCharGlobal, "    ").replace(x.spaceLine, ""));
-    let s = 1 / 0;
+    let i = 1 / 0;
     for (;e; ) {
-      if (e.length < s)
-        s = e.length;
+      if (e.length < i)
+        i = e.length;
       else {
         this.infiniteLoopError(e.charCodeAt(0));
         break;
       }
       let r;
-      if (this.options.extensions?.block?.some((i) => (r = i.call({ lexer: this }, e, t)) ? (e = e.substring(r.raw.length), t.push(r), true) : false))
+      if (this.options.extensions?.block?.some((s) => (r = s.call({ lexer: this }, e, t)) ? (e = e.substring(r.raw.length), t.push(r), true) : false))
         continue;
       if (r = this.tokenizer.space(e)) {
         e = e.substring(r.raw.length);
-        let i = t.at(-1);
-        r.raw.length === 1 && i !== undefined ? i.raw += `
+        let s = t.at(-1);
+        r.raw.length === 1 && s !== undefined ? s.raw += `
 ` : t.push(r);
         continue;
       }
       if (r = this.tokenizer.code(e)) {
         e = e.substring(r.raw.length);
-        let i = t.at(-1);
-        i?.type === "paragraph" || i?.type === "text" ? (i.raw += (i.raw.endsWith(`
+        let s = t.at(-1);
+        s?.type === "paragraph" || s?.type === "text" ? (s.raw += (s.raw.endsWith(`
 `) ? "" : `
-`) + r.raw, i.text += `
-` + r.text, this.inlineQueue.at(-1).src = i.text) : t.push(r);
+`) + r.raw, s.text += `
+` + r.text, this.inlineQueue.at(-1).src = s.text) : t.push(r);
         continue;
       }
       if (r = this.tokenizer.fences(e)) {
@@ -11267,11 +11485,11 @@ var R = class l {
       }
       if (r = this.tokenizer.def(e)) {
         e = e.substring(r.raw.length);
-        let i = t.at(-1);
-        i?.type === "paragraph" || i?.type === "text" ? (i.raw += (i.raw.endsWith(`
+        let s = t.at(-1);
+        s?.type === "paragraph" || s?.type === "text" ? (s.raw += (s.raw.endsWith(`
 `) ? "" : `
-`) + r.raw, i.text += `
-` + r.raw, this.inlineQueue.at(-1).src = i.text) : this.tokens.links[r.tag] || (this.tokens.links[r.tag] = { href: r.href, title: r.title }, t.push(r));
+`) + r.raw, s.text += `
+` + r.raw, this.inlineQueue.at(-1).src = s.text) : this.tokens.links[r.tag] || (this.tokens.links[r.tag] = { href: r.href, title: r.title }, t.push(r));
         continue;
       }
       if (r = this.tokenizer.table(e)) {
@@ -11284,26 +11502,26 @@ var R = class l {
       }
       let o = e;
       if (this.options.extensions?.startBlock) {
-        let i = 1 / 0, u = e.slice(1), a;
-        this.options.extensions.startBlock.forEach((p) => {
-          a = p.call({ lexer: this }, u), typeof a == "number" && a >= 0 && (i = Math.min(i, a));
-        }), i < 1 / 0 && i >= 0 && (o = e.substring(0, i + 1));
+        let s = 1 / 0, l = e.slice(1), u;
+        this.options.extensions.startBlock.forEach((c) => {
+          u = c.call({ lexer: this }, l), typeof u == "number" && u >= 0 && (s = Math.min(s, u));
+        }), s < 1 / 0 && s >= 0 && (o = e.substring(0, s + 1));
       }
       if (this.state.top && (r = this.tokenizer.paragraph(o))) {
-        let i = t.at(-1);
-        n && i?.type === "paragraph" ? (i.raw += (i.raw.endsWith(`
+        let s = t.at(-1);
+        n && s?.type === "paragraph" ? (s.raw += (s.raw.endsWith(`
 `) ? "" : `
-`) + r.raw, i.text += `
-` + r.text, this.inlineQueue.pop(), this.inlineQueue.at(-1).src = i.text) : t.push(r), n = o.length !== e.length, e = e.substring(r.raw.length);
+`) + r.raw, s.text += `
+` + r.text, this.inlineQueue.pop(), this.inlineQueue.at(-1).src = s.text) : t.push(r), n = o.length !== e.length, e = e.substring(r.raw.length);
         continue;
       }
       if (r = this.tokenizer.text(e)) {
         e = e.substring(r.raw.length);
-        let i = t.at(-1);
-        i?.type === "text" ? (i.raw += (i.raw.endsWith(`
+        let s = t.at(-1);
+        s?.type === "text" ? (s.raw += (s.raw.endsWith(`
 `) ? "" : `
-`) + r.raw, i.text += `
-` + r.text, this.inlineQueue.pop(), this.inlineQueue.at(-1).src = i.text) : t.push(r);
+`) + r.raw, s.text += `
+` + r.text, this.inlineQueue.pop(), this.inlineQueue.at(-1).src = s.text) : t.push(r);
         continue;
       }
       if (e) {
@@ -11324,34 +11542,43 @@ var R = class l {
       if (t.test(n[0]) && e.charAt(n.index - 1) !== "!")
         return true;
     for (let n of e.matchAll(this.tokenizer.rules.inline.reflinkSearch)) {
-      let s = n[0], r = s.lastIndexOf("[");
-      if (!(s.charAt(0) === "!" || !Object.hasOwn(this.tokens.links, q(s.slice(r + 1, -1)))) && !(r > 1 && this.linkInText(s.slice(1, r - 1))))
+      let i = n[0], r = i.lastIndexOf("[");
+      if (!(i.charAt(0) === "!" || !Object.hasOwn(this.tokens.links, v(i.slice(r + 1, -1)))) && !(r > 1 && this.linkInText(i.slice(1, r - 1))))
         return true;
     }
     return false;
   }
   inlineTokens(e, t = []) {
     this.tokenizer.lexer = this;
+    let n = this.state.linkParenPossible;
+    this.state.linkParenPossible = n && e.includes(")");
+    try {
+      return this.#e(e, t);
+    } finally {
+      this.state.linkParenPossible = n;
+    }
+  }
+  #e(e, t) {
     let n = e;
     if (this.tokens.links && e.includes("[")) {
-      let i = this.tokenizer.rules.inline.reflinkSearch, u = (a) => {
-        let p = a.lastIndexOf("[");
-        if (!Object.hasOwn(this.tokens.links, q(a.slice(p + 1, -1))))
-          return a;
-        if (p > 1 && a.charAt(0) !== "!") {
-          let c = a.slice(1, p - 1);
-          if (this.linkInText(c))
-            return "[" + c.replace(i, u) + "][" + "a".repeat(a.length - p - 2) + "]";
+      let s = this.tokenizer.rules.inline.reflinkSearch, l = (u) => {
+        let c = u.lastIndexOf("[");
+        if (!Object.hasOwn(this.tokens.links, v(u.slice(c + 1, -1))))
+          return u;
+        if (c > 1 && u.charAt(0) !== "!") {
+          let p = u.slice(1, c - 1);
+          if (this.linkInText(p))
+            return "[" + p.replace(s, l) + "][" + "a".repeat(u.length - c - 2) + "]";
         }
-        return "[" + "a".repeat(a.length - 2) + "]";
+        return "[" + "a".repeat(u.length - 2) + "]";
       };
-      n = n.replace(i, u);
+      n = n.replace(s, l);
     }
-    n = n.replace(this.tokenizer.rules.inline.anyPunctuation, (i) => "+".repeat(i.length)), n = n.replace(this.tokenizer.rules.inline.blockSkip, (i, u, a) => {
-      let p = a ? a.length : 0;
-      return i.slice(0, p) + "[" + "a".repeat(i.length - p - 2) + "]";
+    n = n.replace(this.tokenizer.rules.inline.anyPunctuationOutsideCode, (s, l, u) => u ? "+".repeat(s.length) : l ? l + s.slice(l.length, -l.length).replace(/`/g, "+") + l : s), n = n.replace(this.tokenizer.rules.inline.blockSkip, (s, l, u) => {
+      let c = u ? u.length : 0;
+      return s.slice(0, c) + "[" + "a".repeat(s.length - c - 2) + "]";
     }), n = this.options.hooks?.emStrongMask?.call({ lexer: this }, n) ?? n;
-    let s = false, r = "", o = 1 / 0;
+    let i = false, r = "", o = 1 / 0;
     for (;e; ) {
       if (e.length < o)
         o = e.length;
@@ -11359,63 +11586,63 @@ var R = class l {
         this.infiniteLoopError(e.charCodeAt(0));
         break;
       }
-      s || (r = ""), s = false;
-      let i;
-      if (this.options.extensions?.inline?.some((a) => (i = a.call({ lexer: this }, e, t)) ? (e = e.substring(i.raw.length), t.push(i), true) : false))
+      i || (r = ""), i = false;
+      let s;
+      if (this.options.extensions?.inline?.some((u) => (s = u.call({ lexer: this }, e, t)) ? (e = e.substring(s.raw.length), t.push(s), true) : false))
         continue;
-      if (i = this.tokenizer.escape(e)) {
-        e = e.substring(i.raw.length), t.push(i);
-        continue;
-      }
-      if (i = this.tokenizer.tag(e)) {
-        e = e.substring(i.raw.length), t.push(i);
+      if (s = this.tokenizer.escape(e)) {
+        e = e.substring(s.raw.length), t.push(s);
         continue;
       }
-      if (i = this.tokenizer.link(e)) {
-        e = e.substring(i.raw.length), t.push(i);
+      if (s = this.tokenizer.tag(e)) {
+        e = e.substring(s.raw.length), t.push(s);
         continue;
       }
-      if (i = this.tokenizer.reflink(e, this.tokens.links)) {
-        e = e.substring(i.raw.length);
-        let a = t.at(-1);
-        i.type === "text" && a?.type === "text" ? (a.raw += i.raw, a.text += i.text) : t.push(i);
+      if (s = this.tokenizer.link(e)) {
+        e = e.substring(s.raw.length), t.push(s);
         continue;
       }
-      if (i = this.tokenizer.emStrong(e, n, r)) {
-        e = e.substring(i.raw.length), t.push(i);
+      if (s = this.tokenizer.reflink(e, this.tokens.links)) {
+        e = e.substring(s.raw.length);
+        let u = t.at(-1);
+        s.type === "text" && u?.type === "text" ? (u.raw += s.raw, u.text += s.text) : t.push(s);
         continue;
       }
-      if (i = this.tokenizer.codespan(e)) {
-        e = e.substring(i.raw.length), t.push(i);
+      if (s = this.tokenizer.emStrong(e, n, r)) {
+        e = e.substring(s.raw.length), t.push(s);
         continue;
       }
-      if (i = this.tokenizer.br(e)) {
-        e = e.substring(i.raw.length), t.push(i);
+      if (s = this.tokenizer.codespan(e)) {
+        e = e.substring(s.raw.length), t.push(s);
         continue;
       }
-      if (i = this.tokenizer.del(e, n, r)) {
-        e = e.substring(i.raw.length), t.push(i);
+      if (s = this.tokenizer.br(e)) {
+        e = e.substring(s.raw.length), t.push(s);
         continue;
       }
-      if (i = this.tokenizer.autolink(e)) {
-        e = e.substring(i.raw.length), t.push(i);
+      if (s = this.tokenizer.del(e, n, r)) {
+        e = e.substring(s.raw.length), t.push(s);
         continue;
       }
-      if (!this.state.inLink && (i = this.tokenizer.url(e))) {
-        e = e.substring(i.raw.length), t.push(i);
+      if (s = this.tokenizer.autolink(e)) {
+        e = e.substring(s.raw.length), t.push(s);
         continue;
       }
-      let u = e;
+      if (!this.state.inLink && (s = this.tokenizer.url(e))) {
+        e = e.substring(s.raw.length), t.push(s);
+        continue;
+      }
+      let l = e;
       if (this.options.extensions?.startInline) {
-        let a = 1 / 0, p = e.slice(1), c;
+        let u = 1 / 0, c = e.slice(1), p;
         this.options.extensions.startInline.forEach((d) => {
-          c = d.call({ lexer: this }, p), typeof c == "number" && c >= 0 && (a = Math.min(a, c));
-        }), a < 1 / 0 && a >= 0 && (u = e.substring(0, a + 1));
+          p = d.call({ lexer: this }, c), typeof p == "number" && p >= 0 && (u = Math.min(u, p));
+        }), u < 1 / 0 && u >= 0 && (l = e.substring(0, u + 1));
       }
-      if (i = this.tokenizer.inlineText(u)) {
-        e = e.substring(i.raw.length), i.raw.slice(-1) !== "_" && (r = i.raw.slice(-1)), s = true;
-        let a = t.at(-1);
-        a?.type === "text" ? (a.raw += i.raw, a.text += i.text) : t.push(i);
+      if (s = this.tokenizer.inlineText(l)) {
+        e = e.substring(s.raw.length), s.raw.slice(-1) !== "_" && (r = s.raw.slice(-1)), i = true;
+        let u = t.at(-1);
+        u?.type === "text" ? (u.raw += s.raw, u.text += s.text) : t.push(s);
         continue;
       }
       if (e) {
@@ -11433,7 +11660,7 @@ var R = class l {
       throw new Error(t);
   }
 };
-var S = class {
+var $ = class {
   options;
   parser;
   constructor(e) {
@@ -11443,10 +11670,10 @@ var S = class {
     return "";
   }
   code({ text: e, lang: t, escaped: n }) {
-    let s = (t || "").match(x.notSpaceStart)?.[0], r = e ? e.replace(x.endingNewline, "") + `
+    let i = (t || "").match(x.notSpaceStart)?.[0], r = e ? e.replace(x.endingNewline, "") + `
 ` : "";
-    return s ? '<pre><code class="language-' + O(s) + '">' + (n ? r : O(r, true)) + `</code></pre>
-` : "<pre><code>" + (n ? r : O(r, true)) + `</code></pre>
+    return i ? '<pre><code class="language-' + w(i) + '">' + (n ? r : w(r, true)) + `</code></pre>
+` : "<pre><code>" + (n ? r : w(r, true)) + `</code></pre>
 `;
   }
   blockquote({ tokens: e }) {
@@ -11469,14 +11696,14 @@ ${this.parser.parse(e)}</blockquote>
 `;
   }
   list(e) {
-    let { ordered: t, start: n } = e, s = "";
-    for (let i = 0;i < e.items.length; i++) {
-      let u = e.items[i];
-      s += this.listitem(u);
+    let { ordered: t, start: n } = e, i = "";
+    for (let s = 0;s < e.items.length; s++) {
+      let l = e.items[s];
+      i += this.listitem(l);
     }
     let r = t ? "ol" : "ul", o = t && n !== 1 ? ' start="' + n + '"' : "";
     return "<" + r + o + `>
-` + s + "</" + r + `>
+` + i + "</" + r + `>
 `;
   }
   listitem(e) {
@@ -11495,18 +11722,18 @@ ${this.parser.parse(e)}</blockquote>
     for (let r = 0;r < e.header.length; r++)
       n += this.tablecell(e.header[r]);
     t += this.tablerow({ text: n });
-    let s = "";
+    let i = "";
     for (let r = 0;r < e.rows.length; r++) {
       let o = e.rows[r];
       n = "";
-      for (let i = 0;i < o.length; i++)
-        n += this.tablecell(o[i]);
-      s += this.tablerow({ text: n });
+      for (let s = 0;s < o.length; s++)
+        n += this.tablecell(o[s]);
+      i += this.tablerow({ text: n });
     }
-    return s && (s = `<tbody>${s}</tbody>`), `<table>
+    return i && (i = `<tbody>${i}</tbody>`), `<table>
 <thead>
 ` + t + `</thead>
-` + s + `</table>
+` + i + `</table>
 `;
   }
   tablerow({ text: e }) {
@@ -11526,7 +11753,7 @@ ${e}</tr>
     return `<em>${this.parser.parseInline(e)}</em>`;
   }
   codespan({ text: e }) {
-    return `<code>${O(e, true)}</code>`;
+    return `<code>${w(e, true)}</code>`;
   }
   br(e) {
     return "<br>";
@@ -11534,25 +11761,25 @@ ${e}</tr>
   del({ tokens: e }) {
     return `<del>${this.parser.parseInline(e)}</del>`;
   }
-  link({ href: e, title: t, text: n, tokens: s, autolink: r }) {
-    let o = r ? O(n, true) : this.parser.parseInline(s), i = re(e);
-    if (i === null)
+  link({ href: e, title: t, text: n, tokens: i, autolink: r }) {
+    let o = r ? w(n, true) : this.parser.parseInline(i), s = ie(e);
+    if (s === null)
       return o;
-    e = O(i, r);
-    let u = '<a href="' + e + '"';
-    return t && (u += ' title="' + O(t) + '"'), u += ">" + o + "</a>", u;
+    e = w(s, r);
+    let l = '<a href="' + e + '"';
+    return t && (l += ' title="' + w(t) + '"'), l += ">" + o + "</a>", l;
   }
-  image({ href: e, title: t, text: n, tokens: s }) {
-    s && (n = this.parser.parseInline(s, this.parser.textRenderer));
-    let r = re(e);
+  image({ href: e, title: t, text: n, tokens: i }) {
+    i && (n = this.parser.parseInline(i, this.parser.textRenderer));
+    let r = ie(e);
     if (r === null)
-      return O(n);
+      return w(n);
     e = r;
-    let o = `<img src="${O(e)}" alt="${O(n)}"`;
-    return t && (o += ` title="${O(t)}"`), o += ">", o;
+    let o = `<img src="${w(e)}" alt="${w(n)}"`;
+    return t && (o += ` title="${w(t)}"`), o += ">", o;
   }
   text(e) {
-    return "tokens" in e && e.tokens ? this.parser.parseInline(e.tokens) : ("escaped" in e) && e.escaped ? e.text : O(e.text);
+    return "tokens" in e && e.tokens ? this.parser.parseInline(e.tokens) : ("escaped" in e) && e.escaped ? e.text : w(e.text);
   }
 };
 var z = class {
@@ -11587,32 +11814,32 @@ var z = class {
     return e;
   }
 };
-var T = class l {
+var O = class a {
   options;
   renderer;
   textRenderer;
   constructor(e) {
-    this.options = e || y, this.options.renderer = this.options.renderer || new S, this.renderer = this.options.renderer, this.renderer.options = this.options, this.renderer.parser = this, this.textRenderer = new z;
+    this.options = e || y, this.options.renderer = this.options.renderer || new $, this.renderer = this.options.renderer, this.renderer.options = this.options, this.renderer.parser = this, this.textRenderer = new z;
   }
   static parse(e, t) {
-    return new l(t).parse(e);
+    return new a(t).parse(e);
   }
   static parseInline(e, t) {
-    return new l(t).parseInline(e);
+    return new a(t).parseInline(e);
   }
   parse(e) {
     this.renderer.parser = this;
     let t = "";
     for (let n = 0;n < e.length; n++) {
-      let s = e[n];
-      if (this.options.extensions?.renderers?.[s.type]) {
-        let o = s, i = this.options.extensions.renderers[o.type].call({ parser: this }, o);
-        if (i !== false || !["space", "hr", "heading", "code", "table", "blockquote", "list", "checkbox", "html", "def", "paragraph", "text"].includes(o.type)) {
-          t += i || "";
+      let i = e[n];
+      if (this.options.extensions?.renderers?.[i.type]) {
+        let o = i, s = this.options.extensions.renderers[o.type].call({ parser: this }, o);
+        if (s !== false || !["space", "hr", "heading", "code", "table", "blockquote", "list", "checkbox", "html", "def", "paragraph", "text"].includes(o.type)) {
+          t += s || "";
           continue;
         }
       }
-      let r = s;
+      let r = i;
       switch (r.type) {
         case "space": {
           t += this.renderer.space(r);
@@ -11675,12 +11902,12 @@ var T = class l {
   parseInline(e, t = this.renderer) {
     this.renderer.parser = this;
     let n = "";
-    for (let s = 0;s < e.length; s++) {
-      let r = e[s];
+    for (let i = 0;i < e.length; i++) {
+      let r = e[i];
       if (this.options.extensions?.renderers?.[r.type]) {
-        let i = this.options.extensions.renderers[r.type].call({ parser: this }, r);
-        if (i !== false || !["escape", "html", "link", "image", "checkbox", "strong", "em", "codespan", "br", "del", "text"].includes(r.type)) {
-          n += i || "";
+        let s = this.options.extensions.renderers[r.type].call({ parser: this }, r);
+        if (s !== false || !["escape", "html", "link", "image", "checkbox", "strong", "em", "codespan", "br", "del", "text"].includes(r.type)) {
+          n += s || "";
           continue;
         }
       }
@@ -11731,17 +11958,17 @@ var T = class l {
           break;
         }
         default: {
-          let i = 'Token with "' + o.type + '" type was not found.';
+          let s = 'Token with "' + o.type + '" type was not found.';
           if (this.options.silent)
-            return console.error(i), "";
-          throw new Error(i);
+            return console.error(s), "";
+          throw new Error(s);
         }
       }
     }
     return n;
   }
 };
-var _ = class {
+var L = class {
   options;
   block;
   constructor(e) {
@@ -11762,50 +11989,57 @@ var _ = class {
     return e;
   }
   provideLexer(e = this.block) {
-    return e ? R.lex : R.lexInline;
+    return e ? T.lex : T.lexInline;
   }
   provideParser(e = this.block) {
-    return e ? T.parse : T.parseInline;
+    return e ? O.parse : O.parseInline;
   }
 };
-var F = class {
-  defaults = I();
+function C(a, e) {
+  if (Array.isArray(e))
+    for (let t = 0;t < e.length; t++)
+      a.push(e[t]);
+  else
+    a.push(e);
+}
+var U = class {
+  defaults = B();
   options = this.setOptions;
   parse = this.parseMarkdown(true);
   parseInline = this.parseMarkdown(false);
-  Parser = T;
-  Renderer = S;
+  Parser = O;
+  Renderer = $;
   TextRenderer = z;
-  Lexer = R;
-  Tokenizer = P;
-  Hooks = _;
+  Lexer = T;
+  Tokenizer = _;
+  Hooks = L;
   constructor(...e) {
     this.use(...e);
   }
   walkTokens(e, t) {
     let n = [];
-    for (let s of e)
-      switch (n = n.concat(t.call(this, s)), s.type) {
+    for (let i of e)
+      switch (C(n, t.call(this, i)), i.type) {
         case "table": {
-          let r = s;
+          let r = i;
           for (let o of r.header)
-            n = n.concat(this.walkTokens(o.tokens, t));
+            C(n, this.walkTokens(o.tokens, t));
           for (let o of r.rows)
-            for (let i of o)
-              n = n.concat(this.walkTokens(i.tokens, t));
+            for (let s of o)
+              C(n, this.walkTokens(s.tokens, t));
           break;
         }
         case "list": {
-          let r = s;
-          n = n.concat(this.walkTokens(r.items, t));
+          let r = i;
+          C(n, this.walkTokens(r.items, t));
           break;
         }
         default: {
-          let r = s;
+          let r = i;
           this.defaults.extensions?.childTokens?.[r.type] ? this.defaults.extensions.childTokens[r.type].forEach((o) => {
-            let i = r[o].flat(1 / 0);
-            n = n.concat(this.walkTokens(i, t));
-          }) : r.tokens && (n = n.concat(this.walkTokens(r.tokens, t)));
+            let s = r[o].flat(1 / 0);
+            C(n, this.walkTokens(s, t));
+          }) : r.tokens && C(n, this.walkTokens(r.tokens, t));
         }
       }
     return n;
@@ -11813,15 +12047,15 @@ var F = class {
   use(...e) {
     let t = this.defaults.extensions || { renderers: {}, childTokens: {} };
     return e.forEach((n) => {
-      let s = { ...n };
-      if (s.async = this.defaults.async || s.async || false, n.extensions && (n.extensions.forEach((r) => {
+      let i = { ...n };
+      if (i.async = this.defaults.async || i.async || false, n.extensions && (n.extensions.forEach((r) => {
         if (!r.name)
           throw new Error("extension name required");
         if ("renderer" in r) {
           let o = t.renderers[r.name];
-          o ? t.renderers[r.name] = function(...i) {
-            let u = r.renderer.apply(this, i);
-            return u === false && (u = o.apply(this, i)), u;
+          o ? t.renderers[r.name] = function(...s) {
+            let l = r.renderer.apply(this, s);
+            return l === false && (l = o.apply(this, s)), l;
           } : t.renderers[r.name] = r.renderer;
         }
         if ("tokenizer" in r) {
@@ -11831,107 +12065,107 @@ var F = class {
           o ? o.unshift(r.tokenizer) : t[r.level] = [r.tokenizer], r.start && (r.level === "block" ? t.startBlock ? t.startBlock.push(r.start) : t.startBlock = [r.start] : r.level === "inline" && (t.startInline ? t.startInline.push(r.start) : t.startInline = [r.start]));
         }
         "childTokens" in r && r.childTokens && (t.childTokens[r.name] = r.childTokens);
-      }), s.extensions = t), n.renderer) {
-        let r = this.defaults.renderer || new S(this.defaults);
+      }), i.extensions = t), n.renderer) {
+        let r = this.defaults.renderer || new $(this.defaults);
         for (let o in n.renderer) {
           if (!(o in r))
             throw new Error(`renderer '${o}' does not exist`);
           if (["options", "parser"].includes(o))
             continue;
-          let i = o, u = n.renderer[i], a = r[i];
-          r[i] = (...p) => {
-            let c = u.apply(r, p);
-            return c === false && (c = a.apply(r, p)), c || "";
+          let s = o, l = n.renderer[s], u = r[s];
+          r[s] = (...c) => {
+            let p = l.apply(r, c);
+            return p === false && (p = u.apply(r, c)), p || "";
           };
         }
-        s.renderer = r;
+        i.renderer = r;
       }
       if (n.tokenizer) {
-        let r = this.defaults.tokenizer || new P(this.defaults);
+        let r = this.defaults.tokenizer || new _(this.defaults);
         for (let o in n.tokenizer) {
           if (!(o in r))
             throw new Error(`tokenizer '${o}' does not exist`);
           if (["options", "rules", "lexer"].includes(o))
             continue;
-          let i = o, u = n.tokenizer[i], a = r[i];
-          r[i] = (...p) => {
-            let c = u.apply(r, p);
-            return c === false && (c = a.apply(r, p)), c;
+          let s = o, l = n.tokenizer[s], u = r[s];
+          r[s] = (...c) => {
+            let p = l.apply(r, c);
+            return p === false && (p = u.apply(r, c)), p;
           };
         }
-        s.tokenizer = r;
+        i.tokenizer = r;
       }
       if (n.hooks) {
-        let r = this.defaults.hooks || new _;
+        let r = this.defaults.hooks || new L;
         for (let o in n.hooks) {
           if (!(o in r))
             throw new Error(`hook '${o}' does not exist`);
           if (["options", "block"].includes(o))
             continue;
-          let i = o, u = n.hooks[i], a = r[i];
-          _.passThroughHooks.has(o) ? r[i] = (p) => {
-            if (this.defaults.async && _.passThroughHooksRespectAsync.has(o))
+          let s = o, l = n.hooks[s], u = r[s];
+          L.passThroughHooks.has(o) ? r[s] = (c) => {
+            if (this.defaults.async && L.passThroughHooksRespectAsync.has(o))
               return (async () => {
-                let d = await u.call(r, p);
-                return a.call(r, d);
+                let d = await l.call(r, c);
+                return u.call(r, d);
               })();
-            let c = u.call(r, p);
-            return a.call(r, c);
-          } : r[i] = (...p) => {
+            let p = l.call(r, c);
+            return u.call(r, p);
+          } : r[s] = (...c) => {
             if (this.defaults.async)
               return (async () => {
-                let d = await u.apply(r, p);
-                return d === false && (d = await a.apply(r, p)), d;
+                let d = await l.apply(r, c);
+                return d === false && (d = await u.apply(r, c)), d;
               })();
-            let c = u.apply(r, p);
-            return c === false && (c = a.apply(r, p)), c;
+            let p = l.apply(r, c);
+            return p === false && (p = u.apply(r, c)), p;
           };
         }
-        s.hooks = r;
+        i.hooks = r;
       }
       if (n.walkTokens) {
         let r = this.defaults.walkTokens, o = n.walkTokens;
-        s.walkTokens = function(i) {
-          let u = [];
-          return u.push(o.call(this, i)), r && (u = u.concat(r.call(this, i))), u;
+        i.walkTokens = function(s) {
+          let l = [];
+          return l.push(o.call(this, s)), r && C(l, r.call(this, s)), l;
         };
       }
-      this.defaults = { ...this.defaults, ...s };
+      this.defaults = { ...this.defaults, ...i };
     }), this;
   }
   setOptions(e) {
     return this.defaults = { ...this.defaults, ...e }, this;
   }
   lexer(e, t) {
-    return R.lex(e, t ?? this.defaults);
+    return T.lex(e, t ?? this.defaults);
   }
   parser(e, t) {
-    return T.parse(e, t ?? this.defaults);
+    return O.parse(e, t ?? this.defaults);
   }
   parseMarkdown(e) {
-    return (n, s) => {
-      let r = { ...s }, o = { ...this.defaults, ...r }, i = this.onError(!!o.silent, !!o.async);
+    return (n, i) => {
+      let r = { ...i }, o = { ...this.defaults, ...r }, s = this.onError(!!o.silent, !!o.async);
       if (this.defaults.async === true && r.async === false)
-        return i(new Error("marked(): The async option was set to true by an extension. Remove async: false from the parse options object to return a Promise."));
+        return s(new Error("marked(): The async option was set to true by an extension. Remove async: false from the parse options object to return a Promise."));
       if (typeof n > "u" || n === null)
-        return i(new Error("marked(): input parameter is undefined or null"));
+        return s(new Error("marked(): input parameter is undefined or null"));
       if (typeof n != "string")
-        return i(new Error("marked(): input parameter is of type " + Object.prototype.toString.call(n) + ", string expected"));
+        return s(new Error("marked(): input parameter is of type " + Object.prototype.toString.call(n) + ", string expected"));
       if (o.hooks && (o.hooks.options = o, o.hooks.block = e), o.async)
         return (async () => {
-          let u = o.hooks ? await o.hooks.preprocess(n) : n, p = await (o.hooks ? await o.hooks.provideLexer(e) : e ? R.lex : R.lexInline)(u, o), c = o.hooks ? await o.hooks.processAllTokens(p) : p;
-          o.walkTokens && await Promise.all(this.walkTokens(c, o.walkTokens));
-          let m = await (o.hooks ? await o.hooks.provideParser(e) : e ? T.parse : T.parseInline)(c, o);
-          return o.hooks ? await o.hooks.postprocess(m) : m;
-        })().catch(i);
+          let l = o.hooks ? await o.hooks.preprocess(n) : n, c = await (o.hooks ? await o.hooks.provideLexer(e) : e ? T.lex : T.lexInline)(l, o), p = o.hooks ? await o.hooks.processAllTokens(c) : c;
+          o.walkTokens && await Promise.all(this.walkTokens(p, o.walkTokens));
+          let g = await (o.hooks ? await o.hooks.provideParser(e) : e ? O.parse : O.parseInline)(p, o);
+          return o.hooks ? await o.hooks.postprocess(g) : g;
+        })().catch(s);
       try {
         o.hooks && (n = o.hooks.preprocess(n));
-        let a = (o.hooks ? o.hooks.provideLexer(e) : e ? R.lex : R.lexInline)(n, o);
-        o.hooks && (a = o.hooks.processAllTokens(a)), o.walkTokens && this.walkTokens(a, o.walkTokens);
-        let c = (o.hooks ? o.hooks.provideParser(e) : e ? T.parse : T.parseInline)(a, o);
-        return o.hooks && (c = o.hooks.postprocess(c)), c;
-      } catch (u) {
-        return i(u);
+        let u = (o.hooks ? o.hooks.provideLexer(e) : e ? T.lex : T.lexInline)(n, o);
+        o.hooks && (u = o.hooks.processAllTokens(u)), o.walkTokens && this.walkTokens(u, o.walkTokens);
+        let p = (o.hooks ? o.hooks.provideParser(e) : e ? O.parse : O.parseInline)(u, o);
+        return o.hooks && (p = o.hooks.postprocess(p)), p;
+      } catch (l) {
+        return s(l);
       }
     };
   }
@@ -11939,8 +12173,8 @@ var F = class {
     return (n) => {
       if (n.message += `
 Please report this to https://github.com/markedjs/marked.`, e) {
-        let s = "<p>An error occurred:</p><pre>" + O(n.message + "", true) + "</pre>";
-        return t ? Promise.resolve(s) : s;
+        let i = "<p>An error occurred:</p><pre>" + w(n.message + "", true) + "</pre>";
+        return t ? Promise.resolve(i) : i;
       }
       if (t)
         return Promise.reject(n);
@@ -11948,38 +12182,38 @@ Please report this to https://github.com/markedjs/marked.`, e) {
     };
   }
 };
-var E = new F;
-function k(l, e) {
-  return E.parse(l, e);
+var I = new U;
+function f(a, e) {
+  return I.parse(a, e);
 }
-k.options = k.setOptions = function(l) {
-  return E.setOptions(l), k.defaults = E.defaults, W(k.defaults), k;
+f.options = f.setOptions = function(a) {
+  return I.setOptions(a), f.defaults = I.defaults, V(f.defaults), f;
 };
-k.getDefaults = I;
-k.defaults = y;
-function Pt(...l) {
-  return E.use(...l), k.defaults = E.defaults, W(k.defaults), k;
+f.getDefaults = B;
+f.defaults = y;
+function At(...a) {
+  return I.use(...a), f.defaults = I.defaults, V(f.defaults), f;
 }
-k.use = Pt;
-k.walkTokens = function(l, e) {
-  return E.walkTokens(l, e);
+f.use = At;
+f.walkTokens = function(a, e) {
+  return I.walkTokens(a, e);
 };
-k.parseInline = E.parseInline;
-k.Parser = T;
-k.parser = T.parse;
-k.Renderer = S;
-k.TextRenderer = z;
-k.Lexer = R;
-k.lexer = R.lex;
-k.Tokenizer = P;
-k.Hooks = _;
-k.parse = k;
-var gn = k.options;
-var fn = k.setOptions;
-var mn = k.walkTokens;
-var xn = k.parseInline;
-var Rn = T.parse;
-var Tn = R.lex;
+f.parseInline = I.parseInline;
+f.Parser = O;
+f.parser = O.parse;
+f.Renderer = $;
+f.TextRenderer = z;
+f.Lexer = T;
+f.lexer = T.lex;
+f.Tokenizer = _;
+f.Hooks = L;
+f.parse = f;
+var Rn = f.options;
+var Tn = f.setOptions;
+var On = f.walkTokens;
+var wn = f.parseInline;
+var yn = O.parse;
+var Sn = T.lex;
 // src/shared/lib/quiz/format-errors.ts
 function formatQuizValidationErrors(error) {
   const issueReports = error.issues.map(formatIssueReport);
@@ -12532,6 +12766,18 @@ function prefixIssues(path, issues) {
 }
 function unwrapMessage(message) {
   return typeof message === "string" ? message : message?.message;
+}
+function sizeCaps(defChecks) {
+  const caps = [];
+  for (const ch of defChecks ?? []) {
+    const d = ch._zod.def;
+    if (!/_(length|size)$|_equals$/.test(d.check))
+      break;
+    const max = d.maximum ?? d.length ?? d.size;
+    if (max >= 0)
+      caps.push([max, ch]);
+  }
+  return caps;
 }
 function attachSchema(issues, start, inst) {
   var _a;
@@ -13529,7 +13775,7 @@ ${content.join(`
 var version = {
   major: 4,
   minor: 6,
-  patch: 5
+  patch: 7
 };
 
 // node_modules/zod/v4/core/schemas.js
@@ -14081,6 +14327,29 @@ var $ZodNever = /* @__PURE__ */ $constructor("$ZodNever", (inst, def) => {
     return payload;
   };
 });
+function capSize(inst, size) {
+  const caps = sizeCaps(inst._zod.def.checks);
+  if (!caps.length)
+    return;
+  const cap = Math.min(...caps.map((c) => c[0]));
+  const parse = inst._zod.parse;
+  inst._zod.parse = (payload, ctx) => {
+    const n = size(payload.value);
+    if (n > cap && !ctx?.skipChecks && ctx?.direction !== "backward") {
+      for (const [max, ch] of sizeCaps(inst._zod.def.checks)) {
+        if (n > max && ch._zod.def.when(payload)) {
+          const start = payload.issues.length;
+          ch._zod.check(payload);
+          payload.issues[start].continue = false;
+          attachSchema(payload.issues, start, inst);
+          return payload;
+        }
+      }
+    }
+    return parse(payload, ctx);
+  };
+}
+var arraySize = (input) => Array.isArray(input) ? input.length : -1;
 function handleArrayResult(result, final, index) {
   if (result.issues.length) {
     final.issues.push(...prefixIssues(index, result.issues));
@@ -14124,6 +14393,7 @@ var $ZodArray = /* @__PURE__ */ $constructor("$ZodArray", (inst, def) => {
     }
     return payload;
   };
+  capSize(inst, arraySize);
 });
 function handlePropertyResult(result, final, key, input, optin, optout) {
   const isPresent = key in input;
@@ -18029,7 +18299,7 @@ function markdownToSafeHtml(markdown) {
   if (markdown.trim().length === 0) {
     return "";
   }
-  const safeHtml = import_sanitize_html.default(k.parse(markdown, MARKDOWN_OPTIONS), SANITIZE_OPTIONS);
+  const safeHtml = import_sanitize_html.default(f.parse(markdown, MARKDOWN_OPTIONS), SANITIZE_OPTIONS);
   return highlightCodeBlocks(safeHtml);
 }
 function renderMarkdown(markdown) {
@@ -18039,7 +18309,7 @@ function renderInlineMarkdown(markdown) {
   if (markdown.trim().length === 0) {
     return "";
   }
-  return import_sanitize_html.default(k.parseInline(markdown, MARKDOWN_OPTIONS), INLINE_SANITIZE_OPTIONS);
+  return import_sanitize_html.default(f.parseInline(markdown, MARKDOWN_OPTIONS), INLINE_SANITIZE_OPTIONS);
 }
 function highlightCodeBlocks(html) {
   if (!html.includes("<pre")) {
@@ -18249,7 +18519,7 @@ function formatProfileIssues(fileLabel, issues) {
 }
 function checkMarkdownField(entry) {
   const issues = [];
-  const tokens = k.lexer(entry.value);
+  const tokens = f.lexer(entry.value);
   if (containsRawHtml(tokens)) {
     issues.push({
       severity: "error",

@@ -6,7 +6,7 @@ import { DevTools } from "@vitejs/devtools";
 import { patchCssModules } from "vite-css-modules";
 import { loadEnv } from "vite";
 
-import { sharedViteConfig } from "./vite.shared.ts";
+import { reactCompiler, sharedViteConfig } from "./vite.shared.ts";
 import { quizAssets } from "./astro-quiz-assets.ts";
 
 const devtoolsBuild = process.env.DEVTOOLS === "true";
@@ -33,7 +33,9 @@ export default defineConfig({
     allowedHosts,
   },
   integrations: [
-    react(),
+    react({
+      compiler: reactCompiler,
+    }),
     sitemap({
       filter: (page) => !excludedSitemapRoutes.has(sitemapRoutePath(page)),
     }),

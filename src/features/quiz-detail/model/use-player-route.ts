@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useSyncExternalStore } from "react";
+import { useSyncExternalStore } from "react";
 
 import type { Quiz } from "@/shared/lib/quiz";
 import { parsePlayerUrlState, questionAnchorId, updatePlayerUrlSearch } from "@/shared/lib/routing";
@@ -90,47 +90,38 @@ export function usePlayerRoute(quiz: Quiz): PlayerRoute {
 
   // Re-parse only when the URL or the quiz's Question set changes. The ids gate
   // the `question` anchor: an anchor that no longer exists resolves to none.
-  const questionIds = useMemo(() => quiz.questions.map((question) => question.id), [quiz]);
-  const state = useMemo(() => parsePlayerUrlState(search, questionIds), [search, questionIds]);
+  const questionIds = quiz.questions.map((question) => question.id);
+  const state = parsePlayerUrlState(search, questionIds);
 
-  const enter = useCallback(
-    (view: PlayerView, questionId?: string) => {
-      writeHistory(
-        "push",
-        {
-          mode: view === "summary" ? "summary" : "run",
-          ...(view === "questions" && questionId !== undefined && { questionId }),
-        },
-        quiz,
-        pageSize,
-      );
-    },
-    [quiz, pageSize],
-  );
+  const enter = (view: PlayerView, questionId?: string) => {
+    writeHistory(
+      "push",
+      {
+        mode: view === "summary" ? "summary" : "run",
+        ...(view === "questions" && questionId !== undefined && { questionId }),
+      },
+      quiz,
+      pageSize,
+    );
+  };
 
-  const startHref = useMemo(() => updatePlayerUrlSearch(search, { mode: "run" }), [search]);
+  const startHref = updatePlayerUrlSearch(search, { mode: "run" });
 
-  const questionHref = useCallback(
-    (questionId: string) => {
-      const href = updatePlayerUrlSearch(search, { mode: "run", questionId });
+  const questionHref = (questionId: string) => {
+    const href = updatePlayerUrlSearch(search, { mode: "run", questionId });
 
-      return questionLinkNeedsAnchor(quiz, questionId, pageSize)
-        ? `${href}#${questionAnchorId(questionId)}`
-        : href;
-    },
-    [search, quiz, pageSize],
-  );
+    return questionLinkNeedsAnchor(quiz, questionId, pageSize)
+      ? `${href}#${questionAnchorId(questionId)}`
+      : href;
+  };
 
-  const exit = useCallback(() => {
+  const exit = () => {
     writeHistory("replace", { mode: "detail" }, quiz, pageSize);
-  }, [quiz, pageSize]);
+  };
 
-  const replace = useCallback(
-    (next: PlayerUrlState, playerPageSize = pageSize) => {
-      writeHistory("replace", next, quiz, playerPageSize);
-    },
-    [quiz, pageSize],
-  );
+  const replace = (next: PlayerUrlState, playerPageSize = pageSize) => {
+    writeHistory("replace", next, quiz, playerPageSize);
+  };
 
   return { state, surface: surfaceFromState(state), enter, startHref, questionHref, exit, replace };
 }

@@ -35,21 +35,23 @@ export function Textarea({
   const minimumHeightRef = useRef<number | undefined>(undefined);
   const pageScrollPositionRef = useRef<ScrollPosition | undefined>(undefined);
 
-  const capturePageScroll = useCallback(() => {
+  const capturePageScroll = () => {
     pageScrollPositionRef.current = {
       block: window.scrollY,
       inline: window.scrollX,
     };
-  }, []);
+  };
 
-  const restorePageScroll = useCallback(() => {
+  const restorePageScroll = () => {
     const position = pageScrollPositionRef.current;
 
     if (position === undefined) return;
 
     window.scrollTo(position.inline, position.block);
-  }, []);
+  };
 
+  // `useCallback` stays: `resize` is an effect dependency, and the
+  // exhaustive-deps lint cannot see React Compiler's memoization.
   const resize = useCallback(() => {
     const textarea = textareaRef.current;
 
@@ -57,7 +59,9 @@ export function Textarea({
 
     // Store the rendered minimum before setting an explicit height. This preserves
     // the caller's `rows` value while allowing the field to shrink after edits.
-    minimumHeightRef.current ??= textarea.offsetHeight;
+    if (minimumHeightRef.current === undefined) {
+      minimumHeightRef.current = textarea.offsetHeight;
+    }
 
     // Measure at the intrinsic height instead of collapsing a focused field to
     // zero. A zero-height textarea can make the browser scroll the caret into
@@ -74,18 +78,15 @@ export function Textarea({
     textarea.style.setProperty("--_height", `${height}px`);
   }, []);
 
-  const setRefs = useCallback(
-    (node: HTMLTextAreaElement | null) => {
-      textareaRef.current = node;
+  const setRefs = (node: HTMLTextAreaElement | null) => {
+    textareaRef.current = node;
 
-      if (typeof ref === "function") {
-        ref(node);
-      } else if (ref != null) {
-        ref.current = node;
-      }
-    },
-    [ref],
-  );
+    if (typeof ref === "function") {
+      ref(node);
+    } else if (ref != null) {
+      ref.current = node;
+    }
+  };
 
   useLayoutEffect(resize, [resize, props.defaultValue, props.value]);
 

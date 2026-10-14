@@ -55,6 +55,10 @@ jobs:
       - name: Astro check
         run: bun run check:astro
 
+      # The compiler skips code it cannot handle without failing the build.
+      - name: Check React Compiler skips no code
+        run: bun run react-compiler:check
+
       - name: Install Playwright browser (Chromium)
         run: bunx playwright install --with-deps chromium
 

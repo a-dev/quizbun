@@ -1,4 +1,4 @@
-import { useDeferredValue, useEffect, useMemo, useState } from "react";
+import { useDeferredValue, useEffect, useState } from "react";
 
 import type { PublicQuizSummary, TagCount } from "@/shared/lib/content";
 import { useClientValue } from "@/shared/lib/hydration";
@@ -63,11 +63,8 @@ export function QuizzesCatalog({
   initialPage = 1,
   syncTagsToUrl = true,
 }: QuizzesCatalogProps) {
-  const availableTags = useMemo(() => tags.map(({ tag }) => tag), [tags]);
-  const tagCounts = useMemo(
-    () => Object.fromEntries(tags.map(({ tag, count }) => [tag, count])),
-    [tags],
-  );
+  const availableTags = tags.map(({ tag }) => tag);
+  const tagCounts = Object.fromEntries(tags.map(({ tag, count }) => [tag, count]));
   const [navigatedState, setNavigatedState] = useState<CatalogUrlState | undefined>(undefined);
   // The server-rendered HTML can't know the request URL, so the real filter
   // state comes from the address bar as soon as the client takes over. Derived
@@ -75,19 +72,15 @@ export function QuizzesCatalog({
   // filters are never committed to the screen for a frame. `syncsUrl` also
   // gates the history writes below: before hydration there is nothing to sync.
   const syncsUrl = useClientValue(() => true, false) && syncTagsToUrl;
-  const readUrlState = useMemo<CatalogUrlState>(
-    () =>
-      syncsUrl
-        ? readCatalogUrlState(availableTags)
-        : {
-            selectedTags: [],
-            tagMatchMode: "and",
-            titleQuery: "",
-            page: initialPage,
-            sort: DEFAULT_LIST_SORT,
-          },
-    [availableTags, initialPage, syncsUrl],
-  );
+  const readUrlState: CatalogUrlState = syncsUrl
+    ? readCatalogUrlState(availableTags)
+    : {
+        selectedTags: [],
+        tagMatchMode: "and",
+        titleQuery: "",
+        page: initialPage,
+        sort: DEFAULT_LIST_SORT,
+      };
   // Every later change — a filter edit, a page click, Back/Forward — writes the
   // URL and this state together, so the address bar never has to be re-read.
   const urlState = navigatedState ?? readUrlState;
@@ -96,7 +89,7 @@ export function QuizzesCatalog({
   // render, keeping keystrokes smooth on large catalogs.
   const deferredTitleQuery = useDeferredValue(urlState.titleQuery);
   // Precompute normalised search fields once per catalog, not once per keystroke.
-  const preparedSummaries = useMemo(() => prepareFilterItems(summaries), [summaries]);
+  const preparedSummaries = prepareFilterItems(summaries);
 
   // Keep state in sync with browser Back/Forward, which change the URL without a
   // React update of their own.
@@ -114,24 +107,14 @@ export function QuizzesCatalog({
 
   // Sort after filtering: a title query ranks by match quality, but the
   // explicit Sorting toggle is what the reader asked for, so it wins.
-  const visibleQuizzes = useMemo(
-    () =>
-      sortQuizItems(
-        filterQuizItems(preparedSummaries, {
-          selectedTags: urlState.selectedTags,
-          tagMatchMode: urlState.tagMatchMode,
-          titleQuery: deferredTitleQuery,
-        }),
-        urlState.sort,
-        (summary) => Date.parse(summary.addedAt),
-      ),
-    [
-      deferredTitleQuery,
-      preparedSummaries,
-      urlState.selectedTags,
-      urlState.tagMatchMode,
-      urlState.sort,
-    ],
+  const visibleQuizzes = sortQuizItems(
+    filterQuizItems(preparedSummaries, {
+      selectedTags: urlState.selectedTags,
+      tagMatchMode: urlState.tagMatchMode,
+      titleQuery: deferredTitleQuery,
+    }),
+    urlState.sort,
+    (summary) => Date.parse(summary.addedAt),
   );
   const pageCount = Math.ceil(visibleQuizzes.length / QUIZZES_PER_PAGE);
   // A page number can arrive out of range (a deep link to `/quizzes/page/9/`
@@ -142,6 +125,19 @@ export function QuizzesCatalog({
     (currentPage - 1) * QUIZZES_PER_PAGE,
     currentPage * QUIZZES_PER_PAGE,
   );
+
+  // Two URL shapes: a filtered view is a query string on `/quizzes/`, while an
+  // unfiltered view uses the canonical static `/quizzes/page/{n}/` path that also
+  // exists as a prerendered route (shareable, crawlable, no JS required).
+  function catalogUrlForState(nextState: CatalogUrlState): string {
+    if (hasActiveListFilters(nextState) || !isDefaultListSort(nextState.sort)) {
+      const query = stringifyListUrlState(nextState, availableTags);
+
+      return `${withBase("quizzes/")}${appendListSort(query, nextState.sort)}`;
+    }
+
+    return catalogPageHref(nextState.page);
+  }
 
   /**
    * State and address bar move together. Filter changes `replaceState` (they
@@ -162,19 +158,6 @@ export function QuizzesCatalog({
     }
   }
 
-  // Two URL shapes: a filtered view is a query string on `/quizzes/`, while an
-  // unfiltered view uses the canonical static `/quizzes/page/{n}/` path that also
-  // exists as a prerendered route (shareable, crawlable, no JS required).
-  function catalogUrlForState(nextState: CatalogUrlState): string {
-    if (hasActiveListFilters(nextState) || !isDefaultListSort(nextState.sort)) {
-      const query = stringifyListUrlState(nextState, availableTags);
-
-      return `${withBase("quizzes/")}${appendListSort(query, nextState.sort)}`;
-    }
-
-    return catalogPageHref(nextState.page);
-  }
-
   // Any filter edit resets to page 1: the old page number rarely makes sense
   // against a freshly filtered, shorter result set.
   function updateFilters(nextFilters: Partial<Omit<CatalogUrlState, "page">>) {
@@ -183,10 +166,6 @@ export function QuizzesCatalog({
 
   function changePage(nextPage: number) {
     applyState({ ...urlState, page: nextPage }, "push");
-  }
-
-  function catalogPageHref(page: number): string {
-    return page <= 1 ? withBase("quizzes/") : withBase(`quizzes/page/${page}/`);
   }
 
   function clearFilters() {
@@ -246,6 +225,10 @@ export function QuizzesCatalog({
 
 // The unfiltered page number lives in the path (`/quizzes/page/{n}/`), not the
 // query, so it has to be recovered from the pathname when seeding/syncing state.
+function catalogPageHref(page: number): string {
+  return page <= 1 ? withBase("quizzes/") : withBase(`quizzes/page/${page}/`);
+}
+
 function readCatalogPathPage(): number {
   const match = window.location.pathname.match(/\/quizzes\/page\/(\d+)\/?$/);
   const page = match?.[1] === undefined ? 1 : Number(match[1]);

@@ -1,5 +1,3 @@
-import { memo, useMemo } from "react";
-
 import { Download } from "lucide-react";
 
 import { downloadQuizJson } from "@/shared/lib/quiz";
@@ -20,20 +18,17 @@ interface QuizDetailHeaderProps {
 }
 
 /**
- * `memo` + `useMemo`: the parent re-renders on each progress load, dialog
- * toggle and error, but the header's only changing input is `runStatus`. The
- * quiz is stable, so its Markdown title/description are parsed (`marked` +
- * `sanitize-html`) once and reused instead of on every render.
+ * The parent re-renders on each progress load, dialog toggle and error, but the
+ * header's only changing input is `runStatus`. React Compiler memoizes the
+ * element and the parsed Markdown title/description (`marked` +
+ * `sanitize-html`), so the quiz is parsed once instead of on every render.
  */
-function QuizDetailHeaderComponent({ quiz, runStatus, tagHref }: QuizDetailHeaderProps) {
-  const titleHtml = useMemo(() => renderMarkdownField("quizTitle", quiz.title), [quiz.title]);
-  const descriptionHtml = useMemo(
-    () =>
-      quiz.description === undefined
-        ? undefined
-        : renderMarkdownField("quizDescription", quiz.description),
-    [quiz.description],
-  );
+export function QuizDetailHeader({ quiz, runStatus, tagHref }: QuizDetailHeaderProps) {
+  const titleHtml = renderMarkdownField("quizTitle", quiz.title);
+  const descriptionHtml =
+    quiz.description === undefined
+      ? undefined
+      : renderMarkdownField("quizDescription", quiz.description);
 
   return (
     <header className={styles.root}>
@@ -78,5 +73,3 @@ function QuizDetailHeaderComponent({ quiz, runStatus, tagHref }: QuizDetailHeade
     </header>
   );
 }
-
-export const QuizDetailHeader = memo(QuizDetailHeaderComponent);

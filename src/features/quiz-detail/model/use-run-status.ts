@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 import { messageFromError } from "@/shared/lib/errors";
 import type { Quiz } from "@/shared/lib/quiz";
@@ -53,7 +53,7 @@ export function useRunStatus(source: RunSource, quiz: Quiz): RunStatusController
     };
   }, [quiz, source]);
 
-  const refresh = useCallback(async () => {
+  const refresh = async () => {
     try {
       const next = await getRunStatusAndAnswers(source, quiz);
       setStatus(next.status);
@@ -61,9 +61,9 @@ export function useRunStatus(source: RunSource, quiz: Quiz): RunStatusController
     } catch (refreshError) {
       setError(messageFromError(refreshError));
     }
-  }, [quiz, source]);
+  };
 
-  const reset = useCallback(async (): Promise<boolean> => {
+  const reset = async (): Promise<boolean> => {
     setError(undefined);
 
     try {
@@ -77,7 +77,7 @@ export function useRunStatus(source: RunSource, quiz: Quiz): RunStatusController
       setError(messageFromError(resetError));
       return false;
     }
-  }, [quiz, source]);
+  };
 
   return { status, answers, error, refresh, reset };
 }

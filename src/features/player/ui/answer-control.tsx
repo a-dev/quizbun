@@ -1,5 +1,3 @@
-import { useMemo } from "react";
-
 import type { Question } from "@/shared/lib/quiz";
 import { renderMarkdownField } from "@/shared/lib/render";
 import type { SubmittedAnswer } from "@/shared/lib/storage";
@@ -68,13 +66,10 @@ export function AnswerControl({
 }: Readonly<AnswerControlProps>) {
   // Markdown rendering (marked + sanitize-html) is comparatively costly; the
   // option text never changes for a given Question, so render it once.
-  const optionsHtml = useMemo(
-    () =>
-      question.type === "input"
-        ? []
-        : question.options.map((option) => renderMarkdownField("optionText", option.text)),
-    [question],
-  );
+  const optionsHtml =
+    question.type === "input"
+      ? []
+      : question.options.map((option) => renderMarkdownField("optionText", option.text));
   const displayedOptionIndexes = optionOrder ?? optionsHtml.map((_, optionIndex) => optionIndex);
 
   const hintId = `${idPrefix}-answer-hint`;

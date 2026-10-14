@@ -25,6 +25,7 @@ STEPS=(
   "astro:sync	ci	Generate Astro types	bun run astro sync"
   "typecheck	ci	Typecheck	bun run typecheck"
   "check:astro	ci	Astro check	bun run check:astro"
+  "react-compiler:check	ci	Check React Compiler skips no code	bun run react-compiler:check"
   "test	ci	Unit and component tests	bun run test"
   "check	ci	Lint and format	bun run check"
   "stylelint	ci	CSS lint	bun run stylelint"
@@ -34,12 +35,13 @@ STEPS=(
   "schema:check	ci	Check JSON Schema drift	bun run schema:check"
   "skill:create-quiz:check	ci	Check create-quiz skill drift	bun run skill:create-quiz:check"
   "skill:quizbun:check	ci	Check quizbun skill drift	bun run skill:quizbun:check"
+  "plugin:check	ci	Check plugin drift and manifests	bun run plugin:check"
   "build	ci	Build static site	bun run build"
   "dist:base-paths	ci	Check dist for base-path regressions	bash scripts/check-dist-base-paths.sh"
   "e2e	ci	E2E tests	bun run e2e"
   "knip	extra	Unused files, exports and dependencies	bun run knip"
   "jscpd	extra	Copy-paste detection	bun run jscpd"
-  "mutate	extra	Mutation testing	bun run mutate"
+  "mutate	extra	Mutation testing	bun run test:mutation"
 )
 
 groups="all"

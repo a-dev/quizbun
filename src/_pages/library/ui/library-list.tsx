@@ -1,4 +1,4 @@
-import { useDeferredValue, useEffect, useMemo, useState } from "react";
+import { useDeferredValue, useEffect, useState } from "react";
 
 import { Trash2, Download, CirclePlus } from "lucide-react";
 
@@ -102,26 +102,16 @@ export function LibraryList() {
   const [pendingDelete, setPendingDelete] = useState<QuizSummary | undefined>(undefined);
   const [actionError, setActionError] = useState<string | undefined>(undefined);
   const quizzes = state.status === "ready" ? state.quizzes : EMPTY_QUIZ_SUMMARIES;
-  const availableTags = useMemo(() => collectTags(quizzes), [quizzes]);
-  const preparedQuizzes = useMemo(() => prepareFilterItems(quizzes), [quizzes]);
-  const visibleQuizzes = useMemo(
-    () =>
-      sortQuizItems(
-        filterQuizItems(preparedQuizzes, {
-          selectedTags: urlState.selectedTags,
-          tagMatchMode: urlState.tagMatchMode,
-          titleQuery: deferredTitleQuery,
-        }),
-        urlState.sort,
-        (quiz) => quiz.importedAt,
-      ),
-    [
-      deferredTitleQuery,
-      preparedQuizzes,
-      urlState.selectedTags,
-      urlState.tagMatchMode,
-      urlState.sort,
-    ],
+  const availableTags = collectTags(quizzes);
+  const preparedQuizzes = prepareFilterItems(quizzes);
+  const visibleQuizzes = sortQuizItems(
+    filterQuizItems(preparedQuizzes, {
+      selectedTags: urlState.selectedTags,
+      tagMatchMode: urlState.tagMatchMode,
+      titleQuery: deferredTitleQuery,
+    }),
+    urlState.sort,
+    (quiz) => quiz.importedAt,
   );
   const pageCount = Math.ceil(visibleQuizzes.length / QUIZZES_PER_PAGE);
   const currentPage = clampPage(urlState.page, Math.max(pageCount, 1));

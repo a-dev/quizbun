@@ -1,7 +1,8 @@
 import { defaultExclude, defineConfig, defineProject } from "vitest/config";
+import react from "@vitejs/plugin-react";
 import { playwright } from "@vitest/browser-playwright";
 
-import { sharedViteConfig } from "./vite.shared.ts";
+import { reactCompiler, sharedViteConfig } from "./vite.shared.ts";
 
 // Unit lane — `.spec.ts`, pure logic, Node environment. Co-located in `src/`
 // (and `.storybook/`). Resolves through the same Vite aliases as the app so
@@ -18,9 +19,11 @@ export const unitProject = defineProject({
 
 // Component lane — `.test.{ts,tsx}`, real-browser rendering (Chromium driven by
 // Playwright) for `src/shared/ui` and other islands. Co-located with the
-// component. TSX is transformed by Vitest's esbuild (automatic JSX runtime via
-// tsconfig); `vitest-browser-react` provides the render integration.
+// component. TSX goes through `@vitejs/plugin-react` with the React Compiler,
+// matching the Astro build; `vitest-browser-react` provides the render
+// integration.
 const browserProject = defineProject({
+  plugins: [react({ compiler: reactCompiler })],
   resolve: sharedViteConfig.resolve,
   css: sharedViteConfig.css,
   optimizeDeps: {
@@ -33,6 +36,7 @@ const browserProject = defineProject({
       "react-dom/client",
       "react/jsx-runtime",
       "react/jsx-dev-runtime",
+      "react/compiler-runtime",
       "lucide-react",
       "zod",
       "marked",

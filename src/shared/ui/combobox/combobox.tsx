@@ -3,7 +3,7 @@
  * Highlights matching text in the dropdown items.
  */
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
 import { Combobox as ComboboxBaseUI } from "@base-ui/react/combobox";
 import fuzzysort from "fuzzysort";
@@ -37,7 +37,7 @@ export function Combobox<T extends ComboboxOptionValue>({
 
   // An immutable snapshot indexes the labels once per option list, instead of
   // re-running `fuzzysort.prepare()` for every option on every render.
-  const labelIndex = useMemo(() => fuzzysort.snapshot(options, { key: "label" }), [options]);
+  const labelIndex = fuzzysort.snapshot(options, { key: "label" });
 
   const controlledSelection = Array.isArray(value) ? value : [];
   const normalizedControlledValue = isControlled

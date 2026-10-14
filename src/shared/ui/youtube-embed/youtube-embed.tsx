@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useState } from "react";
 
 import { Play } from "lucide-react";
 
@@ -26,9 +26,9 @@ export function YouTubeEmbed({ videoId, title, start, className }: YouTubeEmbedP
   // Question. Move it onto the player that replaced the control — on attach
   // rather than in the click handler, since the iframe does not exist yet
   // while the click is being handled.
-  const focusOnAttach = useCallback((iframe: HTMLIFrameElement | null) => {
+  const focusOnAttach = (iframe: HTMLIFrameElement | null) => {
     iframe?.focus();
-  }, []);
+  };
 
   return (
     <div className={className}>

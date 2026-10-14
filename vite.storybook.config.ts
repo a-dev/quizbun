@@ -1,8 +1,8 @@
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
-import { sharedViteConfig } from "./vite.shared.ts";
+import { reactCompiler, sharedViteConfig } from "./vite.shared.ts";
 
 export default defineConfig({
   ...sharedViteConfig,
-  plugins: [react()],
+  plugins: [react({ compiler: reactCompiler })],
 });

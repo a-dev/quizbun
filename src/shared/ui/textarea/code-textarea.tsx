@@ -1,4 +1,4 @@
-import { useDeferredValue, useMemo, useState } from "react";
+import { useDeferredValue, useState } from "react";
 
 import Prism from "prismjs";
 import "prismjs/components/prism-json.js";
@@ -30,7 +30,7 @@ export function CodeTextarea({
   // synchronously on every keystroke. Deferring lets React keep typing and the
   // caret responsive while the syntax layer catches up at a lower priority.
   const deferredText = useDeferredValue(text);
-  const highlightedJson = useMemo(() => highlightJson(deferredText), [deferredText]);
+  const highlightedJson = highlightJson(deferredText);
 
   const handleInput: NonNullable<TextareaProps["onInput"]> = (event) => {
     if (value === undefined) setUncontrolledValue(event.currentTarget.value);

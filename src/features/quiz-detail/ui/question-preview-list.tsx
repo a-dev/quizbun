@@ -1,5 +1,3 @@
-import { useMemo } from "react";
-
 import type { Quiz } from "@/shared/lib/quiz";
 import { renderMarkdownField } from "@/shared/lib/render";
 import type { QuestionProgress } from "@/shared/lib/storage";
@@ -38,9 +36,8 @@ export function QuestionPreviewList({
   questionHref,
   onQuestionSelect,
 }: QuestionPreviewListProps) {
-  const titles = useMemo(
-    () => quiz.questions.map((question) => renderMarkdownField("questionTitle", question.title)),
-    [quiz.questions],
+  const titles = quiz.questions.map((question) =>
+    renderMarkdownField("questionTitle", question.title),
   );
 
   return (

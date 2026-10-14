@@ -1,5 +1,3 @@
-import { useMemo } from "react";
-
 import { renderMarkdownFieldText } from "@/shared/lib/render";
 import { Button } from "@/shared/ui/button";
 import { Dialog } from "@/shared/ui/dialog";
@@ -22,7 +20,7 @@ export function ResetProgressDialog({
   quizTitle,
   onConfirm,
 }: ResetProgressDialogProps) {
-  const title = useMemo(() => renderMarkdownFieldText("quizTitle", quizTitle), [quizTitle]);
+  const title = renderMarkdownFieldText("quizTitle", quizTitle);
 
   return (
     <Dialog

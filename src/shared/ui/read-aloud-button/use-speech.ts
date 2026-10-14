@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { useClientValue } from "@/shared/lib/hydration";
 
@@ -53,55 +53,52 @@ export function useSpeech(): UseSpeech {
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
   const keepAliveRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
 
-  const reset = useCallback(() => {
+  const reset = () => {
     clearInterval(keepAliveRef.current);
     keepAliveRef.current = undefined;
     utteranceRef.current = null;
     setSpeaking(false);
-  }, []);
+  };
 
-  const stop = useCallback(() => {
+  const stop = () => {
     reset();
     // Global: also clears anything another card queued. `cancel()` does not fire
     // `end`/`error` reliably across browsers, so `reset()` updates state itself.
     window.speechSynthesis.cancel();
-  }, [reset]);
+  };
 
-  const speak = useCallback(
-    (text: string, options?: SpeakOptions) => {
-      if (text.trim() === "") return;
-      // Only one explanation reads at a time; drop whatever is playing/queued.
-      window.speechSynthesis.cancel();
+  const speak = (text: string, options?: SpeakOptions) => {
+    if (text.trim() === "") return;
+    // Only one explanation reads at a time; drop whatever is playing/queued.
+    window.speechSynthesis.cancel();
 
-      const utterance = new SpeechSynthesisUtterance(text);
-      if (options?.voice) {
-        utterance.voice = options.voice;
-        utterance.lang = options.voice.lang;
+    const utterance = new SpeechSynthesisUtterance(text);
+    if (options?.voice) {
+      utterance.voice = options.voice;
+      utterance.lang = options.voice.lang;
+    }
+
+    const finish = () => {
+      // Ignore stale events from an utterance we have already superseded.
+      if (utteranceRef.current === utterance) reset();
+    };
+    utterance.onend = finish;
+    utterance.onerror = finish;
+
+    utteranceRef.current = utterance;
+    setSpeaking(true);
+    window.speechSynthesis.speak(utterance);
+
+    keepAliveRef.current = setInterval(() => {
+      if (!window.speechSynthesis.speaking) {
+        clearInterval(keepAliveRef.current);
+        keepAliveRef.current = undefined;
+        return;
       }
-
-      const finish = () => {
-        // Ignore stale events from an utterance we have already superseded.
-        if (utteranceRef.current === utterance) reset();
-      };
-      utterance.onend = finish;
-      utterance.onerror = finish;
-
-      utteranceRef.current = utterance;
-      setSpeaking(true);
-      window.speechSynthesis.speak(utterance);
-
-      keepAliveRef.current = setInterval(() => {
-        if (!window.speechSynthesis.speaking) {
-          clearInterval(keepAliveRef.current);
-          keepAliveRef.current = undefined;
-          return;
-        }
-        window.speechSynthesis.pause();
-        window.speechSynthesis.resume();
-      }, KEEP_ALIVE_MS);
-    },
-    [reset],
-  );
+      window.speechSynthesis.pause();
+      window.speechSynthesis.resume();
+    }, KEEP_ALIVE_MS);
+  };
 
   // If the card unmounts mid-utterance (page change, exit Run), stop talking.
   useEffect(() => {

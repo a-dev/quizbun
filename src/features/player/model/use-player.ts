@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { RefObject } from "react";
 
 import { flushSync } from "react-dom";
@@ -97,16 +97,48 @@ export function usePlayer({
   const optionOrderSessionRef = useRef<{ quiz: Quiz; source: RunSource } | undefined>(undefined);
 
   // Keep the latest emitter without making every handler depend on its
-  // identity. Assigning a ref during render is the supported "latest value"
-  // pattern for callbacks read by effects/handlers.
+  // identity. The ref updates in a layout effect, not during render (React
+  // Compiler rejects render-time ref writes); layout effects run before the
+  // effects and handlers that read it.
   const emitRef = useRef(onUrlStateChange);
-  emitRef.current = onUrlStateChange;
+  useLayoutEffect(() => {
+    emitRef.current = onUrlStateChange;
+  });
+  // `useCallback` stays on the two emitters: they are effect dependencies, and
+  // the exhaustive-deps lint cannot see React Compiler's memoization.
   const emitRunAnchor = useCallback((questionId: string | undefined, activePageSize: PageSize) => {
     if (questionId !== undefined) {
       emitRef.current?.({ mode: "run", questionId }, activePageSize);
     }
   }, []);
   const emitSummary = useCallback(() => emitRef.current?.({ mode: "summary" }), []);
+
+  /**
+   * Commits one navigation and then puts the Learner where it landed (T7.1).
+   *
+   * Focus moves to the page heading: the player mounts from a primary action
+   * whose button unmounts with the detail surface, so focus would otherwise
+   * drop to `<body>`. When the URL anchors a Question, the viewport moves to
+   * it — a fragment can name a Question that only exists once its page has
+   * rendered, so the browser's one-shot fragment scroll during document load
+   * cannot be relied on.
+   *
+   * `flushSync` lets both run from the caller instead of an effect: the
+   * heading has to carry its new text before focus reaches it, and the new page
+   * has to be in the DOM before `getElementById` can find the Question.
+   */
+  function commitNavigation(update: () => void, anchorQuestionId?: string) {
+    flushSync(update);
+    headingRef.current?.focus();
+
+    if (anchorQuestionId === undefined) return;
+
+    const anchorId = questionAnchorId(anchorQuestionId);
+
+    if (window.location.hash !== `#${anchorId}`) return;
+
+    document.getElementById(anchorId)?.scrollIntoView();
+  }
 
   // Initial load: read the persisted Run + Page-size preference, then resume
   // where the user left off (T6.5). A finished Run defaults to its Summary —
@@ -175,62 +207,29 @@ export function usePlayer({
 
   const isLoaded = answers !== undefined;
 
-  /**
-   * Commits one navigation and then puts the Learner where it landed (T7.1).
-   *
-   * Focus moves to the page heading: the player mounts from a primary action
-   * whose button unmounts with the detail surface, so focus would otherwise
-   * drop to `<body>`. When the URL anchors a Question, the viewport moves to
-   * it — a fragment can name a Question that only exists once its page has
-   * rendered, so the browser's one-shot fragment scroll during document load
-   * cannot be relied on.
-   *
-   * `flushSync` lets both run from the caller instead of an effect: the
-   * heading has to carry its new text before focus reaches it, and the new page
-   * has to be in the DOM before `getElementById` can find the Question.
-   */
-  function commitNavigation(update: () => void, anchorQuestionId?: string) {
-    flushSync(update);
-    headingRef.current?.focus();
-
-    if (anchorQuestionId === undefined) return;
-
-    const anchorId = questionAnchorId(anchorQuestionId);
-
-    if (window.location.hash !== `#${anchorId}`) return;
-
-    document.getElementById(anchorId)?.scrollIntoView();
-  }
-
-  const pages = useMemo(
-    () => (answers === undefined ? [] : chunkIntoPages(quiz, answers, pageSize)),
-    [quiz, answers, pageSize],
-  );
+  const pages = answers === undefined ? [] : chunkIntoPages(quiz, answers, pageSize);
   const currentPage = pages[Math.min(pageIndex, pages.length - 1)];
 
-  // Stable across renders so a memoized QuestionCard only re-renders when its
-  // own props (question/progress) change, not on every sibling's submit.
-  const onSubmit = useCallback(
-    (question: Question, answer: SubmittedAnswer, isCorrect: boolean) => {
-      void (async () => {
-        setActionError(undefined);
-        try {
-          const contentHash = await computeContentHash(question);
-          // Auto-save on every submit: a reload never loses a submitted answer.
-          const run = await saveAnswer(source, quiz, question.id, {
-            contentHash,
-            submittedAnswer: answer,
-            isCorrect,
-          });
+  // React Compiler keeps this stable while `quiz` and `source` are unchanged,
+  // so it never invalidates a QuestionCard's cached output on its own.
+  const onSubmit = (question: Question, answer: SubmittedAnswer, isCorrect: boolean) => {
+    void (async () => {
+      setActionError(undefined);
+      try {
+        const contentHash = await computeContentHash(question);
+        const progress = { contentHash, submittedAnswer: answer, isCorrect };
+        // Auto-save on every submit: a reload never loses a submitted answer.
+        await saveAnswer(source, quiz, question.id, progress);
 
-          setAnswers(run.answers);
-        } catch (error) {
-          setActionError(messageFromError(error));
-        }
-      })();
-    },
-    [quiz, source],
-  );
+        // Replace only the submitted entry. The saved Run comes back from
+        // IndexedDB as fresh copies; taking it whole would give every answered
+        // QuestionCard a new `progress` and drop its compiled cache.
+        setAnswers((current) => ({ ...current, [question.id]: progress }));
+      } catch (error) {
+        setActionError(messageFromError(error));
+      }
+    })();
+  };
 
   function changePageSize(next: PageSize) {
     if (answers === undefined || currentPage === undefined) return;

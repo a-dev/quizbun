@@ -1,5 +1,3 @@
-import { memo } from "react";
-
 import type { RunStatus } from "@/shared/lib/storage";
 import { Button, LinkAsButton } from "@/shared/ui/button";
 
@@ -58,16 +56,8 @@ interface DetailActionsProps {
  * The state-aware primary action (description.md): a single button whose label and
  * target view track the Run — Start (no Run), Continue (in progress), or See
  * summary (finished). Retake and Reset appear only once a Run exists.
- *
- * `memo`-wrapped with stable callbacks from the parent, so it re-renders only
- * when `runStatus` changes, not on dialog toggles or header-only updates.
  */
-function DetailActionsComponent({
-  runStatus,
-  onPlay,
-  onRetake,
-  onResetRequest,
-}: DetailActionsProps) {
+export function DetailActions({ runStatus, onPlay, onRetake, onResetRequest }: DetailActionsProps) {
   if (runStatus.kind === "none") {
     return (
       <div className={styles.root}>
@@ -96,5 +86,3 @@ function DetailActionsComponent({
     </div>
   );
 }
-
-export const DetailActions = memo(DetailActionsComponent);

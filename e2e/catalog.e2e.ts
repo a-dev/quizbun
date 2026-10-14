@@ -16,6 +16,16 @@ function cardTitles(page: Page): Promise<string[]> {
   return quizCards(page).getByRole("heading").allInnerTexts();
 }
 
+/**
+ * Server-rendered controls are clickable before React listens: a click on the
+ * Tag trigger is lost and a pagination link falls back to a full page load.
+ * Astro drops an island's `ssr` attribute once it hydrates, and every island
+ * here is `client:load` or `client:idle`, so all of them eventually do.
+ */
+async function waitForIslands(page: Page): Promise<void> {
+  await expect(page.locator("astro-island[ssr]")).toHaveCount(0);
+}
+
 function tagFilterCombobox(page: Page): Locator {
   return page.getByRole("combobox", { name: "Filter by tags and / or" });
 }
@@ -27,6 +37,7 @@ function tagFilterCombobox(page: Page): Locator {
  * (`tag (7)`), which the filtered Catalog then has to agree with.
  */
 async function selectMostCommonTag(page: Page): Promise<{ tag: string; count: number }> {
+  await waitForIslands(page);
   await page.getByTestId("combobox-trigger").click();
 
   const options = page.getByRole("option");
@@ -78,11 +89,14 @@ test("Catalog lists Quizzes, filters by Tags, syncs deep links, and opens a Quiz
 
   await expect(page.getByRole("heading", { name: "Quizzes" })).toBeVisible();
   await expect(quizCards(page)).toHaveCount(QUIZZES_PER_PAGE);
+  await waitForIslands(page);
 
   const firstPageTitles = await cardTitles(page);
 
   await page.getByRole("link", { name: "Page 2" }).click();
   await expect(page).toHaveURL(/\/quizzes\/page\/2\/$/);
+  // `allInnerTexts()` does not auto-wait; let the second page's cards render.
+  await expect(quizCards(page).first()).toBeVisible();
 
   const secondPageTitles = await cardTitles(page);
 

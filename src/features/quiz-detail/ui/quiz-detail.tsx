@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { useCallback, useState } from "react";
+import { useState } from "react";
 
 import type { Quiz } from "@/shared/lib/quiz";
 import type { PlayerUrlState } from "@/shared/lib/routing";
@@ -64,38 +64,35 @@ export function QuizDetail({
   // <body> (T7.1). A ref callback fires exactly on that remount — no effect
   // needed; `returnedFromPlayer` keeps the initial visit from stealing focus.
   const [returnedFromPlayer, setReturnedFromPlayer] = useState(false);
-  const focusArticleOnReturn = useCallback(
-    (node: HTMLElement | null) => {
-      if (node !== null && returnedFromPlayer) {
-        setReturnedFromPlayer(false);
-        node.focus();
-      }
-    },
-    [returnedFromPlayer],
-  );
+  const focusArticleOnReturn = (node: HTMLElement | null) => {
+    if (node !== null && returnedFromPlayer) {
+      setReturnedFromPlayer(false);
+      node.focus();
+    }
+  };
 
-  const handleExit = useCallback(() => {
+  const handleExit = () => {
     setReturnedFromPlayer(true);
     exit();
     // Returning may have changed progress; refresh the header's "X of Y".
     void refresh();
-  }, [exit, refresh]);
+  };
 
-  const handleRetake = useCallback(() => {
+  const handleRetake = () => {
     void (async () => {
       // Retake replaces the Run, then drops straight back into the questions.
       if (await reset()) enter("questions");
     })();
-  }, [reset, enter]);
+  };
 
-  const handleStart = useCallback(() => enter("questions"), [enter]);
+  const handleStart = () => enter("questions");
 
-  const requestReset = useCallback(() => setResetDialogOpen(true), []);
+  const requestReset = () => setResetDialogOpen(true);
 
-  const confirmReset = useCallback(() => {
+  const confirmReset = () => {
     setResetDialogOpen(false);
     void reset();
-  }, [reset]);
+  };
 
   if (surface === "player") {
     // The injected player swaps in here; the swap stays on this route (SPEC.md §4).

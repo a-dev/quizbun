@@ -1,4 +1,4 @@
-import { useCallback, useSyncExternalStore } from "react";
+import { useSyncExternalStore } from "react";
 
 import {
   getSelectedVoiceUriSnapshot,
@@ -44,6 +44,6 @@ interface VoicePreference {
 export function useVoicePreference(): VoicePreference {
   const voices = useSpeechVoices();
   const selectedVoiceUri = useSelectedVoiceUri();
-  const selectVoice = useCallback((voiceUri: string | null) => setSelectedVoiceUri(voiceUri), []);
+  const selectVoice = (voiceUri: string | null) => setSelectedVoiceUri(voiceUri);
   return { voices, selectedVoiceUri, selectVoice };
 }

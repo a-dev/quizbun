@@ -1,4 +1,4 @@
-import { memo, useCallback, useId, useMemo, useRef, useState } from "react";
+import { useId, useRef, useState } from "react";
 
 import { checkAnswer } from "@/shared/lib/quiz";
 import type { Question } from "@/shared/lib/quiz";
@@ -27,11 +27,12 @@ interface Props {
 }
 
 /**
- * One Question, with its draft, lock/result state, and Explanation. Wrapped in
- * `memo` because the parent re-chunks (new page objects) on every submit;
- * without it, submitting one Question re-renders every other card on the page.
+ * One Question, with its draft, lock/result state, and Explanation. One
+ * component per list item is what lets React Compiler memoize per Question:
+ * when the parent re-chunks on a submit, an unchanged card reuses its cached
+ * Markdown and JSX instead of re-parsing.
  */
-export const QuestionCard = memo(function QuestionCard({
+export function QuestionCard({
   quizId,
   question,
   index,
@@ -62,25 +63,19 @@ export const QuestionCard = memo(function QuestionCard({
   // detaching and re-attaching the ref on every later render.
   // `preventScroll`: the result appears right where the user is already looking,
   // so the default focus scroll would only yank the card's top off-screen.
-  const focusJustProducedResult = useCallback((node: HTMLOutputElement | null) => {
+  const focusJustProducedResult = (node: HTMLOutputElement | null) => {
     if (node !== null && justSubmitted.current) {
       justSubmitted.current = false;
       node.focus({ preventScroll: true });
     }
-  }, []);
+  };
 
   // Title/description Markdown is stable for a given Question; render once.
-  const titleHtml = useMemo(
-    () => renderMarkdownField("questionTitle", question.title),
-    [question.title],
-  );
-  const descriptionHtml = useMemo(
-    () =>
-      question.description === undefined
-        ? undefined
-        : renderMarkdownField("questionDescription", question.description),
-    [question.description],
-  );
+  const titleHtml = renderMarkdownField("questionTitle", question.title);
+  const descriptionHtml =
+    question.description === undefined
+      ? undefined
+      : renderMarkdownField("questionDescription", question.description);
 
   function submit() {
     const toSubmit = takeSubmittable();
@@ -171,4 +166,4 @@ export const QuestionCard = memo(function QuestionCard({
       )}
     </div>
   );
-});
+}
