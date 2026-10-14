@@ -2912,7 +2912,7 @@ var require_picocolors = __commonJS(function(exports, module) {
   module.exports.createColors = createColors;
 });
 
-// node_modules/sanitize-html/node_modules/postcss/lib/tokenize.js
+// node_modules/postcss/lib/tokenize.js
 var require_tokenize = __commonJS(function(exports, module) {
   var SINGLE_QUOTE = 39;
   var DOUBLE_QUOTE = 34;
@@ -3130,7 +3130,7 @@ var require_tokenize = __commonJS(function(exports, module) {
   };
 });
 
-// node_modules/sanitize-html/node_modules/postcss/lib/terminal-highlight.js
+// node_modules/postcss/lib/terminal-highlight.js
 var require_terminal_highlight = __commonJS(function(exports, module) {
   var pico = require_picocolors();
   var tokenizer = require_tokenize();
@@ -3191,7 +3191,7 @@ var require_terminal_highlight = __commonJS(function(exports, module) {
   module.exports = terminalHighlight;
 });
 
-// node_modules/sanitize-html/node_modules/postcss/lib/css-syntax-error.js
+// node_modules/postcss/lib/css-syntax-error.js
 var require_css_syntax_error = __commonJS(function(exports, module) {
   var pico = require_picocolors();
   var terminalHighlight = require_terminal_highlight();
@@ -3291,7 +3291,7 @@ var require_css_syntax_error = __commonJS(function(exports, module) {
   CssSyntaxError.default = CssSyntaxError;
 });
 
-// node_modules/sanitize-html/node_modules/postcss/lib/stringifier.js
+// node_modules/postcss/lib/stringifier.js
 var require_stringifier = __commonJS(function(exports, module) {
   var AT_NAME_END = /[\t\n\f\r "#'()/;[\\\]{}]/;
   var DEFAULT_RAW = {
@@ -3689,7 +3689,7 @@ var require_stringifier = __commonJS(function(exports, module) {
   Stringifier.default = Stringifier;
 });
 
-// node_modules/sanitize-html/node_modules/postcss/lib/stringify.js
+// node_modules/postcss/lib/stringify.js
 var require_stringify = __commonJS(function(exports, module) {
   var Stringifier = require_stringifier();
   var STYLE_TAG = /(<)(\/?style\b)/gi;
@@ -3750,13 +3750,13 @@ var require_stringify = __commonJS(function(exports, module) {
   stringify.default = stringify;
 });
 
-// node_modules/sanitize-html/node_modules/postcss/lib/symbols.js
+// node_modules/postcss/lib/symbols.js
 var require_symbols = __commonJS(function(exports, module) {
   exports.isClean = Symbol("isClean");
   exports.my = Symbol("my");
 });
 
-// node_modules/sanitize-html/node_modules/postcss/lib/node.js
+// node_modules/postcss/lib/node.js
 var require_node = __commonJS(function(exports, module) {
   var CssSyntaxError = require_css_syntax_error();
   var Stringifier = require_stringifier();
@@ -4159,7 +4159,7 @@ var require_node = __commonJS(function(exports, module) {
   Node.default = Node;
 });
 
-// node_modules/sanitize-html/node_modules/postcss/lib/comment.js
+// node_modules/postcss/lib/comment.js
 var require_comment = __commonJS(function(exports, module) {
   var Node = require_node();
 
@@ -4173,7 +4173,7 @@ var require_comment = __commonJS(function(exports, module) {
   Comment.default = Comment;
 });
 
-// node_modules/sanitize-html/node_modules/postcss/lib/declaration.js
+// node_modules/postcss/lib/declaration.js
 var require_declaration = __commonJS(function(exports, module) {
   var Node = require_node();
 
@@ -4193,7 +4193,7 @@ var require_declaration = __commonJS(function(exports, module) {
   Declaration.default = Declaration;
 });
 
-// node_modules/sanitize-html/node_modules/postcss/lib/container.js
+// node_modules/postcss/lib/container.js
 var require_container = __commonJS(function(exports, module) {
   var Comment = require_comment();
   var Declaration = require_declaration();
@@ -4633,7 +4633,7 @@ var require_container = __commonJS(function(exports, module) {
   };
 });
 
-// node_modules/sanitize-html/node_modules/postcss/lib/at-rule.js
+// node_modules/postcss/lib/at-rule.js
 var require_at_rule = __commonJS(function(exports, module) {
   var Container = require_container();
 
@@ -4658,7 +4658,7 @@ var require_at_rule = __commonJS(function(exports, module) {
   Container.registerAtRule(AtRule);
 });
 
-// node_modules/sanitize-html/node_modules/postcss/lib/document.js
+// node_modules/postcss/lib/document.js
 var require_document = __commonJS(function(exports, module) {
   var Container = require_container();
   var LazyResult;
@@ -4686,7 +4686,7 @@ var require_document = __commonJS(function(exports, module) {
   Document.default = Document;
 });
 
-// node_modules/sanitize-html/node_modules/postcss/node_modules/nanoid/non-secure/index.cjs
+// node_modules/nanoid/non-secure/index.cjs
 var require_non_secure = __commonJS(function(exports, module) {
   var urlAlphabet = "useandom-26T198340PX75pxJACKVERYMINDBUSHWOLF_GQZbfghjklqvwyzrict";
   var customAlphabet = (alphabet, defaultSize = 21) => {
@@ -4710,7 +4710,7 @@ var require_non_secure = __commonJS(function(exports, module) {
   module.exports = { nanoid, customAlphabet };
 });
 
-// node_modules/sanitize-html/node_modules/postcss/node_modules/source-map-js/lib/base64.js
+// node_modules/source-map-js/lib/base64.js
 var require_base64 = __commonJS(function(exports) {
   var intToCharMap = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/".split("");
   exports.encode = function(number) {
@@ -4749,7 +4749,7 @@ var require_base64 = __commonJS(function(exports) {
   };
 });
 
-// node_modules/sanitize-html/node_modules/postcss/node_modules/source-map-js/lib/base64-vlq.js
+// node_modules/source-map-js/lib/base64-vlq.js
 var require_base64_vlq = __commonJS(function(exports) {
   var base64 = require_base64();
   var VLQ_BASE_SHIFT = 5;
@@ -4801,7 +4801,7 @@ var require_base64_vlq = __commonJS(function(exports) {
   };
 });
 
-// node_modules/sanitize-html/node_modules/postcss/node_modules/source-map-js/lib/util.js
+// node_modules/source-map-js/lib/util.js
 var require_util = __commonJS(function(exports) {
   function getArg(aArgs, aName, aDefaultValue) {
     if (aName in aArgs) {
@@ -5179,7 +5179,7 @@ var require_util = __commonJS(function(exports) {
   exports.computeSourceURL = computeSourceURL;
 });
 
-// node_modules/sanitize-html/node_modules/postcss/node_modules/source-map-js/lib/array-set.js
+// node_modules/source-map-js/lib/array-set.js
 var require_array_set = __commonJS(function(exports) {
   var util = require_util();
   var has = Object.prototype.hasOwnProperty;
@@ -5247,7 +5247,7 @@ var require_array_set = __commonJS(function(exports) {
   exports.ArraySet = ArraySet;
 });
 
-// node_modules/sanitize-html/node_modules/postcss/node_modules/source-map-js/lib/mapping-list.js
+// node_modules/source-map-js/lib/mapping-list.js
 var require_mapping_list = __commonJS(function(exports) {
   var util = require_util();
   function generatedPositionAfter(mappingA, mappingB) {
@@ -5284,7 +5284,7 @@ var require_mapping_list = __commonJS(function(exports) {
   exports.MappingList = MappingList;
 });
 
-// node_modules/sanitize-html/node_modules/postcss/node_modules/source-map-js/lib/source-map-generator.js
+// node_modules/source-map-js/lib/source-map-generator.js
 var require_source_map_generator = __commonJS(function(exports) {
   var base64VLQ = require_base64_vlq();
   var util = require_util();
@@ -5572,7 +5572,7 @@ var require_source_map_generator = __commonJS(function(exports) {
   exports.SourceMapGenerator = SourceMapGenerator;
 });
 
-// node_modules/sanitize-html/node_modules/postcss/node_modules/source-map-js/lib/binary-search.js
+// node_modules/source-map-js/lib/binary-search.js
 var require_binary_search = __commonJS(function(exports) {
   exports.GREATEST_LOWER_BOUND = 1;
   exports.LEAST_UPPER_BOUND = 2;
@@ -5619,7 +5619,7 @@ var require_binary_search = __commonJS(function(exports) {
   };
 });
 
-// node_modules/sanitize-html/node_modules/postcss/node_modules/source-map-js/lib/quick-sort.js
+// node_modules/source-map-js/lib/quick-sort.js
 var require_quick_sort = __commonJS(function(exports) {
   function SortTemplate(comparator) {
     function swap(ary, x, y) {
@@ -5674,7 +5674,7 @@ var require_quick_sort = __commonJS(function(exports) {
   };
 });
 
-// node_modules/sanitize-html/node_modules/postcss/node_modules/source-map-js/lib/source-map-consumer.js
+// node_modules/source-map-js/lib/source-map-consumer.js
 var require_source_map_consumer = __commonJS(function(exports) {
   var util = require_util();
   var binarySearch = require_binary_search();
@@ -6310,7 +6310,7 @@ var require_source_map_consumer = __commonJS(function(exports) {
   exports.IndexedSourceMapConsumer = IndexedSourceMapConsumer;
 });
 
-// node_modules/sanitize-html/node_modules/postcss/node_modules/source-map-js/lib/source-node.js
+// node_modules/source-map-js/lib/source-node.js
 var require_source_node = __commonJS(function(exports) {
   var SourceMapGenerator = require_source_map_generator().SourceMapGenerator;
   var util = require_util();
@@ -6568,14 +6568,14 @@ var require_source_node = __commonJS(function(exports) {
   exports.SourceNode = SourceNode;
 });
 
-// node_modules/sanitize-html/node_modules/postcss/node_modules/source-map-js/source-map.js
+// node_modules/source-map-js/source-map.js
 var require_source_map = __commonJS(function(exports) {
   exports.SourceMapGenerator = require_source_map_generator().SourceMapGenerator;
   exports.SourceMapConsumer = require_source_map_consumer().SourceMapConsumer;
   exports.SourceNode = require_source_node().SourceNode;
 });
 
-// node_modules/sanitize-html/node_modules/postcss/lib/previous-map.js
+// node_modules/postcss/lib/previous-map.js
 var require_previous_map = __commonJS(function(exports, module) {
   var { existsSync, readFileSync, realpathSync } = __require("fs");
   var { dirname, isAbsolute, join, relative, sep } = __require("path");
@@ -6725,7 +6725,7 @@ var require_previous_map = __commonJS(function(exports, module) {
   PreviousMap.default = PreviousMap;
 });
 
-// node_modules/sanitize-html/node_modules/postcss/lib/input.js
+// node_modules/postcss/lib/input.js
 var require_input = __commonJS(function(exports, module) {
   var { nanoid } = require_non_secure();
   var { isAbsolute, resolve } = __require("path");
@@ -6949,7 +6949,7 @@ var require_input = __commonJS(function(exports, module) {
   }
 });
 
-// node_modules/sanitize-html/node_modules/postcss/lib/root.js
+// node_modules/postcss/lib/root.js
 var require_root = __commonJS(function(exports, module) {
   var Container = require_container();
   var LazyResult;
@@ -7010,7 +7010,7 @@ var require_root = __commonJS(function(exports, module) {
   Container.registerRoot(Root);
 });
 
-// node_modules/sanitize-html/node_modules/postcss/lib/list.js
+// node_modules/postcss/lib/list.js
 var require_list = __commonJS(function(exports, module) {
   var list = {
     comma(string) {
@@ -7088,7 +7088,7 @@ var require_list = __commonJS(function(exports, module) {
   list.default = list;
 });
 
-// node_modules/sanitize-html/node_modules/postcss/lib/rule.js
+// node_modules/postcss/lib/rule.js
 var require_rule = __commonJS(function(exports, module) {
   var Container = require_container();
   var list = require_list();
@@ -7114,7 +7114,7 @@ var require_rule = __commonJS(function(exports, module) {
   Container.registerRule(Rule);
 });
 
-// node_modules/sanitize-html/node_modules/postcss/lib/fromJSON.js
+// node_modules/postcss/lib/fromJSON.js
 var require_fromJSON = __commonJS(function(exports, module) {
   var AtRule = require_at_rule();
   var Comment = require_comment();
@@ -7204,7 +7204,7 @@ var require_fromJSON = __commonJS(function(exports, module) {
   fromJSON.default = fromJSON;
 });
 
-// node_modules/sanitize-html/node_modules/postcss/lib/map-generator.js
+// node_modules/postcss/lib/map-generator.js
 var require_map_generator = __commonJS(function(exports, module) {
   var { dirname, relative, resolve, sep } = __require("path");
   var { SourceMapConsumer, SourceMapGenerator } = require_source_map();
@@ -7550,7 +7550,7 @@ var require_map_generator = __commonJS(function(exports, module) {
   module.exports = MapGenerator;
 });
 
-// node_modules/sanitize-html/node_modules/postcss/lib/parser.js
+// node_modules/postcss/lib/parser.js
 var require_parser = __commonJS(function(exports, module) {
   var AtRule = require_at_rule();
   var Comment = require_comment();
@@ -8082,7 +8082,7 @@ var require_parser = __commonJS(function(exports, module) {
   module.exports = Parser;
 });
 
-// node_modules/sanitize-html/node_modules/postcss/lib/parse.js
+// node_modules/postcss/lib/parse.js
 var require_parse = __commonJS(function(exports, module) {
   var Container = require_container();
   var Input = require_input();
@@ -8116,7 +8116,7 @@ You tried to parse Less with ` + "the standard CSS parser; " + "try again with t
   Container.registerParse(parse);
 });
 
-// node_modules/sanitize-html/node_modules/postcss/lib/warning.js
+// node_modules/postcss/lib/warning.js
 var require_warning = __commonJS(function(exports, module) {
   var Container = require_container();
   var { my } = require_symbols();
@@ -8156,7 +8156,7 @@ var require_warning = __commonJS(function(exports, module) {
   Warning.default = Warning;
 });
 
-// node_modules/sanitize-html/node_modules/postcss/lib/result.js
+// node_modules/postcss/lib/result.js
 var require_result = __commonJS(function(exports, module) {
   var Warning = require_warning();
 
@@ -8193,7 +8193,7 @@ var require_result = __commonJS(function(exports, module) {
   Result.default = Result;
 });
 
-// node_modules/sanitize-html/node_modules/postcss/lib/warn-once.js
+// node_modules/postcss/lib/warn-once.js
 var require_warn_once = __commonJS(function(exports, module) {
   var printed = {};
   module.exports = function warnOnce(message) {
@@ -8206,7 +8206,7 @@ var require_warn_once = __commonJS(function(exports, module) {
   };
 });
 
-// node_modules/sanitize-html/node_modules/postcss/lib/lazy-result.js
+// node_modules/postcss/lib/lazy-result.js
 var require_lazy_result = __commonJS(function(exports, module) {
   var Container = require_container();
   var Document = require_document();
@@ -8737,7 +8737,7 @@ var require_lazy_result = __commonJS(function(exports, module) {
   Document.registerLazyResult(LazyResult);
 });
 
-// node_modules/sanitize-html/node_modules/postcss/lib/no-work-result.js
+// node_modules/postcss/lib/no-work-result.js
 var require_no_work_result = __commonJS(function(exports, module) {
   var MapGenerator = require_map_generator();
   var parse = require_parse();
@@ -8850,7 +8850,7 @@ var require_no_work_result = __commonJS(function(exports, module) {
   NoWorkResult.default = NoWorkResult;
 });
 
-// node_modules/sanitize-html/node_modules/postcss/lib/processor.js
+// node_modules/postcss/lib/processor.js
 var require_processor = __commonJS(function(exports, module) {
   var Document = require_document();
   var LazyResult = require_lazy_result();
@@ -8904,7 +8904,7 @@ var require_processor = __commonJS(function(exports, module) {
   Document.registerProcessor(Processor);
 });
 
-// node_modules/sanitize-html/node_modules/postcss/lib/postcss.js
+// node_modules/postcss/lib/postcss.js
 var require_postcss = __commonJS(function(exports, module) {
   var AtRule = require_at_rule();
   var Comment = require_comment();
