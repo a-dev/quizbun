@@ -1,0 +1,33 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "quizbun",
+  "version": "0.3.0",
+  "description": "Create explanation-first Quizzes and import them into your local Quizbun Library using available browser tools.",
+  "author": {
+    "name": "Quizbun",
+    "url": "https://quizbun.fyi/"
+  },
+  "homepage": "https://quizbun.fyi/",
+  "license": "MIT",
+  "keywords": ["learning", "quiz", "quizbun"],
+  "extensions": {
+    "com.openai": {
+      "onboardingSkill": "./skills/setup/SKILL.md",
+      "interface": {
+        "displayName": "Quizbun",
+        "developerName": "Quizbun",
+        "shortDescription": "Learn with custom quizzes",
+        "longDescription": "Create explanation-first Quizzes from your conversation, notes, or a topic you choose. Quizbun validates the Quiz Object Standard and shows an Explanation after each submitted answer. With supported local browser tools, ChatGPT imports the Quiz into your selected Quizbun Library and opens it. Without those tools, it provides a JSON file and, when code execution is available, a launcher for Import. Library Quizzes and Progress are stored in the browser used for Import; other browsers or profiles can have separate Libraries. Quiz generation uses your AI service. This plugin requires no Quizbun account or backend and does not provide browser access itself.",
+        "category": "Education & Research",
+        "websiteURL": "https://quizbun.fyi/",
+        "logo": "./assets/icon.png",
+        "composerIcon": "./assets/icon.png",
+        "defaultPrompt": [
+          "Create a Quiz from what we've discussed and save it to my Quizbun Library.",
+          "Import this Quiz JSON into Quizbun and open it for me.",
+          "Create a 10-question Quiz on JavaScript arrays for a beginner and save it to Quizbun."
+        ]
+      }
+    }
+  }
+}
