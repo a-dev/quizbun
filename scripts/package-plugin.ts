@@ -13,6 +13,8 @@ const checkOnly = process.argv.includes("--check");
 const resources = [
   ["LICENSE", "LICENSE"],
   ["public/icons/icon-512.png", "assets/icon.png"],
+  // Claude directory listing icon: square, opaque, 512 px or larger.
+  ["public/icons/icon-maskable-512.png", ".claude-plugin/icon.png"],
   ["skills/create-quiz/package.json", "skills/create-quiz/package.json"],
   [
     "skills/create-quiz/references/quiz-generation-prompt.md",
