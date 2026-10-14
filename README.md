@@ -21,12 +21,13 @@ Add the `quizbun` skill to open a finished quiz in Quizbun. It writes a launcher
 npx skills add a-dev/quizbun --skill create-quiz --skill quizbun
 ```
 
-Quizbun imports quizzes of at most 200 questions and 1 MB of JSON. See [the quizbun skill](docs/quizbun-skill.md).
+Quizbun imports quizzes of at most 200 questions and 1 MB of JSON. See [import limits](docs/import-limits.md).
 
 For ChatGPT, a separate prototype plugin bundles quiz generation and a
-browser-assisted import workflow. Build it with `bun run plugin:chatgpt:package`;
-see [installation and testing](docs/chatgpt-plugin.md). The standalone skills
-remain available independently.
+browser-assisted import workflow. Build it with `bun run plugin:package`;
+see [installation and testing](docs/plugins/chatgpt-plugin.md). The same package also
+installs in Claude Code; see [the Claude Code plugin](docs/plugins/claude-plugin.md). The
+standalone skills remain available independently.
 
 ## Check explanations against marked answers
 

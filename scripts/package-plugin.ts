@@ -3,6 +3,7 @@ import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync } from
 import { resolve } from "node:path";
 
 import { checkChatgptPlugin } from "./check-chatgpt-plugin";
+import { checkClaudePlugin } from "./check-claude-plugin";
 
 // Existing standalone skills remain authoritative and are never changed here.
 // Assemble their resources beside the plugin-specific browser workflow.
@@ -50,9 +51,7 @@ for (const [source, destination] of resources) {
 
   if (checkOnly) {
     if (!readFileSync(sourcePath).equals(readFileSync(destinationPath))) {
-      throw new Error(
-        `Plugin resource has drifted: ${destination}. Run bun run plugin:chatgpt:package.`,
-      );
+      throw new Error(`Plugin resource has drifted: ${destination}. Run bun run plugin:package.`);
     }
   } else {
     cpSync(sourcePath, destinationPath, { recursive: true });
@@ -60,13 +59,15 @@ for (const [source, destination] of resources) {
 }
 
 checkChatgptPlugin(pluginDirectory);
+checkClaudePlugin(pluginDirectory, resolve(root, ".claude-plugin/marketplace.json"));
 
 if (checkOnly) {
-  console.log("ChatGPT plugin resources match the standalone skills.");
+  console.log("Plugin resources match the standalone skills; ChatGPT and Claude manifests pass.");
 } else {
-  const outputDirectory = resolve(root, "tmp/chatgpt-plugin");
+  // Served by the site at /plugins/chatgpt-plugin.zip; git-ignored, built in CI.
+  const outputDirectory = resolve(root, "public/plugins");
   mkdirSync(outputDirectory, { recursive: true });
-  const archive = resolve(outputDirectory, "quizbun.zip");
+  const archive = resolve(outputDirectory, "chatgpt-plugin.zip");
   // Recreate the generated archive so removed files cannot survive a rebuild.
   rmSync(archive, { force: true });
   const zip = spawnSync(
@@ -82,5 +83,5 @@ if (checkOnly) {
     throw new Error(`Could not package the plugin: ${zip.error?.message ?? zip.stderr}`);
   }
 
-  console.log(`Plugin folder: ${pluginDirectory}\nPlugin archive: ${archive}`);
+  console.log(`Plugin folder: ${pluginDirectory}\nChatGPT plugin archive: ${archive}`);
 }

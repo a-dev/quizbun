@@ -62,7 +62,7 @@ The catalog adds these CI-enforced publishing requirements to the standard:
 - Add at least one kebab-case `tags` entry for the catalog filter. Reuse broad subjects such as `javascript`, `system-design`, or `science`. Avoid tags specific to one quiz. Add a new tag only for a new subject area.
 - Name the file after the quiz id. A quiz with `"id": "git-basics"` belongs in `content/quizzes/git-basics.json`.
 - The quiz `id` must be unique across the repository.
-- The quiz has at most 200 questions and 1 MB of JSON, the same [import limits](./quizbun-skill.md#import-limits) the import page applies.
+- The quiz has at most 200 questions and 1 MB of JSON, the same [import limits](./import-limits.md) the import page applies.
 
 ### If your quiz uses images
 
