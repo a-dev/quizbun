@@ -6,20 +6,22 @@ import { CopyPromptButton } from "@/features/copy-prompt";
 const pageDoc = loadDoc("docs/quiz-generation-page.md");
 const promptDoc = loadDoc("skills/create-quiz/references/quiz-generation-prompt.md");
 const createQuizSkillDoc = loadDoc("docs/create-quiz-skill.md");
-const quizbunSkillDoc = loadDoc("docs/quizbun-skill.md");
+const claudePluginDoc = loadDoc("docs/claude-plugin-install.md");
+const importLimitsDoc = loadDoc("docs/import-limits.md");
 const copyPromptDoc = loadDoc("docs/copy-prompt.md");
 const promptText = extractPromptText(promptDoc.source);
 ---
 
 <DocsLayout
   title="AI Quiz generation prompt"
-  description="Install the create-quiz Agent Skill or copy a self-contained prompt that generates one valid Quizbun Quiz in any AI chat."
+  description="Copy a self-contained prompt, install the create-quiz Agent Skill, or install the Claude plugin to generate a valid Quizbun Quiz."
 >
   <Fragment set:html={pageDoc.html} />
   <Fragment set:html={copyPromptDoc.html} />
   <CopyPromptButton client:idle promptText={promptText} />
   <Fragment set:html={createQuizSkillDoc.html} />
-  <Fragment set:html={quizbunSkillDoc.html} />
+  <Fragment set:html={claudePluginDoc.html} />
+  <Fragment set:html={importLimitsDoc.html} />
   <hr />
   <Fragment set:html={promptDoc.html} />
   <CopyPromptButton client:idle promptText={promptText} />

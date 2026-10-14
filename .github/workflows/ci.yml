@@ -85,6 +85,14 @@ jobs:
       - name: Check quizbun skill drift
         run: bun run skill:quizbun:check
 
+      # Assembles plugins/quizbun/ from the standalone skills (git-ignored
+      # copies) and writes public/plugins/chatgpt-plugin.zip, which the site
+      # build below publishes. Then checks drift and both manifests.
+      - name: Assemble and check plugin
+        run: |
+          bun run plugin:package
+          bun run plugin:check
+
       - name: Build static site
         run: bun run build
 
@@ -134,6 +142,36 @@ jobs:
           name: playwright-report
           path: playwright-report/
           retention-days: 7
+
+  publish-plugin:
+    name: Publish plugin branch
+    needs: checks
+    # The Claude marketplace installs from plugin-dist, because the assembled
+    # resources are git-ignored on main. Publish only what main has checked.
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    concurrency:
+      group: plugin-dist
+      cancel-in-progress: false
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: .bun-version
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Assemble plugin
+        run: bun run plugin:package
+
+      - name: Push to plugin-dist
+        run: bash scripts/publish-plugin-branch.sh plugin-dist
 
   deploy:
     name: Deploy to GitHub Pages

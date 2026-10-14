@@ -1,3 +1,3 @@
 # Quiz generation prompt
 
-There are two ways to generate a quiz with AI. If your agent supports [Agent Skills](https://agentskills.io/home), install [create-quiz](https://www.skills.sh/a-dev/quizbun/create-quiz). Otherwise, copy the self-contained prompt on this page into any AI chat.
+Generate a quiz with AI in one of three ways: copy the prompt below into any AI chat, install the [create-quiz](https://www.skills.sh/a-dev/quizbun/create-quiz) Agent Skill, or install the Quizbun plugin for Claude.
