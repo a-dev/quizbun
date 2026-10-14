@@ -26,8 +26,9 @@ the site build, so the site serves it at
 `https://quizbun.fyi/plugins/chatgpt-plugin.zip`.
 
 The packaging step copies the generated resources from the standalone skills.
-Nobody maintains the copies by hand, so package again after you change those
-skills. `bun run plugin:check` catches copies that have drifted.
+The copies are committed. Nobody edits them by hand, so package again after
+you change those skills. `bun run plugin:check` catches copies that have
+drifted, and CI runs it.
 
 The repository marketplace at `.agents/plugins/marketplace.json` describes the
 assembled package. Before you test, register the repository with the local host:

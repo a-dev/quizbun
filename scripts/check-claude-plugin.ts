@@ -3,8 +3,7 @@ import { resolve } from "node:path";
 
 // The Claude Code manifest shares the skills folder with the ChatGPT package.
 // Keep its identity in step with plugin.json and the repository marketplace.
-// The marketplace installs from the CI-built plugin-dist branch, because the
-// assembled resources are git-ignored on main.
+// The marketplace installs the committed plugins/quizbun/ folder from main.
 export function checkClaudePlugin(directory: string, marketplacePath: string): void {
   const root = resolve(directory);
   const shared = JSON.parse(readFileSync(resolve(root, "plugin.json"), "utf8"));
@@ -22,14 +21,8 @@ export function checkClaudePlugin(directory: string, marketplacePath: string): v
   const entry = marketplace.plugins?.find(
     (plugin: { name?: string }) => plugin.name === manifest.name,
   );
-  // CI publishes the assembled folder to this branch; see publish-plugin-branch.sh.
-  const source = entry?.source;
-  if (
-    source?.source !== "github" ||
-    source.repo !== "a-dev/quizbun" ||
-    source.ref !== "plugin-dist"
-  ) {
-    throw new Error(`Marketplace must install ${manifest.name} from a-dev/quizbun@plugin-dist.`);
+  if (entry?.source !== "./plugins/quizbun") {
+    throw new Error(`Marketplace must install ${manifest.name} from ./plugins/quizbun.`);
   }
   if (!existsSync(resolve(root, "skills"))) throw new Error(`Missing skills in ${directory}.`);
   if (entry.description !== manifest.description) {

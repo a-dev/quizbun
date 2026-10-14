@@ -7,7 +7,7 @@ different. `plugins/quizbun/.claude-plugin/plugin.json` describes the package fo
 Claude Code. Two marketplaces list it:
 
 - `.claude-plugin/marketplace.json` (name `quizbun`) is for users. It installs
-  from the `plugin-dist` branch, which CI builds.
+  `./plugins/quizbun` from `main`.
 - `plugins/.claude-plugin/marketplace.json` (name `quizbun-development`) is for
   local testing. It installs from this checkout.
 
@@ -17,8 +17,10 @@ Claude Code namespaces plugin skills, so they appear as `/quizbun:setup` and
 
 ## Build and install locally
 
-The packaging step generates the validator, launcher, references, and icon.
-Git ignores them. Assemble them first:
+The packaging step copies the validator, launcher, references, and icons from
+the standalone skills and `public/`. The copies are committed, so
+`plugins/quizbun/` is a complete plugin on `main`. Package again after you
+change a source file:
 
 ```sh
 bun run plugin:package
@@ -66,14 +68,12 @@ browser tools the session already has.
   usually run. It validates the quiz with the bundled script and writes a
   `.open.html` launcher. The learner opens it and clicks **Save to library**.
 
-## Publishing through CI
+## Publishing
 
-The assembled resources are git-ignored on `main`. On every push to `main`, after
-the checks pass, the `publish-plugin` CI job assembles `plugins/quizbun/`. Then
-`scripts/publish-plugin-branch.sh` commits it to the `plugin-dist` branch. The
-root of that branch is the plugin root. The job pushes only when the content
-changed. The checks job also assembles the plugin and runs both checks on pull
-requests.
+The plugin is published from `plugins/quizbun/` on `main`. CI runs
+`bun run plugin:check`, which fails when a committed copy differs from its
+source. Anthropic's directory reads the same folder. Its listing icon is
+`.claude-plugin/icon.png`, copied from `public/icons/icon-maskable-512.png`.
 
 Users install the published plugin with:
 
