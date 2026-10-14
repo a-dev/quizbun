@@ -17,8 +17,11 @@ Claude Code namespaces plugin skills, so they appear as `/quizbun:setup` and
 
 ## Build and install locally
 
-The packaging step copies the validator, launcher, references, and icons from
-the standalone skills and `public/`. The copies are committed, so
+The packaging step copies the launcher, references, and icons from the
+standalone skills and `public/`. It builds its own validator, which checks only
+the `standard` profile. Without `--profile catalog` and its Markdown stack, the
+validator stays under 256 KiB. Anthropic's directory holds any larger
+non-image file for manual review, and `plugin:check` fails on one. The copies are committed, so
 `plugins/quizbun/` is a complete plugin on `main`. Package again after you
 change a source file:
 
