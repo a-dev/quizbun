@@ -3,23 +3,8 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import type { BunPlugin } from "bun";
 
-/**
- * Builds the standalone `validate-quiz.mjs` bundle for the create-quiz skill
- * (`catalog: true`) and the Quizbun plugin (`catalog: false`).
- *
- * The plugin copy drops `--profile catalog`. Only the catalog profile reaches
- * the Markdown and sanitization stack, which is most of the full bundle. The
- * Claude plugin directory holds any non-image file over 256 KiB for manual
- * review, and the plugin only validates single Quizzes against the standard.
- * It also drops the npm alias, whose INIT_CWD read the directory flags as a
- * credential read.
- * It also drops `--check-media`, so the plugin validator makes no network
- * requests.
- */
-export async function buildCreateQuizValidator(options: {
-  catalog: boolean;
-  header: string;
-}): Promise<string> {
+/** Builds the standalone `validate-quiz.mjs` bundle for the create-quiz skill. */
+export async function buildCreateQuizValidator(options: { header: string }): Promise<string> {
   const workspaceRoot = process.cwd();
   const temporaryDirectory = mkdtempSync(join(tmpdir(), "create-quiz-validator-"));
 
@@ -30,12 +15,7 @@ export async function buildCreateQuizValidator(options: {
       minify: false,
       naming: "validate-quiz.mjs",
       outdir: temporaryDirectory,
-      plugins: [
-        stubSyntaxHighlighterPlugin,
-        ...(options.catalog
-          ? []
-          : [stubCatalogProfilePlugin, stubNpmAliasPlugin, stubRemoteMediaPlugin]),
-      ],
+      plugins: [stubSyntaxHighlighterPlugin],
       sourcemap: "none",
       target: "node",
     });
@@ -77,68 +57,6 @@ const stubSyntaxHighlighterPlugin: BunPlugin = {
 
     build.onLoad({ filter: /.*/, namespace: "stub-prismjs" }, () => ({
       contents: "export default { highlight: (code) => code, languages: {} };",
-      loader: "js",
-    }));
-  },
-};
-
-const CATALOG_UNAVAILABLE =
-  "throw new Error('This validator checks single Quizzes against the standard. " +
-  "For --profile catalog, use the standalone create-quiz skill.');";
-
-/** Replaces the two catalog-only modules; `--profile catalog` then fails clearly. */
-const stubCatalogProfilePlugin: BunPlugin = {
-  name: "stub-catalog-profile",
-  setup(build) {
-    build.onResolve(
-      { filter: /(\/catalog-profile-validation|\/shared\/lib\/content)$/ },
-      (args) => ({
-        path: args.path,
-        namespace: "stub-catalog-profile",
-      }),
-    );
-
-    build.onLoad({ filter: /.*/, namespace: "stub-catalog-profile" }, () => ({
-      contents: [
-        `export function loadPublicQuizzes() { ${CATALOG_UNAVAILABLE} }`,
-        `export function checkCatalogQuizzes() { ${CATALOG_UNAVAILABLE} }`,
-        `export function formatCatalogProfileSummary() { ${CATALOG_UNAVAILABLE} }`,
-      ].join("\n"),
-      loader: "js",
-    }));
-  },
-};
-
-/** The plugin ships no npm alias, so it has no npm caller directory to restore. */
-const stubNpmAliasPlugin: BunPlugin = {
-  name: "stub-npm-alias",
-  setup(build) {
-    build.onResolve({ filter: /\/create-quiz-validator-npm-alias$/ }, (args) => ({
-      path: args.path,
-      namespace: "stub-npm-alias",
-    }));
-
-    build.onLoad({ filter: /.*/, namespace: "stub-npm-alias" }, () => ({
-      contents: "export function restoreNpmCallerWorkingDirectory() {}",
-      loader: "js",
-    }));
-  },
-};
-
-/** The plugin validator stays offline: `--check-media` fails with a pointer instead. */
-const stubRemoteMediaPlugin: BunPlugin = {
-  name: "stub-remote-media",
-  setup(build) {
-    build.onResolve({ filter: /\/create-quiz-remote-media$/ }, (args) => ({
-      path: args.path,
-      namespace: "stub-remote-media",
-    }));
-
-    build.onLoad({ filter: /.*/, namespace: "stub-remote-media" }, () => ({
-      contents:
-        "export async function validateRemoteMedia() { throw new Error('This validator makes no " +
-        "network requests, so --check-media is unavailable. Omit unverified media, or use the " +
-        "standalone create-quiz skill.'); }",
       loader: "js",
     }));
   },

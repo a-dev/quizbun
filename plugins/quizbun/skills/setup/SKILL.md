@@ -19,32 +19,27 @@ profile, or installed app may have a separate library.
 
 ## Explain the two ways to import
 
-Check which browser capabilities this host exposes. When code execution is
-available, also check `node --version` (the launcher needs Node.js 22.12 or
-later). Then tell the user, in a few short lines, that a quiz can reach their
+Check which browser capabilities this host exposes. Then tell the user, in a few short lines, that a quiz can reach their
 library in two ways, and which of them work here:
 
 1. **Browser control.** With local browser tools, the assistant opens the
    import page, validates the quiz, saves it, and checks the result. The quiz
    goes to the library of the browser those tools control. If available, open
    the selected site's library now.
-2. **Launcher file.** The assistant writes `<quiz-id>.open.html` next to the
-   quiz JSON. The user opens it in any browser on this device, and it loads the
-   quiz into Quizbun's import preview there; the user then clicks
-   **Save to library**. This needs no browser tools, so it is the way to choose
-   exactly which browser's library gets the quiz. The quiz travels in the link's
-   fragment, which the browser does not send to a server; the launcher file and
-   browser history keep a copy until the user deletes them.
+2. **JSON file.** The assistant provides the quiz JSON file and the import page
+   link. The user opens the link in any browser on this device, pastes or drops
+   the file, clicks **Validate**, and then **Save to library**. This needs no
+   browser tools, so it is the way to choose exactly which browser's library
+   gets the quiz.
 
 A browser isolated from the user's everyday profile, such as an in-app or
 automation browser, has its own library; say so before treating it as the
-destination, and mention the launcher as the way to reach their usual browser.
+destination, and mention manual import as the way to reach their usual browser.
 If only a remote/cloud browser is available, explain that it cannot save to the
-user's local library; offer the launcher file instead.
+user's local library; offer manual import instead.
 
-Ask which way the user prefers and use it for quizzes in this conversation. If
-neither works (no browser control and no Node.js), the quiz JSON file can still
-be pasted or dropped on the import page. The plugin needs no account, API key,
+Ask which way the user prefers and use it for quizzes in this conversation. Manual
+import always works, so it is the fallback whenever browser control does not. The plugin needs no account, API key,
 or MCP server.
 
 Offer this example prompt: "Create a 10-question quiz about what we've discussed
