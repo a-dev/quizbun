@@ -2,11 +2,15 @@ import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 // The Claude Code manifest shares the skills folder with the ChatGPT package.
-// Keep its identity in step with plugin.json and the repository marketplace.
+// Keep its identity in step with plugins/chatgpt/plugin.json and the repository marketplace.
 // The marketplace installs the committed plugins/quizbun/ folder from main.
-export function checkClaudePlugin(directory: string, marketplacePath: string): void {
+export function checkClaudePlugin(
+  directory: string,
+  sharedManifestPath: string,
+  marketplacePath: string,
+): void {
   const root = resolve(directory);
-  const shared = JSON.parse(readFileSync(resolve(root, "plugin.json"), "utf8"));
+  const shared = JSON.parse(readFileSync(resolve(sharedManifestPath), "utf8"));
   const manifest = JSON.parse(readFileSync(resolve(root, ".claude-plugin/plugin.json"), "utf8"));
   for (const field of ["name", "version", "description", "license"] as const) {
     if (manifest[field] !== shared[field]) {
@@ -33,7 +37,8 @@ export function checkClaudePlugin(directory: string, marketplacePath: string): v
 if (import.meta.main) {
   checkClaudePlugin(
     process.argv[2] ?? "plugins/quizbun",
-    process.argv[3] ?? ".claude-plugin/marketplace.json",
+    process.argv[3] ?? "plugins/chatgpt/plugin.json",
+    process.argv[4] ?? ".claude-plugin/marketplace.json",
   );
   console.log("Claude plugin manifest and marketplace match plugin.json.");
 }

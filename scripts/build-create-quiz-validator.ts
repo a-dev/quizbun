@@ -13,6 +13,8 @@ import type { BunPlugin } from "bun";
  * review, and the plugin only validates single Quizzes against the standard.
  * It also drops the npm alias, whose INIT_CWD read the directory flags as a
  * credential read.
+ * It also drops `--check-media`, so the plugin validator makes no network
+ * requests.
  */
 export async function buildCreateQuizValidator(options: {
   catalog: boolean;
@@ -30,7 +32,9 @@ export async function buildCreateQuizValidator(options: {
       outdir: temporaryDirectory,
       plugins: [
         stubSyntaxHighlighterPlugin,
-        ...(options.catalog ? [] : [stubCatalogProfilePlugin, stubNpmAliasPlugin]),
+        ...(options.catalog
+          ? []
+          : [stubCatalogProfilePlugin, stubNpmAliasPlugin, stubRemoteMediaPlugin]),
       ],
       sourcemap: "none",
       target: "node",
@@ -116,6 +120,25 @@ const stubNpmAliasPlugin: BunPlugin = {
 
     build.onLoad({ filter: /.*/, namespace: "stub-npm-alias" }, () => ({
       contents: "export function restoreNpmCallerWorkingDirectory() {}",
+      loader: "js",
+    }));
+  },
+};
+
+/** The plugin validator stays offline: `--check-media` fails with a pointer instead. */
+const stubRemoteMediaPlugin: BunPlugin = {
+  name: "stub-remote-media",
+  setup(build) {
+    build.onResolve({ filter: /\/create-quiz-remote-media$/ }, (args) => ({
+      path: args.path,
+      namespace: "stub-remote-media",
+    }));
+
+    build.onLoad({ filter: /.*/, namespace: "stub-remote-media" }, () => ({
+      contents:
+        "export async function validateRemoteMedia() { throw new Error('This validator makes no " +
+        "network requests, so --check-media is unavailable. Omit unverified media, or use the " +
+        "standalone create-quiz skill.'); }",
       loader: "js",
     }));
   },

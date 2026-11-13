@@ -124,7 +124,10 @@ export function checkChatgptPlugin(directory: string): void {
 }
 
 if (import.meta.main) {
-  checkChatgptPlugin(process.argv[2] ?? "plugins/quizbun");
+  // The package is staged by scripts/package-plugin.ts; pass that staged folder.
+  if (!process.argv[2])
+    throw new Error("Usage: bun scripts/check-chatgpt-plugin.ts <staged-package-dir>");
+  checkChatgptPlugin(process.argv[2]);
   console.log(
     "ChatGPT plugin publication preflight passed. Identity verification and portal scans remain external checks.",
   );

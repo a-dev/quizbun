@@ -36,8 +36,8 @@ node <skill>/scripts/validate-quiz.mjs <quiz-id>.json
 ```
 
 Fix reported paths and rerun. The validator checks cross-field rules that JSON
-Schema cannot express. For remote media, also use `--check-media`; omit unverified
-media if network access is unavailable. The [JSON Schema](references/quiz.v1.schema.json)
+Schema cannot express. This validator makes no network requests: do not invent
+media identifiers, and omit any remote media you cannot verify. The [JSON Schema](references/quiz.v1.schema.json)
 is available for editors. If code execution or Node is unavailable, use Quizbun's
 Validate action as the executable validation authority. Do not require the user to install Node just to use the
 browser path, or claim a script ran when it did not.

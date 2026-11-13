@@ -38,7 +38,7 @@ claude plugin validate .claude-plugin/marketplace.json
 ```
 
 `plugin:check` also checks that the Claude manifest and the marketplace entry
-use the same name, version, description, and license as `plugin.json`.
+use the same name, version, description, and license as `plugins/chatgpt/plugin.json` (the ChatGPT manifest, kept outside the Claude plugin folder).
 
 To try the plugin for one session without installing it:
 
